@@ -74,7 +74,10 @@ def _clean_secret(s: str) -> str:
 def send(html_body: str) -> None:
     user = _clean_secret(os.environ["GMAIL_ADDRESS"])
     pw = _clean_secret(os.environ["GMAIL_APP_PASSWORD"]).replace(" ", "")
-    to = _clean_secret(os.environ.get("DIGEST_RECIPIENT", user))
+    # os.environ.get(key, default) only falls back when the key is ABSENT --
+    # the workflow's `env:` block always defines DIGEST_RECIPIENT (as "" when
+    # the secret is unset), so `or user` is needed to treat blank as unset too.
+    to = _clean_secret(os.environ.get("DIGEST_RECIPIENT") or user)
 
     msg = MIMEText(html_body, "html", "utf-8")
     msg["Subject"] = f"{config.SUBJECT_PREFIX} — {dt.date.today().isoformat()}"

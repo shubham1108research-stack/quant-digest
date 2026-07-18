@@ -1,0 +1,32 @@
+name: Test Digest (smoke)
+
+# Manual-only, reduced-scope smoke test of the collect->render->email path.
+# Runs in ~30s (skips the slow OpenAlex/S2 collectors) so email-send bugs can
+# be caught without waiting for a full ~50-min weekly run.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read            # smoke test never commits state/reports
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Run smoke test
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          # Deliberately kept -- reproduces the empty-string condition that
+          # crashed the real run when this secret is unset, proving the fix.
+          DIGEST_RECIPIENT: ${{ secrets.DIGEST_RECIPIENT }}
+        run: python test_send.py
