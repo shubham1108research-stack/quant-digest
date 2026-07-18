@@ -139,6 +139,13 @@ header{position:sticky;top:0;z-index:9;background:var(--ground);border-bottom:1p
 .cites small{font-family:var(--sans);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:400;margin-left:3px;}
 .bar{height:2px;background:var(--line);margin:8px 0 0;border-radius:2px;overflow:hidden;}
 .bar i{display:block;height:100%;background:var(--cite);opacity:.55;}
+.rail .yr{font-family:var(--serif);font-size:16px;font-weight:600;line-height:1;color:var(--muted);font-variant-numeric:tabular-nums;}
+.tag{font-family:var(--sans);font-size:9px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;
+  padding:2px 7px;border-radius:20px;white-space:nowrap;border:1px solid;flex:none;}
+.tag.theory{color:var(--accent);border-color:var(--accent);}
+.tag.method{color:var(--medium);border-color:var(--medium);}
+.tag.empirical{color:var(--strong);border-color:var(--strong);}
+.tag.frontier{color:var(--panel);background:var(--accent);border-color:var(--accent);}
 footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint);
   margin-top:40px;border-top:1px solid var(--line);padding-top:16px;}
 </style>
@@ -244,11 +251,30 @@ function renderMonthly(){
   $('view').innerHTML=`<div class="dateline">${esc(label)} <span class="n">· ${rows.length} papers</span></div>`+grouped(rows);
 }
 function classicsGroups(){
-  if(Array.isArray(CLASSICS))return{overall:CLASSICS,journals:{}};
-  return{overall:(CLASSICS&&CLASSICS.overall)||[],journals:(CLASSICS&&CLASSICS.journals)||{}};
+  if(Array.isArray(CLASSICS))return{overall:CLASSICS,journals:{},topics:{}};
+  return{overall:(CLASSICS&&CLASSICS.overall)||[],journals:(CLASSICS&&CLASSICS.journals)||{},topics:(CLASSICS&&CLASSICS.topics)||{}};
+}
+function canonEntry(x){
+  const tag=x.type?`<span class="tag ${esc(String(x.type).toLowerCase())}">${esc(x.type)}</span>`:'';
+  const cites=x.cites!=null?` · ${fmtK(x.cites)} cites`:'';
+  return `<div class="entry"><div class="rail"><div class="yr">${esc(x.year||'')}</div></div>
+    <div class="body">
+      <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${tag}</div>
+      ${x.why?`<div class="summary">${esc(x.why)}</div>`:''}
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}</div>
+    </div></div>`;
+}
+function renderCanon(g,topic){
+  const q=$('q').value.toLowerCase().trim();
+  const rows=((g.topics&&g.topics[topic])||[])
+    .filter(x=>!q||(x.title+' '+x.authors+' '+(x.journal||'')+' '+(x.why||'')).toLowerCase().includes(q))
+    .slice().sort((a,b)=>(a.year||0)-(b.year||0));
+  $('view').innerHTML=`<div class="dateline">${esc(topic)} <span class="n">· seminal · chronological · ${rows.length} papers · cites shown for context, not ranking</span></div>`+
+    (rows.length?rows.map(canonEntry).join(''):'<div class="empty">No papers.</div>');
 }
 function renderClassics(){
   const g=classicsGroups(),sel=$('jsel').value||'__overall';
+  if(sel.slice(0,6)==='topic:'){renderCanon(g,sel.slice(6));return;}
   const src=sel==='__overall'?g.overall:(g.journals[sel]||[]);
   const q=$('q').value.toLowerCase().trim();
   let rows=src.filter(x=>!q||(x.title+' '+x.authors+' '+(x.journal||'')).toLowerCase().includes(q))
@@ -293,8 +319,15 @@ Promise.all([
   [...new Set(d.map(x=>(x.seen||'').slice(0,7)).filter(m=>m>="2026-07"))].sort().reverse()
     .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
   const g=classicsGroups();
-  $('jsel').add(new Option('Overall','__overall'));
-  Object.keys(g.journals).forEach(name=>$('jsel').add(new Option(name,name)));
+  if(Object.keys(g.topics).length){
+    const og=document.createElement('optgroup');og.label='Seminal — by topic';
+    Object.keys(g.topics).forEach(t=>og.appendChild(new Option(t,'topic:'+t)));
+    $('jsel').appendChild(og);
+  }
+  const og2=document.createElement('optgroup');og2.label='Most cited — by journal';
+  og2.appendChild(new Option('Overall (all finance)','__overall'));
+  Object.keys(g.journals).forEach(name=>og2.appendChild(new Option(name,name)));
+  $('jsel').appendChild(og2);
   render();
 });
 </script>
