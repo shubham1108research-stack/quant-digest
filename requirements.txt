@@ -1,3 +1,4 @@
 requests>=2.31
 feedparser>=6.0
+playwright>=1.40   # headless-browser scrape of AQR/Man/RA house research
 # LLM triage uses Gemini's REST API via requests -- no extra dependency.

@@ -9,6 +9,7 @@ import pathlib
 import sys
 
 import emailer
+import firms
 import llm
 import portal
 import prominence
@@ -36,6 +37,7 @@ def collect() -> list[dict]:
         ("SemanticScholar", lambda: sources.semantic_scholar(log)),
         ("Quantocracy", sources.quantocracy),
         ("Practitioner", lambda: sources.practitioner(log)),
+        ("Firms (AQR/Man/RA)", lambda: firms.firms(log)),
         # last: dedup keeps richer records above canonical; this adds net-new
         ("OpenAlex-topics", lambda: sources.openalex_topics(log)),
     ]

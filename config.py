@@ -74,6 +74,21 @@ PRACTITIONER_FEEDS = {
     "Macrosynergy": "https://macrosynergy.com/research/feed/",
 }
 
+# ---- Asset-manager house research (headless Playwright) -------------
+# JS-rendered sites with no RSS. Each entry: (insights URL, href regex that
+# matches an article page). SSRN is intentionally excluded -- it Cloudflare-
+# blocks headless browsers (verified). Best-effort: a site change/block or a
+# missing browser just skips that firm, never breaks the run.
+FIRM_SITES = {
+    "AQR": ("https://www.aqr.com/Insights/Research",
+            r"^/Insights/Research/[^/]+/[^/]+$"),
+    "Man Group": ("https://www.man.com/insights",
+                  r"/insights/[a-z0-9][a-z0-9-]{10,}$"),
+    "Research Affiliates": ("https://www.researchaffiliates.com/insights/publications",
+                            r"/insights/publications/articles/\d+-[a-z0-9-]+$"),
+}
+FIRM_MAX_ITEMS = 15   # newest per firm; cross-week dedup surfaces only net-new
+
 # ---- Preprint probes via OpenAlex -----------------------------------
 # label -> OpenAlex source id (Sxxxxxxxxx), or None to resolve by name at
 # runtime. Resolution is logged so you can verify and hardcode it after
