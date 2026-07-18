@@ -229,6 +229,7 @@ SEMANTIC_SCHOLAR_QUERIES = [
 # "Top picks" section. Get a free key at https://aistudio.google.com/apikey.
 LLM_MODEL = "gemini-flash-latest"   # Gemini (primary); alias -> current Flash
 GROQ_MODEL = "llama-3.3-70b-versatile"   # Groq (fallback if GROQ_API_KEY set)
+MISTRAL_MODEL = "mistral-small-latest"   # Mistral (fallback if MISTRAL_API_KEY set)
 LLM_RANK_BATCH = 40          # items scored per API call
 LLM_MAX_RETRIES = 3          # retries (with backoff) on 429/5xx
 LLM_BATCH_PAUSE = 6          # seconds between calls -- stay under free-tier RPM
@@ -263,19 +264,46 @@ RANK_INTERESTS = (
     "incremental results and papers with no finance angle."
 )
 
-# ---- Monthly top-20 picks (5-parameter composite) -------------------
+# ---- Monthly top-50 picks (5-parameter composite) -------------------
 # Each calendar month's Monthly-tab list is the top MONTHLY_TOP_N papers by a
-# weighted composite of five 0-100 sub-scores. innovation + relevance come from
-# the LLM; paper_cites + author_cites (h-index) come from Semantic Scholar
-# (abstracts.py); journal_if comes from JOURNAL_IMPACT below. Weights sum to 1.
-MONTHLY_TOP_N = 20
+# weighted composite of five 0-100 sub-scores:
+#   velocity     -- citation velocity: real cites-per-year when the paper is old
+#                   enough (S2 cites / age), else the LLM's estimate of expected
+#                   citation velocity given ongoing hot topics
+#   downloads    -- expected download/attention volume (LLM estimate; there is
+#                   no open download-count source for most venues)
+#   paper_cites  -- Semantic Scholar citationCount (log, min-max in-month)
+#   author_cites -- Semantic Scholar max author h-index (min-max in-month)
+#   journal_if   -- JOURNAL_IMPACT table (value / table max)
+# If a sub-score is unavailable for an item, its weight is redistributed to
+# author_cites first, then journal_if (see scoring.composite_entries).
+# The LLM also still scores innovation + relevance (email tiers, Recent's
+# top-10% filter, and the seminal promotion) -- they're just not composite terms.
+MONTHLY_TOP_N = 50
 MONTHLY_WEIGHTS = {
-    "innovation": 0.25,
-    "relevance": 0.25,
+    "velocity": 0.15,
+    "downloads": 0.15,
     "paper_cites": 0.20,
-    "author_cites": 0.15,
-    "journal_if": 0.15,
+    "author_cites": 0.30,
+    "journal_if": 0.20,
 }
+
+# Topic taxonomy for the portal's Archive tab (LLM assigns one per paper).
+# Mirrors the Classics canon topics, plus a catch-all.
+TOPICS = [
+    "Asset Pricing & Factor Models",
+    "Portfolio Construction & Optimization",
+    "Market Efficiency & Behavioral",
+    "Derivatives & Option Pricing",
+    "Volatility Modeling",
+    "Fixed Income & Credit",
+    "Market Microstructure & Liquidity",
+    "Fund Performance & Institutional",
+    "Machine Learning in Finance",
+    "Financial Econometrics",
+    "Macro & Monetary",
+    "Other",
+]
 
 # Approximate 2-year impact factors for the tracked journals (public/JCR ~2023,
 # editable). Keys MUST match the labels in JOURNALS_T1/T2 and PMR_JOURNALS. Used

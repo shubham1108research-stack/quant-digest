@@ -36,6 +36,7 @@ jobs:
           # Groq is the automatic fallback when Gemini's key/quota dies
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: python main.py
 
       - name: Commit state + report archive + portal

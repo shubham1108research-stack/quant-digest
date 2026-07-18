@@ -32,6 +32,7 @@ def _export(con) -> list[dict]:
             "date": m.get("date") or first_seen,
             "seen": first_seen,
             "score": m.get("rank_score"),
+            "topic": m.get("topic", ""),
             "summary": m.get("summary") or m.get("why", ""),
         })
     out.sort(key=lambda x: (x["seen"] or "", x["date"] or ""), reverse=True)
@@ -111,9 +112,9 @@ header{position:sticky;top:0;z-index:9;background:var(--ground);border-bottom:1p
 #q{font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--panel);
   border:1px solid var(--line);border-radius:7px;padding:6px 10px;width:190px;max-width:42vw;}
 #q:focus{outline:2px solid var(--accent);outline-offset:1px;}
-#month,#cat,#jsel{font-family:var(--serif);font-size:15px;color:var(--ink);background:var(--panel);
+#month,#cat,#jsel,#topic{font-family:var(--serif);font-size:15px;color:var(--ink);background:var(--panel);
   border:1px solid var(--line);border-radius:7px;padding:5px 9px;cursor:pointer;max-width:44vw;}
-#cat:focus,#month:focus,#jsel:focus{outline:2px solid var(--accent);outline-offset:1px;}
+#cat:focus,#month:focus,#jsel:focus,#topic:focus{outline:2px solid var(--accent);outline-offset:1px;}
 .dateline{font-family:var(--sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted);margin:26px 0 2px;display:flex;align-items:center;gap:10px;}
 .dateline .n{font-variant-numeric:tabular-nums;color:var(--faint);}
@@ -173,6 +174,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
     <div class="nav">
       <button id="t-monthly" class="on">Monthly</button>
       <button id="t-recent">Recent</button>
+      <button id="t-archive">Archive</button>
       <button id="t-classics">Classics</button>
       <span class="sp"></span>
       <select id="cat" title="Category" style="display:none">
@@ -182,6 +184,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
         <option value="2">Preprints &amp; working papers</option>
         <option value="3">Practitioner &amp; blogs</option>
       </select>
+      <select id="topic" title="Topic" style="display:none"></select>
       <select id="jsel" title="Journal" style="display:none"></select>
       <select id="month" style="display:none"></select>
       <input id="q" type="search" placeholder="Search…" autocomplete="off">
@@ -218,7 +221,7 @@ function entry(x,rank){
   const who=x.authors?' · '+esc(x.authors):'';
   return `<div class="entry">${sc}<div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta"><span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}</div>
+    <div class="meta"><span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}</div>
     ${sm}</div></div>`;
 }
 function grouped(rows){
@@ -239,10 +242,25 @@ function sinceDays(n){
 }
 function renderRecent(){
   const cs=sinceDays(7);
-  let rows=cs?DATA.filter(x=>(x.seen||'')>=cs):DATA;
-  $('view').innerHTML=`<div class="dateline">Last 7 days <span class="n">· ${rows.length} papers</span></div>`+grouped(rows);
+  const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA).filter(x=>x.score!=null);
+  // top 10% of EACH category by LLM score -- the rest live in the Archive tab
+  const g=[[],[],[],[]]; pool.forEach(x=>g[catOf(x)].push(x));
+  let rows=[];
+  g.forEach(a=>{a.sort((p,q)=>(q.score||0)-(p.score||0));
+    rows=rows.concat(a.slice(0,Math.max(1,Math.ceil(a.length*0.10))));});
+  $('view').innerHTML=`<div class="dateline">Last 7 days · top 10% per category <span class="n">· ${rows.length} of ${pool.length} — the rest are in Archive</span></div>`+grouped(rows);
 }
-const SUBS=[['Innov','innovation'],['Rel','relevance'],['Cites','paper_cites'],['Author','author_cites'],['IF','journal_if']];
+function renderArchive(){
+  const q=$('q').value.toLowerCase().trim();
+  const t=$('topic').value||'all';
+  let rows=DATA.filter(x=>(t==='all'||((x.topic||'Other')===t)))
+    .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.topic||'')).toLowerCase().includes(q))
+    .slice().sort(byDate);
+  const label=t==='all'?'All topics':t;
+  $('view').innerHTML=`<div class="dateline">Archive · ${esc(label)} <span class="n">· ${rows.length} papers · date-wise</span></div>`+
+    (rows.length?rows.map(x=>entry(x)).join(''):'<div class="empty">No matches.</div>');
+}
+const SUBS=[['Vel','velocity'],['DL','downloads'],['Cites','paper_cites'],['Author','author_cites'],['IF','journal_if']];
 function monthlyEntry(x,rank){
   const band=bandColor(x.composite);
   const subs=SUBS.map(([l,k])=>{const v=x[k];const w=Math.max(0,Math.min(100,v||0));
@@ -316,19 +334,22 @@ function renderClassics(){
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
-function render(){VIEW==="monthly"?renderMonthly():VIEW==="recent"?renderRecent():renderClassics();}
+function render(){VIEW==="monthly"?renderMonthly():VIEW==="recent"?renderRecent():VIEW==="archive"?renderArchive():renderClassics();}
 function setView(v){
-  VIEW=v;['monthly','recent','classics'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  VIEW=v;['monthly','recent','archive','classics'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
   $('month').style.display=v==="monthly"?'':'none';
   $('jsel').style.display=v==="classics"?'':'none';
-  $('cat').style.display=v==="recent"?'':'none';render();
+  $('cat').style.display=v==="recent"?'':'none';
+  $('topic').style.display=v==="archive"?'':'none';render();
 }
 $('t-recent').onclick=()=>setView('recent');
 $('t-monthly').onclick=()=>setView('monthly');
+$('t-archive').onclick=()=>setView('archive');
 $('t-classics').onclick=()=>setView('classics');
 $('q').addEventListener('input',render);
 $('month').addEventListener('change',render);
 $('cat').addEventListener('change',render);
+$('topic').addEventListener('change',render);
 $('jsel').addEventListener('change',render);
 const root=document.documentElement;
 $('toggle').onclick=()=>{
@@ -345,6 +366,9 @@ Promise.all([
   MAXSEEN=d.reduce((m,x)=>(x.seen||'')>m?(x.seen||''):m,"");
   Object.keys(MONTHLY).filter(k=>/^\\d{4}-\\d{2}$/.test(k)).sort().reverse()
     .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
+  $('topic').add(new Option('All topics','all'));
+  [...new Set(d.map(x=>x.topic||'Other'))].sort()
+    .forEach(t=>$('topic').add(new Option(t,t)));
   const g=classicsGroups();
   if(Object.keys(g.topics).length){
     const og=document.createElement('optgroup');og.label='Seminal — by topic';

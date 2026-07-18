@@ -15,7 +15,7 @@ import time
 import requests
 
 _BATCH = "https://api.semanticscholar.org/graph/v1/paper/batch"
-_FIELDS = "externalIds,abstract,citationCount,authors.hIndex"
+_FIELDS = "externalIds,abstract,citationCount,authors.hIndex,year"
 _UA = {"User-Agent": "quant-digest/1.0 (personal research tool)"}
 _BATCH_SIZE = 500        # S2 hard cap per batch request
 _MAX_RETRIES = 4
@@ -73,6 +73,7 @@ def s2_papers(dois, log=print, batch: int = _BATCH_SIZE) -> dict[str, dict]:
                 "abstract": res.get("abstract") or "",
                 "cites": res.get("citationCount"),
                 "author_h": max(hs) if hs else None,
+                "year": res.get("year"),
             }
         time.sleep(0.5)
     return out

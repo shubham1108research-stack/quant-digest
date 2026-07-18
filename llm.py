@@ -23,27 +23,35 @@ import config
 _GEMINI_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
                "{model}:generateContent")
 _GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+_MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
 
 _SYSTEM = (
     "You are a quantitative-research analyst curating a digest for a "
-    "practitioner. For each item, give TWO 0-100 scores and a one-line "
-    "summary.\n\nINTERESTS:\n"
+    "practitioner. For each item, give FOUR 0-100 scores, a topic, and a "
+    "one-line summary.\n\nINTERESTS:\n"
     + config.RANK_INTERESTS
     + "\n\n1) relevance -- how relevant/important to the interests above. Bands: "
     "80-100 = must-read; 50-79 = relevant; 20-49 = tangential; 0-19 = off-topic "
     "or noise.\n"
-    "2) innovation -- how novel/original the contribution is: 80-100 = a new "
+    "2) innovation -- how novel/original the contribution is, judged against "
+    "the currently hot research directions in quant finance: 80-100 = a new "
     "method, idea, or field-defining result; 50-79 = a meaningful advance; "
-    "20-49 = incremental; 0-19 = derivative or a survey. Judge novelty on its "
-    "own merits, independent of citation count.\n\n"
-    "Be selective -- most items are neither must-reads nor highly innovative. "
-    "Judge from the title, authors, source, and abstract provided.\n\n"
+    "20-49 = incremental; 0-19 = derivative or a survey.\n"
+    "3) velocity -- expected citation velocity: how fast this paper will "
+    "accumulate citations given topic momentum, venue, and author visibility "
+    "(80-100 = likely fast-cited; 0-19 = likely uncited).\n"
+    "4) downloads -- expected download/reader volume: practitioner appeal, "
+    "buzz-worthiness, breadth of audience (80-100 = widely read; 0-19 = "
+    "niche/unread).\n\n"
+    "topic -- exactly one of: " + "; ".join(config.TOPICS) + ".\n\n"
+    "Be selective -- most items score mid-or-low on every scale. Judge from the "
+    "title, authors, source, and abstract provided.\n\n"
     "Also write a crisp one-sentence summary (<= 30 words) of what the paper "
     "does and why it matters to a quant -- concrete about the method, finding, "
     "or asset class; not vague praise.\n\n"
     "Return ONLY a JSON array, one object per item, no prose:\n"
-    '[{"i": <int>, "relevance": <int 0-100>, "innovation": <int 0-100>, '
-    '"summary": "<one sentence>"}]'
+    '[{"i": <int>, "relevance": <int>, "innovation": <int>, "velocity": <int>, '
+    '"downloads": <int>, "topic": "<topic>", "summary": "<one sentence>"}]'
 )
 
 
@@ -58,10 +66,17 @@ def _prompt(batch: list[dict]) -> str:
     return "Items to score:\n\n" + "\n\n".join(lines)
 
 
-def _parse(text: str) -> dict[int, tuple[int, int, str]]:
-    """-> {index: (relevance, innovation, summary)}. Tolerates the older
-    'score' key (treated as relevance) and a missing innovation (falls back to
-    relevance) so a stray old-format response still parses."""
+def _clamp(v, fallback: int) -> int:
+    try:
+        return max(0, min(100, int(v)))
+    except Exception:                              # noqa: BLE001
+        return fallback
+
+
+def _parse(text: str) -> dict[int, dict]:
+    """-> {index: {relevance, innovation, velocity, downloads, topic, summary}}.
+    Tolerates older shapes ('score' as relevance; missing new keys fall back to
+    relevance-derived defaults) so a stray old-format response still parses."""
     m = re.search(r"\[.*\]", text, re.S)          # tolerate stray prose around it
     if not m:
         return {}
@@ -69,16 +84,22 @@ def _parse(text: str) -> dict[int, tuple[int, int, str]]:
         arr = json.loads(m.group(0))
     except Exception:                              # noqa: BLE001
         return {}
-    out: dict[int, tuple[int, int, str]] = {}
+    out: dict[int, dict] = {}
     for o in arr:
         try:
             i = int(o["i"])
-            rel_raw = o.get("relevance", o.get("score"))
-            relevance = max(0, min(100, int(rel_raw)))
-            inv = o.get("innovation")
-            innovation = max(0, min(100, int(inv))) if inv is not None else relevance
-            summary = str(o.get("summary") or o.get("why", "")).strip()[:280]
-            out[i] = (relevance, innovation, summary)
+            relevance = _clamp(o.get("relevance", o.get("score")), 0)
+            topic = str(o.get("topic") or "").strip()
+            if topic not in config.TOPICS:
+                topic = "Other"
+            out[i] = {
+                "relevance": relevance,
+                "innovation": _clamp(o.get("innovation"), relevance),
+                "velocity": _clamp(o.get("velocity"), relevance),
+                "downloads": _clamp(o.get("downloads"), relevance),
+                "topic": topic,
+                "summary": str(o.get("summary") or o.get("why", "")).strip()[:280],
+            }
         except Exception:                          # noqa: BLE001
             continue
     return out
@@ -135,12 +156,34 @@ def _rank_groq(batch: list[dict], log) -> dict | None:
     return {}
 
 
-_PROVIDERS = [("gemini", _rank_gemini), ("groq", _rank_groq)]
+def _rank_mistral(batch: list[dict], log) -> dict | None:
+    key = os.environ.get("MISTRAL_API_KEY")
+    if not key:
+        return None
+    body = {"model": config.MISTRAL_MODEL, "temperature": 0,
+            "messages": [{"role": "system", "content": _SYSTEM},
+                         {"role": "user", "content": _prompt(batch)}]}
+    for attempt in range(config.LLM_MAX_RETRIES + 2):
+        r = requests.post(_MISTRAL_URL, headers={"Authorization": f"Bearer {key}"},
+                          json=body, timeout=90)
+        if r.status_code in (429, 500, 503):       # rate limit -- wait it out
+            wait = int(float(r.headers.get("retry-after", 0))) or 15 * (attempt + 1)
+            time.sleep(min(wait, 60))
+            continue
+        r.raise_for_status()
+        return _parse(r.json()["choices"][0]["message"]["content"])
+    r.raise_for_status()
+    return {}
+
+
+_PROVIDERS = [("gemini", _rank_gemini), ("groq", _rank_groq),
+              ("mistral", _rank_mistral)]
 
 
 def have_key() -> bool:
     return bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-                or os.environ.get("GROQ_API_KEY"))
+                or os.environ.get("GROQ_API_KEY")
+                or os.environ.get("MISTRAL_API_KEY"))
 
 
 def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
@@ -188,7 +231,13 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
         batches += 1
         for i, it in enumerate(batch):
             if i in scores:
-                it["rank_score"], it["innovation"], it["summary"] = scores[i]
+                s = scores[i]
+                it["rank_score"] = s["relevance"]
+                it["innovation"] = s["innovation"]
+                it["velocity_est"] = s["velocity"]
+                it["downloads_est"] = s["downloads"]
+                it["topic"] = s["topic"]
+                it["summary"] = s["summary"]
                 ranked += 1
         time.sleep(config.LLM_BATCH_PAUSE)         # stay under free-tier RPM
     log(f"[llm] ranked {ranked}/{len(items)} via {', '.join(sorted(used)) or 'none'}")
