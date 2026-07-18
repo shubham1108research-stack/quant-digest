@@ -107,15 +107,20 @@ def _rank_groq(batch: list[dict], log) -> dict | None:
     key = os.environ.get("GROQ_API_KEY")
     if not key:
         return None
-    r = requests.post(_GROQ_URL, headers={"Authorization": f"Bearer {key}"},
-                      json={"model": config.GROQ_MODEL, "temperature": 0,
-                            "messages": [{"role": "system", "content": _SYSTEM},
-                                         {"role": "user",
-                                          "content": _prompt(batch)}]},
-                      timeout=90)
+    body = {"model": config.GROQ_MODEL, "temperature": 0,
+            "messages": [{"role": "system", "content": _SYSTEM},
+                         {"role": "user", "content": _prompt(batch)}]}
+    for attempt in range(config.LLM_MAX_RETRIES + 2):
+        r = requests.post(_GROQ_URL, headers={"Authorization": f"Bearer {key}"},
+                          json=body, timeout=90)
+        if r.status_code in (429, 500, 503):       # rate/token limit -- wait it out
+            wait = int(float(r.headers.get("retry-after", 0))) or 15 * (attempt + 1)
+            time.sleep(min(wait, 60))
+            continue
+        r.raise_for_status()
+        return _parse(r.json()["choices"][0]["message"]["content"])
     r.raise_for_status()
-    text = r.json()["choices"][0]["message"]["content"]
-    return _parse(text)
+    return {}
 
 
 _PROVIDERS = [("gemini", _rank_gemini), ("groq", _rank_groq)]
