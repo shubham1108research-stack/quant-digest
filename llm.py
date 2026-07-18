@@ -30,8 +30,11 @@ _SYSTEM = (
     "field-defining); 50-79 = relevant; 20-49 = tangential; 0-19 = off-topic or "
     "noise. Be selective -- most items are NOT must-reads. Judge from the title, "
     "authors, source, and abstract provided.\n\n"
+    "Also write a crisp one-sentence summary (<= 30 words) of what the paper "
+    "does and why it matters to a quant -- concrete about the method, finding, "
+    "or asset class; not vague praise.\n\n"
     "Return ONLY a JSON array, one object per item, no prose:\n"
-    '[{"i": <index int>, "score": <int 0-100>, "why": "<= 12 words"}]'
+    '[{"i": <index int>, "score": <int 0-100>, "summary": "<one sentence>"}]'
 )
 
 
@@ -63,7 +66,8 @@ def _parse(text: str) -> dict[int, tuple[int, str]]:
         try:
             i = int(o["i"])
             score = max(0, min(100, int(o["score"])))
-            out[i] = (score, str(o.get("why", "")).strip()[:120])
+            summary = str(o.get("summary") or o.get("why", "")).strip()[:280]
+            out[i] = (score, summary)
         except Exception:                          # noqa: BLE001
             continue
     return out
@@ -120,7 +124,7 @@ def rank(items: list[dict], log) -> list[dict]:
             continue
         for i, it in enumerate(batch):
             if i in scores:
-                it["rank_score"], it["why"] = scores[i]
+                it["rank_score"], it["summary"] = scores[i]
                 ranked += 1
         time.sleep(config.LLM_BATCH_PAUSE)         # stay under free-tier RPM
     log(f"[llm] ranked {ranked}/{len(items)} items via {config.LLM_MODEL}")

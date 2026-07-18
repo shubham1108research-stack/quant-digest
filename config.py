@@ -1,6 +1,7 @@
 """Central configuration for the quant research digest."""
 
-LOOKBACK_DAYS = 8
+LOOKBACK_DAYS = 3        # daily cron; a few days of overlap covers missed runs
+                         # + indexing lag. Cross-run dedup drops the repeats.
 
 # ---- RePEc NEP -------------------------------------------------------
 NEP_CODES = ["fmk", "inv", "rmg", "ecm", "ets", "for",
@@ -239,3 +240,8 @@ RANK_INTERESTS = (
 
 # ---- Email -----------------------------------------------------------
 SUBJECT_PREFIX = "[Research Digest]"
+# Link shown in the email to browse the full archive portal. Set to your hosted
+# URL (GitHub Pages https://<user>.github.io/quant-digest/, Netlify, Cloudflare
+# Pages) once docs/ is published; the local fallback works with
+# `py -m http.server 8000 --directory docs`. Empty hides the button.
+PORTAL_URL = "http://localhost:8000"

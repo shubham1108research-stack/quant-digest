@@ -39,7 +39,7 @@ def _export(con) -> list[dict]:
             "date": m.get("date") or first_seen,
             "seen": first_seen,
             "score": m.get("rank_score"),
-            "why": m.get("why", ""),
+            "why": m.get("summary") or m.get("why", ""),
         })
     # newest digest first, then best LLM score within a digest
     out.sort(key=lambda x: (x["seen"] or "", x["score"] if x["score"] is not None

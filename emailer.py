@@ -11,10 +11,13 @@ import config
 SECTION_NAMES = {
     1: "Working papers (NEP + NBER)",
     2: "arXiv",
-    3: "Journals + SSRN/preprint probe",
-    4: "Practitioner blogosphere",
-    5: "OpenAlex topic sweep (net-new)",
+    3: "Journals + SSRN / preprints",
+    4: "Practitioner & house research",
+    5: "OpenAlex topic sweep",
 }
+
+_FONT = ("-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,"
+         "Arial,sans-serif")
 
 
 def _esc(s):
@@ -33,32 +36,62 @@ def _plevel(it: dict) -> int:
     return 0
 
 
-def _item_li(it: dict) -> str:
-    who = _esc(it.get("authors", ""))
-    d = _esc(it.get("date", ""))
-    why = _esc(it.get("why", ""))
-    badges = ""
-    if isinstance(it.get("rank_score"), int):
-        badges += f"<b>[{it['rank_score']}]</b> "
-    if it.get("tier"):
-        badges += f"<b>[{_esc(it['tier'])}]</b> "
-    if it.get("prom_hindex"):
-        last = (it.get("prom_author", "").split() or [""])[-1]
-        badges += f"<b>[★h{it['prom_hindex']} {_esc(last)}]</b> "
-    return ("<li>" + badges
-            + f"<a href='{_esc(it['url'])}'>{_esc(it['title'])}</a>"
-            + (f" — {who}" if who else "")
-            + (f" ({d})" if d else "")
-            + (f" <i>— {why}</i>" if why else "") + "</li>")
-
-
 def _by_score(it: dict):
     s = it.get("rank_score")
     return (s if isinstance(s, int) else -1, it.get("date", ""))
 
 
+def _pill(text: str, bg: str) -> str:
+    return (f'<span style="display:inline-block;background:{bg};color:#fff;'
+            'font-size:11px;font-weight:700;padding:2px 8px;border-radius:11px;'
+            f'margin:0 5px 4px 0;white-space:nowrap">{_esc(text)}</span>')
+
+
+def _score_bg(s: int) -> str:
+    return "#0a7f4f" if s >= 70 else "#b26b00" if s >= 45 else "#7a7a7a"
+
+
+def _source_label(it: dict) -> str:
+    src = ", ".join(it.get("sources", [it.get("source", "")]))
+    return src.replace("journal:", "").replace("topic:", "topic · ")
+
+
+def _item_card(it: dict) -> str:
+    pills = ""
+    s = it.get("rank_score")
+    if isinstance(s, int):
+        pills += _pill(str(s), _score_bg(s))
+    if it.get("tier"):
+        pills += _pill(it["tier"], "#12203a" if it["tier"] == "T1" else "#5b6b8c")
+    if it.get("prom_hindex"):
+        last = (it.get("prom_author", "").split() or [""])[-1]
+        pills += _pill(f"★ h{it['prom_hindex']} {last}", "#6b4a9a")
+
+    meta = " · ".join(x for x in [_esc(_source_label(it)),
+                                       _esc(it.get("authors", "")),
+                                       _esc(it.get("date", ""))] if x)
+    summary = _esc(it.get("summary", ""))
+    return (
+        '<div style="padding:12px 0;border-bottom:1px solid #ededed">'
+        + (f'<div style="margin-bottom:5px">{pills}</div>' if pills else "")
+        + f'<a href="{_esc(it["url"])}" style="color:#12203a;'
+        'text-decoration:none;font-weight:600;font-size:15px;line-height:1.35">'
+        f'{_esc(it["title"])}</a>'
+        + (f'<div style="color:#6a6a6a;font-size:12px;margin-top:4px">{meta}</div>'
+           if meta else "")
+        + (f'<div style="color:#333;font-size:13.5px;margin-top:6px;'
+           f'line-height:1.5">{summary}</div>' if summary else "")
+        + "</div>")
+
+
+def _section(title: str, count: int, accent: str) -> str:
+    return (f'<h2 style="font-size:15px;margin:26px 0 2px;padding:8px 12px;'
+            f'background:{accent};color:#fff;border-radius:6px">{_esc(title)} '
+            f'<span style="opacity:.75;font-weight:400">({count})</span></h2>')
+
+
 def render(items: list[dict], notes: list[str]) -> str:
-    today = dt.date.today().isoformat()
+    today = dt.date.today().strftime("%A, %d %b %Y")
 
     # When the LLM layer ran, hide the off-topic/noise band from the email
     # (the portal/archive still keeps every item). Unscored items are kept.
@@ -71,60 +104,66 @@ def render(items: list[dict], notes: list[str]) -> str:
         hidden = len(items) - len(kept)
         items = kept
 
-    subtitle = f"{len(items)} items"
+    subtitle = f"{len(items)} new items"
     if hidden:
-        subtitle += f"; {hidden} low-relevance hidden"
-    parts = [f"<h1 style='font-size:1.3em'>Research digest — {today} "
-             f"({subtitle})</h1>"]
+        subtitle += f" · {hidden} low-relevance hidden"
 
-    # Prominence division: Tier 1 (top journals / prominent authors / must-reads)
-    # and Tier 2 lead; everything else falls through to the per-source sections.
+    p = [f'<div style="font-family:{_FONT};background:#f4f5f7;padding:16px 0;'
+         'margin:0">',
+         '<div style="max-width:720px;margin:0 auto;background:#fff;'
+         'border-radius:10px;padding:22px 24px;color:#12203a">',
+         '<h1 style="font-size:22px;margin:0 0 3px;letter-spacing:-.2px">'
+         'Quant Research Digest</h1>',
+         f'<div style="color:#6a6a6a;font-size:13px">{today} · '
+         f'{subtitle}</div>']
+
+    if config.PORTAL_URL:
+        p.append(f'<a href="{_esc(config.PORTAL_URL)}" style="display:inline-block;'
+                 'background:#0a7f4f;color:#fff;text-decoration:none;'
+                 'font-weight:600;font-size:13px;padding:9px 18px;'
+                 'border-radius:7px;margin-top:14px">\U0001F4CA  Browse the full '
+                 'searchable archive</a>')
+
+    # Prominence division: Tier 1 / Tier 2 lead; the rest fall to source sections.
     tier1 = sorted((it for it in items if _plevel(it) == 1), key=_by_score,
                    reverse=True)
     tier2 = sorted((it for it in items if _plevel(it) == 2), key=_by_score,
                    reverse=True)
     tiered = {id(it) for it in tier1} | {id(it) for it in tier2}
 
-    for label, group in (("★ Tier 1 — top journals, prominent authors & "
-                          "must-reads", tier1),
-                         ("Tier 2 — strong field, established authors & "
-                          "relevant work", tier2)):
-        if not group:
-            continue
-        parts.append(f"<h2 style='font-size:1.15em'>{label} ({len(group)})</h2>"
-                     "<ul style='margin-top:0'>")
-        parts += [_item_li(it) for it in group]
-        parts.append("</ul>")
+    if tier1:
+        p.append(_section("★ Tier 1 — top journals, prominent authors & "
+                          "must-reads", len(tier1), "#12203a"))
+        p += [_item_card(it) for it in tier1]
+    if tier2:
+        p.append(_section("Tier 2 — strong field & established work",
+                          len(tier2), "#5b6b8c"))
+        p += [_item_card(it) for it in tier2]
 
     rest = [it for it in items if id(it) not in tiered]
     for sec in sorted(SECTION_NAMES):
-        sec_items = [it for it in rest if it.get("section") == sec]
+        sec_items = sorted((it for it in rest if it.get("section") == sec),
+                           key=_by_score, reverse=True)
         if not sec_items:
             continue
-        parts.append(f"<h2 style='font-size:1.15em'>{SECTION_NAMES[sec]} "
-                     f"({len(sec_items)})</h2>")
-        by_src: dict[str, list] = {}
-        for it in sec_items:
-            key = ", ".join(it.get("sources", [it["source"]]))
-            by_src.setdefault(key, []).append(it)
-        for src_label in sorted(by_src):
-            group = by_src[src_label]
-            parts.append(f"<p><b>{_esc(src_label)}</b></p><ul style='margin-top:0'>")
-            parts += [_item_li(it) for it in
-                      sorted(group, key=lambda x: x.get("date", ""), reverse=True)]
-            parts.append("</ul>")
+        p.append(_section(SECTION_NAMES[sec], len(sec_items), "#8a8a8a"))
+        p += [_item_card(it) for it in sec_items]
 
-    parts.append("<p><i>Reminder: check this week's SSRN email alert — the "
-                 "automated preprint probe lags and is partial. Google Scholar "
-                 "is deliberately excluded (no API). Firm house-research "
-                 "(AQR, Man, etc.) is not covered in this no-LLM version — "
-                 "Quantocracy carries part of the practitioner voice.</i></p>")
+    p.append('<p style="color:#8a8a8a;font-size:11.5px;line-height:1.5;'
+             'margin-top:26px;border-top:1px solid #ededed;padding-top:14px">'
+             'Ranking, tiers and summaries are LLM-generated (Gemini) — '
+             'skim, don’t trust blindly. SSRN arrives via Crossref (fresh) '
+             'and OpenAlex (lagged); asset-manager pages via headless scrape. '
+             'Google Scholar is excluded (no API, redundant).</p>')
     if notes:
-        parts.append("<h2 style='font-size:1.15em'>Run notes</h2><ul>")
-        parts += [f"<li>{_esc(n)}</li>" for n in notes]
-        parts.append("</ul>")
-    return ("<div style='font-family:sans-serif;max-width:680px'>"
-            + "".join(parts) + "</div>")
+        p.append('<h2 style="font-size:13px;color:#6a6a6a;margin:18px 0 4px">'
+                 'Run notes</h2><ul style="color:#8a8a8a;font-size:11.5px;'
+                 'line-height:1.5;padding-left:18px">')
+        p += [f"<li>{_esc(n)}</li>" for n in notes]
+        p.append("</ul>")
+
+    p.append("</div></div>")
+    return "".join(p)
 
 
 def _clean_secret(s: str) -> str:

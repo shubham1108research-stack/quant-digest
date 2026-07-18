@@ -2,7 +2,7 @@ name: Weekly Research Digest
 
 on:
   schedule:
-    - cron: "30 2 * * WED"   # 02:30 UTC = 08:00 IST, Wednesdays
+    - cron: "30 2 * * *"     # 02:30 UTC = 08:00 IST, daily
   workflow_dispatch: {}
 
 permissions:
@@ -39,4 +39,6 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add state.db reports/ docs/ || true
           git commit -m "digest run $(date -u +%F)" || echo "nothing to commit"
-          git push
+          # survive a moved remote (concurrent push) instead of failing red
+          git pull --rebase --autostash origin master || true
+          git push || (git pull --rebase --autostash origin master && git push)
