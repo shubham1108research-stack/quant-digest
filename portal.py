@@ -1,22 +1,15 @@
-"""Generate a static portal (docs/) from the SQLite archive.
+"""Generate the static portal (docs/) from the SQLite archive.
 
 Exports every archived item to docs/data.json and writes a self-contained
-single-page browser (docs/index.html): two tabs -- the rolling digest archive
-(filter by date, search, section/tier, LLM-ranked) and a permanent "Classics"
-tab of the all-time most-cited finance papers (docs/classics.json, produced
-once by backfill.py). No server, no build step, no external assets.
+"research journal" browser (docs/index.html): three pages -- Recent (last 7
+days), Monthly (grouped by calendar month, Jul 2026 onward), and Classics (the
+all-time most-cited finance papers, docs/classics.json, produced by backfill.py).
+Each page groups entries by source category (Academic T1 / T2 / Preprints /
+Practitioner) latest-first. Self-hosted Newsreader serif in docs/fonts/.
 """
 
 import json
 import pathlib
-
-SECTION_NAMES = {
-    "1": "Working papers (NEP + NBER)",
-    "2": "arXiv",
-    "3": "Journals + SSRN/preprints",
-    "4": "Practitioner & house research",
-    "5": "OpenAlex topic sweep",
-}
 
 
 def _export(con) -> list[dict]:
@@ -30,7 +23,6 @@ def _export(con) -> list[dict]:
         except Exception:                          # noqa: BLE001
             m = {}
         out.append({
-            "uid": uid,
             "title": title or m.get("title", ""),
             "url": url or m.get("url", ""),
             "authors": m.get("authors", ""),
@@ -40,10 +32,9 @@ def _export(con) -> list[dict]:
             "date": m.get("date") or first_seen,
             "seen": first_seen,
             "score": m.get("rank_score"),
-            "why": m.get("summary") or m.get("why", ""),
+            "summary": m.get("summary") or m.get("why", ""),
         })
-    out.sort(key=lambda x: (x["seen"] or "", x["score"] if x["score"] is not None
-                            else -1), reverse=True)
+    out.sort(key=lambda x: (x["seen"] or "", x["date"] or ""), reverse=True)
     return out
 
 
@@ -54,8 +45,7 @@ def build(con) -> int:
     (docs / "data.json").write_text(json.dumps(data, default=str), encoding="utf-8")
     if not (docs / "classics.json").exists():      # placeholder until backfill runs
         (docs / "classics.json").write_text("[]", encoding="utf-8")
-    (docs / "index.html").write_text(
-        _INDEX.replace("__SECTIONS__", json.dumps(SECTION_NAMES)), encoding="utf-8")
+    (docs / "index.html").write_text(_INDEX, encoding="utf-8")
     return len(data)
 
 
@@ -64,142 +54,205 @@ _INDEX = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quant Research Digest</title>
+<title>The Quant Research Digest</title>
 <style>
-  :root { --bg:#fff; --fg:#1a1a1a; --muted:#666; --line:#e5e5e5; --accent:#0a7f4f; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#141414; --fg:#e8e8e8; --muted:#999; --line:#2a2a2a; --accent:#2c8; }
-  }
-  * { box-sizing:border-box; }
-  body { font-family:system-ui,-apple-system,sans-serif; margin:0; background:var(--bg);
-         color:var(--fg); line-height:1.45; }
-  header { position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--line);
-           padding:10px 16px; z-index:5; }
-  h1 { font-size:1.2em; margin:0 0 8px; }
-  .tabs { display:flex; gap:6px; margin-bottom:9px; }
-  .tab { font:inherit; font-size:.9em; padding:6px 12px; border:1px solid var(--line);
-         border-radius:20px; background:var(--bg); color:var(--fg); cursor:pointer; }
-  .tab.on { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
-  .controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-  input, select { font:inherit; padding:6px 8px; border:1px solid var(--line);
-                  border-radius:6px; background:var(--bg); color:var(--fg); }
-  #q { flex:1 1 220px; min-width:0; }
-  .count { color:var(--muted); font-size:.85em; margin-left:auto; }
-  main { max-width:780px; margin:0 auto; padding:8px 16px 48px; }
-  .item { padding:12px 0; border-bottom:1px solid var(--line); }
-  .item a { color:var(--fg); text-decoration:none; font-weight:600; }
-  .item a:hover { text-decoration:underline; }
-  .meta { color:var(--muted); font-size:.82em; margin-top:3px; }
-  .badge { display:inline-block; font-size:.72em; font-weight:700; padding:1px 6px;
-           border-radius:10px; border:1px solid var(--line); margin-right:6px;
-           vertical-align:middle; }
-  .score { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .cites { background:#6b4a9a; color:#fff; border-color:#6b4a9a; }
-  .why { color:var(--muted); font-style:italic; font-size:.85em; margin-top:2px; }
-  .empty { color:var(--muted); padding:32px 0; text-align:center; }
+@font-face{font-family:Newsreader;font-style:normal;font-weight:400;font-display:swap;
+  src:url(fonts/newsreader-400.woff2) format('woff2');}
+@font-face{font-family:Newsreader;font-style:normal;font-weight:600;font-display:swap;
+  src:url(fonts/newsreader-600.woff2) format('woff2');}
+@font-face{font-family:Newsreader;font-style:italic;font-weight:400;font-display:swap;
+  src:url(fonts/newsreader-400-italic.woff2) format('woff2');}
+
+:root{
+  --ground:#F6F8F7; --panel:#FFFFFF; --ink:#171C1A; --muted:#5E6B66;
+  --faint:#8A968F; --line:#E4E8E5; --line2:#EDF0EE; --accent:#0C5C4A;
+  --strong:#1F7A3D; --medium:#9A6B00; --low:#8A8F87; --cite:#9A6B00;
+  --serif:Newsreader,ui-serif,Georgia,'Iowan Old Style',Palatino,serif;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ground:#0F1311; --panel:#141917; --ink:#E9ECE8; --muted:#94A099; --faint:#6E7A73;
+  --line:#232A26; --line2:#1C221F; --accent:#43B08F; --strong:#3FAE63; --medium:#C79A3A;
+  --low:#7D857D; --cite:#C79A3A;}}
+:root[data-theme="dark"]{
+  --ground:#0F1311; --panel:#141917; --ink:#E9ECE8; --muted:#94A099; --faint:#6E7A73;
+  --line:#232A26; --line2:#1C221F; --accent:#43B08F; --strong:#3FAE63; --medium:#C79A3A;
+  --low:#7D857D; --cite:#C79A3A;}
+:root[data-theme="light"]{
+  --ground:#F6F8F7; --panel:#FFFFFF; --ink:#171C1A; --muted:#5E6B66; --faint:#8A968F;
+  --line:#E4E8E5; --line2:#EDF0EE; --accent:#0C5C4A; --strong:#1F7A3D; --medium:#9A6B00;
+  --low:#8A8F87; --cite:#9A6B00;}
+
+*{box-sizing:border-box;}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+a{color:inherit;text-decoration:none;}
+.wrap{max-width:768px;margin:0 auto;padding:0 22px 72px;}
+header{position:sticky;top:0;z-index:9;background:var(--ground);border-bottom:1px solid var(--line);}
+.mast{max-width:768px;margin:0 auto;padding:18px 22px 0;}
+.brandrow{display:flex;align-items:baseline;justify-content:space-between;gap:14px;}
+.brand{font-weight:600;font-size:26px;letter-spacing:-.01em;line-height:1;}
+.brand .the{font-style:italic;font-weight:400;color:var(--muted);}
+.tagline{font-family:var(--sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);margin-top:6px;}
+.toggle{font-family:var(--sans);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);background:none;border:1px solid var(--line);border-radius:20px;
+  padding:5px 11px;cursor:pointer;}
+.toggle:hover{border-color:var(--accent);color:var(--accent);}
+.doublerule{height:3px;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);margin:14px 0 0;}
+.nav{display:flex;gap:26px;align-items:center;padding:11px 0 0;flex-wrap:wrap;}
+.nav button{font-family:var(--serif);font-size:16px;color:var(--muted);background:none;
+  border:0;padding:0 0 12px;cursor:pointer;position:relative;}
+.nav button.on{color:var(--ink);}
+.nav button.on:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--accent);}
+.nav .sp{flex:1;}
+#q{font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:7px;padding:6px 10px;width:190px;max-width:42vw;}
+#q:focus{outline:2px solid var(--accent);outline-offset:1px;}
+#month{font-family:var(--serif);font-size:15px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:7px;padding:5px 9px;}
+.dateline{font-family:var(--sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);margin:26px 0 2px;display:flex;align-items:center;gap:10px;}
+.dateline .n{font-variant-numeric:tabular-nums;color:var(--faint);}
+.sechead{font-size:19px;font-weight:600;margin:26px 0 2px;padding-bottom:7px;
+  border-bottom:1px solid var(--ink);display:flex;justify-content:space-between;align-items:baseline;}
+.sechead .cnt{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);font-weight:400;}
+.sechead.t2{color:var(--muted);border-bottom-color:var(--line);}
+.entry{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:16px 0;border-bottom:1px solid var(--line2);}
+.rail{text-align:right;padding-top:2px;}
+.score{font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;color:var(--score,var(--ink));}
+.rail .cap{font-family:var(--sans);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:3px;}
+.title{font-size:17px;font-weight:600;line-height:1.28;text-wrap:balance;}
+.title:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
+.meta{font-family:var(--sans);font-size:11.5px;letter-spacing:.02em;color:var(--muted);margin-top:4px;}
+.meta .j{color:var(--ink);font-weight:500;}
+.summary{font-size:15px;line-height:1.5;color:var(--ink);margin-top:7px;max-width:63ch;}
+.empty{color:var(--muted);font-style:italic;padding:40px 0;text-align:center;}
+.entry.classic{grid-template-columns:1fr;}
+.cwrap{display:flex;align-items:baseline;justify-content:space-between;gap:14px;}
+.cites{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--cite);white-space:nowrap;}
+.cites small{font-family:var(--sans);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:400;margin-left:3px;}
+.bar{height:2px;background:var(--line);margin:8px 0 0;border-radius:2px;overflow:hidden;}
+.bar i{display:block;height:100%;background:var(--cite);opacity:.55;}
+footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint);
+  margin-top:40px;border-top:1px solid var(--line);padding-top:16px;}
 </style>
 </head>
 <body>
 <header>
-  <h1>Quant Research Digest</h1>
-  <div class="tabs">
-    <button class="tab on" id="tab-recent">Recent digest</button>
-    <button class="tab" id="tab-classics">★ Classics — most cited</button>
-  </div>
-  <div class="controls">
-    <input id="q" type="search" placeholder="Search title, author, source…" autocomplete="off">
-    <select id="date"><option value="">All dates</option></select>
-    <select id="section"><option value="">All sections</option></select>
-    <label style="font-size:.85em;color:var(--muted)">
-      <input id="ranked" type="checkbox"> ranked only</label>
-    <span class="count" id="count"></span>
+  <div class="mast">
+    <div class="brandrow">
+      <div>
+        <div class="brand"><span class="the">The</span> Quant Research Digest</div>
+        <div class="tagline">A private review of quantitative finance</div>
+      </div>
+      <button class="toggle" id="toggle">Dark</button>
+    </div>
+    <div class="doublerule"></div>
+    <div class="nav">
+      <button id="t-recent" class="on">Recent</button>
+      <button id="t-monthly">Monthly</button>
+      <button id="t-classics">Classics</button>
+      <span class="sp"></span>
+      <select id="month" style="display:none"></select>
+      <input id="q" type="search" placeholder="Search…" autocomplete="off">
+    </div>
   </div>
 </header>
-<main><div id="list"></div></main>
+<main class="wrap"><div id="view"></div>
+  <footer>Ranking and summaries are LLM-generated (Gemini, with a Groq fallback) — skim,
+    don't trust blindly. Sources: NEP · NBER · arXiv · finance journals &amp; SSRN via
+    Crossref · PM-Research · OpenAlex · practitioner &amp; asset-manager research.
+  </footer>
+</main>
 <script>
-const SECTIONS = __SECTIONS__;
-let DATA = [], CLASSICS = [], VIEW = "recent";
-const $ = id => document.getElementById(id);
+let DATA=[], CLASSICS=[], VIEW="recent", MAXSEEN="";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtK=n=>n>=1000?(n/1000).toFixed(1)+'k':String(n);
+const bandColor=s=>s>=70?'var(--strong)':s>=45?'var(--medium)':'var(--low)';
+const jlabel=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'topic · ');
 
-Promise.all([
-  fetch('data.json').then(r => r.json()).catch(() => []),
-  fetch('classics.json').then(r => r.json()).catch(() => []),
-]).then(([d, c]) => {
-  DATA = d; CLASSICS = c;
-  const dates = [...new Set(d.map(x => x.seen).filter(Boolean))].sort().reverse();
-  for (const dt of dates) $('date').add(new Option(dt, dt));
-  for (const [k, v] of Object.entries(SECTIONS)) $('section').add(new Option(v, k));
-  render();
-});
+const CATS=[
+ {label:"Academic · Tier 1 — top journals",cls:""},
+ {label:"Academic · Tier 2 — field &amp; practitioner journals",cls:"t2"},
+ {label:"Preprints &amp; working papers",cls:"t2"},
+ {label:"Practitioner &amp; blogs",cls:"t2"},
+];
+const catOf=x=>x.tier==="T1"?0:x.tier==="T2"?1:String(x.section)==="4"?3:2;
+const byDate=(a,b)=>String(b.date||b.seen||'').localeCompare(String(a.date||a.seen||''));
 
-$('tab-recent').onclick = () => setView("recent");
-$('tab-classics').onclick = () => setView("classics");
-function setView(v) {
-  VIEW = v;
-  $('tab-recent').classList.toggle('on', v === "recent");
-  $('tab-classics').classList.toggle('on', v === "classics");
-  const recentOnly = v === "recent" ? "" : "none";
-  $('date').style.display = recentOnly;
-  $('section').style.display = recentOnly;
-  $('ranked').parentElement.style.display = recentOnly;
-  render();
+function entry(x){
+  const sc=(x.score!=null)?`<div class="rail"><div class="score" style="--score:${bandColor(x.score)}">${x.score}</div><div class="cap">score</div></div>`:'<div class="rail"></div>';
+  const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
+  const who=x.authors?' · '+esc(x.authors):'';
+  return `<div class="entry">${sc}<div class="body">
+    <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
+    <div class="meta"><span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}</div>
+    ${sm}</div></div>`;
 }
-['q','date','section','ranked'].forEach(id => {
-  $(id).addEventListener('input', render);
-  $(id).addEventListener('change', render);
-});
-
-function render() { VIEW === "classics" ? renderClassics() : renderRecent(); }
-
-function renderRecent() {
-  const q = $('q').value.toLowerCase().trim();
-  const dt = $('date').value, sec = $('section').value, rk = $('ranked').checked;
-  const rows = DATA.filter(x => {
-    if (dt && x.seen !== dt) return false;
-    if (sec && x.section !== sec) return false;
-    if (rk && (x.score == null)) return false;
-    if (q && !((x.title + ' ' + x.authors + ' ' + x.source).toLowerCase().includes(q)))
-      return false;
-    return true;
+function grouped(rows){
+  const q=$('q').value.toLowerCase().trim();
+  rows=rows.filter(x=>!q||(x.title+' '+x.authors+' '+x.source).toLowerCase().includes(q));
+  const g=[[],[],[],[]]; rows.forEach(x=>g[catOf(x)].push(x));
+  let h='';
+  g.forEach((a,i)=>{ if(!a.length)return; a.sort(byDate);
+    h+=`<div class="sechead ${CATS[i].cls}">${CATS[i].label}<span class="cnt">${a.length}</span></div>`+a.map(entry).join('');
   });
-  $('count').textContent = rows.length + ' items';
-  if (!rows.length) { $('list').innerHTML = '<div class="empty">No matches.</div>'; return; }
-  $('list').innerHTML = rows.map(x => {
-    const score = (x.score != null) ? `<span class="badge score">${x.score}</span>` : '';
-    const tier = x.tier ? `<span class="badge">${esc(x.tier)}</span>` : '';
-    const why = x.why ? `<div class="why">${esc(x.why)}</div>` : '';
-    const who = x.authors ? ' · ' + esc(x.authors) : '';
-    return `<div class="item">${score}${tier}
-      <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-      <div class="meta">${esc(SECTIONS[x.section] || x.source)}${who} · ${esc(x.date || x.seen)}</div>
-      ${why}</div>`;
-  }).join('');
+  return h||'<div class="empty">No matches.</div>';
 }
-
-function renderClassics() {
-  const q = $('q').value.toLowerCase().trim();
-  let rows = CLASSICS.filter(x =>
-    !q || (x.title + ' ' + x.authors + ' ' + (x.journal || '')).toLowerCase().includes(q));
-  rows = rows.slice().sort((a, b) => (b.cites || 0) - (a.cites || 0));
-  $('count').textContent = rows.length + ' classics';
-  if (!rows.length) {
-    $('list').innerHTML = '<div class="empty">Classics not generated yet — run backfill.py.</div>';
-    return;
-  }
-  $('list').innerHTML = rows.map(x => {
-    const cites = (x.cites != null) ? `<span class="badge cites">${fmt(x.cites)} cites</span>` : '';
-    const why = x.summary ? `<div class="why">${esc(x.summary)}</div>` : '';
-    const who = x.authors ? ' · ' + esc(x.authors) : '';
-    return `<div class="item">${cites}
-      <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-      <div class="meta">${esc(x.journal || '')}${who} · ${esc(x.year || '')}</div>
-      ${why}</div>`;
-  }).join('');
+function renderRecent(){
+  let rows=DATA;
+  if(MAXSEEN){const c=new Date(MAXSEEN);c.setDate(c.getDate()-6);
+    const cs=c.toISOString().slice(0,10);rows=DATA.filter(x=>(x.seen||'')>=cs);}
+  $('view').innerHTML=`<div class="dateline">Last 7 days <span class="n">· ${rows.length} papers</span></div>`+grouped(rows);
 }
-
-function fmt(n){ return n >= 1000 ? (n/1000).toFixed(1) + 'k' : String(n); }
-function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,
-  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function renderMonthly(){
+  const m=$('month').value||(MAXSEEN||'').slice(0,7)||"2026-07";
+  const rows=DATA.filter(x=>(x.seen||'').slice(0,7)===m);
+  const label=new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'});
+  $('view').innerHTML=`<div class="dateline">${esc(label)} <span class="n">· ${rows.length} papers</span></div>`+grouped(rows);
+}
+function renderClassics(){
+  const q=$('q').value.toLowerCase().trim();
+  let rows=CLASSICS.filter(x=>!q||(x.title+' '+x.authors+' '+(x.journal||'')).toLowerCase().includes(q))
+    .slice().sort((a,b)=>(b.cites||0)-(a.cites||0));
+  const max=Math.max(1,...rows.map(x=>x.cites||0));
+  $('view').innerHTML=`<div class="dateline">Most-cited <span class="n">· 1970–2026 · ${rows.length} papers</span></div>`+
+    (rows.length?rows.map(x=>`<div class="entry classic"><div class="body">
+      <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="cites">${fmtK(x.cites||0)}<small>cites</small></span></div>
+      <div class="bar"><i style="width:${((x.cites||0)/max*100).toFixed(1)}%"></i></div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}</div>
+      ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
+      :'<div class="empty">Classics not generated yet.</div>');
+}
+function render(){VIEW==="recent"?renderRecent():VIEW==="monthly"?renderMonthly():renderClassics();}
+function setView(v){
+  VIEW=v;['recent','monthly','classics'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  $('month').style.display=v==="monthly"?'':'none';render();
+}
+$('t-recent').onclick=()=>setView('recent');
+$('t-monthly').onclick=()=>setView('monthly');
+$('t-classics').onclick=()=>setView('classics');
+$('q').addEventListener('input',render);
+$('month').addEventListener('change',render);
+const root=document.documentElement;
+$('toggle').onclick=()=>{
+  const dark=!(root.getAttribute('data-theme')==='dark'||
+    (!root.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme:dark)').matches));
+  root.setAttribute('data-theme',dark?'dark':'light');$('toggle').textContent=dark?'Light':'Dark';
+};
+Promise.all([
+  fetch('data.json').then(r=>r.json()).catch(()=>[]),
+  fetch('classics.json').then(r=>r.json()).catch(()=>[]),
+]).then(([d,c])=>{
+  DATA=d;CLASSICS=c;
+  MAXSEEN=d.reduce((m,x)=>(x.seen||'')>m?(x.seen||''):m,"");
+  [...new Set(d.map(x=>(x.seen||'').slice(0,7)).filter(m=>m>="2026-07"))].sort().reverse()
+    .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
+  render();
+});
 </script>
 </body>
 </html>
