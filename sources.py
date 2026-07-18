@@ -307,7 +307,8 @@ def openalex_topics(log) -> list[dict]:
         topic_ids = list(mapped.values())
 
     since = _cutoff().date().isoformat()
-    fin = f"primary_topic.field.id:{config.OPENALEX_FINANCE_FIELD}"  # econ/finance
+    fin_a = f"primary_topic.field.id:{config.OPENALEX_FINANCE_FIELD}"      # econ+fin
+    fin_b = f"primary_topic.subfield.id:{config.OPENALEX_FULLTEXT_SUBFIELD}"  # finance
     out = []
 
     # Branch A -- taxonomy-mapped topics, one batched call
@@ -315,7 +316,7 @@ def openalex_topics(log) -> list[dict]:
         try:
             r = _openalex_get("https://api.openalex.org/works", {
                 "filter": f"topics.id:{'|'.join(topic_ids)},"
-                          f"from_publication_date:{since},{fin}",
+                          f"from_publication_date:{since},{fin_a}",
                 "per-page": 100,
                 "sort": "publication_date:desc",
             }, log)
@@ -331,7 +332,7 @@ def openalex_topics(log) -> list[dict]:
         try:
             r = _openalex_get("https://api.openalex.org/works", {
                 "search": term,
-                "filter": f"from_publication_date:{since},type:article,{fin}",
+                "filter": f"from_publication_date:{since},type:article,{fin_b}",
                 "per-page": config.OPENALEX_FULLTEXT_LIMIT,
                 "sort": "publication_date:desc",
             }, log)

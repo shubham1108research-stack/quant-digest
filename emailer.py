@@ -23,8 +23,23 @@ def _esc(s):
 
 def render(items: list[dict], notes: list[str]) -> str:
     today = dt.date.today().isoformat()
+
+    # When the LLM layer ran, hide the off-topic/noise band from the email
+    # (the portal/archive still keeps every item). Unscored items are kept.
+    graded = any(isinstance(it.get("rank_score"), int) for it in items)
+    hidden = 0
+    if graded:
+        kept = [it for it in items
+                if not (isinstance(it.get("rank_score"), int)
+                        and it["rank_score"] < config.MIN_SHOW_SCORE)]
+        hidden = len(items) - len(kept)
+        items = kept
+
+    subtitle = f"{len(items)} items"
+    if hidden:
+        subtitle += f"; {hidden} low-relevance hidden"
     parts = [f"<h1 style='font-size:1.3em'>Research digest — {today} "
-             f"({len(items)} new items)</h1>"]
+             f"({subtitle})</h1>"]
 
     # Top picks -- only present when the optional LLM layer scored the items.
     picks = sorted((it for it in items if isinstance(it.get("rank_score"), int)),

@@ -82,10 +82,13 @@ OPENALEX_PREPRINT_SOURCES = {
 # How many retries (with linear backoff) on an OpenAlex 429 before giving up.
 OPENALEX_MAX_RETRIES = 4
 
-# Restrict the topic sweep to the OpenAlex "Economics, Econometrics and Finance"
-# field (id 20) via primary_topic -- keeps generic seeds (momentum->physics,
-# anomalies->CompSci, crowding->engineering) from pulling off-topic work.
-OPENALEX_FINANCE_FIELD = "20"
+# Restrict the topic sweep to finance/economics via primary_topic. Branch A
+# (curated finance topics) uses the whole field 20 ("Economics, Econometrics
+# and Finance"); branch B (broad keyword search) uses the tighter Finance
+# subfield 2003 -- keyword search over all of economics otherwise returns
+# economic history, philosophy-of-economics, regional-development, and spam.
+OPENALEX_FINANCE_FIELD = "20"          # branch A (already topic-constrained)
+OPENALEX_FULLTEXT_SUBFIELD = "2003"    # branch B: Finance only
 
 # ---- OpenAlex topic sweep -------------------------------------------
 # SEARCH SEEDS, not OpenAlex taxonomy names. Resolved once (run-1) against the
@@ -159,8 +162,10 @@ SEMANTIC_SCHOLAR_QUERIES = [
 LLM_MODEL = "gemini-flash-latest"   # alias -> current free Flash; won't go stale
 LLM_RANK_BATCH = 40          # items scored per API call
 LLM_MAX_RETRIES = 3          # retries (with backoff) on 429/5xx
-LLM_BATCH_PAUSE = 4          # seconds between calls -- stay under free-tier RPM
+LLM_BATCH_PAUSE = 6          # seconds between calls -- stay under free-tier RPM
 TOP_PICKS = 20               # how many top-ranked items to feature in the email
+MIN_SHOW_SCORE = 20          # hide items the LLM scored below this from the email
+                             # (0-19 = off-topic/noise band); the portal keeps all
 RANK_INTERESTS = (
     "- Empirical asset pricing: cross-section of returns, factor models, "
     "anomalies, return predictability, risk premia, expected returns.\n"
