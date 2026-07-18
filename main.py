@@ -6,6 +6,7 @@ ANTHROPIC_API_KEY is set; without it this is the plain aggregation feed."""
 import datetime as dt
 import os
 import pathlib
+import re
 import sys
 
 import emailer
@@ -18,8 +19,13 @@ import store
 
 NOTES: list[str] = []
 
+# Strip credentials/PII that an exception message (e.g. a request URL) might
+# carry before it reaches the run notes -> the archived, possibly-shared report.
+_REDACT = re.compile(r"(?i)(key=|mailto=|api[_-]?key[=:]\s*)[^&\s\"']+")
+
 
 def log(msg: str) -> None:
+    msg = _REDACT.sub(r"\1REDACTED", str(msg))
     print(msg)
     NOTES.append(msg)
 

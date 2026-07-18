@@ -85,7 +85,9 @@ def _rank_batch(key: str, batch: list[dict], log) -> dict[int, tuple[int, str]]:
         },
     }
     for attempt in range(config.LLM_MAX_RETRIES):
-        r = requests.post(url, params={"key": key},
+        # key goes in a header, NOT the URL -- otherwise a request exception's
+        # message would carry ?key=... into logs and the archived reports.
+        r = requests.post(url, headers={"x-goog-api-key": key},
                           json=body, timeout=90)
         if r.status_code in (429, 500, 503):
             wait = 10 * (attempt + 1)
