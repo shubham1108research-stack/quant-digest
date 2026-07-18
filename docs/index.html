@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quant Research Digest — Archive</title>
+<title>Quant Research Digest</title>
 <style>
-  :root { --bg:#fff; --fg:#1a1a1a; --muted:#666; --line:#e5e5e5; --accent:#0b5; }
+  :root { --bg:#fff; --fg:#1a1a1a; --muted:#666; --line:#e5e5e5; --accent:#0a7f4f; }
   @media (prefers-color-scheme: dark) {
     :root { --bg:#141414; --fg:#e8e8e8; --muted:#999; --line:#2a2a2a; --accent:#2c8; }
   }
@@ -13,14 +13,18 @@
   body { font-family:system-ui,-apple-system,sans-serif; margin:0; background:var(--bg);
          color:var(--fg); line-height:1.45; }
   header { position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--line);
-           padding:12px 16px; }
-  h1 { font-size:1.25em; margin:0 0 8px; }
+           padding:10px 16px; z-index:5; }
+  h1 { font-size:1.2em; margin:0 0 8px; }
+  .tabs { display:flex; gap:6px; margin-bottom:9px; }
+  .tab { font:inherit; font-size:.9em; padding:6px 12px; border:1px solid var(--line);
+         border-radius:20px; background:var(--bg); color:var(--fg); cursor:pointer; }
+  .tab.on { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
   .controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
   input, select { font:inherit; padding:6px 8px; border:1px solid var(--line);
                   border-radius:6px; background:var(--bg); color:var(--fg); }
   #q { flex:1 1 220px; min-width:0; }
   .count { color:var(--muted); font-size:.85em; margin-left:auto; }
-  main { max-width:760px; margin:0 auto; padding:8px 16px 48px; }
+  main { max-width:780px; margin:0 auto; padding:8px 16px 48px; }
   .item { padding:12px 0; border-bottom:1px solid var(--line); }
   .item a { color:var(--fg); text-decoration:none; font-weight:600; }
   .item a:hover { text-decoration:underline; }
@@ -29,13 +33,18 @@
            border-radius:10px; border:1px solid var(--line); margin-right:6px;
            vertical-align:middle; }
   .score { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .cites { background:#6b4a9a; color:#fff; border-color:#6b4a9a; }
   .why { color:var(--muted); font-style:italic; font-size:.85em; margin-top:2px; }
   .empty { color:var(--muted); padding:32px 0; text-align:center; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Quant Research Digest — Archive</h1>
+  <h1>Quant Research Digest</h1>
+  <div class="tabs">
+    <button class="tab on" id="tab-recent">Recent digest</button>
+    <button class="tab" id="tab-classics">★ Classics — most cited</button>
+  </div>
   <div class="controls">
     <input id="q" type="search" placeholder="Search title, author, source…" autocomplete="off">
     <select id="date"><option value="">All dates</option></select>
@@ -47,41 +56,55 @@
 </header>
 <main><div id="list"></div></main>
 <script>
-const SECTIONS = {"1": "Working papers (NEP + NBER)", "2": "arXiv", "3": "Journals + SSRN/preprint probe", "4": "Practitioner blogosphere", "5": "OpenAlex topic sweep"};
-let DATA = [];
+const SECTIONS = {"1": "Working papers (NEP + NBER)", "2": "arXiv", "3": "Journals + SSRN/preprints", "4": "Practitioner & house research", "5": "OpenAlex topic sweep"};
+let DATA = [], CLASSICS = [], VIEW = "recent";
 const $ = id => document.getElementById(id);
 
-fetch('data.json').then(r => r.json()).then(d => {
-  DATA = d;
+Promise.all([
+  fetch('data.json').then(r => r.json()).catch(() => []),
+  fetch('classics.json').then(r => r.json()).catch(() => []),
+]).then(([d, c]) => {
+  DATA = d; CLASSICS = c;
   const dates = [...new Set(d.map(x => x.seen).filter(Boolean))].sort().reverse();
   for (const dt of dates) $('date').add(new Option(dt, dt));
-  for (const [k,v] of Object.entries(SECTIONS)) $('section').add(new Option(v, k));
+  for (const [k, v] of Object.entries(SECTIONS)) $('section').add(new Option(v, k));
   render();
-}).catch(e => { $('list').innerHTML = '<div class="empty">Could not load data.json</div>'; });
+});
 
+$('tab-recent').onclick = () => setView("recent");
+$('tab-classics').onclick = () => setView("classics");
+function setView(v) {
+  VIEW = v;
+  $('tab-recent').classList.toggle('on', v === "recent");
+  $('tab-classics').classList.toggle('on', v === "classics");
+  const recentOnly = v === "recent" ? "" : "none";
+  $('date').style.display = recentOnly;
+  $('section').style.display = recentOnly;
+  $('ranked').parentElement.style.display = recentOnly;
+  render();
+}
 ['q','date','section','ranked'].forEach(id => {
   $(id).addEventListener('input', render);
   $(id).addEventListener('change', render);
 });
 
-function render() {
+function render() { VIEW === "classics" ? renderClassics() : renderRecent(); }
+
+function renderRecent() {
   const q = $('q').value.toLowerCase().trim();
   const dt = $('date').value, sec = $('section').value, rk = $('ranked').checked;
   const rows = DATA.filter(x => {
     if (dt && x.seen !== dt) return false;
     if (sec && x.section !== sec) return false;
-    if (rk && (x.score === null || x.score === undefined)) return false;
-    if (q) {
-      const hay = (x.title + ' ' + x.authors + ' ' + x.source).toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
+    if (rk && (x.score == null)) return false;
+    if (q && !((x.title + ' ' + x.authors + ' ' + x.source).toLowerCase().includes(q)))
+      return false;
     return true;
   });
   $('count').textContent = rows.length + ' items';
   if (!rows.length) { $('list').innerHTML = '<div class="empty">No matches.</div>'; return; }
   $('list').innerHTML = rows.map(x => {
-    const score = (x.score !== null && x.score !== undefined)
-      ? `<span class="badge score">${x.score}</span>` : '';
+    const score = (x.score != null) ? `<span class="badge score">${x.score}</span>` : '';
     const tier = x.tier ? `<span class="badge">${esc(x.tier)}</span>` : '';
     const why = x.why ? `<div class="why">${esc(x.why)}</div>` : '';
     const who = x.authors ? ' · ' + esc(x.authors) : '';
@@ -91,6 +114,29 @@ function render() {
       ${why}</div>`;
   }).join('');
 }
+
+function renderClassics() {
+  const q = $('q').value.toLowerCase().trim();
+  let rows = CLASSICS.filter(x =>
+    !q || (x.title + ' ' + x.authors + ' ' + (x.journal || '')).toLowerCase().includes(q));
+  rows = rows.slice().sort((a, b) => (b.cites || 0) - (a.cites || 0));
+  $('count').textContent = rows.length + ' classics';
+  if (!rows.length) {
+    $('list').innerHTML = '<div class="empty">Classics not generated yet — run backfill.py.</div>';
+    return;
+  }
+  $('list').innerHTML = rows.map(x => {
+    const cites = (x.cites != null) ? `<span class="badge cites">${fmt(x.cites)} cites</span>` : '';
+    const why = x.summary ? `<div class="why">${esc(x.summary)}</div>` : '';
+    const who = x.authors ? ' · ' + esc(x.authors) : '';
+    return `<div class="item">${cites}
+      <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
+      <div class="meta">${esc(x.journal || '')}${who} · ${esc(x.year || '')}</div>
+      ${why}</div>`;
+  }).join('');
+}
+
+function fmt(n){ return n >= 1000 ? (n/1000).toFixed(1) + 'k' : String(n); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,
   c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 </script>
