@@ -64,10 +64,17 @@ def render(items: list[dict], notes: list[str]) -> str:
             + "".join(parts) + "</div>")
 
 
+def _clean_secret(s: str) -> str:
+    """Strip a leading UTF-8 BOM (U+FEFF) and surrounding whitespace. GitHub
+    secrets set from a Windows shell can pick up a stray BOM from stdin
+    encoding, which then breaks smtplib's ascii-only command lines."""
+    return s.strip().lstrip("﻿")
+
+
 def send(html_body: str) -> None:
-    user = os.environ["GMAIL_ADDRESS"]
-    pw = os.environ["GMAIL_APP_PASSWORD"].replace(" ", "")
-    to = os.environ.get("DIGEST_RECIPIENT", user)
+    user = _clean_secret(os.environ["GMAIL_ADDRESS"])
+    pw = _clean_secret(os.environ["GMAIL_APP_PASSWORD"]).replace(" ", "")
+    to = _clean_secret(os.environ.get("DIGEST_RECIPIENT", user))
 
     msg = MIMEText(html_body, "html", "utf-8")
     msg["Subject"] = f"{config.SUBJECT_PREFIX} — {dt.date.today().isoformat()}"

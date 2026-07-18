@@ -1,7 +1,9 @@
-# Local state / secrets -- never commit
-state.db
+# Secrets -- never commit
 *.env
 .env
+
+# NOTE: state.db is intentionally NOT ignored -- the workflow commits it back
+# every run as the persistent cross-week dedup store (see README architecture).
 
 # Python
 __pycache__/

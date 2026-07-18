@@ -134,6 +134,9 @@ OPENALEX_FULLTEXT_TERMS = [t for t in TOPIC_SEARCH_TERMS
 OPENALEX_TOPIC_MIN_SCORE = 3000   # relevance gate used during live re-bootstrap
 OPENALEX_FULLTEXT_LIMIT = 25      # max works per fulltext seed
 
+# How many retries (with linear backoff) on an S2 429 before giving up on
+# that one query (free unauthenticated tier; no API key used or required).
+S2_MAX_RETRIES = 3
 SEMANTIC_SCHOLAR_QUERIES = [
     "asset pricing",
     "factor investing",

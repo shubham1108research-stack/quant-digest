@@ -342,17 +342,25 @@ def semantic_scholar(log) -> list[dict]:
     for q in config.SEMANTIC_SCHOLAR_QUERIES:
         # RUN-1 VERIFY: parameter name publicationDateOrYear and the open-ended
         # "date:" range syntax, per api.semanticscholar.org/api-docs
-        r = requests.get(
-            "https://api.semanticscholar.org/graph/v1/paper/search",
-            params={"query": q,
-                    "publicationDateOrYear": f"{since}:",
-                    "fields": "title,authors,abstract,externalIds,url,"
-                              "publicationDate,venue",
-                    "limit": 40},
-            headers=UA, timeout=60)
-        if r.status_code == 429:
-            log(f"[s2] rate limited on '{q}'; backing off 30s")
-            time.sleep(30)
+        r = None
+        for attempt in range(config.S2_MAX_RETRIES):
+            r = requests.get(
+                "https://api.semanticscholar.org/graph/v1/paper/search",
+                params={"query": q,
+                        "publicationDateOrYear": f"{since}:",
+                        "fields": "title,authors,abstract,externalIds,url,"
+                                  "publicationDate,venue",
+                        "limit": 40},
+                headers=UA, timeout=60)
+            if r.status_code != 429:
+                break
+            wait = 30 * (attempt + 1)
+            log(f"[s2] rate limited on '{q}'; retry {attempt + 1}/"
+                f"{config.S2_MAX_RETRIES} after {wait}s")
+            time.sleep(wait)
+        else:
+            log(f"[s2] '{q}' still rate limited after "
+                f"{config.S2_MAX_RETRIES} retries; skipped this week")
             continue
         r.raise_for_status()
         for p in r.json().get("data", []):
