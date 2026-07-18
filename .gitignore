@@ -1,0 +1,13 @@
+# Local state / secrets -- never commit
+state.db
+*.env
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local Claude Code tool settings (not part of the project)
+.claude/
