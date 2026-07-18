@@ -26,6 +26,25 @@ def render(items: list[dict], notes: list[str]) -> str:
     parts = [f"<h1 style='font-size:1.3em'>Research digest — {today} "
              f"({len(items)} new items)</h1>"]
 
+    # Top picks -- only present when the optional LLM layer scored the items.
+    picks = sorted((it for it in items if isinstance(it.get("rank_score"), int)),
+                   key=lambda x: x["rank_score"], reverse=True)[:config.TOP_PICKS]
+    if picks:
+        parts.append("<h2 style='font-size:1.15em'>Top picks "
+                     f"({len(picks)}, LLM-ranked)</h2><ul style='margin-top:0'>")
+        for it in picks:
+            who = _esc(it.get("authors", ""))
+            why = _esc(it.get("why", ""))
+            tier = it.get("tier")
+            parts.append(
+                "<li>"
+                f"<b>[{it['rank_score']}]</b> "
+                + (f"<b>[{_esc(tier)}]</b> " if tier else "")
+                + f"<a href='{_esc(it['url'])}'>{_esc(it['title'])}</a>"
+                + (f" — {who}" if who else "")
+                + (f" <i>— {why}</i>" if why else "") + "</li>")
+        parts.append("</ul>")
+
     for sec in sorted(SECTION_NAMES):
         sec_items = [it for it in items if it.get("section") == sec]
         if not sec_items:

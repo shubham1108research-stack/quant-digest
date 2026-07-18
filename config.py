@@ -146,5 +146,33 @@ SEMANTIC_SCHOLAR_QUERIES = [
     "volatility risk premium",
 ]
 
+# ---- LLM triage (optional; Google Gemini, free tier) ----------------
+# Dormant unless GEMINI_API_KEY (or GOOGLE_API_KEY) is set; any failure
+# degrades cleanly to the plain no-LLM feed. Ranks deduped items 0-100 for a
+# "Top picks" section. Get a free key at https://aistudio.google.com/apikey.
+LLM_MODEL = "gemini-flash-latest"   # alias -> current free Flash; won't go stale
+LLM_RANK_BATCH = 40          # items scored per API call
+LLM_MAX_RETRIES = 3          # retries (with backoff) on 429/5xx
+LLM_BATCH_PAUSE = 4          # seconds between calls -- stay under free-tier RPM
+TOP_PICKS = 20               # how many top-ranked items to feature in the email
+RANK_INTERESTS = (
+    "- Empirical asset pricing: cross-section of returns, factor models, "
+    "anomalies, return predictability, risk premia, expected returns.\n"
+    "- Portfolio construction: optimization, allocation, risk parity, "
+    "rebalancing, transaction costs, optimal execution.\n"
+    "- Quant methods: covariance/shrinkage estimation, regime switching, "
+    "forecast combination, estimation risk, multiple testing, backtest "
+    "overfitting.\n"
+    "- Machine learning in finance: ML asset pricing, deep learning for "
+    "returns, reinforcement-learning trading, textual/alternative data.\n"
+    "- Volatility & derivatives: vol forecasting, variance risk premium, "
+    "implied vol, option returns, market microstructure, liquidity, HFT, "
+    "statistical arbitrage.\n"
+    "- Institutional: fund performance, flows, hedge funds, crowding, short "
+    "selling, tail risk.\n"
+    "Prefer novel, rigorous, and practitioner-implementable work; deprioritize "
+    "incremental results and papers with no finance angle."
+)
+
 # ---- Email -----------------------------------------------------------
 SUBJECT_PREFIX = "[Research Digest]"

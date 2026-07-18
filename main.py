@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Weekly quant research digest. Collect -> dedup -> email -> archive.
-No-LLM version: pure aggregation; triage/summaries/firm-pages removed."""
+"""Weekly quant research digest. Collect -> dedup -> (LLM rank) -> email ->
+archive + portal. The LLM ranking is optional and dormant unless
+ANTHROPIC_API_KEY is set; without it this is the plain aggregation feed."""
 
 import datetime as dt
 import os
@@ -8,6 +9,8 @@ import pathlib
 import sys
 
 import emailer
+import llm
+import portal
 import sources
 import store
 
@@ -50,6 +53,9 @@ def main() -> None:
     fresh = store.filter_new(con, raw)
     print(f"collected {len(raw)}, new after dedup {len(fresh)}")
 
+    # optional LLM triage -- attaches rank_score/why; no-op without an API key
+    fresh = llm.rank(fresh, log)
+
     html_body = emailer.render(fresh, NOTES)
 
     # archive first -- if SMTP fails we still keep the report and the state
@@ -58,7 +64,14 @@ def main() -> None:
     (reports / f"{dt.date.today().isoformat()}.html").write_text(
         html_body, encoding="utf-8")
 
-    store.save(con, fresh)
+    store.save(con, fresh)          # persists rank_score/why into the archive
+
+    # rebuild the static portal from the full archive (incl. this run)
+    try:
+        n = portal.build(con)
+        print(f"portal built -> docs/ ({n} items)")
+    except Exception as e:                           # noqa: BLE001
+        log(f"[portal] build failed: {type(e).__name__}: {e}")
 
     try:
         emailer.send(html_body)
