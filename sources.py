@@ -142,20 +142,42 @@ def _crossref_issn(issn: str, label: str) -> list[dict]:
     return out
 
 
-# ------------------------------------- PM Research journals (pm-research.com)
-def _pmr_abstract(url: str) -> str:
-    """Pull the abstract from a pm-research.com article page's citation_abstract
-    meta tag (static HTML; empty for editorials/front matter or on any error)."""
+# --------------------------------------------- abstract extraction helpers
+def _reconstruct_abstract(inv: dict | None) -> str:
+    """Rebuild plain text from OpenAlex's abstract_inverted_index
+    ({word: [positions]}). Empty when the field is absent."""
+    if not inv:
+        return ""
+    pairs = [(p, word) for word, positions in inv.items() for p in positions]
+    pairs.sort()
+    return _clean(" ".join(w for _, w in pairs))[:1500]
+
+
+# publisher article pages that aren't Cloudflare-gated (pm-research, many
+# Atypon/Highwire sites) expose the abstract in a meta tag -- try each in order.
+_META_ABS = (
+    r'<meta[^>]+name=["\']citation_abstract["\'][^>]+content=["\'](.*?)["\']',
+    r'<meta[^>]+name=["\']dc\.?Description["\'][^>]+content=["\'](.*?)["\']',
+    r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\'](.*?)["\']',
+)
+
+
+def _scrape_abstract(url: str) -> str:
+    """Fetch an article page and pull the abstract from its meta tags. Static
+    HTML only -- returns '' on non-200 (Cloudflare/paywall), short blurbs, or
+    any error, so a blocked publisher never breaks the run."""
     if not url:
         return ""
     try:
-        r = requests.get(url, headers=UA, timeout=30)
+        r = requests.get(url, headers=UA, timeout=25)
         if r.status_code != 200:
             return ""
-        m = re.search(r'<meta name="citation_abstract" content="(.*?)"\s*/?>',
-                      r.text, re.I | re.S)
-        if m:
-            return _clean(_html.unescape(m.group(1)))[:1500]
+        for pat in _META_ABS:
+            m = re.search(pat, r.text, re.I | re.S)
+            if m:
+                txt = _clean(_html.unescape(m.group(1)))
+                if len(txt) > 80:            # skip truncated og:description blurbs
+                    return txt[:1500]
     except Exception:                                # noqa: BLE001
         pass
     return ""
@@ -189,7 +211,7 @@ def pmr(log, existing: set) -> list[dict]:
             it["tier"] = "T2"
             doi = (it.get("doi") or "").lower()
             if doi and f"doi:{doi}" not in existing:   # only scrape net-new
-                it["abstract"] = _pmr_abstract(it.get("url", ""))
+                it["abstract"] = _scrape_abstract(it.get("url", ""))
                 if it["abstract"]:
                     new += 1
                 time.sleep(0.4)                        # polite to pm-research
@@ -349,7 +371,7 @@ def _oa_item(w: dict, source: str, section: int) -> dict:
     return {
         "title": _clean(w.get("display_name", "")),
         "authors": ", ".join(a["author"]["display_name"] for a in auths[:4]),
-        "abstract": "",  # OpenAlex abstracts are inverted-index; skip
+        "abstract": _reconstruct_abstract(w.get("abstract_inverted_index")),
         "url": (w.get("primary_location") or {}).get("landing_page_url")
                or w.get("id", ""),
         "date": w.get("publication_date", ""),
@@ -523,3 +545,62 @@ def semantic_scholar(log) -> list[dict]:
             })
         time.sleep(1.2)  # unauthenticated S2 etiquette
     return out
+
+
+# --------------------------------------- abstract enrichment (post-collect)
+def enrich_abstracts(items: list[dict], log) -> list[dict]:
+    """Fill missing abstracts for DOI-bearing items. Primary path: one batched
+    OpenAlex lookup per 50 DOIs, reconstructing the inverted-index abstract
+    (reliable, Cloudflare-free). Fallback: scrape the journal article page's
+    meta tags for whatever OpenAlex can't supply (bounded). Best-effort --
+    every failure just leaves that abstract empty. Mutates items in place."""
+    need = [it for it in items if not it.get("abstract") and it.get("doi")]
+    if not need:
+        return items
+
+    by_doi: dict[str, str] = {}
+    for i in range(0, len(need), 50):                # OpenAlex: up to 50 DOIs/OR
+        dois = "|".join(it["doi"].lower() for it in need[i:i + 50])
+        try:
+            r = _openalex_get("https://api.openalex.org/works", {
+                "filter": f"doi:{dois}",
+                "select": "doi,abstract_inverted_index",
+                "per-page": 50,
+            }, log)
+        except Exception as e:                       # noqa: BLE001
+            log(f"[enrich] OpenAlex batch {i // 50} failed: "
+                f"{type(e).__name__}: {e}")
+            continue
+        for w in r.json().get("results", []):
+            doi = (w.get("doi") or "").replace("https://doi.org/", "").lower()
+            ab = _reconstruct_abstract(w.get("abstract_inverted_index"))
+            if doi and ab:
+                by_doi[doi] = ab
+        time.sleep(0.5)
+
+    oa_filled = 0
+    for it in need:
+        ab = by_doi.get(it["doi"].lower())
+        if ab:
+            it["abstract"] = ab
+            oa_filled += 1
+
+    # page-scrape fallback: journal items OpenAlex couldn't fill (bounded so a
+    # slow/blocked publisher can't stall the run)
+    scraped = 0
+    for it in need:
+        if scraped >= config.ENRICH_SCRAPE_CAP:
+            break
+        if it.get("abstract"):
+            continue
+        if not str(it.get("source", "")).startswith("journal:"):
+            continue
+        ab = _scrape_abstract(it.get("url", ""))
+        if ab:
+            it["abstract"] = ab
+            scraped += 1
+        time.sleep(0.4)
+
+    log(f"[enrich] abstracts filled: {oa_filled} via OpenAlex + {scraped} "
+        f"scraped, of {len(need)} missing")
+    return items

@@ -3,6 +3,11 @@
 LOOKBACK_DAYS = 30       # every-3-days cron with a 1-month window; cross-run
                          # dedup drops the heavy overlap so emails stay net-new.
 
+# Abstract enrichment (sources.enrich_abstracts): after the reliable OpenAlex
+# lookup, at most this many journal article pages are scraped for a missing
+# abstract, so a slow/blocked publisher can't stall the run.
+ENRICH_SCRAPE_CAP = 60
+
 # ---- RePEc NEP -------------------------------------------------------
 NEP_CODES = ["fmk", "inv", "rmg", "ecm", "ets", "for",
              "cfn", "ino", "mst", "big", "cmp", "ain"]

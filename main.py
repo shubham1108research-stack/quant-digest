@@ -66,6 +66,12 @@ def main() -> None:
     fresh = store.filter_new(con, raw)
     print(f"collected {len(raw)}, new after dedup {len(fresh)}")
 
+    # backfill missing abstracts (OpenAlex inverted-index + page scrape)
+    try:
+        fresh = sources.enrich_abstracts(fresh, log)
+    except Exception as e:                           # noqa: BLE001
+        log(f"[enrich] failed: {type(e).__name__}: {e}")
+
     # author-citation prominence (best-effort; enriches OpenAlex-native items)
     prominence.MAILTO = sources.MAILTO
     try:
