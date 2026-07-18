@@ -1,17 +1,17 @@
-"""Historical backfill: the most-cited finance papers, overall AND per journal.
+"""Historical backfill: the most-cited finance papers, overall AND per journal,
+plus the curated seminal canon -- all via Crossref (free, unmetered; citations
+from is-referenced-by-count). OpenAlex is intentionally not used here.
 
-Writes docs/classics.json -- the data behind the portal's permanent "Classics"
-(history) tab -- as:
+Writes docs/classics.json (the portal's "Classics" tab):
 
-    {"overall":  [ {paper}, ... ],           # most-cited finance papers, all-time
-     "journals": {"Journal of Finance": [ {paper}, ... ], ...}}   # per journal
+    {"overall":  [ {paper}, ... ],            # most-cited across tracked journals
+     "journals": {"Journal of Finance": [ {paper}, ... ], ...},   # per journal
+     "topics":   {"Asset Pricing Theory": [ {paper}, ... ], ...}} # seminal canon
 
-Ranked purely by citation count (no LLM -- the history is meant to be the full,
-objective citation record, not a curated pick). Each {paper} is
-{title,url,authors,journal,year,cites,summary}, where summary is the abstract
-when OpenAlex has one. Journals covered = every journal the digest tracks
-(Tier 1 + Tier 2 + the PM-Research titles). Run once, and re-run any time to
-refresh:
+overall/journals are ranked by citation count; topics is the hand-curated canon
+(canon.py) grounded to real Crossref records. Journals covered = every journal
+the digest tracks (Tier 1 + Tier 2 + the PM-Research titles). Run once, re-run
+any time to refresh:
 
     python backfill.py
 
@@ -19,6 +19,7 @@ Commit docs/classics.json and it ships with the portal.
 """
 
 import difflib
+import html as _html
 import json
 import os
 import pathlib
@@ -32,85 +33,85 @@ import canon
 import config
 
 _UA = {"User-Agent": "quant-digest/1.0 (personal research tool)"}
-_OVERALL_N = 250             # most-cited finance papers overall
-_PER_JOURNAL_N = 40          # most-cited papers per journal
-_SELECT = ("id,doi,title,publication_year,cited_by_count,"
-           "authorships,primary_location,abstract_inverted_index")
+_OVERALL_N = 250             # most-cited finance papers overall (aggregated)
+_PER_JOURNAL_N = 50          # most-cited papers kept per journal
+_CR = "https://api.crossref.org"
 _MAILTO = os.environ.get("CONTACT_EMAIL") or os.environ.get("GMAIL_ADDRESS")
 
 # every journal the digest tracks, top-tier first
 _JOURNALS = {**config.JOURNALS_T1, **config.JOURNALS_T2, **config.PMR_JOURNALS}
 
 
-def _abstract(w: dict) -> str:
-    inv = w.get("abstract_inverted_index")
-    if not inv:
-        return ""
-    pos = {}
-    for word, idxs in inv.items():
-        for i in idxs:
-            pos[i] = word
-    return " ".join(pos[i] for i in sorted(pos))[:600]
-
-
-def _item(w: dict) -> dict:
-    auths = w.get("authorships") or []
-    loc = w.get("primary_location") or {}
-    return {
-        "title": (w.get("title") or "").strip(),
-        "url": loc.get("landing_page_url") or w.get("id", ""),
-        "authors": ", ".join(a["author"]["display_name"] for a in auths[:4]),
-        "journal": (loc.get("source") or {}).get("display_name", ""),
-        "year": w.get("publication_year"),
-        "cites": w.get("cited_by_count") or 0,
-        "summary": _abstract(w),
-    }
-
-
-def _get(params: dict) -> dict:
-    if _MAILTO:
-        params = {**params, "mailto": _MAILTO}
-    r = requests.get("https://api.openalex.org/works", params=params,
-                     headers=_UA, timeout=60)
-    r.raise_for_status()
-    return r.json()
-
-
-def fetch_overall(log) -> list[dict]:
-    flt = ("primary_topic.subfield.id:2003,"           # OpenAlex Finance subfield
-           "from_publication_date:1970-01-01,"
-           "to_publication_date:2026-06-30,type:article")
-    out, cursor = [], "*"
-    while len(out) < _OVERALL_N:
-        j = _get({"filter": flt, "sort": "cited_by_count:desc",
-                  "per-page": 200, "cursor": cursor, "select": _SELECT})
-        res = j.get("results") or []
-        if not res:
-            break
-        out += [_item(w) for w in res]
-        log(f"  overall: {len(out)}")
-        cursor = (j.get("meta") or {}).get("next_cursor")
-        if not cursor:
-            break
-        time.sleep(0.3)
-    return out[:_OVERALL_N]
-
-
-def fetch_journal(label: str, issn: str, log) -> list[dict]:
-    j = _get({"filter": f"primary_location.source.issn:{issn},type:article",
-              "sort": "cited_by_count:desc", "per-page": _PER_JOURNAL_N,
-              "select": _SELECT})
-    return [_item(w) for w in (j.get("results") or [])]
-
-
-# ---- seminal canon: resolve each curated paper to its real OpenAlex record ---
-def _norm(s: str) -> str:
-    return re.sub(r"[^a-z0-9 ]", "", (s or "").lower()).strip()
+# ---------------------------------------------------------------- helpers
+def _tidy(s: str, n: int = 480) -> str:
+    """Unescape entities, strip HTML/JATS markup (Crossref abstracts are JATS
+    XML; some carry <b>/<i>/<jats:p>), collapse whitespace, and truncate on a
+    word boundary with an ellipsis rather than mid-word."""
+    s = _html.unescape(s or "")
+    s = re.sub(r"<[^>]+>", " ", s)
+    s = re.sub(r"^\s*Abstract\s+", "", " ".join(s.split()), flags=re.I)
+    if len(s) > n:
+        s = s[:n].rsplit(" ", 1)[0].rstrip(" ,;:.") + "…"
+    return s
 
 
 def _cr_year(it: dict) -> int:
     dp = (it.get("published") or it.get("issued") or {}).get("date-parts") or [[0]]
     return (dp[0] or [0])[0] or 0
+
+
+def _cr_get(url: str, params: dict) -> list[dict]:
+    if _MAILTO:
+        params = {**params, "mailto": _MAILTO}
+    r = requests.get(url, params=params, headers=_UA, timeout=60)
+    r.raise_for_status()
+    return r.json()["message"]["items"]
+
+
+def _cr_item(it: dict, journal_fallback: str = "") -> dict:
+    return {
+        "title": (" ".join(it.get("title") or [])).strip(),
+        "url": it.get("URL") or (f"https://doi.org/{it['DOI']}" if it.get("DOI") else ""),
+        "authors": ", ".join(" ".join(filter(None, [a.get("given"), a.get("family")]))
+                             for a in (it.get("author") or [])[:4]),
+        "journal": (it.get("container-title") or [journal_fallback])[0] or journal_fallback,
+        "year": _cr_year(it),
+        "cites": it.get("is-referenced-by-count") or 0,
+        "summary": _tidy(it.get("abstract", "")),
+        "doi": it.get("DOI"),
+    }
+
+
+# ------------------------------------------------ most-cited (per journal)
+_ITEM_SELECT = ("DOI,title,author,container-title,published,issued,"
+                "is-referenced-by-count,URL,abstract")
+
+
+def fetch_journal(label: str, issn: str, log) -> list[dict]:
+    items = _cr_get(f"{_CR}/journals/{issn}/works", {
+        "filter": "type:journal-article",
+        "sort": "is-referenced-by-count", "order": "desc",
+        "rows": _PER_JOURNAL_N, "select": _ITEM_SELECT})
+    rows = [_cr_item(it, label) for it in items]
+    return [r for r in rows if r["title"]]
+
+
+def build_overall(journals: dict, log) -> list[dict]:
+    """Overall most-cited = the union of every tracked journal's top-cited,
+    deduped by DOI and ranked by citations. A pure-Crossref stand-in for the
+    old OpenAlex finance-subfield sweep, scoped to the journals we care about."""
+    seen: dict[str, dict] = {}
+    for rows in journals.values():
+        for p in rows:
+            k = (p.get("doi") or p.get("url") or p.get("title")).lower()
+            if k not in seen or p["cites"] > seen[k]["cites"]:
+                seen[k] = p
+    return sorted(seen.values(), key=lambda p: p["cites"], reverse=True)[:_OVERALL_N]
+
+
+# ------------------------------------------------ seminal canon (curated)
+def _norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9 ]", "", (s or "").lower()).strip()
 
 
 _BOOKISH = {"reference-entry", "book", "book-chapter", "book-part",
@@ -119,9 +120,9 @@ _BOOKISH = {"reference-entry", "book", "book-chapter", "book-part",
 
 def _best_match(items: list[dict], title: str, author: str, year: int):
     """Pick the Crossref candidate that best matches the curated (title, author,
-    year), or None if nothing clears the bar. Author matches are weighted hard
-    and encyclopedia/book entries penalised, so a near-identical reference-entry
-    title (e.g. a SpringerReference stub) never wins over the real article."""
+    year). Author matches are weighted hard and encyclopedia/book entries
+    penalised; accept only on author confirmation or a near-exact title with a
+    close year -- else leave it unresolved (a Scholar link) over a wrong paper."""
     tnorm = _norm(title)
     best = None
     best_score = best_ratio = 0.0
@@ -136,7 +137,7 @@ def _best_match(items: list[dict], title: str, author: str, year: int):
                       for a in (it.get("author") or []))
         yr = _cr_year(it)
         if not auth_ok and year and yr and abs(yr - year) > 7:
-            continue                              # wrong era + wrong author = not it
+            continue
         t = it.get("type", "")
         type_adj = (0.05 if t in ("journal-article", "proceedings-article")
                     else -0.5 if t in _BOOKISH else 0.0)
@@ -147,8 +148,6 @@ def _best_match(items: list[dict], title: str, author: str, year: int):
                 it, score, ratio, auth_ok, yr
     if not best:
         return None
-    # accept on author confirmation; or on a near-exact title, but only if the
-    # year is also close (else it's a same-topic namesake, not the paper)
     far = bool(year and best_year and abs(best_year - year) > 5)
     if (best_auth and best_score >= 0.60) or (best_ratio >= 0.82 and not far):
         return best
@@ -176,24 +175,17 @@ def _canon_item(title, author, year, typ, why, it: dict | None) -> dict:
 
 
 def resolve_canon(log) -> dict:
-    """Resolve each curated canon paper to its real record via Crossref (free,
-    unmetered, and carries is-referenced-by-count for the cite figure)."""
     out = {}
     for topic, papers in canon.CANON.items():
         rows = []
         for (title, author, year, typ, why) in papers:
             it = None
             try:
-                params = {"query.bibliographic": title, "query.author": author,
-                          "rows": 6,
-                          "select": "DOI,title,published,issued,container-title,"
-                                    "author,is-referenced-by-count,URL,type"}
-                if _MAILTO:
-                    params["mailto"] = _MAILTO
-                r = requests.get("https://api.crossref.org/works", params=params,
-                                 headers=_UA, timeout=60)
-                r.raise_for_status()
-                it = _best_match(r.json()["message"]["items"], title, author, year)
+                items = _cr_get(f"{_CR}/works", {
+                    "query.bibliographic": title, "query.author": author, "rows": 6,
+                    "select": "DOI,title,published,issued,container-title,"
+                              "author,is-referenced-by-count,URL,type"})
+                it = _best_match(items, title, author, year)
             except Exception as e:               # noqa: BLE001
                 log(f"  [canon] '{title[:40]}...' lookup failed: {type(e).__name__}")
             rows.append(_canon_item(title, author, year, typ, why, it))
@@ -205,42 +197,36 @@ def resolve_canon(log) -> dict:
     return out
 
 
-def _existing(key: str, default):
-    """The prior value from docs/classics.json -- used to preserve the OpenAlex
-    most-cited data when today's OpenAlex free budget is exhausted."""
-    try:
-        return json.load(open("docs/classics.json", encoding="utf-8")).get(key, default)
-    except Exception:                                  # noqa: BLE001
-        return default
-
-
+# ---------------------------------------------------------------- driver
 def main() -> None:
     def log(m):
         print(m)
 
-    # OpenAlex now meters a small daily free budget; if the most-cited fetches
-    # fail (budget/HTTP), keep whatever the last good run wrote.
-    try:
-        overall = fetch_overall(log) or _existing("overall", [])
-    except Exception as e:                             # noqa: BLE001
-        log(f"overall fetch failed ({type(e).__name__}); keeping existing")
-        overall = _existing("overall", [])
-    log(f"overall: {len(overall)} most-cited finance papers")
-
+    log("most-cited per journal (Crossref)...")
     journals = {}
     for label, issn in _JOURNALS.items():
         try:
             got = fetch_journal(label, issn, log)
         except Exception as e:                         # noqa: BLE001
-            log(f"  [{label}] failed ({type(e).__name__}); keeping existing")
-            got = _existing("journals", {}).get(label, [])
+            log(f"  [{label}] failed: {type(e).__name__}: {e}")
+            got = []
         if got:
             journals[label] = got
         log(f"  {label}: {len(got)}")
         time.sleep(0.3)
 
+    overall = build_overall(journals, log)
+    log(f"overall: {len(overall)} most-cited across tracked journals")
+
     log("resolving seminal canon (curated -> grounded via Crossref)...")
     topics = resolve_canon(log)
+
+    # drop the internal doi key from the display data
+    for p in overall:
+        p.pop("doi", None)
+    for rows in journals.values():
+        for p in rows:
+            p.pop("doi", None)
 
     data = {"overall": overall, "journals": journals, "topics": topics}
     docs = pathlib.Path("docs")
