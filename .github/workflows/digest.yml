@@ -11,6 +11,9 @@ permissions:
 jobs:
   digest:
     runs-on: ubuntu-latest
+    env:
+      # dormant until you add the Cloudflare secrets (see README/Setup)
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,3 +45,14 @@ jobs:
           # survive a moved remote (concurrent push) instead of failing red
           git pull --rebase --autostash origin master || true
           git push || (git pull --rebase --autostash origin master && git push)
+
+      - name: Deploy portal to Cloudflare Pages (private hosting)
+        if: ${{ env.CF_TOKEN != '' }}   # dormant until Cloudflare secrets are set
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --yes wrangler@3 pages project create quant-digest \
+            --production-branch=main 2>/dev/null || true
+          npx --yes wrangler@3 pages deploy docs \
+            --project-name=quant-digest --branch=main --commit-dirty=true

@@ -244,4 +244,4 @@ SUBJECT_PREFIX = "[Research Digest]"
 # URL (GitHub Pages https://<user>.github.io/quant-digest/, Netlify, Cloudflare
 # Pages) once docs/ is published; the local fallback works with
 # `py -m http.server 8000 --directory docs`. Empty hides the button.
-PORTAL_URL = "http://localhost:8000"
+PORTAL_URL = "https://quant-digest.pages.dev"   # Cloudflare Pages (login-walled)
