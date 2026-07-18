@@ -549,49 +549,19 @@ def semantic_scholar(log) -> list[dict]:
 
 # --------------------------------------- abstract enrichment (post-collect)
 def enrich_abstracts(items: list[dict], log) -> list[dict]:
-    """Fill missing abstracts for DOI-bearing items. Primary path: one batched
-    OpenAlex lookup per 50 DOIs, reconstructing the inverted-index abstract
-    (reliable, Cloudflare-free). Fallback: scrape the journal article page's
-    meta tags for whatever OpenAlex can't supply (bounded). Best-effort --
-    every failure just leaves that abstract empty. Mutates items in place."""
-    need = [it for it in items if not it.get("abstract") and it.get("doi")]
-    if not need:
-        return items
+    """Enrich DOI-bearing items via Semantic Scholar (one batched call): fills a
+    missing abstract AND attaches the paper citation count + author h-index that
+    the monthly composite needs. Fallback: scrape the journal article page's meta
+    tags for any abstract S2 still lacks (bounded). Best-effort; mutates in
+    place. OpenAlex is intentionally not used here."""
+    import scoring
+    scoring.attach_s2(items, log)     # abstract + cites + author_h
 
-    by_doi: dict[str, str] = {}
-    for i in range(0, len(need), 50):                # OpenAlex: up to 50 DOIs/OR
-        dois = "|".join(it["doi"].lower() for it in need[i:i + 50])
-        try:
-            r = _openalex_get("https://api.openalex.org/works", {
-                "filter": f"doi:{dois}",
-                "select": "doi,abstract_inverted_index",
-                "per-page": 50,
-            }, log)
-        except Exception as e:                       # noqa: BLE001
-            log(f"[enrich] OpenAlex batch {i // 50} failed: "
-                f"{type(e).__name__}: {e}")
-            continue
-        for w in r.json().get("results", []):
-            doi = (w.get("doi") or "").replace("https://doi.org/", "").lower()
-            ab = _reconstruct_abstract(w.get("abstract_inverted_index"))
-            if doi and ab:
-                by_doi[doi] = ab
-        time.sleep(0.5)
-
-    oa_filled = 0
-    for it in need:
-        ab = by_doi.get(it["doi"].lower())
-        if ab:
-            it["abstract"] = ab
-            oa_filled += 1
-
-    # page-scrape fallback: journal items OpenAlex couldn't fill (bounded so a
-    # slow/blocked publisher can't stall the run)
     scraped = 0
-    for it in need:
+    for it in items:
         if scraped >= config.ENRICH_SCRAPE_CAP:
             break
-        if it.get("abstract"):
+        if it.get("abstract") or not it.get("doi"):
             continue
         if not str(it.get("source", "")).startswith("journal:"):
             continue
@@ -601,6 +571,6 @@ def enrich_abstracts(items: list[dict], log) -> list[dict]:
             scraped += 1
         time.sleep(0.4)
 
-    log(f"[enrich] abstracts filled: {oa_filled} via OpenAlex + {scraped} "
-        f"scraped, of {len(need)} missing")
+    filled = sum(1 for it in items if it.get("abstract"))
+    log(f"[enrich] S2 + {scraped} page-scraped; {filled}/{len(items)} have abstracts")
     return items

@@ -12,6 +12,7 @@ import sys
 import emailer
 import firms
 import llm
+import monthly
 import portal
 import prominence
 import sources
@@ -66,7 +67,8 @@ def main() -> None:
     fresh = store.filter_new(con, raw)
     print(f"collected {len(raw)}, new after dedup {len(fresh)}")
 
-    # backfill missing abstracts (OpenAlex inverted-index + page scrape)
+    # enrich via Semantic Scholar: fills missing abstracts + attaches paper
+    # citation count and author h-index (feeds the monthly composite)
     try:
         fresh = sources.enrich_abstracts(fresh, log)
     except Exception as e:                           # noqa: BLE001
@@ -90,7 +92,13 @@ def main() -> None:
     (reports / f"{dt.date.today().isoformat()}.html").write_text(
         html_body, encoding="utf-8")
 
-    store.save(con, fresh)          # persists rank_score/why into the archive
+    store.save(con, fresh)          # persists scores into the archive
+
+    # monthly top-20 (present recompute + promote-seminal + one backward month)
+    try:
+        monthly.run(con, fresh, log)
+    except Exception as e:                           # noqa: BLE001
+        log(f"[monthly] failed: {type(e).__name__}: {e}")
 
     # rebuild the static portal from the full archive (incl. this run)
     try:

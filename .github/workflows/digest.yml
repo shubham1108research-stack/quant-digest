@@ -2,7 +2,8 @@ name: Research Digest
 
 on:
   schedule:
-    - cron: "30 23 */3 * *"  # 23:30 UTC = 05:00 IST, every 3rd day
+    - cron: "30 23 * * *"  # 23:30 UTC = 05:00 IST, DAILY during history catch-up
+    #                        (revert to "30 23 */3 * *" once backfill reaches 2010)
   workflow_dispatch: {}
 
 permissions:

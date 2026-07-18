@@ -263,6 +263,76 @@ RANK_INTERESTS = (
     "incremental results and papers with no finance angle."
 )
 
+# ---- Monthly top-20 picks (5-parameter composite) -------------------
+# Each calendar month's Monthly-tab list is the top MONTHLY_TOP_N papers by a
+# weighted composite of five 0-100 sub-scores. innovation + relevance come from
+# the LLM; paper_cites + author_cites (h-index) come from Semantic Scholar
+# (abstracts.py); journal_if comes from JOURNAL_IMPACT below. Weights sum to 1.
+MONTHLY_TOP_N = 20
+MONTHLY_WEIGHTS = {
+    "innovation": 0.25,
+    "relevance": 0.25,
+    "paper_cites": 0.20,
+    "author_cites": 0.15,
+    "journal_if": 0.15,
+}
+
+# Approximate 2-year impact factors for the tracked journals (public/JCR ~2023,
+# editable). Keys MUST match the labels in JOURNALS_T1/T2 and PMR_JOURNALS. Used
+# only for the journal_if sub-score (value / table-max); items from an unlisted
+# venue (preprints, blogs) get 0.
+JOURNAL_IMPACT = {
+    # Tier 1
+    "Journal of Finance": 7.5,
+    "Review of Financial Studies": 6.8,
+    "Journal of Financial Economics": 9.6,
+    # Tier 2 -- academic finance
+    "Financial Management": 3.0,
+    "Journal of Banking and Finance": 3.6,
+    "Journal of Corporate Finance": 5.5,
+    "Journal of Financial and Quantitative Analysis": 3.5,
+    "Journal of Financial Econometrics": 2.5,
+    "Journal of Financial Intermediation": 4.0,
+    "Journal of Financial Markets": 2.5,
+    "Journal of Financial Services Research": 1.5,
+    "Journal of Money, Credit and Banking": 2.0,
+    "Review of Asset Pricing Studies": 2.5,
+    "Review of Corporate Finance Studies": 2.5,
+    "Review of Finance": 4.4,
+    "Quantitative Finance": 1.8,
+    "Mathematical Finance": 2.0,
+    "Finance and Stochastics": 1.6,
+    "Financial Analysts Journal": 3.5,
+    "Journal of Asset Management": 1.5,
+    "Journal of Risk": 0.8,
+    "Journal of Empirical Finance": 2.3,
+    # PM-Research practitioner journals
+    "Journal of Portfolio Management": 1.5,
+    "Journal of Investing": 0.5,
+    "Journal of Derivatives": 0.6,
+    "Journal of Fixed Income": 0.5,
+    "Journal of Financial Data Science": 1.0,
+    "Journal of Alternative Investments": 0.8,
+    "Journal of Wealth Management": 0.4,
+    "Journal of Beta Investment Strategies": 0.3,
+    "Practical Applications": 0.2,
+}
+
+# ---- Backward monthly backfill (progressive history) ----------------
+# Every run refreshes the current month, then processes ONE earlier month,
+# walking back to BACKFILL_FLOOR. BACKFILL_LLM_BATCHES caps LLM scoring calls
+# spent on the backfill per run (after the present digest) -- a month too big
+# for the budget resumes next run from state.db (month_progress). During
+# catch-up run the workflow daily (LLM free-tier limits reset daily).
+BACKFILL_FLOOR = "2010-01"          # earliest month to backfill (inclusive)
+BACKFILL_LLM_BATCHES = 8            # LLM scoring batches/run for the backfill
+S2_BATCH_SIZE = 500                 # Semantic Scholar /paper/batch hard cap
+
+# Promote a present-run paper into the Classics "modern" (emerging-seminal) list
+# when the LLM rates it this innovative AND its composite clears this bar.
+SEMINAL_INNOV = 90
+SEMINAL_MIN = 80
+
 # ---- Email -----------------------------------------------------------
 SUBJECT_PREFIX = "[Research Digest]"
 # Link shown in the email to browse the full archive portal. Set to your hosted

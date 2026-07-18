@@ -45,6 +45,8 @@ def build(con) -> int:
     (docs / "data.json").write_text(json.dumps(data, default=str), encoding="utf-8")
     if not (docs / "classics.json").exists():      # placeholder until backfill runs
         (docs / "classics.json").write_text("[]", encoding="utf-8")
+    if not (docs / "monthly.json").exists():        # placeholder until monthly runs
+        (docs / "monthly.json").write_text("{}", encoding="utf-8")
     (docs / "index.html").write_text(_INDEX, encoding="utf-8")
     return len(data)
 
@@ -146,6 +148,13 @@ header{position:sticky;top:0;z-index:9;background:var(--ground);border-bottom:1p
 .tag.method{color:var(--medium);border-color:var(--medium);}
 .tag.empirical{color:var(--strong);border-color:var(--strong);}
 .tag.frontier{color:var(--panel);background:var(--accent);border-color:var(--accent);}
+.tag.modern{color:var(--panel);background:var(--medium);border-color:var(--medium);}
+.subs{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;}
+.sub{font-family:var(--sans);display:flex;flex-direction:column;gap:3px;min-width:54px;}
+.sub i{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-style:normal;}
+.sub b{font-size:12px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1;}
+.sub s{height:2px;width:100%;background:var(--line);border-radius:2px;display:block;text-decoration:none;overflow:hidden;}
+.sub s u{display:block;height:100%;background:var(--accent);opacity:.6;}
 footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint);
   margin-top:40px;border-top:1px solid var(--line);padding-top:16px;}
 </style>
@@ -162,9 +171,8 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
     </div>
     <div class="doublerule"></div>
     <div class="nav">
-      <button id="t-picks" class="on">Picks</button>
+      <button id="t-monthly" class="on">Monthly</button>
       <button id="t-recent">Recent</button>
-      <button id="t-monthly">Monthly</button>
       <button id="t-classics">Classics</button>
       <span class="sp"></span>
       <select id="cat" title="Category" style="display:none">
@@ -187,7 +195,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
   </footer>
 </main>
 <script>
-let DATA=[], CLASSICS=[], VIEW="picks", MAXSEEN="";
+let DATA=[], CLASSICS=[], MONTHLY={}, VIEW="monthly", MAXSEEN="";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtK=n=>n>=1000?(n/1000).toFixed(1)+'k':String(n);
@@ -229,38 +237,56 @@ function sinceDays(n){
   const c=new Date(MAXSEEN);c.setDate(c.getDate()-(n-1));
   return c.toISOString().slice(0,10);
 }
-function renderPicks(){
-  const q=$('q').value.toLowerCase().trim();
-  const cs=sinceDays(30);
-  let rows=DATA.filter(x=>x.score!=null && (!cs||(x.seen||'')>=cs))
-    .filter(x=>!q||(x.title+' '+x.authors+' '+x.source).toLowerCase().includes(q))
-    .sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,10);
-  $('view').innerHTML=`<div class="dateline">Top picks <span class="n">· LLM-ranked · last 30 days</span></div>`+
-    (rows.length?rows.map((x,i)=>entry(x,i+1)).join('')
-      :'<div class="empty">No ranked papers yet — the next digest run fills this.</div>');
-}
 function renderRecent(){
   const cs=sinceDays(7);
   let rows=cs?DATA.filter(x=>(x.seen||'')>=cs):DATA;
   $('view').innerHTML=`<div class="dateline">Last 7 days <span class="n">· ${rows.length} papers</span></div>`+grouped(rows);
 }
+const SUBS=[['Innov','innovation'],['Rel','relevance'],['Cites','paper_cites'],['Author','author_cites'],['IF','journal_if']];
+function monthlyEntry(x,rank){
+  const band=bandColor(x.composite);
+  const subs=SUBS.map(([l,k])=>{const v=x[k];const w=Math.max(0,Math.min(100,v||0));
+    return `<span class="sub"><i>${l}</i><b>${v==null?'–':Math.round(v)}</b><s><u style="width:${w}%"></u></s></span>`;}).join('');
+  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}`;
+  return `<div class="entry"><div class="rail" style="--score:${band}">
+      <div class="rank">${rank}</div><div class="score">${Math.round(x.composite)}</div><div class="ratebar"></div><div class="cap">composite</div></div>
+    <div class="body">
+      <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
+      <div class="meta">${meta}</div>
+      ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}
+      <div class="subs">${subs}</div>
+    </div></div>`;
+}
 function renderMonthly(){
-  const m=$('month').value||(MAXSEEN||'').slice(0,7)||"2026-07";
-  const rows=DATA.filter(x=>(x.seen||'').slice(0,7)===m);
+  const keys=Object.keys(MONTHLY).filter(k=>/^\\d{4}-\\d{2}$/.test(k)).sort().reverse();
+  if(!keys.length){$('view').innerHTML='<div class="empty">No monthly picks yet — the next run fills this.</div>';return;}
+  const m=$('month').value||keys[0];
+  const q=$('q').value.toLowerCase().trim();
+  const rows=(MONTHLY[m]||[]).filter(x=>!q||(x.title+' '+x.authors+' '+(x.journal||'')).toLowerCase().includes(q));
   const label=new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'});
-  $('view').innerHTML=`<div class="dateline">${esc(label)} <span class="n">· ${rows.length} papers</span></div>`+grouped(rows);
+  $('view').innerHTML=`<div class="dateline">${esc(label)} <span class="n">· top ${rows.length} · 5-factor composite</span></div>`+
+    (rows.length?rows.map((x,i)=>monthlyEntry(x,i+1)).join(''):'<div class="empty">No matches.</div>');
 }
 function classicsGroups(){
-  if(Array.isArray(CLASSICS))return{overall:CLASSICS,journals:{},topics:{}};
-  return{overall:(CLASSICS&&CLASSICS.overall)||[],journals:(CLASSICS&&CLASSICS.journals)||{},topics:(CLASSICS&&CLASSICS.topics)||{}};
+  if(Array.isArray(CLASSICS))return{overall:CLASSICS,journals:{},topics:{},modern:[]};
+  return{overall:(CLASSICS&&CLASSICS.overall)||[],journals:(CLASSICS&&CLASSICS.journals)||{},
+    topics:(CLASSICS&&CLASSICS.topics)||{},modern:(CLASSICS&&CLASSICS.modern)||[]};
+}
+function renderModern(g){
+  const q=$('q').value.toLowerCase().trim();
+  const rows=(g.modern||[]).filter(x=>!q||(x.title+' '+x.authors+' '+(x.journal||'')).toLowerCase().includes(q))
+    .slice().sort((a,b)=>(b.composite||0)-(a.composite||0));
+  $('view').innerHTML=`<div class="dateline">Modern · emerging — LLM-flagged <span class="n">· ${rows.length} papers</span></div>`+
+    (rows.length?rows.map(canonEntry).join(''):'<div class="empty">Nothing flagged yet — high-innovation papers land here as runs proceed.</div>');
 }
 function canonEntry(x){
   const tag=x.type?`<span class="tag ${esc(String(x.type).toLowerCase())}">${esc(x.type)}</span>`:'';
   const cites=x.cites!=null?` · ${fmtK(x.cites)} cites`:'';
+  const why=x.why||x.summary||'';
   return `<div class="entry"><div class="rail"><div class="yr">${esc(x.year||'')}</div></div>
     <div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${tag}</div>
-      ${x.why?`<div class="summary">${esc(x.why)}</div>`:''}
+      ${why?`<div class="summary">${esc(why)}</div>`:''}
       <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}</div>
     </div></div>`;
 }
@@ -275,6 +301,7 @@ function renderCanon(g,topic){
 function renderClassics(){
   const g=classicsGroups(),sel=$('jsel').value||'__overall';
   if(sel.slice(0,6)==='topic:'){renderCanon(g,sel.slice(6));return;}
+  if(sel==='__modern'){renderModern(g);return;}
   const src=sel==='__overall'?g.overall:(g.journals[sel]||[]);
   const q=$('q').value.toLowerCase().trim();
   let rows=src.filter(x=>!q||(x.title+' '+x.authors+' '+(x.journal||'')).toLowerCase().includes(q))
@@ -289,14 +316,13 @@ function renderClassics(){
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
-function render(){VIEW==="picks"?renderPicks():VIEW==="recent"?renderRecent():VIEW==="monthly"?renderMonthly():renderClassics();}
+function render(){VIEW==="monthly"?renderMonthly():VIEW==="recent"?renderRecent():renderClassics();}
 function setView(v){
-  VIEW=v;['picks','recent','monthly','classics'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  VIEW=v;['monthly','recent','classics'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
   $('month').style.display=v==="monthly"?'':'none';
   $('jsel').style.display=v==="classics"?'':'none';
-  $('cat').style.display=(v==="recent"||v==="monthly")?'':'none';render();
+  $('cat').style.display=v==="recent"?'':'none';render();
 }
-$('t-picks').onclick=()=>setView('picks');
 $('t-recent').onclick=()=>setView('recent');
 $('t-monthly').onclick=()=>setView('monthly');
 $('t-classics').onclick=()=>setView('classics');
@@ -313,10 +339,11 @@ $('toggle').onclick=()=>{
 Promise.all([
   fetch('data.json').then(r=>r.json()).catch(()=>[]),
   fetch('classics.json').then(r=>r.json()).catch(()=>[]),
-]).then(([d,c])=>{
-  DATA=d;CLASSICS=c;
+  fetch('monthly.json').then(r=>r.json()).catch(()=>({})),
+]).then(([d,c,mo])=>{
+  DATA=d;CLASSICS=c;MONTHLY=mo||{};
   MAXSEEN=d.reduce((m,x)=>(x.seen||'')>m?(x.seen||''):m,"");
-  [...new Set(d.map(x=>(x.seen||'').slice(0,7)).filter(m=>m>="2026-07"))].sort().reverse()
+  Object.keys(MONTHLY).filter(k=>/^\\d{4}-\\d{2}$/.test(k)).sort().reverse()
     .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
   const g=classicsGroups();
   if(Object.keys(g.topics).length){
@@ -328,6 +355,11 @@ Promise.all([
   og2.appendChild(new Option('Overall (all finance)','__overall'));
   Object.keys(g.journals).forEach(name=>og2.appendChild(new Option(name,name)));
   $('jsel').appendChild(og2);
+  if((g.modern||[]).length){
+    const og3=document.createElement('optgroup');og3.label='Emerging';
+    og3.appendChild(new Option('Modern — flagged','__modern'));
+    $('jsel').appendChild(og3);
+  }
   render();
 });
 </script>

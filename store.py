@@ -18,6 +18,15 @@ CREATE TABLE IF NOT EXISTS items (
     meta       TEXT,                 -- full item as JSON, for the archive
     first_seen TEXT DEFAULT (date('now'))
 );
+CREATE TABLE IF NOT EXISTS kv (
+    key   TEXT PRIMARY KEY,          -- e.g. 'backfill_earliest'
+    val   TEXT
+);
+CREATE TABLE IF NOT EXISTS month_progress (
+    month      TEXT PRIMARY KEY,     -- 'YYYY-MM' currently being backfilled
+    candidates TEXT,                 -- JSON list of candidate items + partial scores
+    done       INTEGER DEFAULT 0     -- 1 once every candidate is scored
+);
 """
 
 
@@ -36,7 +45,7 @@ def make_uid(item: dict) -> str:
 
 def connect():
     con = sqlite3.connect(DB_PATH)
-    con.execute(SCHEMA)
+    con.executescript(SCHEMA)         # multiple CREATE TABLE statements
     return con
 
 
@@ -60,6 +69,46 @@ def filter_new(con, items: list[dict]) -> list[dict]:
         batch_uids.add(uid)
         fresh.append(it)
     return fresh
+
+
+def kv_get(con, key: str, default=None):
+    row = con.execute("SELECT val FROM kv WHERE key=?", (key,)).fetchone()
+    return row[0] if row else default
+
+
+def kv_set(con, key: str, val: str) -> None:
+    con.execute("INSERT INTO kv (key, val) VALUES (?, ?) "
+                "ON CONFLICT(key) DO UPDATE SET val=excluded.val", (key, str(val)))
+    con.commit()
+
+
+def get_progress(con, month: str) -> dict | None:
+    """Return {'candidates': [...], 'done': bool} for an in-progress backfill
+    month, or None if that month has no saved progress."""
+    row = con.execute(
+        "SELECT candidates, done FROM month_progress WHERE month=?", (month,)
+    ).fetchone()
+    if not row:
+        return None
+    try:
+        cands = json.loads(row[0]) if row[0] else []
+    except Exception:                                  # noqa: BLE001
+        cands = []
+    return {"candidates": cands, "done": bool(row[1])}
+
+
+def set_progress(con, month: str, candidates: list[dict], done: bool) -> None:
+    con.execute(
+        "INSERT INTO month_progress (month, candidates, done) VALUES (?,?,?) "
+        "ON CONFLICT(month) DO UPDATE SET candidates=excluded.candidates, "
+        "done=excluded.done",
+        (month, json.dumps(candidates, default=str), 1 if done else 0))
+    con.commit()
+
+
+def clear_progress(con, month: str) -> None:
+    con.execute("DELETE FROM month_progress WHERE month=?", (month,))
+    con.commit()
 
 
 def save(con, items: list[dict]) -> None:

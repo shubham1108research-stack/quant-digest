@@ -18,6 +18,7 @@ any time to refresh:
 Commit docs/classics.json and it ships with the portal.
 """
 
+import calendar
 import difflib
 import html as _html
 import json
@@ -94,6 +95,62 @@ def fetch_journal(label: str, issn: str, log) -> list[dict]:
         "rows": _PER_JOURNAL_N, "select": _ITEM_SELECT})
     rows = [_cr_item(it, label) for it in items]
     return [r for r in rows if r["title"]]
+
+
+def _cr_date(it: dict) -> str:
+    dp = (it.get("published") or it.get("issued") or {}).get("date-parts") or [[0]]
+    parts = (dp[0] or [])[:3]
+    if not parts or not parts[0]:
+        return ""
+    y = parts[0]
+    m = parts[1] if len(parts) > 1 else 1
+    d = parts[2] if len(parts) > 2 else 1
+    return f"{y:04d}-{m:02d}-{d:02d}"
+
+
+def _month_bounds(month: str) -> tuple[str, str]:
+    y, m = map(int, month.split("-"))
+    return f"{month}-01", f"{month}-{calendar.monthrange(y, m)[1]:02d}"
+
+
+def _month_item(it: dict, label: str) -> dict:
+    doi = it.get("DOI")
+    return {
+        "title": (" ".join(it.get("title") or [])).strip(),
+        "url": it.get("URL") or (f"https://doi.org/{doi}" if doi else ""),
+        "authors": ", ".join(" ".join(filter(None, [a.get("given"), a.get("family")]))
+                             for a in (it.get("author") or [])[:4]),
+        "journal": (it.get("container-title") or [label])[0] or label,
+        "journal_label": label,
+        "date": _cr_date(it),
+        "doi": doi,
+        "cites": it.get("is-referenced-by-count"),
+        "abstract": _tidy(it.get("abstract", ""), 1500),
+        "source": f"journal:{label}",
+        "section": "3",
+    }
+
+
+def fetch_month(month: str, log) -> list[dict]:
+    """Every tracked journal's articles published in `month` (YYYY-MM), as scoring
+    candidates (Crossref). One call per journal (~30); a bad ISSN is skipped."""
+    lo, hi = _month_bounds(month)
+    out = []
+    for label, issn in _JOURNALS.items():
+        try:
+            items = _cr_get(f"{_CR}/journals/{issn}/works", {
+                "filter": f"type:journal-article,from-pub-date:{lo},until-pub-date:{hi}",
+                "rows": 100, "select": _ITEM_SELECT})
+        except Exception as e:                         # noqa: BLE001
+            log(f"  [{label}] {month}: {type(e).__name__}")
+            continue
+        for it in items:
+            mi = _month_item(it, label)
+            if mi["title"] and mi["doi"]:
+                out.append(mi)
+        time.sleep(0.2)
+    log(f"  {month}: {len(out)} journal articles fetched")
+    return out
 
 
 def build_overall(journals: dict, log) -> list[dict]:

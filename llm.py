@@ -26,18 +26,24 @@ _GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 _SYSTEM = (
     "You are a quantitative-research analyst curating a digest for a "
-    "practitioner. For each item, score 0-100 how relevant and important it is "
-    "to these interests, and note briefly why.\n\nINTERESTS:\n"
+    "practitioner. For each item, give TWO 0-100 scores and a one-line "
+    "summary.\n\nINTERESTS:\n"
     + config.RANK_INTERESTS
-    + "\n\nScore bands: 80-100 = must-read (novel, rigorous, implementable, or "
-    "field-defining); 50-79 = relevant; 20-49 = tangential; 0-19 = off-topic or "
-    "noise. Be selective -- most items are NOT must-reads. Judge from the title, "
-    "authors, source, and abstract provided.\n\n"
+    + "\n\n1) relevance -- how relevant/important to the interests above. Bands: "
+    "80-100 = must-read; 50-79 = relevant; 20-49 = tangential; 0-19 = off-topic "
+    "or noise.\n"
+    "2) innovation -- how novel/original the contribution is: 80-100 = a new "
+    "method, idea, or field-defining result; 50-79 = a meaningful advance; "
+    "20-49 = incremental; 0-19 = derivative or a survey. Judge novelty on its "
+    "own merits, independent of citation count.\n\n"
+    "Be selective -- most items are neither must-reads nor highly innovative. "
+    "Judge from the title, authors, source, and abstract provided.\n\n"
     "Also write a crisp one-sentence summary (<= 30 words) of what the paper "
     "does and why it matters to a quant -- concrete about the method, finding, "
     "or asset class; not vague praise.\n\n"
     "Return ONLY a JSON array, one object per item, no prose:\n"
-    '[{"i": <index int>, "score": <int 0-100>, "summary": "<one sentence>"}]'
+    '[{"i": <int>, "relevance": <int 0-100>, "innovation": <int 0-100>, '
+    '"summary": "<one sentence>"}]'
 )
 
 
@@ -52,7 +58,10 @@ def _prompt(batch: list[dict]) -> str:
     return "Items to score:\n\n" + "\n\n".join(lines)
 
 
-def _parse(text: str) -> dict[int, tuple[int, str]]:
+def _parse(text: str) -> dict[int, tuple[int, int, str]]:
+    """-> {index: (relevance, innovation, summary)}. Tolerates the older
+    'score' key (treated as relevance) and a missing innovation (falls back to
+    relevance) so a stray old-format response still parses."""
     m = re.search(r"\[.*\]", text, re.S)          # tolerate stray prose around it
     if not m:
         return {}
@@ -60,13 +69,16 @@ def _parse(text: str) -> dict[int, tuple[int, str]]:
         arr = json.loads(m.group(0))
     except Exception:                              # noqa: BLE001
         return {}
-    out: dict[int, tuple[int, str]] = {}
+    out: dict[int, tuple[int, int, str]] = {}
     for o in arr:
         try:
             i = int(o["i"])
-            score = max(0, min(100, int(o["score"])))
+            rel_raw = o.get("relevance", o.get("score"))
+            relevance = max(0, min(100, int(rel_raw)))
+            inv = o.get("innovation")
+            innovation = max(0, min(100, int(inv))) if inv is not None else relevance
             summary = str(o.get("summary") or o.get("why", "")).strip()[:280]
-            out[i] = (score, summary)
+            out[i] = (relevance, innovation, summary)
         except Exception:                          # noqa: BLE001
             continue
     return out
@@ -126,18 +138,32 @@ def _rank_groq(batch: list[dict], log) -> dict | None:
 _PROVIDERS = [("gemini", _rank_gemini), ("groq", _rank_groq)]
 
 
-def rank(items: list[dict], log) -> list[dict]:
-    """Attach rank_score/summary to each item in place; return the same list."""
+def have_key() -> bool:
+    return bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+                or os.environ.get("GROQ_API_KEY"))
+
+
+def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
+    """Attach rank_score (relevance), innovation, and summary to each item in
+    place; return the same list. Scored items get all three keys; unscored items
+    get none, so callers can tell them apart (`'innovation' in it`).
+
+    max_batches caps how many LLM batches are spent this call (the backfill's
+    per-run budget); items past the budget are left unscored for a later run.
+    Items are processed in the order given -- order the most promising first."""
     if not items:
         return items
-    if not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-            or os.environ.get("GROQ_API_KEY")):
+    if not have_key():
         log("[llm] no provider key set; skipping ranking (plain no-LLM feed)")
         return items
 
     b = config.LLM_RANK_BATCH
-    ranked, used, dead = 0, set(), set()
+    ranked, used, dead, batches = 0, set(), set(), 0
     for start in range(0, len(items), b):
+        if max_batches is not None and batches >= max_batches:
+            log(f"[llm] batch budget {max_batches} reached; "
+                f"{len(items) - start} items left unscored")
+            break
         batch = items[start:start + b]
         scores = None
         for name, fn in _PROVIDERS:
@@ -155,10 +181,14 @@ def rank(items: list[dict], log) -> list[dict]:
             scores, _ = res, used.add(name)
             break
         if not scores:
+            if len(dead) == len([n for n, _ in _PROVIDERS]):
+                log("[llm] all providers exhausted; stopping")
+                break
             continue
+        batches += 1
         for i, it in enumerate(batch):
             if i in scores:
-                it["rank_score"], it["summary"] = scores[i]
+                it["rank_score"], it["innovation"], it["summary"] = scores[i]
                 ranked += 1
         time.sleep(config.LLM_BATCH_PAUSE)         # stay under free-tier RPM
     log(f"[llm] ranked {ranked}/{len(items)} via {', '.join(sorted(used)) or 'none'}")
