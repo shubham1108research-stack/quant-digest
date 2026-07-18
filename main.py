@@ -33,6 +33,7 @@ def collect() -> list[dict]:
         ("NBER", sources.nber),
         ("arXiv", sources.arxiv),
         ("Journals/Crossref", lambda: sources.journals(log)),
+        ("SSRN/Crossref", lambda: sources.ssrn_crossref(log)),
         ("OpenAlex-preprints", lambda: sources.openalex_preprints(log)),
         ("SemanticScholar", lambda: sources.semantic_scholar(log)),
         ("Quantocracy", sources.quantocracy),

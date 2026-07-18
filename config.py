@@ -62,6 +62,23 @@ JOURNALS_T2 = {
     # their finance papers reach you via NBER/NEP anyway.
 }
 
+# ---- SSRN via Crossref ----------------------------------------------
+# SSRN registers DOIs under the 10.2139 prefix, indexed by Crossref same-day.
+# This gets fresh SSRN papers WITHOUT scraping SSRN (which Cloudflare-blocks).
+# The prefix alone is an all-discipline firehose, so each finance query narrows
+# it before the LLM layer filters; queries overlap and dedup handles it.
+SSRN_CROSSREF_PREFIX = "10.2139"
+SSRN_ROWS = 60               # results per finance query
+SSRN_QUERIES = [
+    "asset pricing cross-section returns factor",
+    "return predictability anomalies momentum value",
+    "portfolio optimization allocation risk parity",
+    "machine learning deep learning trading finance",
+    "market microstructure liquidity execution high-frequency",
+    "volatility variance risk premium options derivatives",
+    "hedge fund mutual fund performance flows",
+]
+
 # ---- Practitioner blogosphere ---------------------------------------
 QUANTOCRACY_RSS = "https://quantocracy.com/feed/"
 # Direct practitioner RSS (verified 2026-07-18). Asset-manager house pages

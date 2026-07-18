@@ -104,6 +104,26 @@ def arxiv() -> list[dict]:
 
 
 # ----------------------------------------------------------- Crossref
+def _crossref_item(w: dict, source: str) -> dict | None:
+    title = _clean(" ".join(w.get("title") or []))
+    if not title:
+        return None
+    authors = ", ".join(
+        " ".join(filter(None, [a.get("given"), a.get("family")]))
+        for a in (w.get("author") or [])[:4])
+    return {
+        "title": title,
+        "authors": authors,
+        "abstract": _clean(w.get("abstract", "")),
+        "url": w.get("URL", ""),
+        "date": "-".join(str(x) for x in
+                         (w.get("created", {}).get("date-parts") or [[""]])[0]),
+        "source": source,
+        "section": 3,
+        "doi": w.get("DOI"),
+    }
+
+
 def _crossref_issn(issn: str, label: str) -> list[dict]:
     since = _cutoff().date().isoformat()
     params = {"filter": f"from-created-date:{since}", "rows": 100,
@@ -115,23 +135,40 @@ def _crossref_issn(issn: str, label: str) -> list[dict]:
     r.raise_for_status()
     out = []
     for w in r.json()["message"]["items"]:
-        title = _clean(" ".join(w.get("title") or []))
-        if not title:
+        it = _crossref_item(w, f"journal:{label}")
+        if it:
+            out.append(it)
+    return out
+
+
+# ------------------------------------------- SSRN via Crossref (10.2139)
+def ssrn_crossref(log) -> list[dict]:
+    """SSRN papers through Crossref (DOI prefix 10.2139) -- fresh, free, no
+    Cloudflare. Finance queries narrow the all-discipline SSRN firehose; the
+    LLM layer filters the rest. One bad query is logged, not fatal."""
+    since = _cutoff().date().isoformat()
+    out = []
+    for q in config.SSRN_QUERIES:
+        params = {
+            "filter": f"prefix:{config.SSRN_CROSSREF_PREFIX},"
+                      f"from-created-date:{since}",
+            "query.bibliographic": q, "rows": config.SSRN_ROWS,
+            "sort": "created", "order": "desc",
+        }
+        if MAILTO:
+            params["mailto"] = MAILTO
+        try:
+            r = requests.get("https://api.crossref.org/works", params=params,
+                             headers=UA, timeout=60)
+            r.raise_for_status()
+        except Exception as e:                           # noqa: BLE001
+            log(f"[ssrn] query '{q[:30]}...' failed: {type(e).__name__}: {e}")
             continue
-        authors = ", ".join(
-            " ".join(filter(None, [a.get("given"), a.get("family")]))
-            for a in (w.get("author") or [])[:4])
-        out.append({
-            "title": title,
-            "authors": authors,
-            "abstract": _clean(w.get("abstract", "")),
-            "url": w.get("URL", ""),
-            "date": "-".join(str(x) for x in
-                             (w.get("created", {}).get("date-parts") or [[""]])[0]),
-            "source": f"journal:{label}",
-            "section": 3,
-            "doi": w.get("DOI"),
-        })
+        for w in r.json()["message"]["items"]:
+            it = _crossref_item(w, "SSRN (via Crossref)")
+            if it:
+                out.append(it)
+        time.sleep(0.5)                                  # Crossref politeness
     return out
 
 
