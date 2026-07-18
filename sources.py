@@ -176,7 +176,12 @@ def quantocracy() -> list[dict]:
 
 # ------------------------------------ OpenAlex (preprint repositories)
 def _openalex_get(url: str, params: dict, log) -> requests.Response:
-    """GET with linear backoff on 429 (OpenAlex throttles shared IPs)."""
+    """GET with linear backoff on a genuine 429 rate limit.
+
+    NOTE: OpenAlex also returns 429 for a *paywalled feature* (e.g. the
+    from_created_date filter needs a paid plan) -- that is not a rate limit
+    and must NOT be retried, so we detect the 'plan upgrade' body and fail
+    fast instead of burning the full backoff budget."""
     if MAILTO:
         params = {**params, "mailto": MAILTO}
     last = None
@@ -186,6 +191,9 @@ def _openalex_get(url: str, params: dict, log) -> requests.Response:
         if r.status_code != 429:
             r.raise_for_status()
             return r
+        if "upgrade required" in r.text.lower() or "paid plan" in r.text.lower():
+            log(f"[openalex] paywalled request, not retrying: {r.text[:160]}")
+            r.raise_for_status()          # raises -- caller logs & skips source
         wait = 5 * (i + 1)
         log(f"[openalex] 429; retry {i + 1}/{config.OPENALEX_MAX_RETRIES} "
             f"after {wait}s")
@@ -225,7 +233,7 @@ def _oa_item(w: dict, source: str, section: int) -> dict:
 def _openalex_works(sid: str, label: str, log) -> list[dict]:
     since = _cutoff().date().isoformat()
     r = _openalex_get("https://api.openalex.org/works", {
-        "filter": f"locations.source.id:{sid},from_created_date:{since}",
+        "filter": f"locations.source.id:{sid},from_publication_date:{since}",
         "per-page": 100,
         "sort": "publication_date:desc",
     }, log)
@@ -306,7 +314,7 @@ def openalex_topics(log) -> list[dict]:
         try:
             r = _openalex_get("https://api.openalex.org/works", {
                 "filter": f"topics.id:{'|'.join(topic_ids)},"
-                          f"from_created_date:{since}",
+                          f"from_publication_date:{since}",
                 "per-page": 100,
                 "sort": "publication_date:desc",
             }, log)
@@ -322,7 +330,7 @@ def openalex_topics(log) -> list[dict]:
         try:
             r = _openalex_get("https://api.openalex.org/works", {
                 "search": term,
-                "filter": f"from_created_date:{since},type:article",
+                "filter": f"from_publication_date:{since},type:article",
                 "per-page": config.OPENALEX_FULLTEXT_LIMIT,
                 "sort": "publication_date:desc",
             }, log)

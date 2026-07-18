@@ -31,6 +31,18 @@ def main() -> None:
     except Exception as e:                           # noqa: BLE001
         print(f"[arXiv] skipped: {type(e).__name__}: {e}")
 
+    # Trimmed OpenAlex probe (SSRN only) -- confirms the from_publication_date
+    # fix works on the runner's IP too (the old from_created_date filter was
+    # paywalled -> 429). Kept small so the smoke test stays fast.
+    try:
+        import config
+        config.OPENALEX_PREPRINT_SOURCES = {"SSRN": "S4210172589"}
+        got = sources.openalex_preprints(print)
+        print(f"OpenAlex/SSRN: {len(got)} items (using first 3)")
+        items += got[:3]
+    except Exception as e:                           # noqa: BLE001
+        print(f"[openalex] skipped: {type(e).__name__}: {e}")
+
     # Synthetic items to exercise tier badges (section 3) and the topic
     # sweep section (5) without hitting the throttled OpenAlex endpoints.
     items.append({
