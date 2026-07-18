@@ -249,10 +249,10 @@ def _resolve_openalex_source(name: str, log) -> str | None:
 
 
 def _oa_item(w: dict, source: str, section: int) -> dict:
+    auths = w.get("authorships") or []
     return {
         "title": _clean(w.get("display_name", "")),
-        "authors": ", ".join(a["author"]["display_name"]
-                             for a in (w.get("authorships") or [])[:4]),
+        "authors": ", ".join(a["author"]["display_name"] for a in auths[:4]),
         "abstract": "",  # OpenAlex abstracts are inverted-index; skip
         "url": (w.get("primary_location") or {}).get("landing_page_url")
                or w.get("id", ""),
@@ -260,6 +260,10 @@ def _oa_item(w: dict, source: str, section: int) -> dict:
         "source": source,
         "section": section,
         "doi": (w.get("doi") or "").replace("https://doi.org/", "") or None,
+        # OpenAlex author ids -- reliable for native items; used for the
+        # author-citation prominence signal (see prominence.py).
+        "oa_author_ids": [a["author"]["id"].rsplit("/", 1)[-1]
+                          for a in auths[:4] if a.get("author", {}).get("id")],
     }
 
 

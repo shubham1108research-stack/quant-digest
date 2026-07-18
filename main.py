@@ -11,6 +11,7 @@ import sys
 import emailer
 import llm
 import portal
+import prominence
 import sources
 import store
 
@@ -53,6 +54,13 @@ def main() -> None:
     raw = collect()
     fresh = store.filter_new(con, raw)
     print(f"collected {len(raw)}, new after dedup {len(fresh)}")
+
+    # author-citation prominence (best-effort; enriches OpenAlex-native items)
+    prominence.MAILTO = sources.MAILTO
+    try:
+        fresh = prominence.annotate(fresh, log)
+    except Exception as e:                           # noqa: BLE001
+        log(f"[prominence] failed: {type(e).__name__}: {e}")
 
     # optional LLM triage -- attaches rank_score/why; no-op without an API key
     fresh = llm.rank(fresh, log)

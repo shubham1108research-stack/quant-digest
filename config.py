@@ -175,6 +175,15 @@ LLM_BATCH_PAUSE = 6          # seconds between calls -- stay under free-tier RPM
 TOP_PICKS = 20               # how many top-ranked items to feature in the email
 MIN_SHOW_SCORE = 20          # hide items the LLM scored below this from the email
                              # (0-19 = off-topic/noise band); the portal keeps all
+
+# ---- Prominence tiering ---------------------------------------------
+# The email is divided into Tier 1 / Tier 2 / rest. An item is Tier 1 if it's a
+# T1 journal, a prominent author (OpenAlex h-index >= PROM_H1), or a must-read
+# by the LLM (score >= RANK_T1); Tier 2 is the analogous middle band.
+PROM_H1 = 40                 # author h-index for "prominent" (tier 1)
+PROM_H2 = 20                 # author h-index for "established" (tier 2)
+RANK_T1 = 85                 # LLM score that alone earns tier 1
+RANK_T2 = 60                 # LLM score that alone earns tier 2
 RANK_INTERESTS = (
     "- Empirical asset pricing: cross-section of returns, factor models, "
     "anomalies, return predictability, risk premia, expected returns.\n"
