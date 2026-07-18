@@ -34,6 +34,7 @@ def collect() -> list[dict]:
         ("OpenAlex-preprints", lambda: sources.openalex_preprints(log)),
         ("SemanticScholar", lambda: sources.semantic_scholar(log)),
         ("Quantocracy", sources.quantocracy),
+        ("Practitioner", lambda: sources.practitioner(log)),
         # last: dedup keeps richer records above canonical; this adds net-new
         ("OpenAlex-topics", lambda: sources.openalex_topics(log)),
     ]

@@ -174,6 +174,39 @@ def quantocracy() -> list[dict]:
     return out
 
 
+# ------------------------------------------- Practitioner RSS feeds
+def practitioner(log) -> list[dict]:
+    """Direct practitioner blogs (Alpha Architect, Quantpedia, ...). One bad
+    feed is logged and skipped, never killing the others."""
+    cut = _cutoff()
+    out = []
+    for label, url in config.PRACTITIONER_FEEDS.items():
+        try:
+            feed = feedparser.parse(url, agent=UA["User-Agent"])
+        except Exception as e:                       # noqa: BLE001
+            log(f"[practitioner] '{label}' failed: {type(e).__name__}: {e}")
+            continue
+        got = 0
+        for e in feed.entries:
+            d = _entry_date(e)
+            if d and d < cut:
+                continue
+            out.append({
+                "title": _clean(e.get("title", "")),
+                "authors": _clean(e.get("author", "")),
+                "abstract": _clean(e.get("description", "")
+                                   or e.get("summary", ""))[:600],
+                "url": e.get("link", ""),
+                "date": d.date().isoformat() if d else "",
+                "source": label,
+                "section": 4,
+            })
+            got += 1
+        print(f"  practitioner/{label}: {got} posts")
+        time.sleep(0.3)
+    return out
+
+
 # ------------------------------------ OpenAlex (preprint repositories)
 def _openalex_get(url: str, params: dict, log) -> requests.Response:
     """GET with linear backoff on a genuine 429 rate limit.

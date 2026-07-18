@@ -64,6 +64,15 @@ JOURNALS_T2 = {
 
 # ---- Practitioner blogosphere ---------------------------------------
 QUANTOCRACY_RSS = "https://quantocracy.com/feed/"
+# Direct practitioner RSS (verified 2026-07-18). Asset-manager house pages
+# (AQR, Man, Research Affiliates) and SSRN eJournals have no usable RSS -- they
+# are JS-rendered / scrape-blocked and would need a headless browser.
+PRACTITIONER_FEEDS = {
+    "Alpha Architect": "https://alphaarchitect.com/feed/",
+    "Quantpedia": "https://quantpedia.com/feed/",
+    "Newfound / Flirting with Models": "https://blog.thinknewfound.com/feed/",
+    "Macrosynergy": "https://macrosynergy.com/research/feed/",
+}
 
 # ---- Preprint probes via OpenAlex -----------------------------------
 # label -> OpenAlex source id (Sxxxxxxxxx), or None to resolve by name at
