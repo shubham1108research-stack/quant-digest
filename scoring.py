@@ -22,10 +22,23 @@ per-run batch budget); composite_entries() ranks and returns the top-N.
 
 import datetime as dt
 import math
+import re
 
 import abstracts
 import config
 import llm
+
+# Non-paper records that occasionally slip through a source (Crossref front
+# matter, a blog's own link-roundup post) and would otherwise rank on
+# journal_if or LLM enthusiasm alone despite not being a paper.
+_JUNK_TITLE = re.compile(
+    r"^(editorial board|table of contents|front matter|masthead|"
+    r"issue information|recent quant links|weekly (?:roundup|links)|"
+    r"links? (?:roundup|round-up))\b", re.I)
+
+
+def is_junk(title: str) -> bool:
+    return bool(_JUNK_TITLE.match((title or "").strip()))
 
 
 def _label(it: dict) -> str:
@@ -69,10 +82,13 @@ def attach_s2(items: list[dict], log=print) -> list[dict]:
 
 
 def llm_score(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
-    """LLM-score only the not-yet-scored items (innovation/relevance/summary),
-    most-cited first so a batch budget spends on the strongest candidates.
-    Mutates in place; leaves items past the budget unscored for a later run."""
-    todo = [it for it in items if it.get("innovation") is None]
+    """LLM-score only the not-yet-scored, non-junk items (innovation/relevance/
+    summary/topic), most-cited first so a batch budget spends on the strongest
+    candidates. Mutates in place; leaves items past the budget unscored for a
+    later run. Junk records (editorial front matter, a blog's own link-roundup
+    post) are skipped entirely -- never worth spending LLM quota on."""
+    todo = [it for it in items
+            if it.get("innovation") is None and not is_junk(it.get("title", ""))]
     todo.sort(key=lambda it: (it.get("cites") or 0), reverse=True)
     llm.rank(todo, log, max_batches=max_batches)
     return items
@@ -100,7 +116,8 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
     clean monthly.json entries, highest composite first. Missing sub-scores
     redistribute their weight to author_cites, then journal_if."""
     scored = [it for it in items
-              if it.get("innovation") is not None and it.get("rank_score") is not None]
+              if it.get("innovation") is not None and it.get("rank_score") is not None
+              and not is_junk(it.get("title", ""))]
     if not scored:
         return []
     # in-pool normalisations

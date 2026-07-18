@@ -11,6 +11,8 @@ Practitioner) latest-first. Self-hosted Newsreader serif in docs/fonts/.
 import json
 import pathlib
 
+import scoring
+
 
 def _export(con) -> list[dict]:
     rows = con.execute(
@@ -18,6 +20,8 @@ def _export(con) -> list[dict]:
     ).fetchall()
     out = []
     for uid, title, source, section, url, meta, first_seen in rows:
+        if scoring.is_junk(title):    # editorial front matter, blog link-roundups
+            continue
         try:
             m = json.loads(meta)
         except Exception:                          # noqa: BLE001
