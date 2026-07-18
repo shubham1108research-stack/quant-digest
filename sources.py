@@ -307,6 +307,7 @@ def openalex_topics(log) -> list[dict]:
         topic_ids = list(mapped.values())
 
     since = _cutoff().date().isoformat()
+    fin = f"primary_topic.field.id:{config.OPENALEX_FINANCE_FIELD}"  # econ/finance
     out = []
 
     # Branch A -- taxonomy-mapped topics, one batched call
@@ -314,7 +315,7 @@ def openalex_topics(log) -> list[dict]:
         try:
             r = _openalex_get("https://api.openalex.org/works", {
                 "filter": f"topics.id:{'|'.join(topic_ids)},"
-                          f"from_publication_date:{since}",
+                          f"from_publication_date:{since},{fin}",
                 "per-page": 100,
                 "sort": "publication_date:desc",
             }, log)
@@ -330,7 +331,7 @@ def openalex_topics(log) -> list[dict]:
         try:
             r = _openalex_get("https://api.openalex.org/works", {
                 "search": term,
-                "filter": f"from_publication_date:{since},type:article",
+                "filter": f"from_publication_date:{since},type:article,{fin}",
                 "per-page": config.OPENALEX_FULLTEXT_LIMIT,
                 "sort": "publication_date:desc",
             }, log)
@@ -362,13 +363,14 @@ def semantic_scholar(log) -> list[dict]:
                 headers=UA, timeout=60)
             if r.status_code != 429:
                 break
-            wait = 30 * (attempt + 1)
-            log(f"[s2] rate limited on '{q}'; retry {attempt + 1}/"
-                f"{config.S2_MAX_RETRIES} after {wait}s")
-            time.sleep(wait)
-        else:
-            log(f"[s2] '{q}' still rate limited after "
-                f"{config.S2_MAX_RETRIES} retries; skipped this week")
+            # best-effort: only wait if another attempt remains
+            if attempt + 1 < config.S2_MAX_RETRIES:
+                wait = 30 * (attempt + 1)
+                log(f"[s2] rate limited on '{q}'; retry {attempt + 1}/"
+                    f"{config.S2_MAX_RETRIES} after {wait}s")
+                time.sleep(wait)
+        if r is None or r.status_code == 429:
+            log(f"[s2] '{q}' rate limited; skipped this week (best-effort)")
             continue
         r.raise_for_status()
         for p in r.json().get("data", []):

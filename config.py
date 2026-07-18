@@ -76,10 +76,16 @@ OPENALEX_PREPRINT_SOURCES = {
     "SSRN": "S4210172589",                       # verified run-1 (2026-07-18)
     "Munich Personal RePEc Archive": "S4306400553",  # MPRA working papers
     "EconStor": "S4306401696",                   # ZBW open working-paper server
-    "OSF Preprints": "S4306401127",              # incl. SocArXiv economics
+    # OSF Preprints (S4306401127) dropped -- all-disciplines repository that
+    # brought in sociology/psychology/etc.; the three above are econ/finance.
 }
 # How many retries (with linear backoff) on an OpenAlex 429 before giving up.
 OPENALEX_MAX_RETRIES = 4
+
+# Restrict the topic sweep to the OpenAlex "Economics, Econometrics and Finance"
+# field (id 20) via primary_topic -- keeps generic seeds (momentum->physics,
+# anomalies->CompSci, crowding->engineering) from pulling off-topic work.
+OPENALEX_FINANCE_FIELD = "20"
 
 # ---- OpenAlex topic sweep -------------------------------------------
 # SEARCH SEEDS, not OpenAlex taxonomy names. Resolved once (run-1) against the
@@ -134,9 +140,9 @@ OPENALEX_FULLTEXT_TERMS = [t for t in TOPIC_SEARCH_TERMS
 OPENALEX_TOPIC_MIN_SCORE = 3000   # relevance gate used during live re-bootstrap
 OPENALEX_FULLTEXT_LIMIT = 25      # max works per fulltext seed
 
-# How many retries (with linear backoff) on an S2 429 before giving up on
-# that one query (free unauthenticated tier; no API key used or required).
-S2_MAX_RETRIES = 3
+# S2 is best-effort on the free unauthenticated tier: 1 = try once, skip on a
+# 429 with no wait (fast runs). Raise for retries-with-backoff if you rely on it.
+S2_MAX_RETRIES = 1
 SEMANTIC_SCHOLAR_QUERIES = [
     "asset pricing",
     "factor investing",
