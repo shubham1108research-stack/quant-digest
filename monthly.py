@@ -71,16 +71,15 @@ def _archive_items(con) -> list[dict]:
 
 
 def refresh_present(con, fresh, monthly, log) -> None:
-    months = {m for m in (_month_of(it) for it in fresh) if _valid(m)}
-    if not months:
-        return
-    archive = _archive_items(con)
-    for m in sorted(months):
-        items = [it for it in archive if _month_of(it) == m]
-        entries = scoring.composite_entries(items, config.MONTHLY_TOP_N)
-        if entries:
-            monthly[m] = entries
-            log(f"[monthly] {m}: {len(entries)} picks from {len(items)} items")
+    """Recompute the CURRENT calendar month's top-20 from the archive's stored
+    scores. Only the current month -- earlier months are filled fully by the
+    backward backfill (Crossref), not from the sparse 30-day digest window."""
+    m = _this_month()
+    items = [it for it in _archive_items(con) if _month_of(it) == m]
+    entries = scoring.composite_entries(items, config.MONTHLY_TOP_N)
+    if entries:
+        monthly[m] = entries
+        log(f"[monthly] {m} (present): {len(entries)} picks from {len(items)} items")
 
 
 def promote_seminal(fresh, log) -> None:
@@ -122,8 +121,7 @@ def backfill_step(con, monthly, log) -> None:
     floor = config.BACKFILL_FLOOR
     earliest = store.kv_get(con, "backfill_earliest")
     if not (earliest and _valid(earliest)):
-        present = sorted(m for m in monthly if _valid(m))
-        earliest = present[0] if present else _this_month()
+        earliest = _this_month()          # start walking back from the current month
     target = _prev_month(earliest)
     if target < floor:
         log(f"[backfill] reached floor {floor}; nothing to do")
