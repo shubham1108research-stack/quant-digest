@@ -19,47 +19,49 @@ ARXIV_API = "http://export.arxiv.org/api/query"
 ARXIV_MAX = 200
 
 # ---- Journals via Crossref (tiered) ---------------------------------
-# All ISSNs verified against Crossref (run-1, 2026-07-18) -- looked up BY ISSN
-# and title-confirmed, because Crossref's fuzzy title search mis-resolves.
-# Each item is tagged with its tier (T1/T2) in the email.
+# Finance-only, keyed to NYU Stern Finance Dept's top-tier journals list
+# (2020-12-10). All ISSNs verified against Crossref by ISSN. Economics
+# (Econometrica, JPE, J of Econometrics, AER/QJE/REStud) and accounting are
+# deliberately excluded -- finance only. Each item is tagged T1/T2 in the email.
 #
-# Tier 1 -- top academic. Ratification signal; slow, high bar.
+# Tier 1 -- NYU Stern's three top-tier FINANCE journals (the top-tier list also
+# names 5 economics journals, excluded here per the finance-only scope).
 JOURNALS_T1 = {
     "Journal of Finance": "0022-1082",
-    "Journal of Financial Economics": "0304-405X",
     "Review of Financial Studies": "0893-9454",
-    "Journal of Financial and Quantitative Analysis": "0022-1090",
-    "Review of Finance": "1572-3097",
-    "Review of Asset Pricing Studies": "2045-9920",
-    "Journal of Econometrics": "0304-4076",
-    "Econometrica": "0012-9682",                 # methods; finance-relevant
-    "Journal of Political Economy": "0022-3808",  # publishes asset pricing
-    "Management Science": "0025-1909",           # finance dept
+    "Journal of Financial Economics": "0304-405X",
 }
-# Tier 2 -- strong field + practitioner. Where implementable work lands.
+# Tier 2 -- NYU Stern's "other notable" FINANCE journals + the practitioner /
+# quant field journals (JPM, FAJ, Quantitative Finance, ...) a quant desk reads.
 JOURNALS_T2 = {
-    "Journal of Financial Markets": "1386-4181",
-    "Journal of Empirical Finance": "0927-5398",
+    # NYU "other notable" finance
+    "Financial Management": "0046-3892",
     "Journal of Banking and Finance": "0378-4266",
+    "Journal of Corporate Finance": "0929-1199",
+    "Journal of Financial and Quantitative Analysis": "0022-1090",
     "Journal of Financial Econometrics": "1479-8409",
+    "Journal of Financial Intermediation": "1042-9573",
+    "Journal of Financial Markets": "1386-4181",
+    "Journal of Financial Services Research": "0920-8550",
+    "Journal of Money, Credit and Banking": "0022-2879",
+    "Review of Asset Pricing Studies": "2045-9920",
+    "Review of Corporate Finance Studies": "2046-9128",
+    "Review of Finance": "1572-3097",
+    # practitioner / quant field finance journals (not on NYU's academic list,
+    # but finance and central to a quant practitioner)
+    "Quantitative Finance": "1469-7688",
     "Mathematical Finance": "0960-1627",
     "Finance and Stochastics": "0949-2984",
-    "Quantitative Finance": "1469-7688",
     "Journal of Portfolio Management": "0095-4918",
     "Financial Analysts Journal": "0015-198X",
     "Journal of Financial Data Science": "2640-3943",
     "Journal of Asset Management": "1470-8272",
     "Journal of Derivatives": "1074-1240",
-    "Review of Corporate Finance Studies": "2046-9128",
     "Journal of Risk": "1465-1211",
-    # "Journal of Investment Management": no usable Crossref coverage
-    #     (no journal-level ISSN indexed; DOIs absent) -- dropped, not guessed.
-    # accounting trio -- uncomment if IVA/fundamentals work returns:
-    # "Journal of Accounting Research": "0021-8456",
-    # "Journal of Accounting and Economics": "0165-4101",
-    # "The Accounting Review": "0001-4826",
-    # deliberately EXCLUDED: AER, QJE, REStud -- mostly non-finance volume;
-    # their finance papers reach you via NBER/NEP anyway.
+    "Journal of Empirical Finance": "0927-5398",
+    # EXCLUDED per finance-only scope: Econometrica, Journal of Political
+    # Economy, Journal of Econometrics (economics); Management Science (NYU
+    # classes it "other business disciplines"); accounting journals.
 }
 
 # ---- SSRN via Crossref ----------------------------------------------
