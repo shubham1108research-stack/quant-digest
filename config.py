@@ -53,17 +53,36 @@ JOURNALS_T2 = {
     "Quantitative Finance": "1469-7688",
     "Mathematical Finance": "0960-1627",
     "Finance and Stochastics": "0949-2984",
-    "Journal of Portfolio Management": "0095-4918",
     "Financial Analysts Journal": "0015-198X",
-    "Journal of Financial Data Science": "2640-3943",
     "Journal of Asset Management": "1470-8272",
-    "Journal of Derivatives": "1074-1240",
     "Journal of Risk": "1465-1211",
     "Journal of Empirical Finance": "0927-5398",
+    # NOTE: Journal of Portfolio Management, Journal of Derivatives, and Journal
+    # of Financial Data Science are PM-Research journals -- collected via pmr()
+    # below (with abstracts scraped from pm-research.com), not here.
     # EXCLUDED per finance-only scope: Econometrica, Journal of Political
     # Economy, Journal of Econometrics (economics); Management Science (NYU
     # classes it "other business disciplines"); accounting journals.
 }
+
+# ---- PM Research journals (pm-research.com) -------------------------
+# Practitioner finance journals. Crossref lists each journal's articles by ISSN
+# but PMR does NOT deposit abstracts to Crossref, so pmr() fetches each article's
+# pm-research.com page and pulls the abstract from its citation_abstract meta tag
+# (static HTML, no Cloudflare). All tagged tier T2. Abstracts are only fetched
+# for articles not already in the archive, so re-runs don't re-scrape.
+PMR_JOURNALS = {
+    "Journal of Portfolio Management": "0095-4918",
+    "Journal of Investing": "1068-0896",
+    "Journal of Derivatives": "1074-1240",
+    "Journal of Fixed Income": "1059-8596",
+    "Journal of Financial Data Science": "2640-3943",
+    "Journal of Alternative Investments": "1520-3255",
+    "Journal of Wealth Management": "1520-4154",
+    "Journal of Beta Investment Strategies": "2771-6511",
+    "Practical Applications": "2329-0196",
+}
+PMR_MAX_PER_JOURNAL = 30    # newest articles listed per journal per run
 
 # ---- SSRN via Crossref ----------------------------------------------
 # SSRN registers DOIs under the 10.2139 prefix, indexed by Crossref same-day.

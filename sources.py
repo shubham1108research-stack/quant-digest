@@ -5,6 +5,7 @@ dead feed never kills the run.
 """
 
 import datetime as dt
+import html as _html
 import re
 import time
 
@@ -138,6 +139,64 @@ def _crossref_issn(issn: str, label: str) -> list[dict]:
         it = _crossref_item(w, f"journal:{label}")
         if it:
             out.append(it)
+    return out
+
+
+# ------------------------------------- PM Research journals (pm-research.com)
+def _pmr_abstract(url: str) -> str:
+    """Pull the abstract from a pm-research.com article page's citation_abstract
+    meta tag (static HTML; empty for editorials/front matter or on any error)."""
+    if not url:
+        return ""
+    try:
+        r = requests.get(url, headers=UA, timeout=30)
+        if r.status_code != 200:
+            return ""
+        m = re.search(r'<meta name="citation_abstract" content="(.*?)"\s*/?>',
+                      r.text, re.I | re.S)
+        if m:
+            return _clean(_html.unescape(m.group(1)))[:1500]
+    except Exception:                                # noqa: BLE001
+        pass
+    return ""
+
+
+def pmr(log, existing: set) -> list[dict]:
+    """PM Research practitioner journals -- article list via Crossref (PMR does
+    not deposit abstracts there), abstract scraped from each pm-research.com
+    page. Abstracts are fetched only for articles NOT already in the archive
+    (`existing` uids), so re-runs don't re-scrape. All tagged tier T2."""
+    since = _cutoff().date().isoformat()
+    out = []
+    for label, issn in config.PMR_JOURNALS.items():
+        params = {"filter": f"from-created-date:{since}",
+                  "rows": config.PMR_MAX_PER_JOURNAL, "sort": "created",
+                  "order": "desc"}
+        if MAILTO:
+            params["mailto"] = MAILTO
+        try:
+            r = requests.get(f"https://api.crossref.org/journals/{issn}/works",
+                             params=params, headers=UA, timeout=60)
+            r.raise_for_status()
+        except Exception as e:                       # noqa: BLE001
+            log(f"[pmr] '{label}' list failed: {type(e).__name__}: {e}")
+            continue
+        got = new = 0
+        for w in r.json()["message"]["items"]:
+            it = _crossref_item(w, f"journal:{label}")
+            if not it:
+                continue
+            it["tier"] = "T2"
+            doi = (it.get("doi") or "").lower()
+            if doi and f"doi:{doi}" not in existing:   # only scrape net-new
+                it["abstract"] = _pmr_abstract(it.get("url", ""))
+                if it["abstract"]:
+                    new += 1
+                time.sleep(0.4)                        # polite to pm-research
+            out.append(it)
+            got += 1
+        print(f"  pmr/{label}: {got} articles ({new} new abstracts)")
+        time.sleep(0.5)
     return out
 
 

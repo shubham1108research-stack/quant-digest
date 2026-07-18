@@ -30,7 +30,7 @@ def log(msg: str) -> None:
     NOTES.append(msg)
 
 
-def collect() -> list[dict]:
+def collect(existing: set) -> list[dict]:
     sources.MAILTO = os.environ.get("CONTACT_EMAIL") \
         or os.environ.get("GMAIL_ADDRESS")
     items: list[dict] = []
@@ -39,6 +39,7 @@ def collect() -> list[dict]:
         ("NBER", sources.nber),
         ("arXiv", sources.arxiv),
         ("Journals/Crossref", lambda: sources.journals(log)),
+        ("PMR journals", lambda: sources.pmr(log, existing)),
         ("SSRN/Crossref", lambda: sources.ssrn_crossref(log)),
         ("OpenAlex-preprints", lambda: sources.openalex_preprints(log)),
         ("SemanticScholar", lambda: sources.semantic_scholar(log)),
@@ -60,7 +61,8 @@ def collect() -> list[dict]:
 
 def main() -> None:
     con = store.connect()
-    raw = collect()
+    existing = {r[0] for r in con.execute("SELECT uid FROM items")}
+    raw = collect(existing)
     fresh = store.filter_new(con, raw)
     print(f"collected {len(raw)}, new after dedup {len(fresh)}")
 
