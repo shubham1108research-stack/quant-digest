@@ -1,7 +1,7 @@
 """Central configuration for the quant research digest."""
 
-LOOKBACK_DAYS = 3        # daily cron; a few days of overlap covers missed runs
-                         # + indexing lag. Cross-run dedup drops the repeats.
+LOOKBACK_DAYS = 30       # every-3-days cron with a 1-month window; cross-run
+                         # dedup drops the heavy overlap so emails stay net-new.
 
 # ---- RePEc NEP -------------------------------------------------------
 NEP_CODES = ["fmk", "inv", "rmg", "ecm", "ets", "for",
@@ -203,7 +203,8 @@ SEMANTIC_SCHOLAR_QUERIES = [
 # Dormant unless GEMINI_API_KEY (or GOOGLE_API_KEY) is set; any failure
 # degrades cleanly to the plain no-LLM feed. Ranks deduped items 0-100 for a
 # "Top picks" section. Get a free key at https://aistudio.google.com/apikey.
-LLM_MODEL = "gemini-flash-latest"   # alias -> current free Flash; won't go stale
+LLM_MODEL = "gemini-flash-latest"   # Gemini (primary); alias -> current Flash
+GROQ_MODEL = "llama-3.3-70b-versatile"   # Groq (fallback if GROQ_API_KEY set)
 LLM_RANK_BATCH = 40          # items scored per API call
 LLM_MAX_RETRIES = 3          # retries (with backoff) on 429/5xx
 LLM_BATCH_PAUSE = 6          # seconds between calls -- stay under free-tier RPM
