@@ -43,6 +43,8 @@ def _export(con) -> list[dict]:
             "testability": (m.get("testability") or {}).get("level"),
             "novelty_type": m.get("novelty_type"),
             "novelty_posterior": m.get("novelty_posterior"),
+            "consensus_n": m.get("consensus_n"),
+            "consensus_agree": m.get("consensus_agree"),
             "topic": m.get("topic", ""),
             "summary": m.get("summary") or m.get("why", ""),
         })
@@ -243,7 +245,7 @@ function entry(x,rank){
   ].join('')+'</div>':'';
   return `<div class="entry">${sc}<div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta"><span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}</div>
+    <div class="meta"><span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}</div>
     ${sm}${subs}</div></div>`;
 }
 function grouped(rows){
@@ -299,7 +301,7 @@ function monthlyEntry(x,rank){
     _subBar('Reputation',x.reputation!=null?x.reputation.toFixed(2)+'×':'–',
       x.reputation!=null?(x.reputation-0.85)/0.30*100:0),
   ].join('');
-  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}`;
+  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}`;
   return `<div class="entry"><div class="rail" style="--score:${band}">
       <div class="rank">${rank}</div><div class="score">${Math.round(x.composite)}</div><div class="ratebar"></div><div class="cap">composite</div></div>
     <div class="body">

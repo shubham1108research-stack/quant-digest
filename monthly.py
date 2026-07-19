@@ -142,6 +142,10 @@ def backfill_step(con, monthly, log) -> None:
         store.set_progress(con, target, candidates, False)
 
     scoring.llm_score(candidates, log, max_batches=config.BACKFILL_LLM_BATCHES)
+    try:                                           # ensemble consensus on the shortlist
+        llm.consensus(candidates, log, max_batches=config.CONSENSUS_MAX_BATCHES)
+    except Exception as e:                         # noqa: BLE001
+        log(f"[consensus] backfill failed: {type(e).__name__}: {e}")
     monthly[target] = scoring.composite_entries(candidates, config.MONTHLY_TOP_N)
 
     # junk records (editorial front matter, etc.) are deliberately NEVER scored

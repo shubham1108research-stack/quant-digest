@@ -250,6 +250,8 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
             "novelty_type": it.get("novelty_type"),
             "novelty_posterior": it.get("novelty_posterior"),
             "antecedent_match": it.get("antecedent_match"),
+            "consensus_n": it.get("consensus_n"),
+            "consensus_agree": it.get("consensus_agree"),
             "testability": test_l,
             "base_quality": round(base_quality, 1),
             "cites_norm": round(cnorm, 1) if cites_available else None,

@@ -230,9 +230,33 @@ SEMANTIC_SCHOLAR_QUERIES = [
 LLM_MODEL = "gemini-flash-latest"   # Gemini (primary); alias -> current Flash
 GROQ_MODEL = "llama-3.3-70b-versatile"   # Groq (fallback if GROQ_API_KEY set)
 MISTRAL_MODEL = "mistral-small-latest"   # Mistral (fallback if MISTRAL_API_KEY set)
+# OpenRouter (last fallback if OPENROUTER_API_KEY set): one key fronts many
+# models incl. free tiers. Swap for any OpenRouter model id; ":free" variants
+# have low daily caps but cost nothing -- fine for a last-resort provider.
+OPENROUTER_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
+# OpenAI (paid; last in triage order so the free providers carry the 1500-item
+# bulk and OpenAI cost only hits the ~250-item consensus shortlist). Reliable,
+# high-quality ensemble vote. Set OPENAI_API_KEY.
+OPENAI_MODEL = "gpt-5.4-mini"
 LLM_RANK_BATCH = 40          # items scored per API call
 LLM_MAX_RETRIES = 3          # retries (with backoff) on 429/5xx
 LLM_BATCH_PAUSE = 6          # seconds between calls -- stay under free-tier RPM
+
+# ---- Ensemble consensus (shortlist only) ----------------------------
+# The bulk triage (llm.rank) scores every item with the first available
+# provider. Then llm.consensus() re-scores only the SHORTLIST -- items the
+# triage found promising -- with ALL configured providers together and combines
+# their independent votes: median of the 0-3 rubric levels, majority
+# antecedent_match/novelty_type. The "do they converge" test: if the providers
+# DISAGREE on contribution by more than CONSENSUS_AGREE_SPREAD levels the item
+# is marked provisional (uncertain) rather than trusted -- consensus is only
+# used when the models actually agree. Keeps the 3-4x cost on the few hundred
+# items that decide Monthly/Recent, not the ~1500-item firehose.
+CONSENSUS_MIN_RELEVANCE = 2   # shortlist: triage relevance level >= this
+CONSENSUS_MIN_CONTRIB = 2     # AND triage contribution level >= this
+CONSENSUS_MAX_ITEMS = 250     # hard cap on shortlist (cost bound); best first
+CONSENSUS_AGREE_SPREAD = 1    # max contribution-level spread to count as converged
+CONSENSUS_MAX_BATCHES = 6     # per-run consensus batch budget (backfill path)
 TOP_PICKS = 20               # how many top-ranked items to feature in the email
 MIN_SHOW_SCORE = 20          # hide items the LLM scored below this from the email
                              # (0-19 = off-topic/noise band); the portal keeps all

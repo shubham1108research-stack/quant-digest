@@ -40,11 +40,14 @@ jobs:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT: ${{ secrets.DIGEST_RECIPIENT }}
-          # optional -- ranking is dormant if none are set; Gemini is primary,
-          # Groq is the automatic fallback when Gemini's key/quota dies
+          # optional -- ranking is dormant if none are set. Triage uses the
+          # first that responds (free-first); consensus on the shortlist uses
+          # all together. OpenAI is paid (backstops triage; votes on shortlist).
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python main.py
 
       - name: Commit state + report archive + portal

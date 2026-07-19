@@ -96,6 +96,12 @@ def main() -> None:
 
     # optional LLM triage -- attaches rank_score/why; no-op without an API key
     fresh = llm.rank(fresh, log)
+    # ensemble consensus on the promising shortlist (>=2 providers): multiple
+    # models re-score together; disagreement is flagged provisional
+    try:
+        fresh = llm.consensus(fresh, log)
+    except Exception as e:                           # noqa: BLE001
+        log(f"[consensus] failed: {type(e).__name__}: {e}")
 
     html_body = emailer.render(fresh, NOTES)
 

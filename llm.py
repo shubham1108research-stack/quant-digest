@@ -16,9 +16,11 @@ doesn't say -- absence of information is never treated as a red flag):
   isolated_backtest_only, no_costs_mentioned, extreme_claimed_sharpe,
   weak_stat_support
 
-Tries providers in order -- Gemini, then Groq, then Mistral -- so if one
-provider's key expires or its quota is exhausted, scoring automatically fails
-over to the next. Entirely optional: dormant unless at least one provider key
+Two passes: (1) rank() TRIAGES every item with the first provider in the chain
+that responds (Gemini -> Groq -> Mistral -> OpenRouter -> OpenAI, free-first so
+paid OpenAI only backstops); (2) consensus() re-scores just the promising
+SHORTLIST with ALL providers together and combines their votes, flagging
+disagreement as provisional. Entirely optional: dormant unless a provider key
 is set, and every failure path degrades to the plain no-LLM feed rather than
 breaking the run.
 
@@ -26,12 +28,15 @@ Keys (any/all, free tiers):
   GEMINI_API_KEY (or GOOGLE_API_KEY)  -- https://aistudio.google.com/apikey
   GROQ_API_KEY                        -- https://console.groq.com/keys
   MISTRAL_API_KEY                     -- https://console.mistral.ai/api-keys
+  OPENROUTER_API_KEY                  -- https://openrouter.ai/keys
+  OPENAI_API_KEY                      -- https://platform.openai.com/api-keys
 """
 
 import json
 import os
 import re
 import time
+from collections import Counter
 
 import requests
 
@@ -42,6 +47,8 @@ _GEMINI_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
                "{model}:generateContent")
 _GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 _MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
+_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+_OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 
 
 def _known_frameworks_block() -> str:
@@ -364,14 +371,87 @@ def _rank_mistral(batch: list[dict], log) -> dict | None:
     return {}
 
 
+def _rank_openrouter(batch: list[dict], log) -> dict | None:
+    # OpenRouter is OpenAI-compatible; one key fronts many models (incl. free
+    # tiers). The optional Referer/Title headers are just attribution, ignored
+    # by scoring. Last in the chain -- resilience when the others are exhausted.
+    key = os.environ.get("OPENROUTER_API_KEY")
+    if not key:
+        return None
+    body = {"model": config.OPENROUTER_MODEL, "temperature": 0,
+            "messages": [{"role": "system", "content": _SYSTEM},
+                         {"role": "user", "content": _prompt(batch)}]}
+    headers = {"Authorization": f"Bearer {key}",
+               "HTTP-Referer": "https://quant-digest-e62.pages.dev",
+               "X-Title": "quant-digest"}
+    for attempt in range(config.LLM_MAX_RETRIES + 2):
+        r = requests.post(_OPENROUTER_URL, headers=headers, json=body, timeout=90)
+        if r.status_code in (429, 500, 503):       # rate/token limit -- wait it out
+            wait = int(float(r.headers.get("retry-after", 0))) or 15 * (attempt + 1)
+            time.sleep(min(wait, 60))
+            continue
+        r.raise_for_status()
+        return _parse(r.json()["choices"][0]["message"]["content"])
+    r.raise_for_status()
+    return {}
+
+
+def _rank_openai(batch: list[dict], log) -> dict | None:
+    # OpenAI (paid) -- reliable, high-quality vote. Last in the chain so free
+    # providers carry the bulk triage; consensus (shortlist only) always
+    # includes it. No `temperature` field: the gpt-5 family rejects any value
+    # other than the default on chat/completions.
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        return None
+    body = {"model": config.OPENAI_MODEL,
+            "messages": [{"role": "system", "content": _SYSTEM},
+                         {"role": "user", "content": _prompt(batch)}]}
+    for attempt in range(config.LLM_MAX_RETRIES + 2):
+        r = requests.post(_OPENAI_URL, headers={"Authorization": f"Bearer {key}"},
+                          json=body, timeout=120)
+        if r.status_code in (429, 500, 503):
+            wait = int(float(r.headers.get("retry-after", 0))) or 15 * (attempt + 1)
+            time.sleep(min(wait, 60))
+            continue
+        r.raise_for_status()
+        return _parse(r.json()["choices"][0]["message"]["content"])
+    r.raise_for_status()
+    return {}
+
+
 _PROVIDERS = [("gemini", _rank_gemini), ("groq", _rank_groq),
-              ("mistral", _rank_mistral)]
+              ("mistral", _rank_mistral), ("openrouter", _rank_openrouter),
+              ("openai", _rank_openai)]
 
 
 def have_key() -> bool:
     return bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
                 or os.environ.get("GROQ_API_KEY")
-                or os.environ.get("MISTRAL_API_KEY"))
+                or os.environ.get("MISTRAL_API_KEY")
+                or os.environ.get("OPENROUTER_API_KEY")
+                or os.environ.get("OPENAI_API_KEY"))
+
+
+def _n_configured() -> int:
+    """How many distinct providers have a key set -- consensus needs >= 2 to be
+    worth the extra calls (a single vote is just a re-score of the triage)."""
+    return sum(bool(k) for k in (
+        os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"),
+        os.environ.get("GROQ_API_KEY"),
+        os.environ.get("MISTRAL_API_KEY"),
+        os.environ.get("OPENROUTER_API_KEY"),
+        os.environ.get("OPENAI_API_KEY")))
+
+
+def _err(e) -> str:
+    """Compact provider-error string incl. HTTP status + body snippet (which
+    reveals e.g. a decommissioned Groq model id or a Gemini quota message);
+    credentials in the body are scrubbed by main.log's redaction regex."""
+    resp = getattr(e, "response", None)
+    body = (getattr(resp, "text", "") or "")[:160].replace("\n", " ")
+    code = getattr(resp, "status_code", "")
+    return f"{type(e).__name__} {code}: {body}".strip() if body else type(e).__name__
 
 
 def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
@@ -414,7 +494,7 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
                 res = fn(batch, log)
             except Exception as e:                 # noqa: BLE001
                 log(f"[llm] {name} failed on batch {start // b} "
-                    f"({type(e).__name__}); failing over")
+                    f"({_err(e)}); failing over")
                 dead.add(name)                     # stop retrying it this run
                 continue
             if res is None:                        # provider not configured
@@ -429,28 +509,140 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
         batches += 1
         for i, it in enumerate(batch):
             if i in scores:
-                s = scores[i]
-                it["relevance"] = s["relevance"]
-                it["generality"] = s["generality"]
-                it["contribution"] = s["contribution"]
-                it["novelty_type"] = s["novelty_type"]
-                it["testability"] = s["testability"]
-                it["antecedent_match"] = s["antecedent_match"]
-                it["isolated_backtest_only"] = s["isolated_backtest_only"]
-                it["no_costs_mentioned"] = s["no_costs_mentioned"]
-                it["extreme_claimed_sharpe"] = s["extreme_claimed_sharpe"]
-                it["weak_stat_support"] = s["weak_stat_support"]
-                it["topic"] = s["topic"]
-                it["summary"] = s["summary"]
-                it["rank_score"] = round(s["relevance"]["level"] / 3 * 100)
-                # Bayesian novelty: overwrite the LLM's guessed `provisional`
-                # with a history-grounded posterior (topic prior x antecedent
-                # likelihood). A contribution counts as non-provisional only
-                # when the posterior clears NOVELTY_CONFIDENCE.
-                post = novelty_posterior(s["topic"], s["antecedent_match"])
-                it["novelty_posterior"] = round(post, 3)
-                it["contribution"]["provisional"] = post < config.NOVELTY_CONFIDENCE
+                _apply_score(it, scores[i])
                 ranked += 1
         time.sleep(config.LLM_BATCH_PAUSE)         # stay under free-tier RPM
     log(f"[llm] ranked {ranked}/{len(items)} via {', '.join(sorted(used)) or 'none'}")
+    return items
+
+
+def _apply_score(it: dict, s: dict) -> None:
+    """Write one parsed score dict onto an item, incl. the Bayesian novelty
+    posterior that overwrites the LLM's guessed `provisional` (topic prior x
+    antecedent likelihood; non-provisional only when the posterior clears
+    NOVELTY_CONFIDENCE). Shared by the triage pass and the consensus merge."""
+    it["relevance"] = s["relevance"]
+    it["generality"] = s["generality"]
+    it["contribution"] = s["contribution"]
+    it["novelty_type"] = s["novelty_type"]
+    it["testability"] = s["testability"]
+    it["antecedent_match"] = s["antecedent_match"]
+    it["isolated_backtest_only"] = s["isolated_backtest_only"]
+    it["no_costs_mentioned"] = s["no_costs_mentioned"]
+    it["extreme_claimed_sharpe"] = s["extreme_claimed_sharpe"]
+    it["weak_stat_support"] = s["weak_stat_support"]
+    it["topic"] = s["topic"]
+    it["summary"] = s["summary"]
+    it["rank_score"] = round(s["relevance"]["level"] / 3 * 100)
+    post = novelty_posterior(s["topic"], s["antecedent_match"])
+    it["novelty_posterior"] = round(post, 3)
+    it["contribution"]["provisional"] = post < config.NOVELTY_CONFIDENCE
+
+
+# ------------------------------------------- ensemble consensus (shortlist)
+_ANT_ORDER = ["matches_known", "ambiguous", "no_antecedent"]   # conservative-first
+_ROBUST_FLAGS = ("isolated_backtest_only", "no_costs_mentioned",
+                 "extreme_claimed_sharpe", "weak_stat_support")
+
+
+def _median_level(picks: list[dict], axis: str) -> int:
+    vals = sorted(p[axis]["level"] for p in picks)
+    return vals[(len(vals) - 1) // 2]              # lower median (conservative)
+
+
+def _majority(vals, tie, order=None):
+    counts = Counter(vals)
+    best = counts.most_common(1)[0][1]
+    winners = [v for v, c in counts.items() if c == best]
+    if len(winners) == 1:
+        return winners[0]
+    if order:                                      # tie -> most conservative
+        for v in order:
+            if v in winners:
+                return v
+    return tie
+
+
+def _merge_votes(picks: list[dict]) -> tuple[dict, bool]:
+    """Combine >=1 provider score dicts into one merged score (median levels,
+    majority verdicts, majority-True robustness flags) + whether they converged
+    on contribution (spread <= CONSENSUS_AGREE_SPREAD)."""
+    def axis(a):
+        return {"level": _median_level(picks, a), "why": picks[0][a]["why"]}
+    c_levels = [p["contribution"]["level"] for p in picks]
+    agree = (len(picks) == 1
+             or max(c_levels) - min(c_levels) <= config.CONSENSUS_AGREE_SPREAD)
+    merged = {
+        "relevance": axis("relevance"),
+        "generality": axis("generality"),
+        "contribution": {"level": _median_level(picks, "contribution"),
+                         "why": picks[0]["contribution"]["why"],
+                         "provisional": True},
+        "testability": axis("testability"),
+        "novelty_type": _majority([p["novelty_type"] for p in picks], "none"),
+        "antecedent_match": _majority([p["antecedent_match"] for p in picks],
+                                      "ambiguous", _ANT_ORDER),
+        "topic": _majority([p["topic"] for p in picks], picks[0]["topic"]),
+        "summary": picks[0]["summary"],
+    }
+    for f in _ROBUST_FLAGS:
+        trues = sum(1 for p in picks if p.get(f) is True)
+        falses = sum(1 for p in picks if p.get(f) is False)
+        merged[f] = True if trues * 2 > len(picks) else (False if falses and not trues else None)
+    return merged, agree
+
+
+def consensus(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
+    """Re-score the promising SHORTLIST (triage relevance/contribution both
+    >= the CONSENSUS_MIN_* bars, best first, capped) with EVERY configured
+    provider together and combine their independent votes. If the providers
+    don't converge on contribution the item is marked provisional (uncertain).
+    Mutates in place; non-shortlist items keep their triage scores."""
+    if _n_configured() < 2:
+        log("[consensus] <2 providers configured; skipping (a single vote just "
+            "re-scores the triage)")
+        return items
+    short = [it for it in items
+             if (it.get("relevance") or {}).get("level", 0) >= config.CONSENSUS_MIN_RELEVANCE
+             and (it.get("contribution") or {}).get("level", 0) >= config.CONSENSUS_MIN_CONTRIB]
+    short.sort(key=lambda it: ((it.get("contribution") or {}).get("level", 0),
+                               (it.get("relevance") or {}).get("level", 0)), reverse=True)
+    short = short[:config.CONSENSUS_MAX_ITEMS]
+    if not short:
+        log("[consensus] no shortlist items to refine")
+        return items
+
+    b = config.LLM_RANK_BATCH
+    refined = converged = batches = 0
+    for start in range(0, len(short), b):
+        if max_batches is not None and batches >= max_batches:
+            log(f"[consensus] batch budget {max_batches} reached; "
+                f"{len(short) - start} shortlist items keep triage scores")
+            break
+        batch = short[start:start + b]
+        votes = []
+        for name, fn in _PROVIDERS:
+            try:
+                res = fn(batch, log)
+            except Exception as e:                 # noqa: BLE001
+                log(f"[consensus] {name} failed on batch {start // b} ({_err(e)})")
+                continue
+            if res:
+                votes.append(res)
+                time.sleep(config.LLM_BATCH_PAUSE)
+        batches += 1
+        for i, it in enumerate(batch):
+            picks = [res[i] for res in votes if i in res]
+            if not picks:
+                continue                           # nobody scored it -> keep triage
+            merged, agree = _merge_votes(picks)
+            _apply_score(it, merged)               # levels + posterior-based provisional
+            if not agree:                          # didn't converge -> uncertain
+                it["contribution"]["provisional"] = True
+            it["consensus_n"] = len(picks)
+            it["consensus_agree"] = bool(agree)
+            refined += 1
+            converged += int(agree)
+    log(f"[consensus] refined {refined}/{len(short)} shortlist items via "
+        f"ensemble; {converged} converged, {refined - converged} flagged uncertain")
     return items
