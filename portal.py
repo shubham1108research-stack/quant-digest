@@ -36,6 +36,8 @@ def _export(con) -> list[dict]:
             "date": m.get("date") or first_seen,
             "seen": first_seen,
             "score": m.get("rank_score"),
+            "contribution": (m.get("contribution") or {}).get("level"),
+            "contribution_provisional": (m.get("contribution") or {}).get("provisional", True),
             "topic": m.get("topic", ""),
             "summary": m.get("summary") or m.get("why", ""),
         })
@@ -247,12 +249,10 @@ function sinceDays(n){
 function renderRecent(){
   const cs=sinceDays(7);
   const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA).filter(x=>x.score!=null);
-  // top 10% of EACH category by LLM score -- the rest live in the Archive tab
-  const g=[[],[],[],[]]; pool.forEach(x=>g[catOf(x)].push(x));
-  let rows=[];
-  g.forEach(a=>{a.sort((p,q)=>(q.score||0)-(p.score||0));
-    rows=rows.concat(a.slice(0,Math.max(1,Math.ceil(a.length*0.10))));});
-  $('view').innerHTML=`<div class="dateline">Last 7 days · top 10% per category <span class="n">· ${rows.length} of ${pool.length} — the rest are in Archive</span></div>`+grouped(rows);
+  // absolute quality bar, no percentage cut: relevance at ceiling AND a
+  // genuinely novel, non-provisional contribution -- the rest live in Archive
+  const rows=pool.filter(x=>x.score===100&&x.contribution===3&&!x.contribution_provisional);
+  $('view').innerHTML=`<div class="dateline">Last 7 days · genuinely strong <span class="n">· ${rows.length} of ${pool.length} — the rest are in Archive</span></div>`+grouped(rows);
 }
 function renderArchive(){
   const q=$('q').value.toLowerCase().trim();

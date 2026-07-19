@@ -35,12 +35,31 @@ import time
 
 import requests
 
+import canon
 import config
 
 _GEMINI_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
                "{model}:generateContent")
 _GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 _MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
+
+
+def _known_frameworks_block() -> str:
+    """A compact reference of already-established measurement/modeling
+    frameworks, drawn straight from the curated seminal canon's Method-type
+    entries (canon.py) -- the literal "cross-examine against history"
+    mechanism: it grows automatically as the canon grows, no separate list to
+    maintain. Used to stop the contribution rubric from mistaking "known
+    framework applied to a new dataset/asset/label" for a new mechanism."""
+    methods = [(title, why) for papers in canon.CANON.values()
+               for (title, _author, _year, typ, why) in papers if typ == "Method"]
+    lines = "\n".join(f"- {title}: {why}" for title, why in methods)
+    return (
+        "KNOWN, ALREADY-ESTABLISHED FRAMEWORKS (for calibration only -- this "
+        "list is illustrative, not exhaustive; the same caution applies to any "
+        "well-established framework/measurement-technique even if it isn't "
+        "listed here):\n" + lines
+    )
 
 _SYSTEM = (
     "You are a research analyst EXTRACTING anchored rubric judgments for a "
@@ -65,15 +84,28 @@ _SYSTEM = (
     "   1 = works but narrow; one specific setup.\n"
     "   0 = one-off; fragile to its exact sample/universe.\n\n"
     "3) contribution -- novel idea OR credible extension.\n"
-    "   3 = a new mechanism with no obvious antecedent, OR a sharp, non-obvious "
-    "extension that changes a prior result's sign/magnitude/scope.\n"
+    "   3 = a genuinely new mechanism/measurement approach with no obvious "
+    "antecedent, OR a sharp, non-obvious extension that changes a prior "
+    "result's sign/magnitude/scope.\n"
     "   2 = meaningful extension of recent work.\n"
     "   1 = incremental tweak on a well-worn method.\n"
     "   0 = re-derivation of a known result under new notation, or a survey.\n"
+    "   CRITICAL -- reused framework, new label is NOT a 3, in ANY topic/domain "
+    "(this is a general rule, not specific to any one research area): if the "
+    "paper's core method is an already-established framework or measurement "
+    "technique (see the reference list below, or any other well-known "
+    "framework/technique you recognize) applied to a new dataset, asset class, "
+    "sample, or label, that is an APPLICATION, not a new mechanism -- cap it at "
+    "1-2 regardless of how the abstract frames it ('novel dataset', 'first "
+    "study of X', 'introduces a new index for Y' when Y is just a new "
+    "underlying for an old construction method, etc.). Judge the novelty of "
+    "the MECHANISM itself, never the novelty of the application/dataset/label "
+    "alone.\n"
     "   Set provisional=true whenever the abstract alone doesn't let you rule "
     "out a direct antecedent (you have no citation graph here) -- default to "
     "true unless the abstract itself makes the novelty claim explicit and "
     "checkable.\n\n"
+    + _known_frameworks_block() + "\n\n"
     "4) testability -- how sharp/falsifiable/cheap to test with public data.\n"
     "   3 = sharp, falsifiable, cheap with public data; clean identification.\n"
     "   2 = testable, some ambiguity in construction.\n"
