@@ -206,11 +206,22 @@ function renderArchive(){
   $('view').innerHTML=`<div class="dateline">Archive · ${esc(label)} <span class="n">· ${rows.length} papers · date-wise</span></div>`+
     (rows.length?rows.map(x=>entry(x)).join(''):'<div class="empty">No matches.</div>');
 }
-const SUBS=[['Vel','velocity'],['DL','downloads'],['Cites','paper_cites'],['Author','author_cites'],['IF','journal_if']];
+function _subBar(label,valueHtml,pct){
+  const w=Math.max(0,Math.min(100,pct||0));
+  return `<span class="sub"><i>${label}</i><b>${valueHtml}</b><s><u style="width:${w}%"></u></s></span>`;
+}
 function monthlyEntry(x,rank){
   const band=bandColor(x.composite);
-  const subs=SUBS.map(([l,k])=>{const v=x[k];const w=Math.max(0,Math.min(100,v||0));
-    return `<span class="sub"><i>${l}</i><b>${v==null?'–':Math.round(v)}</b><s><u style="width:${w}%"></u></s></span>`;}).join('');
+  const lvl=v=>v==null?'–':`${v}/3`;
+  const prov=x.contribution_provisional?' <span style="opacity:.55">(prov.)</span>':'';
+  const subs=[
+    _subBar('Generality',lvl(x.generality),(x.generality||0)/3*100),
+    _subBar('Contribution',lvl(x.contribution)+prov,(x.contribution||0)/3*100),
+    _subBar('Testability',lvl(x.testability),(x.testability||0)/3*100),
+    _subBar('Robustness',x.robustness!=null?Math.round(x.robustness*100)+'%':'–',(x.robustness||0)*100),
+    _subBar('Credibility',x.credibility!=null?x.credibility.toFixed(2)+'×':'–',
+      x.credibility!=null?(x.credibility-0.85)/0.30*100:0),
+  ].join('');
   const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}`;
   return `<div class="entry"><div class="rail" style="--score:${band}">
       <div class="rank">${rank}</div><div class="score">${Math.round(x.composite)}</div><div class="ratebar"></div><div class="cap">composite</div></div>

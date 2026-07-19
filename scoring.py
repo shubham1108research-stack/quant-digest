@@ -1,22 +1,31 @@
-"""Monthly 5-parameter composite scoring, shared by the present-month recompute
-and the backward backfill.
+"""Monthly composite scoring, shared by the present-month recompute and the
+backward backfill.
 
-Sub-scores (each 0-100), weights in config.MONTHLY_WEIGHTS:
-  velocity     -- real cites-per-year (S2 cites / age) when the paper is >=1
-                  year old, min-max log-normalised in-pool; else the LLM's
-                  expected-citation-velocity estimate
-  downloads    -- the LLM's expected download/attention estimate
-  paper_cites  -- S2 citationCount, log min-max in-pool
-  author_cites -- S2 max author h-index, min-max in-pool
-  journal_if   -- config.JOURNAL_IMPACT / table max
-If a sub-score is missing for an item its weight is redistributed to
-author_cites first, then journal_if (per user rule); if both are missing the
-remaining weights are renormalised. The LLM's innovation/relevance/topic are
-still attached (email tiers, Recent's top-10% filter, seminal promotion, and
-the Archive tab's topics) -- they're just not composite terms.
+composite = base_quality * R * M_cred -- all deterministic, code-only (the LLM
+only ever supplies anchored 0-3 rubric levels + a short justification; see
+llm.py's module docstring for the "extract, never invent the rank" design):
 
-Flow: attach_s2() fills abstract/cites/author_h/year; llm_score() attaches
-relevance/innovation/velocity_est/downloads_est/topic/summary (respecting a
+  base_quality -- weighted avg of the LLM's anchored generality/contribution/
+                  testability levels (0-3, rescaled 0-100). contribution is
+                  capped at level 2 when the LLM marked it `provisional`
+                  (abstract alone can't rule out a direct antecedent).
+  R            -- soft robustness DISCOUNT (never a bonus; floored at
+                  config.ROBUSTNESS_FLOOR): multiplies in
+                  config.ROBUSTNESS_DISCOUNTS[flag] for each robustness flag the
+                  LLM found EXPLICITLY stated in the abstract. A null flag
+                  (abstract simply didn't say) is never penalised -- absence of
+                  information isn't evidence of a problem.
+  M_cred       -- bounded credibility multiplier in [1-CRED_BOUND, 1+CRED_BOUND]
+                  (i.e. [0.85, 1.15]) from whichever of {S2 paper citations, S2
+                  author h-index, JOURNAL_IMPACT} are available for that item --
+                  prestige/traction can only NUDGE the ranking, never carry a
+                  paper that's weak on base_quality.
+
+Gate: an item needs relevance level >= 1 (not off-topic/no testable content) to
+be composite-eligible at all.
+
+Flow: attach_s2() fills abstract/cites/author_h/pub_year; llm_score() attaches
+the anchored rubric levels + robustness flags + topic + summary (respecting a
 per-run batch budget); composite_entries() ranks and returns the top-N.
 """
 
@@ -82,13 +91,14 @@ def attach_s2(items: list[dict], log=print) -> list[dict]:
 
 
 def llm_score(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
-    """LLM-score only the not-yet-scored, non-junk items (innovation/relevance/
-    summary/topic), most-cited first so a batch budget spends on the strongest
-    candidates. Mutates in place; leaves items past the budget unscored for a
-    later run. Junk records (editorial front matter, a blog's own link-roundup
-    post) are skipped entirely -- never worth spending LLM quota on."""
+    """LLM-score only the not-yet-scored, non-junk items (anchored rubric
+    levels + robustness flags + topic + summary), most-cited first so a batch
+    budget spends on the strongest candidates. Mutates in place; leaves items
+    past the budget unscored for a later run. Junk records (editorial front
+    matter, a blog's own link-roundup post) are skipped entirely -- never worth
+    spending LLM quota on."""
     todo = [it for it in items
-            if it.get("innovation") is None and not is_junk(it.get("title", ""))]
+            if it.get("relevance") is None and not is_junk(it.get("title", ""))]
     todo.sort(key=lambda it: (it.get("cites") or 0), reverse=True)
     llm.rank(todo, log, max_batches=max_batches)
     return items
@@ -111,62 +121,75 @@ def _age_years(it: dict) -> float | None:
     return max(0.0, dt.date.today().year - int(yr))
 
 
+def _level(it: dict, axis: str) -> int | None:
+    node = it.get(axis)
+    return node.get("level") if isinstance(node, dict) else None
+
+
+def _robustness_discount(it: dict) -> float:
+    """R: multiply in a discount for every EXPLICITLY-detected flag; a null
+    flag (abstract didn't say) never contributes a penalty. Floored."""
+    r = 1.0
+    for flag, factor in config.ROBUSTNESS_DISCOUNTS.items():
+        if it.get(flag) is True:
+            r *= factor
+    return max(config.ROBUSTNESS_FLOOR, r)
+
+
 def composite_entries(items: list[dict], n: int) -> list[dict]:
-    """Compute the composite over every LLM-scored item and return the top-n as
-    clean monthly.json entries, highest composite first. Missing sub-scores
-    redistribute their weight to author_cites, then journal_if."""
+    """Compute composite = base_quality * R * M_cred over every LLM-scored,
+    on-topic item and return the top-n as clean monthly.json entries, highest
+    composite first."""
     scored = [it for it in items
-              if it.get("innovation") is not None and it.get("rank_score") is not None
+              if _level(it, "relevance") is not None
+              and _level(it, "relevance") >= 1
               and not is_junk(it.get("title", ""))]
     if not scored:
         return []
-    # in-pool normalisations
+
+    # in-pool normalisations for the credibility inputs
     nc = _norm_counts([(it.get("cites") or 0) for it in scored], logscale=True)
     na = _norm_counts([(it.get("author_h") or 0) for it in scored], logscale=False)
-    # real citation velocity (cites/age) where the paper is old enough to have one
-    vel_real_raw = [((it.get("cites") or 0) / a) if (a := _age_years(it)) and a >= 1
-                    and it.get("cites") is not None else None for it in scored]
-    have_vel = [v for v in vel_real_raw if v is not None]
-    vel_norm_pool = _norm_counts(have_vel, logscale=True) if have_vel else []
-    vel_iter = iter(vel_norm_pool)
-    vel_real = [next(vel_iter) if v is not None else None for v in vel_real_raw]
-
     if_max = max(config.JOURNAL_IMPACT.values()) or 1.0
-    base_w = config.MONTHLY_WEIGHTS
+
     out = []
-    for it, cnorm, anorm, vreal in zip(scored, nc, na, vel_real):
+    for it, cnorm, anorm in zip(scored, nc, na):
         label = _label(it)
         in_table = label in config.JOURNAL_IMPACT
         if_raw = config.JOURNAL_IMPACT.get(label, 0.0)
-        # sub-scores; None = unavailable for this item. A paper under a year old
-        # with zero citations is too young to judge on citations -- treat
-        # paper_cites as unavailable so its weight shifts to author/journal
-        # (daily-feed papers naturally score on author h-index + journal IF).
         age = _age_years(it)
         too_young = (age is None or age < 1) and not (it.get("cites") or 0)
-        subs = {
-            "velocity": (vreal if vreal is not None
-                         else (float(it["velocity_est"])
-                               if it.get("velocity_est") is not None else None)),
-            "downloads": (float(it["downloads_est"])
-                          if it.get("downloads_est") is not None else None),
-            "paper_cites": (cnorm if it.get("cites") is not None and not too_young
-                            else None),
-            "author_cites": anorm if it.get("author_h") is not None else None,
-            "journal_if": 100.0 * if_raw / if_max if in_table else None,
-        }
-        # weight redistribution: missing -> author_cites, then journal_if
-        w = dict(base_w)
-        missing = sum(w.pop(k) for k in [k for k, v in subs.items() if v is None])
-        if missing:
-            if subs["author_cites"] is not None:
-                w["author_cites"] = w.get("author_cites", 0) + missing
-            elif subs["journal_if"] is not None:
-                w["journal_if"] = w.get("journal_if", 0) + missing
-            elif w:                                # renormalise what's left
-                tot = sum(w.values())
-                w = {k: v / tot for k, v in w.items()} if tot else w
-        comp = sum(w[k] * subs[k] for k in w if subs[k] is not None)
+
+        # --- base_quality: the three anchored rank axes (never prestige) ---
+        gen_l = _level(it, "generality") or 0
+        contrib_node = it.get("contribution") or {}
+        contrib_l = contrib_node.get("level") or 0
+        provisional = bool(contrib_node.get("provisional", True))
+        if provisional:
+            contrib_l = min(contrib_l, 2)          # capped: can't rule out an antecedent
+        test_l = _level(it, "testability") or 0
+        aw = config.AXIS_WEIGHTS
+        base_quality = (aw["generality"] * (gen_l / 3 * 100)
+                        + aw["contribution"] * (contrib_l / 3 * 100)
+                        + aw["testability"] * (test_l / 3 * 100))
+
+        # --- R: soft robustness discount (abstract-derived, never a bonus) ---
+        R = _robustness_discount(it)
+
+        # --- M_cred: bounded credibility multiplier -- prestige nudges only,
+        # never carries a paper weak on base_quality
+        cred_inputs = []
+        if it.get("cites") is not None and not too_young:
+            cred_inputs.append(cnorm)
+        if it.get("author_h") is not None:
+            cred_inputs.append(anorm)
+        if in_table:
+            cred_inputs.append(100.0 * if_raw / if_max)
+        cred_avg = sum(cred_inputs) / len(cred_inputs) if cred_inputs else 50.0
+        M_cred = (1 - config.CRED_BOUND) + 2 * config.CRED_BOUND * (cred_avg / 100)
+
+        composite = base_quality * R * M_cred
+
         out.append({
             "title": it.get("title", ""),
             "url": it.get("url", ""),
@@ -177,14 +200,15 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
             "author_h": it.get("author_h"),
             "if": round(if_raw, 1),
             "topic": it.get("topic", ""),
-            "innovation": round(it["innovation"]),
-            "relevance": round(it["rank_score"]),
-            "velocity": None if subs["velocity"] is None else round(subs["velocity"]),
-            "downloads": None if subs["downloads"] is None else round(subs["downloads"]),
-            "paper_cites": None if subs["paper_cites"] is None else round(subs["paper_cites"]),
-            "author_cites": None if subs["author_cites"] is None else round(subs["author_cites"]),
-            "journal_if": None if subs["journal_if"] is None else round(subs["journal_if"]),
-            "composite": round(comp, 1),
+            "relevance": _level(it, "relevance"),
+            "generality": gen_l,
+            "contribution": contrib_l,
+            "contribution_provisional": provisional,
+            "testability": test_l,
+            "base_quality": round(base_quality, 1),
+            "robustness": round(R, 3),
+            "credibility": round(M_cred, 3),
+            "composite": round(composite, 1),
             "summary": it.get("summary", ""),
         })
     out.sort(key=lambda e: e["composite"], reverse=True)

@@ -241,6 +241,10 @@ MIN_SHOW_SCORE = 20          # hide items the LLM scored below this from the ema
 # The email is divided into Tier 1 / Tier 2 / rest. An item is Tier 1 if it's a
 # T1 journal, a prominent author (OpenAlex h-index >= PROM_H1), or a must-read
 # by the LLM (score >= RANK_T1); Tier 2 is the analogous middle band.
+# NOTE: rank_score is now the anchored `relevance` LEVEL (0-3) rescaled to
+# 0/33/67/100 (llm.rank), not a continuous guess -- these thresholds happen to
+# land exactly on that discrete scale: 85 admits only level 3 (100), 60 admits
+# level 2+ (67/100), MIN_SHOW_SCORE=20 admits level 1+ (33/67/100).
 PROM_H1 = 40                 # author h-index for "prominent" (tier 1)
 PROM_H2 = 20                 # author h-index for "established" (tier 2)
 RANK_T1 = 85                 # LLM score that alone earns tier 1
@@ -264,29 +268,47 @@ RANK_INTERESTS = (
     "incremental results and papers with no finance angle."
 )
 
-# ---- Monthly top-50 picks (5-parameter composite) -------------------
-# Each calendar month's Monthly-tab list is the top MONTHLY_TOP_N papers by a
-# weighted composite of five 0-100 sub-scores:
-#   velocity     -- citation velocity: real cites-per-year when the paper is old
-#                   enough (S2 cites / age), else the LLM's estimate of expected
-#                   citation velocity given ongoing hot topics
-#   downloads    -- expected download/attention volume (LLM estimate; there is
-#                   no open download-count source for most venues)
-#   paper_cites  -- Semantic Scholar citationCount (log, min-max in-month)
-#   author_cites -- Semantic Scholar max author h-index (min-max in-month)
-#   journal_if   -- JOURNAL_IMPACT table (value / table max)
-# If a sub-score is unavailable for an item, its weight is redistributed to
-# author_cites first, then journal_if (see scoring.composite_entries).
-# The LLM also still scores innovation + relevance (email tiers, Recent's
-# top-10% filter, and the seminal promotion) -- they're just not composite terms.
+# ---- Monthly top-50 picks: quality composite x robustness x bounded credibility
+# Each calendar month's Monthly-tab list is the top MONTHLY_TOP_N papers, ranked
+# by  composite = base_quality * R * M_cred  (scoring.composite_entries):
+#
+#   base_quality -- weighted avg of the LLM's three ANCHORED 0-3 rubric levels
+#     (rescaled 0-100), never continuous guesses: generality (does the
+#     mechanism travel across assets/strategies/regimes), contribution (novel
+#     mechanism vs. incremental, capped when `provisional`), testability
+#     (falsifiable/cheap to test with public data). Weights below.
+#
+#   R -- soft, abstract-derived robustness DISCOUNT (never a bonus; floor
+#     ROBUSTNESS_FLOOR). Multiplies by the matching factor in
+#     ROBUSTNESS_DISCOUNTS for each flag the LLM found EXPLICITLY stated in the
+#     abstract (isolated_backtest_only, no_costs_mentioned,
+#     extreme_claimed_sharpe, weak_stat_support). A null flag (abstract simply
+#     didn't say) is never penalised -- absence of information isn't evidence
+#     of a problem, only an affirmatively-detected one is.
+#
+#   M_cred -- bounded credibility multiplier in [1-CRED_BOUND, 1+CRED_BOUND],
+#     i.e. [0.85, 1.15]: prestige/traction (S2 citationCount, S2 author
+#     h-index, JOURNAL_IMPACT) can only NUDGE the ranking, never carry a paper
+#     that's weak on base_quality. Computed from whichever of the three inputs
+#     are available for that item; missing ones just drop from the average.
+#
+# relevance is a GATE, not a ranking weight (item needs relevance level >= 1 to
+# be composite-eligible at all) -- it, topic, and the robustness flags are also
+# kept on the item for the email/Recent/Archive/seminal-promotion paths.
 MONTHLY_TOP_N = 50
-MONTHLY_WEIGHTS = {
-    "velocity": 0.15,
-    "downloads": 0.15,
-    "paper_cites": 0.20,
-    "author_cites": 0.30,
-    "journal_if": 0.20,
+AXIS_WEIGHTS = {
+    "generality": 0.40,
+    "contribution": 0.35,
+    "testability": 0.25,
 }
+CRED_BOUND = 0.15                    # M_cred in [0.85, 1.15]
+ROBUSTNESS_DISCOUNTS = {             # applied only when the LLM flags it True
+    "isolated_backtest_only": 0.85,
+    "no_costs_mentioned": 0.90,
+    "extreme_claimed_sharpe": 0.85,
+    "weak_stat_support": 0.85,
+}
+ROBUSTNESS_FLOOR = 0.5               # R never discounts below this
 
 # Topic taxonomy for the portal's Archive tab (LLM assigns one per paper).
 # Mirrors the Classics canon topics, plus a catch-all.
@@ -357,9 +379,10 @@ BACKFILL_LLM_BATCHES = 8            # LLM scoring batches/run for the backfill
 S2_BATCH_SIZE = 500                 # Semantic Scholar /paper/batch hard cap
 
 # Promote a present-run paper into the Classics "modern" (emerging-seminal) list
-# when the LLM rates it this innovative AND its composite clears this bar.
-SEMINAL_INNOV = 90
-SEMINAL_MIN = 80
+# when the LLM rates its contribution at the top anchor (non-provisional) AND
+# its composite clears this bar.
+SEMINAL_CONTRIB_MIN = 3      # contribution level (of 0-3), must be non-provisional
+SEMINAL_COMPOSITE_MIN = 80
 
 # ---- Email -----------------------------------------------------------
 SUBJECT_PREFIX = "[Research Digest]"

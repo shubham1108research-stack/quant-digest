@@ -85,8 +85,9 @@ def refresh_present(con, fresh, monthly, log) -> None:
 def promote_seminal(fresh, log) -> None:
     entries = scoring.composite_entries(fresh, len(fresh) or 1)
     flagged = [e for e in entries
-               if e["innovation"] >= config.SEMINAL_INNOV
-               and e["composite"] >= config.SEMINAL_MIN]
+               if e["contribution"] >= config.SEMINAL_CONTRIB_MIN
+               and not e["contribution_provisional"]
+               and e["composite"] >= config.SEMINAL_COMPOSITE_MIN]
     if not flagged:
         return
     classics = _load(CLASSICS, {})
@@ -102,7 +103,7 @@ def promote_seminal(fresh, log) -> None:
         modern.append({
             "title": e["title"], "url": e["url"], "authors": e["authors"],
             "journal": e["journal"], "year": str(e.get("date", ""))[:4],
-            "cites": e.get("cites"), "innovation": e["innovation"],
+            "cites": e.get("cites"), "contribution": e["contribution"],
             "composite": e["composite"], "summary": e.get("summary", ""),
             "type": "Modern", "added": _this_month(),
         })
