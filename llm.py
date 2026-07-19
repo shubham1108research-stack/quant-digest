@@ -439,14 +439,16 @@ def _rank_openai(batch: list[dict], log) -> dict | None:
     return {}
 
 
-_PROVIDERS = [("gemini", _rank_gemini), ("groq", _rank_groq),
+# Gemini disabled for now (the key's service account is deleted -> 401 every
+# batch). _rank_gemini is kept above; re-add ("gemini", _rank_gemini) here with
+# a valid AIza key to re-enable.
+_PROVIDERS = [("groq", _rank_groq),
               ("mistral", _rank_mistral), ("openrouter", _rank_openrouter),
               ("openai", _rank_openai)]
 
 
 def have_key() -> bool:
-    return bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-                or os.environ.get("GROQ_API_KEY")
+    return bool(os.environ.get("GROQ_API_KEY")
                 or os.environ.get("MISTRAL_API_KEY")
                 or os.environ.get("OPENROUTER_API_KEY")
                 or os.environ.get("OPENAI_API_KEY"))
@@ -456,7 +458,6 @@ def _n_configured() -> int:
     """How many distinct providers have a key set -- consensus needs >= 2 to be
     worth the extra calls (a single vote is just a re-score of the triage)."""
     return sum(bool(k) for k in (
-        os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"),
         os.environ.get("GROQ_API_KEY"),
         os.environ.get("MISTRAL_API_KEY"),
         os.environ.get("OPENROUTER_API_KEY"),

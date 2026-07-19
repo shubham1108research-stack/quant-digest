@@ -76,12 +76,21 @@ def nber() -> list[dict]:
 # -------------------------------------------------------------- arXiv
 def arxiv() -> list[dict]:
     query = " OR ".join(f"cat:{c}" for c in config.ARXIV_CATS)
-    r = requests.get(config.ARXIV_API, params={
+    params = {
         "search_query": query,
         "sortBy": "submittedDate",
         "sortOrder": "descending",
         "max_results": config.ARXIV_MAX,
-    }, headers=UA, timeout=60)
+    }
+    # arXiv rate-limits by IP (429) and asks for spacing between requests; retry
+    # with linear backoff before giving up so a busy window doesn't drop the feed.
+    r = None
+    for attempt in range(config.ARXIV_MAX_RETRIES):
+        r = requests.get(config.ARXIV_API, params=params, headers=UA, timeout=60)
+        if r.status_code != 429:
+            break
+        wait = int(float(r.headers.get("retry-after", 0))) or 5 * (attempt + 1)
+        time.sleep(min(wait, 30))
     r.raise_for_status()
     feed = feedparser.parse(r.text)
     cut = _cutoff()

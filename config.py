@@ -23,6 +23,7 @@ ARXIV_CATS = ["q-fin.PR", "q-fin.PM", "q-fin.ST", "q-fin.GN", "q-fin.EC",
               "q-fin.RM", "q-fin.CP", "q-fin.TR", "q-fin.MF"]
 ARXIV_API = "http://export.arxiv.org/api/query"
 ARXIV_MAX = 200
+ARXIV_MAX_RETRIES = 4        # arXiv rate-limits (429) by IP; retry w/ backoff
 
 # ---- Journals via Crossref (tiered) ---------------------------------
 # Finance-only, keyed to NYU Stern Finance Dept's top-tier journals list

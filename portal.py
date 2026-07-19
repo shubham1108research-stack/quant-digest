@@ -46,7 +46,8 @@ def _export(con) -> list[dict]:
             "consensus_n": m.get("consensus_n"),
             "consensus_agree": m.get("consensus_agree"),
             "topic": m.get("topic", ""),
-            "summary": m.get("summary") or m.get("why", ""),
+            # practitioners aren't LLM-summarised -> fall back to their RSS blurb
+            "summary": m.get("summary") or m.get("why") or (m.get("abstract") or "")[:400],
         })
     out.sort(key=lambda x: (x["seen"] or "", x["date"] or ""), reverse=True)
     return out
@@ -185,19 +186,20 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
     </div>
     <div class="doublerule"></div>
     <div class="nav">
-      <button id="t-monthly" class="on">Monthly</button>
-      <button id="t-recent">Recent</button>
-      <button id="t-archive">Archive</button>
+      <button id="t-recent" class="on">Recent</button>
+      <button id="t-monthly">Monthly</button>
       <button id="t-classics">Classics</button>
+      <button id="t-practitioners">Practitioners</button>
+      <button id="t-archive">Archive</button>
       <span class="sp"></span>
       <select id="cat" title="Category" style="display:none">
         <option value="all">All categories</option>
         <option value="0">Academic · Tier 1</option>
         <option value="1">Academic · Tier 2</option>
         <option value="2">Preprints &amp; working papers</option>
-        <option value="3">Practitioner &amp; blogs</option>
       </select>
       <select id="topic" title="Topic" style="display:none"></select>
+      <select id="psrc" title="Source" style="display:none"></select>
       <select id="jsel" title="Journal" style="display:none"></select>
       <select id="month" style="display:none"></select>
       <input id="q" type="search" placeholder="Search…" autocomplete="off">
@@ -205,13 +207,15 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
   </div>
 </header>
 <main class="wrap"><div id="view"></div>
-  <footer>Ranking and summaries are LLM-generated (Gemini, with a Groq fallback) — skim,
-    don't trust blindly. Sources: NEP · NBER · arXiv · finance journals &amp; SSRN via
-    Crossref · PM-Research · OpenAlex · practitioner &amp; asset-manager research.
+  <footer>Rubric scores are an ensemble consensus of multiple LLMs (Groq · Mistral ·
+    OpenAI) — skim, don't trust blindly. Practitioner posts are listed as-is, not scored.
+    Sources: NEP · NBER · arXiv · finance journals &amp; SSRN via Crossref · PM-Research ·
+    OpenAlex · practitioner &amp; asset-manager research.
   </footer>
 </main>
 <script>
-let DATA=[], CLASSICS=[], MONTHLY={}, VIEW="monthly", MAXSEEN="";
+let DATA=[], CLASSICS=[], MONTHLY={}, VIEW="recent", MAXSEEN="";
+const isPrac=x=>String(x.section)==="4";   // practitioner blogs + house research
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtK=n=>n>=1000?(n/1000).toFixed(1)+'k':String(n);
@@ -266,16 +270,38 @@ function sinceDays(n){
 }
 function renderRecent(){
   const cs=sinceDays(7);
-  const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA).filter(x=>x.score!=null);
+  const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA).filter(x=>x.score!=null&&!isPrac(x));
   // absolute quality bar, no percentage cut: relevance at ceiling AND a
   // genuinely novel, non-provisional contribution -- the rest live in Archive
   const rows=pool.filter(x=>x.score===100&&x.contribution===3&&!x.contribution_provisional);
   $('view').innerHTML=`<div class="dateline">Last 7 days · genuinely strong <span class="n">· ${rows.length} of ${pool.length} — the rest are in Archive</span></div>`+grouped(rows);
 }
+const _psource=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'').trim()||'Other';
+function pracEntry(x){
+  const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
+  return `<div class="entry"><div class="rail"></div><div class="body">
+    <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
+    <div class="meta">${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}</div>
+    ${sm}</div></div>`;
+}
+function renderPractitioners(){
+  const q=$('q').value.toLowerCase().trim();
+  const src=$('psrc').value||'all';
+  const rows=DATA.filter(isPrac)
+    .filter(x=>src==='all'||_psource(x)===src)
+    .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.summary||'')).toLowerCase().includes(q))
+    .slice().sort(byDate);
+  const groups={}; rows.forEach(x=>{const s=_psource(x);(groups[s]=groups[s]||[]).push(x);});
+  let h=`<div class="dateline">Practitioner &amp; house research <span class="n">· ${rows.length} posts · by source · latest first</span></div>`;
+  if(!rows.length){$('view').innerHTML=h+'<div class="empty">No matches.</div>';return;}
+  Object.keys(groups).sort().forEach(s=>{const a=groups[s];
+    h+=`<div class="sechead t2">${esc(s)}<span class="cnt">${a.length}</span></div>`+a.map(pracEntry).join('');});
+  $('view').innerHTML=h;
+}
 function renderArchive(){
   const q=$('q').value.toLowerCase().trim();
   const t=$('topic').value||'all';
-  let rows=DATA.filter(x=>(t==='all'||((x.topic||'Other')===t)))
+  let rows=DATA.filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.topic||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
   const label=t==='all'?'All topics':t;
@@ -370,22 +396,25 @@ function renderClassics(){
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
-function render(){VIEW==="monthly"?renderMonthly():VIEW==="recent"?renderRecent():VIEW==="archive"?renderArchive():renderClassics();}
+function render(){VIEW==="monthly"?renderMonthly():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():renderClassics();}
 function setView(v){
-  VIEW=v;['monthly','recent','archive','classics'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  VIEW=v;['recent','monthly','classics','practitioners','archive'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
   $('month').style.display=v==="monthly"?'':'none';
   $('jsel').style.display=v==="classics"?'':'none';
   $('cat').style.display=v==="recent"?'':'none';
-  $('topic').style.display=v==="archive"?'':'none';render();
+  $('topic').style.display=v==="archive"?'':'none';
+  $('psrc').style.display=v==="practitioners"?'':'none';render();
 }
 $('t-recent').onclick=()=>setView('recent');
 $('t-monthly').onclick=()=>setView('monthly');
-$('t-archive').onclick=()=>setView('archive');
 $('t-classics').onclick=()=>setView('classics');
+$('t-practitioners').onclick=()=>setView('practitioners');
+$('t-archive').onclick=()=>setView('archive');
 $('q').addEventListener('input',render);
 $('month').addEventListener('change',render);
 $('cat').addEventListener('change',render);
 $('topic').addEventListener('change',render);
+$('psrc').addEventListener('change',render);
 $('jsel').addEventListener('change',render);
 const root=document.documentElement;
 $('toggle').onclick=()=>{
@@ -403,8 +432,11 @@ Promise.all([
   Object.keys(MONTHLY).filter(k=>/^\\d{4}-\\d{2}$/.test(k)).sort().reverse()
     .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
   $('topic').add(new Option('All topics','all'));
-  [...new Set(d.map(x=>x.topic||'Other'))].sort()
+  [...new Set(d.filter(x=>!isPrac(x)).map(x=>x.topic||'Other'))].sort()
     .forEach(t=>$('topic').add(new Option(t,t)));
+  $('psrc').add(new Option('All sources','all'));
+  [...new Set(d.filter(isPrac).map(_psource))].sort()
+    .forEach(s=>$('psrc').add(new Option(s,s)));
   const g=classicsGroups();
   if(Object.keys(g.topics).length){
     const og=document.createElement('optgroup');og.label='Seminal — by topic';

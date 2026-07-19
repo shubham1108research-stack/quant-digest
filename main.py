@@ -94,12 +94,21 @@ def main() -> None:
     except Exception as e:                           # noqa: BLE001
         log(f"[prominence] failed: {type(e).__name__}: {e}")
 
+    # Practitioner & house-research posts (section 4: blogs, AQR/Man/RA,
+    # Quantocracy) are NOT research papers -- skip the rubric scoring entirely
+    # (saves LLM quota) and surface them in the portal's Practitioners tab by
+    # source. Only sections 1/2/3/5 go through triage + consensus.
+    research = [it for it in fresh if str(it.get("section")) != "4"]
+    n_prac = len(fresh) - len(research)
+    if n_prac:
+        log(f"[llm] {n_prac} practitioner items skipped (not scored)")
+
     # optional LLM triage -- attaches rank_score/why; no-op without an API key
-    fresh = llm.rank(fresh, log)
+    llm.rank(research, log)               # mutates the shared item dicts in place
     # ensemble consensus on the promising shortlist (>=2 providers): multiple
     # models re-score together; disagreement is flagged provisional
     try:
-        fresh = llm.consensus(fresh, log)
+        llm.consensus(research, log)
     except Exception as e:                           # noqa: BLE001
         log(f"[consensus] failed: {type(e).__name__}: {e}")
 
