@@ -2,14 +2,27 @@ name: Research Digest
 
 on:
   schedule:
-    # GitHub's schedule trigger is best-effort and can silently skip a firing
-    # (confirmed 2026-07-19: the 05:00 IST run never fired). Two triggers a few
-    # minutes apart make a same-day miss unlikely; main.py's once-per-day guard
-    # (see store.kv "last_run_date") makes a double-fire a no-op, not a double run.
-    - cron: "30 23 * * *"  # 23:30 UTC = 05:00 IST, DAILY during history catch-up
-    - cron: "47 23 * * *"  # 23:47 UTC = 05:17 IST -- redundant backup trigger
+    # GitHub's schedule trigger is best-effort: it can be delayed by hours or
+    # dropped entirely (confirmed 2026-07-19: the 23:30 UTC tick fired ~8h late).
+    # So we give it FIVE chances across the early-IST-morning window -- GitHub is
+    # very likely to run at least one near the intended time. main.py's
+    # once-per-day guard (store.kv "last_run_date", schedule events only) makes
+    # every fire after the first a fast no-op, and the `concurrency` group below
+    # serialises them so a late/batched tick can't race the guard.
+    - cron: "30 23 * * *"  # 23:30 UTC = 05:00 IST  (primary)
+    - cron: "50 23 * * *"  # 23:50 UTC = 05:20 IST
+    - cron: "20 0 * * *"   # 00:20 UTC = 05:50 IST
+    - cron: "10 1 * * *"   # 01:10 UTC = 06:40 IST
+    - cron: "20 2 * * *"   # 02:20 UTC = 07:50 IST  (last-resort catch-up)
     #        (revert to a single "30 23 */3 * *" once backfill reaches 2010)
   workflow_dispatch: {}
+
+# Only one digest run at a time: a delayed/batched cron tick queues behind the
+# running one (never cancels it), then hits the once-per-day guard and exits --
+# so overlapping fires can't double-run or race on state.db.
+concurrency:
+  group: research-digest
+  cancel-in-progress: false
 
 permissions:
   contents: write            # to commit state.db and reports/ back
