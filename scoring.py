@@ -1,25 +1,40 @@
 """Monthly composite scoring, shared by the present-month recompute and the
 backward backfill.
 
-composite = base_quality * R * M_cred -- all deterministic, code-only (the LLM
-only ever supplies anchored 0-3 rubric levels + a short justification; see
-llm.py's module docstring for the "extract, never invent the rank" design):
+Design intent: the LLM is confined to purely SUBJECTIVE judgment (novelty,
+generality, usefulness) -- everything quantifiable from real data (citation
+count, citation velocity, author/venue track record) is computed here in code,
+never guessed by the LLM (see llm.py's module docstring for the "extract,
+never invent the rank" design). Concretely:
 
-  base_quality -- weighted avg of the LLM's anchored generality/contribution/
-                  testability levels (0-3, rescaled 0-100). contribution is
-                  capped at level 2 when the LLM marked it `provisional`
-                  (abstract alone can't rule out a direct antecedent).
-  R            -- soft robustness DISCOUNT (never a bonus; floored at
-                  config.ROBUSTNESS_FLOOR): multiplies in
-                  config.ROBUSTNESS_DISCOUNTS[flag] for each robustness flag the
-                  LLM found EXPLICITLY stated in the abstract. A null flag
-                  (abstract simply didn't say) is never penalised -- absence of
-                  information isn't evidence of a problem.
-  M_cred       -- bounded credibility multiplier in [1-CRED_BOUND, 1+CRED_BOUND]
-                  (i.e. [0.85, 1.15]) from whichever of {S2 paper citations, S2
-                  author h-index, JOURNAL_IMPACT} are available for that item --
-                  prestige/traction can only NUDGE the ranking, never carry a
-                  paper that's weak on base_quality.
+  composite = (QUALITY_WEIGHT*base_quality + CITES_WEIGHT*paper_cites_norm
+               + VELOCITY_WEIGHT*velocity_norm) * R * M_rep
+
+  base_quality (SUBJECTIVE, LLM)   -- weighted avg of the LLM's anchored
+    generality/contribution/testability levels (0-3, rescaled 0-100).
+    contribution is capped at level 2 when the LLM marked it `provisional`
+    (abstract alone can't rule out a direct antecedent).
+  paper_cites_norm (QUANTITATIVE)  -- this paper's own S2 citation count (log,
+    min-max in-pool) -- direct empirical evidence, a real weight not a nudge.
+  velocity_norm (QUANTITATIVE)     -- this paper's real citation velocity
+    (S2 citationCount / years since publication, log, min-max in-pool),
+    computed only when the paper is >=1 year old with a known citation count.
+  Any of the two quantitative terms that's unavailable for an item (too new)
+  is excluded and its weight redistributed onto base_quality -- a paper is
+  never penalised for simply being new.
+
+  R      -- soft robustness DISCOUNT (never a bonus; floored at
+            config.ROBUSTNESS_FLOOR): multiplies in
+            config.ROBUSTNESS_DISCOUNTS[flag] for each robustness flag the LLM
+            found EXPLICITLY stated in the abstract. A null flag (abstract
+            simply didn't say) is never penalised -- absence of information
+            isn't evidence of a problem.
+  M_rep  -- bounded REPUTATION multiplier in [1-CRED_BOUND, 1+CRED_BOUND] (i.e.
+            [0.85, 1.15]) from S2 author h-index + JOURNAL_IMPACT ONLY (never
+            this paper's own citations, which get a real weight above
+            instead): these are priors about the author's/venue's general
+            track record, not evidence about this specific paper, so they can
+            only nudge, never carry.
 
 Gate: an item needs relevance level >= 1 (not off-topic/no testable content) to
 be composite-eligible at all.
@@ -137,9 +152,11 @@ def _robustness_discount(it: dict) -> float:
 
 
 def composite_entries(items: list[dict], n: int) -> list[dict]:
-    """Compute composite = base_quality * R * M_cred over every LLM-scored,
-    on-topic item and return the top-n as clean monthly.json entries, highest
-    composite first."""
+    """Compute composite = (QUALITY_WEIGHT*base_quality + CITES_WEIGHT*cites_norm
+    + VELOCITY_WEIGHT*velocity_norm) * R * M_rep over every LLM-scored, on-topic
+    item and return the top-n as clean monthly.json entries, highest composite
+    first. Missing quantitative terms (paper too new) redistribute their weight
+    onto base_quality rather than penalising the item with a 0."""
     scored = [it for it in items
               if _level(it, "relevance") is not None
               and _level(it, "relevance") >= 1
@@ -147,20 +164,30 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
     if not scored:
         return []
 
-    # in-pool normalisations for the credibility inputs
+    # in-pool normalisations
     nc = _norm_counts([(it.get("cites") or 0) for it in scored], logscale=True)
     na = _norm_counts([(it.get("author_h") or 0) for it in scored], logscale=False)
     if_max = max(config.JOURNAL_IMPACT.values()) or 1.0
 
+    # real citation velocity (cites/age) -- only for items old enough to have one
+    ages = [_age_years(it) for it in scored]
+    vel_raw = [((it.get("cites") or 0) / a) if a is not None and a >= 1
+               and it.get("cites") is not None else None
+               for it, a in zip(scored, ages)]
+    have_vel = [v for v in vel_raw if v is not None]
+    vel_pool = iter(_norm_counts(have_vel, logscale=True)) if have_vel else iter([])
+    vnorm_list = [next(vel_pool) if v is not None else None for v in vel_raw]
+
     out = []
-    for it, cnorm, anorm in zip(scored, nc, na):
+    for it, cnorm, anorm, vnorm in zip(scored, nc, na, vnorm_list):
         label = _label(it)
         in_table = label in config.JOURNAL_IMPACT
         if_raw = config.JOURNAL_IMPACT.get(label, 0.0)
         age = _age_years(it)
         too_young = (age is None or age < 1) and not (it.get("cites") or 0)
+        cites_available = it.get("cites") is not None and not too_young
 
-        # --- base_quality: the three anchored rank axes (never prestige) ---
+        # --- base_quality: the three anchored rank axes (SUBJECTIVE, LLM) ---
         gen_l = _level(it, "generality") or 0
         contrib_node = it.get("contribution") or {}
         contrib_l = contrib_node.get("level") or 0
@@ -173,22 +200,38 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
                         + aw["contribution"] * (contrib_l / 3 * 100)
                         + aw["testability"] * (test_l / 3 * 100))
 
+        # --- quantitative blend: subjective quality + real citations + real
+        # velocity; a term unavailable for this item redistributes its weight
+        # back onto base_quality (never penalised for simply being new)
+        eff_w = {"quality": config.QUALITY_WEIGHT}
+        terms = {"quality": base_quality}
+        if cites_available:
+            eff_w["cites"] = config.CITES_WEIGHT
+            terms["cites"] = cnorm
+        else:
+            eff_w["quality"] += config.CITES_WEIGHT
+        if vnorm is not None:
+            eff_w["velocity"] = config.VELOCITY_WEIGHT
+            terms["velocity"] = vnorm
+        else:
+            eff_w["quality"] += config.VELOCITY_WEIGHT
+        blend = sum(eff_w[k] * terms[k] for k in eff_w)
+
         # --- R: soft robustness discount (abstract-derived, never a bonus) ---
         R = _robustness_discount(it)
 
-        # --- M_cred: bounded credibility multiplier -- prestige nudges only,
-        # never carries a paper weak on base_quality
-        cred_inputs = []
-        if it.get("cites") is not None and not too_young:
-            cred_inputs.append(cnorm)
+        # --- M_rep: bounded reputation multiplier -- author/venue track
+        # record can only nudge, never carry (this paper's own citations are
+        # already in the weighted blend above, not here)
+        rep_inputs = []
         if it.get("author_h") is not None:
-            cred_inputs.append(anorm)
+            rep_inputs.append(anorm)
         if in_table:
-            cred_inputs.append(100.0 * if_raw / if_max)
-        cred_avg = sum(cred_inputs) / len(cred_inputs) if cred_inputs else 50.0
-        M_cred = (1 - config.CRED_BOUND) + 2 * config.CRED_BOUND * (cred_avg / 100)
+            rep_inputs.append(100.0 * if_raw / if_max)
+        rep_avg = sum(rep_inputs) / len(rep_inputs) if rep_inputs else 50.0
+        M_rep = (1 - config.CRED_BOUND) + 2 * config.CRED_BOUND * (rep_avg / 100)
 
-        composite = base_quality * R * M_cred
+        composite = blend * R * M_rep
 
         out.append({
             "title": it.get("title", ""),
@@ -206,8 +249,10 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
             "contribution_provisional": provisional,
             "testability": test_l,
             "base_quality": round(base_quality, 1),
+            "cites_norm": round(cnorm, 1) if cites_available else None,
+            "velocity_norm": round(vnorm, 1) if vnorm is not None else None,
             "robustness": round(R, 3),
-            "credibility": round(M_cred, 3),
+            "reputation": round(M_rep, 3),
             "composite": round(composite, 1),
             "summary": it.get("summary", ""),
         })

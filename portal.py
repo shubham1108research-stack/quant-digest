@@ -276,9 +276,11 @@ function monthlyEntry(x,rank){
     _subBar('Generality',lvl(x.generality),(x.generality||0)/3*100),
     _subBar('Contribution',lvl(x.contribution)+prov,(x.contribution||0)/3*100),
     _subBar('Testability',lvl(x.testability),(x.testability||0)/3*100),
+    _subBar('Citations',x.cites_norm!=null?Math.round(x.cites_norm):'–',x.cites_norm||0),
+    _subBar('Velocity',x.velocity_norm!=null?Math.round(x.velocity_norm):'–',x.velocity_norm||0),
     _subBar('Robustness',x.robustness!=null?Math.round(x.robustness*100)+'%':'–',(x.robustness||0)*100),
-    _subBar('Credibility',x.credibility!=null?x.credibility.toFixed(2)+'×':'–',
-      x.credibility!=null?(x.credibility-0.85)/0.30*100:0),
+    _subBar('Reputation',x.reputation!=null?x.reputation.toFixed(2)+'×':'–',
+      x.reputation!=null?(x.reputation-0.85)/0.30*100:0),
   ].join('');
   const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}`;
   return `<div class="entry"><div class="rail" style="--score:${band}">

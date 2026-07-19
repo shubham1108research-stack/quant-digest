@@ -268,40 +268,69 @@ RANK_INTERESTS = (
     "incremental results and papers with no finance angle."
 )
 
-# ---- Monthly top-50 picks: quality composite x robustness x bounded credibility
-# Each calendar month's Monthly-tab list is the top MONTHLY_TOP_N papers, ranked
-# by  composite = base_quality * R * M_cred  (scoring.composite_entries):
+# ---- Monthly top-50 picks: (subjective quality + real citations + real velocity)
+#      x robustness x bounded reputation
+# Design intent: the LLM is confined to purely SUBJECTIVE judgment (is this
+# novel, does it generalize, is it useful/testable) -- everything quantifiable
+# from real data (citation count, citation velocity, author/venue track record)
+# is computed in code, never guessed by the LLM. Each calendar month's
+# Monthly-tab list is the top MONTHLY_TOP_N papers, ranked by:
 #
-#   base_quality -- weighted avg of the LLM's three ANCHORED 0-3 rubric levels
-#     (rescaled 0-100), never continuous guesses: generality (does the
+#   composite = (QUALITY_WEIGHT*base_quality + CITES_WEIGHT*paper_cites_norm
+#                + VELOCITY_WEIGHT*velocity_norm) * R * M_rep
+#
+# (scoring.composite_entries). Any term whose data is unavailable (a paper too
+# new to have citations/velocity yet) is excluded and its weight redistributed
+# onto base_quality -- never penalised with a 0 for simply being new.
+#
+#   base_quality (SUBJECTIVE, LLM) -- weighted avg of three ANCHORED 0-3 rubric
+#     levels (rescaled 0-100), never continuous guesses: generality (does the
 #     mechanism travel across assets/strategies/regimes), contribution (novel
 #     mechanism vs. incremental, capped when `provisional`), testability
-#     (falsifiable/cheap to test with public data). Weights below.
+#     (falsifiable/cheap to test with public data). Weights: AXIS_WEIGHTS.
 #
-#   R -- soft, abstract-derived robustness DISCOUNT (never a bonus; floor
-#     ROBUSTNESS_FLOOR). Multiplies by the matching factor in
-#     ROBUSTNESS_DISCOUNTS for each flag the LLM found EXPLICITLY stated in the
-#     abstract (isolated_backtest_only, no_costs_mentioned,
-#     extreme_claimed_sharpe, weak_stat_support). A null flag (abstract simply
-#     didn't say) is never penalised -- absence of information isn't evidence
-#     of a problem, only an affirmatively-detected one is.
+#   paper_cites_norm (QUANTITATIVE, code) -- THIS paper's own Semantic Scholar
+#     citation count (log, min-max in-pool). Direct empirical evidence the
+#     field engaged with and built on this specific paper -- not a reputation
+#     proxy, so it gets a real, meaningful weight, not a bounded nudge.
 #
-#   M_cred -- bounded credibility multiplier in [1-CRED_BOUND, 1+CRED_BOUND],
-#     i.e. [0.85, 1.15]: prestige/traction (S2 citationCount, S2 author
-#     h-index, JOURNAL_IMPACT) can only NUDGE the ranking, never carry a paper
-#     that's weak on base_quality. Computed from whichever of the three inputs
-#     are available for that item; missing ones just drop from the average.
+#   velocity_norm (QUANTITATIVE, code) -- THIS paper's real citation velocity
+#     (S2 citationCount / years since publication, log, min-max in-pool),
+#     computed only for papers >=1 year old with a known citation count. A
+#     fast-accumulating paper is weighted differently than a slow-burn paper
+#     with the same raw count -- purely arithmetic, no LLM estimate involved.
+#
+#   R (code, from LLM-EXTRACTED facts) -- soft, abstract-derived robustness
+#     DISCOUNT (never a bonus; floor ROBUSTNESS_FLOOR). Multiplies by the
+#     matching factor in ROBUSTNESS_DISCOUNTS for each flag the LLM found
+#     EXPLICITLY stated in the abstract (isolated_backtest_only,
+#     no_costs_mentioned, extreme_claimed_sharpe, weak_stat_support). A null
+#     flag (abstract simply didn't say) is never penalised -- absence of
+#     information isn't evidence of a problem, only an affirmatively-detected
+#     one is. (The LLM only extracts whether the text states these facts; the
+#     discount arithmetic itself is deterministic code, not an LLM opinion.)
+#
+#   M_rep (QUANTITATIVE, code) -- bounded REPUTATION multiplier in
+#     [1-CRED_BOUND, 1+CRED_BOUND], i.e. [0.85, 1.15], from S2 author h-index +
+#     JOURNAL_IMPACT ONLY (never this paper's own citations, which live in the
+#     weighted blend above instead): these are priors about the AUTHOR's/
+#     VENUE's general track record, not evidence about this specific paper, so
+#     they can only nudge, never carry. Computed from whichever of the two
+#     inputs are available; missing ones just drop from the average.
 #
 # relevance is a GATE, not a ranking weight (item needs relevance level >= 1 to
 # be composite-eligible at all) -- it, topic, and the robustness flags are also
 # kept on the item for the email/Recent/Archive/seminal-promotion paths.
 MONTHLY_TOP_N = 50
-AXIS_WEIGHTS = {
+AXIS_WEIGHTS = {                     # LLM subjective axes -> base_quality
     "generality": 0.40,
     "contribution": 0.35,
     "testability": 0.25,
 }
-CRED_BOUND = 0.15                    # M_cred in [0.85, 1.15]
+QUALITY_WEIGHT = 0.45                # weight on base_quality (subjective, LLM)
+CITES_WEIGHT = 0.30                  # weight on this paper's own citation count (real)
+VELOCITY_WEIGHT = 0.25               # weight on this paper's own citation velocity (real)
+CRED_BOUND = 0.15                    # M_rep (author h-index + journal IF) in [0.85, 1.15]
 ROBUSTNESS_DISCOUNTS = {             # applied only when the LLM flags it True
     "isolated_backtest_only": 0.85,
     "no_costs_mentioned": 0.90,
