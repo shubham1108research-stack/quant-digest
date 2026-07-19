@@ -2,8 +2,13 @@ name: Research Digest
 
 on:
   schedule:
+    # GitHub's schedule trigger is best-effort and can silently skip a firing
+    # (confirmed 2026-07-19: the 05:00 IST run never fired). Two triggers a few
+    # minutes apart make a same-day miss unlikely; main.py's once-per-day guard
+    # (see store.kv "last_run_date") makes a double-fire a no-op, not a double run.
     - cron: "30 23 * * *"  # 23:30 UTC = 05:00 IST, DAILY during history catch-up
-    #                        (revert to "30 23 */3 * *" once backfill reaches 2010)
+    - cron: "47 23 * * *"  # 23:47 UTC = 05:17 IST -- redundant backup trigger
+    #        (revert to a single "30 23 */3 * *" once backfill reaches 2010)
   workflow_dispatch: {}
 
 permissions:
@@ -29,6 +34,9 @@ jobs:
 
       - name: Run digest
         env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}  # lets main.py's once-per-day
+          #   guard skip a same-day redundant "schedule" firing; manual runs (event
+          #   "workflow_dispatch") always execute regardless of the guard.
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT: ${{ secrets.DIGEST_RECIPIENT }}

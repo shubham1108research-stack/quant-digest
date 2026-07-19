@@ -62,6 +62,19 @@ def collect(existing: set) -> list[dict]:
 
 def main() -> None:
     con = store.connect()
+
+    # GitHub's own `schedule` trigger is best-effort and can silently skip OR
+    # double-fire (we run two crons a few minutes apart as a redundancy against
+    # the former; this guards against the latter). Only a redundant *scheduled*
+    # firing is skipped -- a manual run (workflow_dispatch, or local/no env var)
+    # always executes, so testing/catch-up is never blocked.
+    today = dt.date.today().isoformat()
+    if (os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+            and store.kv_get(con, "last_run_date") == today):
+        print(f"[guard] already ran today ({today}) via schedule; skipping "
+              f"this redundant firing")
+        return
+
     existing = {r[0] for r in con.execute("SELECT uid FROM items")}
     raw = collect(existing)
     fresh = store.filter_new(con, raw)
@@ -106,6 +119,11 @@ def main() -> None:
         print(f"portal built -> docs/ ({n} items)")
     except Exception as e:                           # noqa: BLE001
         log(f"[portal] build failed: {type(e).__name__}: {e}")
+
+    # mark today done (collection/scoring/backfill/portal all attempted) so a
+    # redundant same-day `schedule` firing skips re-doing the LLM-costly work,
+    # even if the email send below fails
+    store.kv_set(con, "last_run_date", today)
 
     try:
         emailer.send(html_body)
