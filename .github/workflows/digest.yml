@@ -2,19 +2,17 @@ name: Research Digest
 
 on:
   schedule:
-    # GitHub's schedule trigger is best-effort: it can be delayed by hours or
-    # dropped entirely (confirmed 2026-07-19: the 23:30 UTC tick fired ~8h late).
-    # So we give it FIVE chances across the early-IST-morning window -- GitHub is
-    # very likely to run at least one near the intended time. main.py's
-    # once-per-day guard (store.kv "last_run_date", schedule events only) makes
-    # every fire after the first a fast no-op, and the `concurrency` group below
-    # serialises them so a late/batched tick can't race the guard.
-    - cron: "30 23 * * *"  # 23:30 UTC = 05:00 IST  (primary)
-    - cron: "50 23 * * *"  # 23:50 UTC = 05:20 IST
-    - cron: "20 0 * * *"   # 00:20 UTC = 05:50 IST
-    - cron: "10 1 * * *"   # 01:10 UTC = 06:40 IST
-    - cron: "20 2 * * *"   # 02:20 UTC = 07:50 IST  (last-resort catch-up)
-    #        (revert to a single "30 23 */3 * *" once backfill reaches 2010)
+    # PRIMARY trigger is an EXTERNAL cron (cron-job.org) that fires a
+    # workflow_dispatch daily at 23:30 UTC / 05:00 IST -- precise and reliable,
+    # unlike GitHub's own best-effort cron (which fired ~8h late on 2026-07-19).
+    # GitHub's cron is kept ONLY as a conditional backup: two attempts spaced 5h
+    # apart, a few hours AFTER the primary window. main.py's once-per-day guard
+    # (store.kv "last_run_date", schedule events only) makes each a fast no-op
+    # when the digest already ran that day -- so these do real work ONLY if the
+    # external primary missed. The `concurrency` group below serialises any
+    # overlap so a late/batched tick can't race the guard.
+    - cron: "30 4 * * *"   # 04:30 UTC = 10:00 IST -- backup 1 (5h after primary)
+    - cron: "30 9 * * *"   # 09:30 UTC = 15:00 IST -- backup 2 (another 5h later)
   workflow_dispatch: {}
 
 # Only one digest run at a time: a delayed/batched cron tick queues behind the
