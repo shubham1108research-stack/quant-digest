@@ -83,24 +83,48 @@ _SYSTEM = (
     "   2 = broad within one asset class; several use-cases.\n"
     "   1 = works but narrow; one specific setup.\n"
     "   0 = one-off; fragile to its exact sample/universe.\n\n"
-    "3) contribution -- novel idea OR credible extension.\n"
-    "   3 = a genuinely new mechanism/measurement approach with no obvious "
-    "antecedent, OR a sharp, non-obvious extension that changes a prior "
+    "3) contribution -- how novel the paper's HEADLINE CONTRIBUTION is. Novelty "
+    "comes in THREE distinct kinds, and a paper needs only ONE to be genuinely "
+    "novel -- always credit the STRONGEST kind; a familiar element on the other "
+    "axes never caps it:\n"
+    "     THEORY -- a new economic mechanism/explanation (e.g. WHY a factor is "
+    "priced: a new risk story, a new ICAPM state variable).\n"
+    "     METHOD -- a new estimator/test/model (e.g. a new way to estimate "
+    "time-varying factor loadings, a new multiple-testing correction).\n"
+    "     EMPIRICAL -- a new fact/factor/signal/regularity (e.g. a NEW priced "
+    "factor that adds explanatory power beyond the existing set).\n"
+    "   Report novelty_type = which kind carries the contribution ('theory' | "
+    "'method' | 'empirical', or 'none' if nothing is new), and score the level "
+    "of that strongest kind:\n"
+    "   3 = a genuinely new theory, method, OR empirical finding with no "
+    "obvious antecedent, OR a sharp, non-obvious extension that changes a prior "
     "result's sign/magnitude/scope.\n"
     "   2 = meaningful extension of recent work.\n"
-    "   1 = incremental tweak on a well-worn method.\n"
-    "   0 = re-derivation of a known result under new notation, or a survey.\n"
-    "   CRITICAL -- reused framework, new label is NOT a 3, in ANY topic/domain "
-    "(this is a general rule, not specific to any one research area): if the "
-    "paper's core method is an already-established framework or measurement "
-    "technique (see the reference list below, or any other well-known "
-    "framework/technique you recognize) applied to a new dataset, asset class, "
-    "sample, or label, that is an APPLICATION, not a new mechanism -- cap it at "
-    "1-2 regardless of how the abstract frames it ('novel dataset', 'first "
-    "study of X', 'introduces a new index for Y' when Y is just a new "
-    "underlying for an old construction method, etc.). Judge the novelty of "
-    "the MECHANISM itself, never the novelty of the application/dataset/label "
-    "alone.\n"
+    "   1 = incremental tweak on a well-worn approach.\n"
+    "   0 = re-derivation of a known result under new notation, or a survey "
+    "(novelty_type='none').\n"
+    "   Extending an established model (e.g. adding a factor to Fama-French) CAN "
+    "be a 3 -- if the ADDED factor (empirical), the estimator (method), or the "
+    "explanation (theory) is itself genuinely new. The FF regression it's tested "
+    "in is the yardstick, not the contribution.\n"
+    "   CRITICAL -- judge ONLY the paper's HEADLINE CONTRIBUTION (the new thing "
+    "it claims to add), in ANY topic/domain. If that claimed contribution is "
+    "ITSELF an already-established framework/measurement technique (see the "
+    "reference list below, or any other well-known one) merely re-pointed at a "
+    "new dataset/asset/sample/label, that is an APPLICATION, not a new mechanism "
+    "-- cap it at 1-2 regardless of framing ('novel dataset', 'first study of "
+    "X', 'introduces a new index for Y' when Y is just a new underlying for an "
+    "old construction method, e.g. a VIX-style index built for a new asset).\n"
+    "   BUT -- using an established framework as a TEST, BENCHMARK, or "
+    "ESTIMATION TOOL is normal, rigorous practice and does NOT lower "
+    "contribution. A paper proposing a NEW factor/signal/model that evaluates "
+    "it with Fama-French 3/5-factor, Fama-MacBeth regressions, GMM, "
+    "Newey-West, a GARCH baseline, etc. is using those as the yardstick, not as "
+    "its contribution -- score the novelty of the NEW thing being tested. "
+    "Beating or surviving an established benchmark (e.g. a new factor with alpha "
+    "after Fama-French) is evidence FOR a real contribution, never against it. "
+    "Only the MECHANISM's novelty matters, never the application/dataset/label "
+    "alone -- and never penalise a paper for the standard tests it runs.\n"
     "   Set provisional=true whenever the abstract alone doesn't let you rule "
     "out a direct antecedent (you have no citation graph here) -- default to "
     "true unless the abstract itself makes the novelty claim explicit and "
@@ -115,15 +139,27 @@ _SYSTEM = (
     "range honestly. Judge only from the title, authors, source, and abstract "
     "given -- if a level can't be judged, use the conservative (lower) level "
     "rather than guessing high.\n\n"
-    "antecedent_match -- classify this paper's CORE method against the known "
-    "framework list above (and any other well-established framework/technique "
-    "you recognise), independently of the contribution level:\n"
-    "   'matches_known' = the core method IS an established framework/technique "
-    "applied to a new dataset/asset/label/market (an application, not a new "
-    "mechanism).\n"
-    "   'no_antecedent' = a genuinely new mechanism or measurement approach with "
-    "no identifiable established antecedent.\n"
+    "antecedent_match -- classify ONLY the paper's HEADLINE CONTRIBUTION (the "
+    "new thing it claims to add) against the known framework list above (and "
+    "any other well-established framework/technique you recognise), "
+    "independently of the contribution level:\n"
+    "   'matches_known' = the claimed contribution ITSELF is an established "
+    "framework/measurement technique merely re-pointed at a new dataset/asset/"
+    "label/market (mechanism is old, only the application is new -- e.g. a "
+    "VIX-style index built for a new underlying and called novel).\n"
+    "   'no_antecedent' = a genuinely new mechanism, factor, signal, or "
+    "measurement approach with no identifiable established antecedent.\n"
     "   'ambiguous' = partial resemblance, or the abstract doesn't let you tell.\n"
+    "   Judge this against the contribution's OWN kind (novelty_type): for an "
+    "EMPIRICAL contribution, 'matches_known' means the factor/signal ITSELF is a "
+    "known one relabeled (NOT that it was tested with a known model); for "
+    "METHOD, that the estimator/test is a known one; for THEORY, that the "
+    "mechanism is a restatement.\n"
+    "   DO NOT mark 'matches_known' just because the paper USES an established "
+    "framework to TEST/BENCHMARK/ESTIMATE (Fama-French, Fama-MacBeth, GMM, "
+    "Newey-West, GARCH baselines, etc.) -- that is standard practice, orthogonal "
+    "to novelty. Judge only whether the CONTRIBUTION is a repackaged old one, "
+    "not which tools it is tested with.\n"
     "   When unsure, use 'ambiguous' (the neutral, non-committal verdict).\n\n"
     "Also flag these ONLY when the abstract EXPLICITLY states them -- leave "
     "null (do not guess) when it simply doesn't say; the null case is not a "
@@ -144,6 +180,7 @@ _SYSTEM = (
     '"relevance": {"level": 0-3, "why": "..."}, '
     '"generality": {"level": 0-3, "why": "..."}, '
     '"contribution": {"level": 0-3, "why": "...", "provisional": bool}, '
+    '"novelty_type": "theory|method|empirical|none", '
     '"testability": {"level": 0-3, "why": "..."}, '
     '"antecedent_match": "matches_known|ambiguous|no_antecedent", '
     '"isolated_backtest_only": bool_or_null, "no_costs_mentioned": bool_or_null, '
@@ -222,10 +259,14 @@ def _parse(text: str) -> dict[int, dict]:
             match = str(o.get("antecedent_match") or "").strip().lower()
             if match not in config.NOVELTY_LR:
                 match = "ambiguous"                    # neutral default
+            ntype = str(o.get("novelty_type") or "").strip().lower()
+            if ntype not in ("theory", "method", "empirical", "none"):
+                ntype = "none"
             out[i] = {
                 "relevance": rel,
                 "generality": _axis(o, "generality", fallback_level=rel["level"]),
                 "contribution": _axis(o, "contribution", fallback_level=rel["level"]),
+                "novelty_type": ntype,
                 "testability": _axis(o, "testability", fallback_level=rel["level"]),
                 "antecedent_match": match,
                 "isolated_backtest_only": _bool_or_null(o.get("isolated_backtest_only")),
@@ -392,6 +433,7 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
                 it["relevance"] = s["relevance"]
                 it["generality"] = s["generality"]
                 it["contribution"] = s["contribution"]
+                it["novelty_type"] = s["novelty_type"]
                 it["testability"] = s["testability"]
                 it["antecedent_match"] = s["antecedent_match"]
                 it["isolated_backtest_only"] = s["isolated_backtest_only"]

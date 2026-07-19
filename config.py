@@ -438,7 +438,11 @@ NOVELTY_LR = {                       # likelihood ratio by LLM antecedent verdic
     "ambiguous": 1.0,                # some resemblance, can't tell -> uninformative
     "no_antecedent": 6.0,            # new mechanism, no identifiable antecedent -> for novelty
 }
-NOVELTY_CONFIDENCE = 0.40            # posterior >= this => contribution counts as non-provisional
+NOVELTY_CONFIDENCE = 0.28            # posterior >= this => contribution counts as non-provisional
+#   Tuned so a confident no_antecedent verdict clears in every genuine quant
+#   topic (incl. high-volume Financial Econometrics ~0.28 / Fund Performance
+#   ~0.29), while non-core Macro (~0.06) and Other (~0.01) still require external
+#   corroboration, and ambiguous/matches_known verdicts never clear anywhere.
 
 # ---- Backward monthly backfill (progressive history) ----------------
 # Every run refreshes the current month, then processes ONE earlier month,
