@@ -165,10 +165,21 @@ function entry(x,rank){
   const sc=(x.score!=null)?`<div class="rail" style="--score:${bandColor(x.score)}">${rk}<div class="score">${x.score}</div><div class="ratebar"></div><div class="cap">rating</div></div>`:`<div class="rail">${rk}</div>`;
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
   const who=x.authors?' · '+esc(x.authors):'';
+  const lvl=v=>v==null?'–':v+'/3';
+  const prov=x.contribution_provisional?' <span style="opacity:.55">(prov.)</span>':'';
+  const ctype=(x.novelty_type&&x.novelty_type!=='none')?' ('+esc(x.novelty_type)+')':'';
+  const hasScores=(x.generality!=null||x.contribution!=null||x.testability!=null||x.novelty_posterior!=null);
+  const subs=hasScores?'<div class="subs">'+[
+    _subBar('Relevance',lvl(x.relevance),(x.relevance||0)/3*100),
+    _subBar('Generality',lvl(x.generality),(x.generality||0)/3*100),
+    _subBar('Contribution'+ctype,lvl(x.contribution)+prov,(x.contribution||0)/3*100),
+    _subBar('Testability',lvl(x.testability),(x.testability||0)/3*100),
+    _subBar('Novelty vs history',x.novelty_posterior!=null?Math.round(x.novelty_posterior*100)+'%':'–',(x.novelty_posterior||0)*100),
+  ].join('')+'</div>':'';
   return `<div class="entry">${sc}<div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
     <div class="meta"><span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}</div>
-    ${sm}</div></div>`;
+    ${sm}${subs}</div></div>`;
 }
 function grouped(rows){
   const q=$('q').value.toLowerCase().trim();
