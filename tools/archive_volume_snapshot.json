@@ -1,0 +1,19 @@
+{
+  "_comment": "Per-topic count of scored archive items, used as the Beta-Binomial denominator (a proxy for total papers per topic) when regenerating config.NOVELTY_PRIOR. Captured 2026-07-19 from a full ~1315-item run BEFORE the Day-0 archive clear -- the priors must NOT be recomputed against the emptied Day-0 archive. Refresh this snapshot from a future full archive when the corpus has grown materially, then re-run tools/gen_novelty_prior.py.",
+  "captured": "2026-07-19",
+  "n_scored": 1315,
+  "topic_volume": {
+    "Asset Pricing & Factor Models": 82,
+    "Portfolio Construction & Optimization": 77,
+    "Market Efficiency & Behavioral": 43,
+    "Derivatives & Option Pricing": 47,
+    "Volatility Modeling": 32,
+    "Fixed Income & Credit": 43,
+    "Market Microstructure & Liquidity": 66,
+    "Fund Performance & Institutional": 102,
+    "Machine Learning in Finance": 45,
+    "Financial Econometrics": 93,
+    "Macro & Monetary": 73,
+    "Other": 612
+  }
+}

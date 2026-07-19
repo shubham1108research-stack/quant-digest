@@ -397,6 +397,49 @@ JOURNAL_IMPACT = {
     "Practical Applications": 0.2,
 }
 
+# ---- Bayesian novelty prior (cross-examine new papers against history) ----
+# The contribution.provisional flag -- which decides whether a contribution==3
+# is allowed to count at full weight (scoring.composite_entries caps provisional
+# ones at 2, portal Recent requires non-provisional, monthly.promote_seminal
+# requires non-provisional) -- is set by a calibrated Bayesian posterior instead
+# of an LLM guess (llm.rank):
+#
+#   prior(topic)  = P(a paper in this topic is seminal-caliber), a Beta-Binomial
+#                   empirical-Bayes estimate (A0 + canon_count) / (A0 + B0 +
+#                   archive_volume) from the seminal canon (canon.CANON) vs. our
+#                   scored-archive volume. NUMBERS BELOW ARE PRECOMPUTED by
+#                   tools/gen_novelty_prior.py -- regenerate (do not compute
+#                   live: the Day-0/cleared archive would divide by zero).
+#                   Caveat: archive_volume is a proxy for total papers in a
+#                   topic, so priors are directionally right, not perfectly
+#                   calibrated.
+#   LR(match)     = likelihood ratio from the LLM's independent 3-way antecedent
+#                   classification (NOT reused from contribution.level -- that
+#                   would be circular).
+#   posterior     = prior_odds * LR / (1 + prior_odds * LR); the paper is
+#                   non-provisional only when posterior >= NOVELTY_CONFIDENCE.
+NOVELTY_PRIOR_FALLBACK = 0.0476     # base rate A0/(A0+B0) for an unlisted topic
+NOVELTY_PRIOR = {
+    "Asset Pricing & Factor Models": 0.2136,        # canon=21, archive_vol=82
+    "Portfolio Construction & Optimization": 0.102,  # canon=9, archive_vol=77
+    "Market Efficiency & Behavioral": 0.1562,       # canon=9, archive_vol=43
+    "Derivatives & Option Pricing": 0.1471,         # canon=9, archive_vol=47
+    "Volatility Modeling": 0.1698,                  # canon=8, archive_vol=32
+    "Fixed Income & Credit": 0.125,                 # canon=7, archive_vol=43
+    "Market Microstructure & Liquidity": 0.1034,    # canon=8, archive_vol=66
+    "Fund Performance & Institutional": 0.065,      # canon=7, archive_vol=102
+    "Machine Learning in Finance": 0.197,           # canon=12, archive_vol=45
+    "Financial Econometrics": 0.0614,               # canon=6, archive_vol=93
+    "Macro & Monetary": 0.0106,                     # canon=0, archive_vol=73
+    "Other": 0.0016,                                # canon=0, archive_vol=612
+}
+NOVELTY_LR = {                       # likelihood ratio by LLM antecedent verdict
+    "matches_known": 0.15,           # core method is a cataloged framework -> against novelty
+    "ambiguous": 1.0,                # some resemblance, can't tell -> uninformative
+    "no_antecedent": 6.0,            # new mechanism, no identifiable antecedent -> for novelty
+}
+NOVELTY_CONFIDENCE = 0.40            # posterior >= this => contribution counts as non-provisional
+
 # ---- Backward monthly backfill (progressive history) ----------------
 # Every run refreshes the current month, then processes ONE earlier month,
 # walking back to BACKFILL_FLOOR. BACKFILL_LLM_BATCHES caps LLM scoring calls

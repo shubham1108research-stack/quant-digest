@@ -38,6 +38,7 @@ def _export(con) -> list[dict]:
             "score": m.get("rank_score"),
             "contribution": (m.get("contribution") or {}).get("level"),
             "contribution_provisional": (m.get("contribution") or {}).get("provisional", True),
+            "novelty_posterior": m.get("novelty_posterior"),
             "topic": m.get("topic", ""),
             "summary": m.get("summary") or m.get("why", ""),
         })
@@ -275,6 +276,7 @@ function monthlyEntry(x,rank){
   const subs=[
     _subBar('Generality',lvl(x.generality),(x.generality||0)/3*100),
     _subBar('Contribution',lvl(x.contribution)+prov,(x.contribution||0)/3*100),
+    _subBar('Novelty vs history',x.novelty_posterior!=null?Math.round(x.novelty_posterior*100)+'%':'–',(x.novelty_posterior||0)*100),
     _subBar('Testability',lvl(x.testability),(x.testability||0)/3*100),
     _subBar('Citations',x.cites_norm!=null?Math.round(x.cites_norm):'–',x.cites_norm||0),
     _subBar('Velocity',x.velocity_norm!=null?Math.round(x.velocity_norm):'–',x.velocity_norm||0),

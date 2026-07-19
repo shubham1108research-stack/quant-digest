@@ -115,6 +115,16 @@ _SYSTEM = (
     "range honestly. Judge only from the title, authors, source, and abstract "
     "given -- if a level can't be judged, use the conservative (lower) level "
     "rather than guessing high.\n\n"
+    "antecedent_match -- classify this paper's CORE method against the known "
+    "framework list above (and any other well-established framework/technique "
+    "you recognise), independently of the contribution level:\n"
+    "   'matches_known' = the core method IS an established framework/technique "
+    "applied to a new dataset/asset/label/market (an application, not a new "
+    "mechanism).\n"
+    "   'no_antecedent' = a genuinely new mechanism or measurement approach with "
+    "no identifiable established antecedent.\n"
+    "   'ambiguous' = partial resemblance, or the abstract doesn't let you tell.\n"
+    "   When unsure, use 'ambiguous' (the neutral, non-committal verdict).\n\n"
     "Also flag these ONLY when the abstract EXPLICITLY states them -- leave "
     "null (do not guess) when it simply doesn't say; the null case is not a "
     "penalty, it just means unknown:\n"
@@ -135,6 +145,7 @@ _SYSTEM = (
     '"generality": {"level": 0-3, "why": "..."}, '
     '"contribution": {"level": 0-3, "why": "...", "provisional": bool}, '
     '"testability": {"level": 0-3, "why": "..."}, '
+    '"antecedent_match": "matches_known|ambiguous|no_antecedent", '
     '"isolated_backtest_only": bool_or_null, "no_costs_mentioned": bool_or_null, '
     '"extreme_claimed_sharpe": bool_or_null, "weak_stat_support": bool_or_null, '
     '"topic": "<topic>", "summary": "<one sentence>"}]'
@@ -208,11 +219,15 @@ def _parse(text: str) -> dict[int, dict]:
             topic = str(o.get("topic") or "").strip()
             if topic not in config.TOPICS:
                 topic = "Other"
+            match = str(o.get("antecedent_match") or "").strip().lower()
+            if match not in config.NOVELTY_LR:
+                match = "ambiguous"                    # neutral default
             out[i] = {
                 "relevance": rel,
                 "generality": _axis(o, "generality", fallback_level=rel["level"]),
                 "contribution": _axis(o, "contribution", fallback_level=rel["level"]),
                 "testability": _axis(o, "testability", fallback_level=rel["level"]),
+                "antecedent_match": match,
                 "isolated_backtest_only": _bool_or_null(o.get("isolated_backtest_only")),
                 "no_costs_mentioned": _bool_or_null(o.get("no_costs_mentioned")),
                 "extreme_claimed_sharpe": _bool_or_null(o.get("extreme_claimed_sharpe")),
@@ -223,6 +238,18 @@ def _parse(text: str) -> dict[int, dict]:
         except Exception:                          # noqa: BLE001
             continue
     return out
+
+
+def novelty_posterior(topic: str, antecedent_match: str) -> float:
+    """Bayesian posterior P(seminal-caliber | topic, antecedent verdict):
+    combine the topic prior (how often work in this area proves seminal, from
+    the canon) with the LLM's independent antecedent classification as a
+    likelihood ratio. Pure arithmetic -- the LLM never sees this number."""
+    p = config.NOVELTY_PRIOR.get(topic, config.NOVELTY_PRIOR_FALLBACK)
+    p = min(max(p, 1e-6), 1 - 1e-6)                # keep odds finite
+    lr = config.NOVELTY_LR.get(antecedent_match, 1.0)
+    post_odds = (p / (1 - p)) * lr
+    return post_odds / (1 + post_odds)
 
 
 # ------------------------------------------------------ providers
@@ -366,6 +393,7 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
                 it["generality"] = s["generality"]
                 it["contribution"] = s["contribution"]
                 it["testability"] = s["testability"]
+                it["antecedent_match"] = s["antecedent_match"]
                 it["isolated_backtest_only"] = s["isolated_backtest_only"]
                 it["no_costs_mentioned"] = s["no_costs_mentioned"]
                 it["extreme_claimed_sharpe"] = s["extreme_claimed_sharpe"]
@@ -373,6 +401,13 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
                 it["topic"] = s["topic"]
                 it["summary"] = s["summary"]
                 it["rank_score"] = round(s["relevance"]["level"] / 3 * 100)
+                # Bayesian novelty: overwrite the LLM's guessed `provisional`
+                # with a history-grounded posterior (topic prior x antecedent
+                # likelihood). A contribution counts as non-provisional only
+                # when the posterior clears NOVELTY_CONFIDENCE.
+                post = novelty_posterior(s["topic"], s["antecedent_match"])
+                it["novelty_posterior"] = round(post, 3)
+                it["contribution"]["provisional"] = post < config.NOVELTY_CONFIDENCE
                 ranked += 1
         time.sleep(config.LLM_BATCH_PAUSE)         # stay under free-tier RPM
     log(f"[llm] ranked {ranked}/{len(items)} via {', '.join(sorted(used)) or 'none'}")
