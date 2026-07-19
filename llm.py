@@ -331,13 +331,11 @@ def _rank_gemini(batch: list[dict], log) -> dict | None:
     return {}
 
 
-def _rank_groq(batch: list[dict], log) -> dict | None:
-    key = os.environ.get("GROQ_API_KEY")
-    if not key:
-        return None
+def _groq_call(sub: list[dict], key: str) -> dict:
+    """One Groq request for a small sub-batch -> {localidx: parsed}."""
     body = {"model": config.GROQ_MODEL, "temperature": 0,
             "messages": [{"role": "system", "content": _SYSTEM},
-                         {"role": "user", "content": _prompt(batch)}]}
+                         {"role": "user", "content": _prompt(sub)}]}
     for attempt in range(config.LLM_MAX_RETRIES + 2):
         r = requests.post(_GROQ_URL, headers={"Authorization": f"Bearer {key}"},
                           json=body, timeout=90)
@@ -349,6 +347,27 @@ def _rank_groq(batch: list[dict], log) -> dict | None:
         return _parse(r.json()["choices"][0]["message"]["content"])
     r.raise_for_status()
     return {}
+
+
+def _rank_groq(batch: list[dict], log) -> dict | None:
+    # Groq's free tier has a low per-request token cap (413 on ~25 items) and a
+    # tight per-minute budget, so we sub-chunk to config.GROQ_BATCH and merge.
+    # A chunk that fails (429/413) is skipped, not fatal -- Groq contributes
+    # whatever chunks succeed, and consensus tolerates a partial vote.
+    key = os.environ.get("GROQ_API_KEY")
+    if not key:
+        return None
+    out: dict[int, dict] = {}
+    chunk = max(1, config.GROQ_BATCH)
+    for start in range(0, len(batch), chunk):
+        try:
+            for k, v in _groq_call(batch[start:start + chunk], key).items():
+                out[start + k] = v
+        except Exception as e:                     # noqa: BLE001
+            log(f"[groq] chunk {start // chunk} skipped ({_err(e)})")
+        if start + chunk < len(batch):
+            time.sleep(2)                          # ease the per-minute budget
+    return out or None
 
 
 def _rank_mistral(batch: list[dict], log) -> dict | None:

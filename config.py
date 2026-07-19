@@ -228,7 +228,10 @@ SEMANTIC_SCHOLAR_QUERIES = [
 # degrades cleanly to the plain no-LLM feed. Ranks deduped items 0-100 for a
 # "Top picks" section. Get a free key at https://aistudio.google.com/apikey.
 LLM_MODEL = "gemini-flash-latest"   # Gemini (primary); alias -> current Flash
-GROQ_MODEL = "llama-3.3-70b-versatile"   # Groq (fallback if GROQ_API_KEY set)
+GROQ_MODEL = "llama-3.1-8b-instant"      # Groq: fast + high free-tier throughput
+GROQ_BATCH = 8                           # Groq's free per-request token cap is low
+                                         # (413 on ~25 items) -- its provider fn
+                                         # sub-chunks the batch to this size
 MISTRAL_MODEL = "mistral-small-latest"   # Mistral (fallback if MISTRAL_API_KEY set)
 # OpenRouter (last fallback if OPENROUTER_API_KEY set): one key fronts many
 # models incl. free tiers. Swap for any OpenRouter model id; ":free" variants
