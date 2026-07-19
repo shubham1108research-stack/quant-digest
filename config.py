@@ -24,6 +24,9 @@ ARXIV_CATS = ["q-fin.PR", "q-fin.PM", "q-fin.ST", "q-fin.GN", "q-fin.EC",
 ARXIV_API = "http://export.arxiv.org/api/query"
 ARXIV_MAX = 200
 ARXIV_MAX_RETRIES = 4        # arXiv rate-limits (429) by IP; retry w/ backoff
+# Per-category RSS fallback used when the bulk API 429s -- lighter endpoint,
+# far less throttled (empties on weekends; arXiv doesn't announce Sat/Sun).
+ARXIV_RSS = "https://rss.arxiv.org/rss/{cat}"
 
 # ---- Journals via Crossref (tiered) ---------------------------------
 # Finance-only, keyed to NYU Stern Finance Dept's top-tier journals list

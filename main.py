@@ -38,7 +38,7 @@ def collect(existing: set) -> list[dict]:
     steps = [
         ("NEP", sources.nep),
         ("NBER", sources.nber),
-        ("arXiv", sources.arxiv),
+        ("arXiv", lambda: sources.arxiv(log)),
         ("Journals/Crossref", lambda: sources.journals(log)),
         ("PMR journals", lambda: sources.pmr(log, existing)),
         ("SSRN/Crossref", lambda: sources.ssrn_crossref(log)),

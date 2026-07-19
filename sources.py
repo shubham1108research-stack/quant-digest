@@ -74,7 +74,7 @@ def nber() -> list[dict]:
 
 
 # -------------------------------------------------------------- arXiv
-def arxiv() -> list[dict]:
+def _arxiv_api() -> list[dict]:
     query = " OR ".join(f"cat:{c}" for c in config.ARXIV_CATS)
     params = {
         "search_query": query,
@@ -111,6 +111,59 @@ def arxiv() -> list[dict]:
             "arxiv_id": aid,
         })
     return out
+
+
+def _arxiv_rss(log) -> list[dict]:
+    """Fallback: per-category arXiv RSS feeds -- a lighter, far-less-throttled
+    endpoint than the bulk API. Each feed lists the latest announcement day's
+    new papers (empty on weekends; arXiv doesn't announce Sat/Sun). Best-effort
+    per category; dedup across categories is left to store.filter_new."""
+    out, seen = [], set()
+    cut = _cutoff()
+    for cat in config.ARXIV_CATS:
+        try:
+            r = requests.get(config.ARXIV_RSS.format(cat=cat), headers=UA, timeout=30)
+            r.raise_for_status()
+            feed = feedparser.parse(r.text)
+        except Exception as e:                       # noqa: BLE001
+            log(f"[arxiv] RSS '{cat}' failed: {type(e).__name__}")
+            continue
+        for e in feed.entries:
+            link = e.get("link", "") or e.get("id", "")
+            aid = link.rsplit("/abs/", 1)[-1]
+            if aid in seen:
+                continue
+            seen.add(aid)
+            d = _entry_date(e)
+            if d and d < cut:
+                continue
+            desc = e.get("summary", "") or e.get("description", "")
+            # new-format description embeds "... Abstract: <text>" -- keep the abstract
+            parts = re.split(r"Abstract:\s*", desc, maxsplit=1, flags=re.I)
+            abstract = _clean(parts[-1] if parts else desc)
+            title = re.sub(r"\s*\(arXiv:[^)]*\)\s*$", "", e.get("title", ""))
+            out.append({
+                "title": _clean(title),
+                "authors": _clean(e.get("author", "")),
+                "abstract": abstract,
+                "url": link,
+                "date": d.date().isoformat() if d else "",
+                "source": "arxiv",
+                "section": 2,
+                "arxiv_id": aid,
+            })
+        time.sleep(1)                                # polite spacing between feeds
+    return out
+
+
+def arxiv(log=print) -> list[dict]:
+    """Bulk API first; on any failure (typically a 429 after retries) fall back
+    to the per-category RSS feeds so a throttled window doesn't drop arXiv."""
+    try:
+        return _arxiv_api()
+    except Exception as e:                           # noqa: BLE001
+        log(f"[arxiv] bulk API failed ({type(e).__name__}); per-category RSS fallback")
+        return _arxiv_rss(log)
 
 
 # ----------------------------------------------------------- Crossref
