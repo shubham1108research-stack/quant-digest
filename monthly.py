@@ -144,7 +144,11 @@ def backfill_step(con, monthly, log) -> None:
     scoring.llm_score(candidates, log, max_batches=config.BACKFILL_LLM_BATCHES)
     monthly[target] = scoring.composite_entries(candidates, config.MONTHLY_TOP_N)
 
-    remaining = [c for c in candidates if c.get("innovation") is None]
+    # junk records (editorial front matter, etc.) are deliberately NEVER scored
+    # (scoring.llm_score skips them to save LLM quota) -- exclude them here too,
+    # or the month would never be detected as complete.
+    remaining = [c for c in candidates
+                 if c.get("relevance") is None and not scoring.is_junk(c.get("title", ""))]
     if remaining:
         store.set_progress(con, target, candidates, False)
         log(f"[backfill] {target} partial: {len(remaining)} unscored; resume next run")
