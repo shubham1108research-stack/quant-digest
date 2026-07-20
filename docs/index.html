@@ -277,7 +277,9 @@ const byDate=(a,b)=>String(b.date||b.seen||'').localeCompare(String(a.date||a.se
 
 function entry(x,rank){
   const rk=rank?`<div class="rank">${rank}</div>`:'';
-  const sc=(x.score!=null)?`<div class="rail">${rk}<div class="gauge" style="--pct:${x.score};--gc:${bandColor(x.score)}"><span>${x.score}</span></div><div class="cap">rating</div></div>`:`<div class="rail">${rk}</div>`;
+  const dv=x._displayScore!=null?x._displayScore:x.score;
+  const cap=x._displayLabel||'rating';
+  const sc=(dv!=null)?`<div class="rail">${rk}<div class="gauge" style="--pct:${dv};--gc:${bandColor(dv)}"><span>${dv}</span></div><div class="cap">${cap}</div></div>`:`<div class="rail">${rk}</div>`;
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
   const who=x.authors?' · '+esc(x.authors):'';
   const lvl=v=>v==null?'–':v+'/3';
@@ -312,6 +314,14 @@ function sinceDays(n){
   const c=new Date(MAXSEEN);c.setDate(c.getDate()-(n-1));
   return c.toISOString().slice(0,10);
 }
+// Recent's bar requires relevance at ceiling (score===100) as a *gate*, so
+// every qualified item would show the same "100" -- not a differentiator.
+// Blend the dimensions that still vary among qualified items (generality,
+// testability, novelty-vs-history) into a display-only strength score.
+function _strengthScore(x){
+  const g=x.generality||0,t=x.testability||0,np=x.novelty_posterior||0;
+  return Math.max(0,Math.min(100,Math.round((g+t)/6*50+np*50)));
+}
 function renderRecent(){
   const cs=sinceDays(7);
   const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA).filter(x=>x.score!=null&&!isPrac(x));
@@ -321,7 +331,7 @@ function renderRecent(){
   const qualified=pool.filter(x=>x.score===100&&x.contribution===3&&!x.contribution_provisional);
   const rows=qualified.slice().sort((a,b)=>
     (b.novelty_posterior||0)-(a.novelty_posterior||0)||(b.generality||0)-(a.generality||0)||byDate(a,b)
-  ).slice(0,10);
+  ).slice(0,10).map(x=>({...x,_displayScore:_strengthScore(x),_displayLabel:'strength'}));
   $('view').innerHTML=`<div class="dateline">Last 7 days · genuinely strong <span class="n">· top ${rows.length} of ${qualified.length} that cleared the bar — the rest are in Archive</span></div>`+grouped(rows);
 }
 const FORYOU_KEYWORDS=[
