@@ -377,6 +377,17 @@ function grouped(rows){
   });
   return h||'<div class="empty">No matches.</div>';
 }
+// like grouped(), but ignores the shared #cat select (For You has no
+// category filter of its own, and that select's stale value from a
+// previous Recent-tab visit would otherwise silently hide whole sections)
+function byCategory(rows,sortFn){
+  const g=[[],[],[],[]]; rows.forEach(x=>g[catOf(x)].push(x));
+  let h='';
+  g.forEach((a,i)=>{ if(!a.length)return; a.sort(sortFn||byDate);
+    h+=`<div class="sechead ${CATS[i].cls}">${CATS[i].label}<span class="cnt">${a.length}</span></div>`+a.map(x=>entry(x)).join('');
+  });
+  return h||'<div class="empty">No matches.</div>';
+}
 function sinceDays(n){
   if(!MAXSEEN)return"";
   const c=new Date(MAXSEEN);c.setDate(c.getDate()-(n-1));
@@ -435,14 +446,22 @@ function renderForYou(){
   const cs=sinceDays(21);
   const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA)
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source).toLowerCase().includes(q));
-  const rows=pool.map(x=>({...x,_fy:forYouScore(x)})).filter(x=>x._fy>=2.5)
-    .sort((a,b)=>b._fy-a._fy||byDate(a,b)).slice(0,10)
+  const matched=pool.map(x=>({...x,_fy:forYouScore(x)})).filter(x=>x._fy>=2.5)
+    .sort((a,b)=>b._fy-a._fy||byDate(a,b));
+  // a raw keyword-sum ranking structurally favours long academic abstracts
+  // over short practitioner posts (more text = more hits), so a flat top-10
+  // would rarely surface a blog even when it's a genuinely strong match --
+  // reserve slots across both buckets instead of letting them compete directly
+  const prac=matched.filter(isPrac),acad=matched.filter(x=>!isPrac(x));
+  let nPrac=Math.min(3,prac.length),nAcad=Math.min(10-nPrac,acad.length);
+  nPrac=Math.min(10-nAcad,prac.length);
+  const rows=[...acad.slice(0,nAcad),...prac.slice(0,nPrac)]
     // show personal-fit match strength here, not the generic (and often
     // unrelated) triage relevance score -- the two can legitimately
     // disagree, and showing the wrong one reads as a contradiction
     .map(x=>({...x,_displayScore:Math.min(100,Math.round(x._fy*10)),_displayLabel:'match'}));
-  $('view').innerHTML=`<div class="dateline">For you <span class="n">· matched to trend/CTA, commodities, macro regime, factor models, Bayesian state-space, hedge-fund replication · top ${rows.length}</span></div>`+
-    (rows.length?rows.map(x=>entry(x)).join(''):'<div class="empty">Nothing matched strongly in the last 3 weeks.</div>');
+  $('view').innerHTML=`<div class="dateline">For you <span class="n">· matched to trend/CTA, commodities, macro regime, factor models, Bayesian state-space, hedge-fund replication · top ${rows.length}, across journals/preprints/practitioner</span></div>`+
+    (rows.length?byCategory(rows,(a,b)=>(b._fy||0)-(a._fy||0)):'<div class="empty">Nothing matched strongly in the last 3 weeks.</div>');
 }
 const _psource=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'').trim()||'Other';
 function pracEntry(x){
