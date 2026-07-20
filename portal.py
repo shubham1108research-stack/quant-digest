@@ -187,6 +187,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
     <div class="doublerule"></div>
     <div class="nav">
       <button id="t-recent" class="on">Recent</button>
+      <button id="t-foryou">For You</button>
       <button id="t-monthly">Monthly</button>
       <button id="t-classics">Classics</button>
       <button id="t-practitioners">Practitioners</button>
@@ -272,9 +273,46 @@ function renderRecent(){
   const cs=sinceDays(7);
   const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA).filter(x=>x.score!=null&&!isPrac(x));
   // absolute quality bar, no percentage cut: relevance at ceiling AND a
-  // genuinely novel, non-provisional contribution -- the rest live in Archive
-  const rows=pool.filter(x=>x.score===100&&x.contribution===3&&!x.contribution_provisional);
-  $('view').innerHTML=`<div class="dateline">Last 7 days · genuinely strong <span class="n">· ${rows.length} of ${pool.length} — the rest are in Archive</span></div>`+grouped(rows);
+  // genuinely novel, non-provisional contribution -- then cap to the top 10
+  // by strength so a busy week doesn't dump dozens of "good enough" papers
+  const qualified=pool.filter(x=>x.score===100&&x.contribution===3&&!x.contribution_provisional);
+  const rows=qualified.slice().sort((a,b)=>
+    (b.novelty_posterior||0)-(a.novelty_posterior||0)||(b.generality||0)-(a.generality||0)||byDate(a,b)
+  ).slice(0,10);
+  $('view').innerHTML=`<div class="dateline">Last 7 days · genuinely strong <span class="n">· top ${rows.length} of ${qualified.length} that cleared the bar — the rest are in Archive</span></div>`+grouped(rows);
+}
+const FORYOU_KEYWORDS=[
+  ['trend following',3],['trend-following',3],[' cta ',2],['ewma',2],
+  ['commodit',3],['multi-asset',2.5],['multi asset',2.5],['regime',2],
+  ['tactical asset allocation',2],['quality factor',2.5],['factor timing',2.5],
+  ['cross-sectional',1.5],['cross section of',1.5],['bayesian',2.5],
+  ['kalman filter',3],['state-space',2.5],['state space model',2.5],
+  ['gibbs sampling',3],['dynamic model averaging',3],['hedge fund replication',3],
+  ['gold',1],['oil price',2],['oil return',2],['stock-bond correlation',2.5],
+  ['bond-equity correlation',2.5],['equity-bond correlation',2.5],
+  ['volatility targeting',2],['target volatility',2],['transaction cost',1],
+  ['turnover',0.5],['systematic trading',1.5],['systematic alpha',1.5],
+  ['regularized regression',1],['regularised regression',1],['carry trade',1.5],
+  ['carry factor',1.5],['basis momentum',2],['skewness',1],['econometrics',0.5],
+  ['asset pricing',0.8],['portfolio construction',1],['macro',0.6],
+  ['time-series forecasting',1],['factor investing',1.5],['momentum',1.2],
+  ['futures',0.8],['systematic macro',2],['risk premia',1.2],
+];
+function forYouScore(x){
+  const text=(' '+(x.title||'')+' '+(x.summary||'')+' '+(x.topic||'')+' ').toLowerCase();
+  let s=0;
+  FORYOU_KEYWORDS.forEach(([term,w])=>{if(text.includes(term))s+=w;});
+  return s;
+}
+function renderForYou(){
+  const q=$('q').value.toLowerCase().trim();
+  const cs=sinceDays(21);
+  const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA)
+    .filter(x=>!q||(x.title+' '+x.authors+' '+x.source).toLowerCase().includes(q));
+  const rows=pool.map(x=>({...x,_fy:forYouScore(x)})).filter(x=>x._fy>=2.5)
+    .sort((a,b)=>b._fy-a._fy||byDate(a,b)).slice(0,10);
+  $('view').innerHTML=`<div class="dateline">For you <span class="n">· matched to trend/CTA, commodities, macro regime, factor models, Bayesian state-space, hedge-fund replication · top ${rows.length}</span></div>`+
+    (rows.length?rows.map(x=>entry(x)).join(''):'<div class="empty">Nothing matched strongly in the last 3 weeks.</div>');
 }
 const _psource=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'').trim()||'Other';
 function pracEntry(x){
@@ -396,9 +434,9 @@ function renderClassics(){
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
-function render(){VIEW==="monthly"?renderMonthly():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():renderClassics();}
+function render(){VIEW==="monthly"?renderMonthly():VIEW==="foryou"?renderForYou():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():renderClassics();}
 function setView(v){
-  VIEW=v;['recent','monthly','classics','practitioners','archive'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  VIEW=v;['recent','foryou','monthly','classics','practitioners','archive'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
   $('month').style.display=v==="monthly"?'':'none';
   $('jsel').style.display=v==="classics"?'':'none';
   $('cat').style.display=v==="recent"?'':'none';
@@ -406,6 +444,7 @@ function setView(v){
   $('psrc').style.display=v==="practitioners"?'':'none';render();
 }
 $('t-recent').onclick=()=>setView('recent');
+$('t-foryou').onclick=()=>setView('foryou');
 $('t-monthly').onclick=()=>setView('monthly');
 $('t-classics').onclick=()=>setView('classics');
 $('t-practitioners').onclick=()=>setView('practitioners');
