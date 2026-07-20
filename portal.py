@@ -170,6 +170,10 @@ header{position:sticky;top:0;z-index:9;background:var(--ground);border-bottom:1p
 .sub b{font-size:12px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1;}
 .sub s{height:2px;width:100%;background:var(--line);border-radius:2px;display:block;text-decoration:none;overflow:hidden;}
 .sub s u{display:block;height:100%;background:var(--accent);opacity:.6;}
+.savebtn{font-family:var(--sans);background:none;border:0;cursor:pointer;font-size:15px;
+  line-height:1;color:var(--faint);padding:0;margin-left:8px;vertical-align:-1px;}
+.savebtn:hover{color:var(--accent);}
+.savebtn.on{color:var(--medium);}
 footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint);
   margin-top:40px;border-top:1px solid var(--line);padding-top:16px;}
 </style>
@@ -192,6 +196,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
       <button id="t-classics">Classics</button>
       <button id="t-practitioners">Practitioners</button>
       <button id="t-archive">Archive</button>
+      <button id="t-saved">Saved</button>
       <span class="sp"></span>
       <select id="cat" title="Category" style="display:none">
         <option value="all">All categories</option>
@@ -223,6 +228,39 @@ const fmtK=n=>n>=1000?(n/1000).toFixed(1)+'k':String(n);
 const bandColor=s=>s>=70?'var(--strong)':s>=45?'var(--medium)':'var(--low)';
 const jlabel=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'topic · ');
 
+// "Saved" bucket: kept in this browser's localStorage (no backend) so a
+// star click here works the same across every tab -- Recent/For You/
+// Monthly/Classics/Archive all render entries through the same _saveBtn.
+let SAVED={};
+try{SAVED=JSON.parse(localStorage.getItem('qd_saved_v1')||'{}');}catch(e){SAVED={};}
+let ITEM_BY_URL={};
+function persistSaved(){localStorage.setItem('qd_saved_v1',JSON.stringify(SAVED));}
+function _saveBtn(x){
+  if(!x||!x.url)return'';
+  const on=!!SAVED[x.url];
+  return `<button class="savebtn${on?' on':''}" data-url="${esc(x.url)}" title="${on?'Remove from Saved':'Save for later'}" onclick="toggleSave(event,this)">${on?'★':'☆'}</button>`;
+}
+function toggleSave(ev,btn){
+  ev.preventDefault();ev.stopPropagation();
+  const url=btn.dataset.url;
+  if(SAVED[url]){delete SAVED[url];btn.classList.remove('on');btn.textContent='☆';btn.title='Save for later';}
+  else{
+    const item=ITEM_BY_URL[url]||{url};
+    SAVED[url]={...item,_savedAt:Date.now()};
+    btn.classList.add('on');btn.textContent='★';btn.title='Remove from Saved';
+  }
+  persistSaved();
+  if(VIEW==='saved')renderSaved();
+}
+function renderSaved(){
+  const q=$('q').value.toLowerCase().trim();
+  const rows=Object.values(SAVED)
+    .filter(x=>!q||(x.title+' '+(x.authors||'')+' '+(x.source||x.journal||'')).toLowerCase().includes(q))
+    .sort((a,b)=>(b._savedAt||0)-(a._savedAt||0));
+  $('view').innerHTML=`<div class="dateline">Saved <span class="n">· ${rows.length} papers · this browser only</span></div>`+
+    (rows.length?rows.map(x=>entry(x)).join(''):'<div class="empty">Nothing saved yet — click the ☆ on any paper.</div>');
+}
+
 const CATS=[
  {label:"Academic · Tier 1 — top journals",cls:""},
  {label:"Academic · Tier 2 — field &amp; practitioner journals",cls:"t2"},
@@ -250,7 +288,7 @@ function entry(x,rank){
   ].join('')+'</div>':'';
   return `<div class="entry">${sc}<div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta"><span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}</div>
+    <div class="meta"><span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_saveBtn(x)}</div>
     ${sm}${subs}</div></div>`;
 }
 function grouped(rows){
@@ -324,7 +362,7 @@ function pracEntry(x){
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
   return `<div class="entry"><div class="rail"></div><div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}</div>
+    <div class="meta">${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_saveBtn(x)}</div>
     ${sm}</div></div>`;
 }
 function renderPractitioners(){
@@ -370,7 +408,7 @@ function monthlyEntry(x,rank){
     _subBar('Reputation',x.reputation!=null?x.reputation.toFixed(2)+'×':'–',
       x.reputation!=null?(x.reputation-0.85)/0.30*100:0),
   ].join('');
-  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}`;
+  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_saveBtn(x)}`;
   return `<div class="entry"><div class="rail" style="--score:${band}">
       <div class="rank">${rank}</div><div class="score">${Math.round(x.composite)}</div><div class="ratebar"></div><div class="cap">composite</div></div>
     <div class="body">
@@ -410,7 +448,7 @@ function canonEntry(x){
     <div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${tag}</div>
       ${why?`<div class="summary">${esc(why)}</div>`:''}
-      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}</div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}${_saveBtn(x)}</div>
     </div></div>`;
 }
 function renderCanon(g,topic){
@@ -435,13 +473,13 @@ function renderClassics(){
     (rows.length?rows.map(x=>`<div class="entry classic"><div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="cites">${fmtK(x.cites||0)}<small>cites</small></span></div>
       <div class="bar"><i style="width:${((x.cites||0)/max*100).toFixed(1)}%"></i></div>
-      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}</div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}${_saveBtn(x)}</div>
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
-function render(){VIEW==="monthly"?renderMonthly():VIEW==="foryou"?renderForYou():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():renderClassics();}
+function render(){VIEW==="monthly"?renderMonthly():VIEW==="foryou"?renderForYou():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 function setView(v){
-  VIEW=v;['recent','foryou','monthly','classics','practitioners','archive'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  VIEW=v;['recent','foryou','monthly','classics','practitioners','archive','saved'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
   $('month').style.display=v==="monthly"?'':'none';
   $('jsel').style.display=v==="classics"?'':'none';
   $('cat').style.display=v==="recent"?'':'none';
@@ -454,6 +492,7 @@ $('t-monthly').onclick=()=>setView('monthly');
 $('t-classics').onclick=()=>setView('classics');
 $('t-practitioners').onclick=()=>setView('practitioners');
 $('t-archive').onclick=()=>setView('archive');
+$('t-saved').onclick=()=>setView('saved');
 $('q').addEventListener('input',render);
 $('month').addEventListener('change',render);
 $('cat').addEventListener('change',render);
@@ -496,6 +535,14 @@ Promise.all([
     og3.appendChild(new Option('Modern — flagged','__modern'));
     $('jsel').appendChild(og3);
   }
+  // registry so a star click on any tab can find the full record by URL,
+  // no matter which of the three JSON files it actually came from
+  d.forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
+  Object.values(MONTHLY).forEach(arr=>(arr||[]).forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;}));
+  (g.overall||[]).forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
+  Object.values(g.journals||{}).forEach(arr=>(arr||[]).forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;}));
+  Object.values(g.topics||{}).forEach(arr=>(arr||[]).forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;}));
+  (g.modern||[]).forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
   render();
 });
 </script>
