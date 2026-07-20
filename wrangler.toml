@@ -1,0 +1,7 @@
+name = "quant-digest"
+pages_build_output_dir = "docs"
+compatibility_date = "2026-07-20"
+
+[[kv_namespaces]]
+binding = "SAVED_PAPERS"
+id = "969335e25c504dbdaf7d00ca985a1aa0"

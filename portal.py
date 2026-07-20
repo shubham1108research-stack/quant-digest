@@ -235,6 +235,20 @@ let SAVED={};
 try{SAVED=JSON.parse(localStorage.getItem('qd_saved_v1')||'{}');}catch(e){SAVED={};}
 let ITEM_BY_URL={};
 function persistSaved(){localStorage.setItem('qd_saved_v1',JSON.stringify(SAVED));}
+function pushSavedToServer(){
+  fetch('/api/saved',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(SAVED)}).catch(()=>{});
+}
+async function syncSavedFromServer(){
+  try{
+    const r=await fetch('/api/saved');
+    if(!r.ok)return;
+    const remote=await r.json();
+    SAVED={...SAVED,...remote};   // remote wins per-key; local-only additions survive the merge
+    persistSaved();
+    if(VIEW==='saved')renderSaved();
+    pushSavedToServer();          // reconcile anything local-only back up to KV
+  }catch(e){/* offline or KV not provisioned yet -- localStorage still works standalone */}
+}
 function _saveBtn(x){
   if(!x||!x.url)return'';
   const on=!!SAVED[x.url];
@@ -250,6 +264,7 @@ function toggleSave(ev,btn){
     btn.classList.add('on');btn.textContent='★';btn.title='Remove from Saved';
   }
   persistSaved();
+  pushSavedToServer();
   if(VIEW==='saved')renderSaved();
 }
 function renderSaved(){
@@ -505,6 +520,7 @@ $('toggle').onclick=()=>{
     (!root.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme:dark)').matches));
   root.setAttribute('data-theme',dark?'dark':'light');$('toggle').textContent=dark?'Light':'Dark';
 };
+syncSavedFromServer();
 Promise.all([
   fetch('data.json').then(r=>r.json()).catch(()=>[]),
   fetch('classics.json').then(r=>r.json()).catch(()=>[]),
