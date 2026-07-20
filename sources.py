@@ -34,20 +34,31 @@ def _entry_date(e) -> dt.datetime | None:
 
 
 # ---------------------------------------------------------------- NEP
+_REPEC_ARXIV = re.compile(r"RePEc:arx:papers:([\d.]+)", re.I)
+
+
 def nep() -> list[dict]:
     out = []
     for code in config.NEP_CODES:
         feed = feedparser.parse(config.NEP_URL.format(code=code))
         for e in feed.entries:
-            out.append({
+            link = e.get("link", "")
+            # NEP mailing-list items often just mirror an arXiv paper via a
+            # RePEc redirect URL; without this the same paper collected
+            # directly from arXiv gets a different uid and dedup misses it
+            m = _REPEC_ARXIV.search(link)
+            item = {
                 "title": _clean(e.get("title", "")),
                 "authors": "",
                 "abstract": _clean(e.get("description", "") or e.get("summary", "")),
-                "url": e.get("link", ""),
+                "url": link,
                 "date": (d := _entry_date(e)) and d.date().isoformat() or "",
                 "source": f"nep-{code}",
                 "section": 1,
-            })
+            }
+            if m:
+                item["arxiv_id"] = m.group(1)
+            out.append(item)
         time.sleep(0.5)
     return out
 
