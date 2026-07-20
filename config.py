@@ -475,6 +475,60 @@ NOVELTY_CONFIDENCE = 0.28            # posterior >= this => contribution counts 
 #   ~0.29), while non-core Macro (~0.06) and Other (~0.01) still require external
 #   corroboration, and ambiguous/matches_known verdicts never clear anywhere.
 
+# ---- Bayesian relevance posterior (replaces the flat relevance-level rescale) --
+# The old `rank_score` (relevance.level/3*100, only 4 possible values -- 0/33/
+# 67/100) drove both the displayed rating AND the Recent/Monthly gates, and a
+# hard gate showing a constant ceiling value reads as broken, not selective.
+# Same Bayesian shape as the novelty posterior above, but blending TWO real
+# signals instead of one:
+#   prior(topic) = (A0 + canon_weight*canon_count + archive_hits) /
+#                  (A0 + B0 + canon_weight*canon_count + archive_total)
+#                  -- archive_hits/archive_total: how often work in this topic
+#                  has historically been judged core-fit (real data, not
+#                  circular -- it's the PRIOR run's judgments, not this item's);
+#                  canon_count: how canon-dense the topic is, same as novelty.
+#                  NUMBERS BELOW ARE PRECOMPUTED by tools/gen_relevance_prior.py
+#                  -- regenerate (do not compute live: divide-by-zero on a
+#                  cleared archive, and drift run-to-run otherwise).
+#   LR(category)  = likelihood ratio from the LLM's independent 3-way
+#                   relevance_category verdict (core_fit/adjacent/off_topic) --
+#                   NOT the relevance.level rubric, which stays a separate,
+#                   graded (0-3) judgment used only for its "why" and as an
+#                   axis fallback level.
+#   posterior     = prior_odds * LR / (1 + prior_odds * LR); this posterior IS
+#                   rank_score (rescaled to 0-100) and the Recent/Monthly gate,
+#                   replacing the old exact relevance-level==3 requirement with
+#                   posterior >= RELEVANCE_CONFIDENCE.
+RELEVANCE_PRIOR_FALLBACK = 0.2
+RELEVANCE_PRIOR = {
+    "Asset Pricing & Factor Models": 0.6019,  # canon=21, archive_core=42/77
+    "Portfolio Construction & Optimization": 0.4696,  # canon=9, archive_core=43/96
+    "Market Efficiency & Behavioral": 0.2,  # canon=9, archive_core=3/51
+    "Derivatives & Option Pricing": 0.56,  # canon=9, archive_core=31/56
+    "Volatility Modeling": 0.5484,  # canon=8, archive_core=24/44
+    "Fixed Income & Credit": 0.2364,  # canon=7, archive_core=4/38
+    "Market Microstructure & Liquidity": 0.4286,  # canon=8, archive_core=29/73
+    "Fund Performance & Institutional": 0.2136,  # canon=7, archive_core=13/86
+    "Machine Learning in Finance": 0.3373,  # canon=12, archive_core=14/61
+    "Financial Econometrics": 0.0965,  # canon=6, archive_core=3/98
+    "Macro & Monetary": 0.0263,  # canon=0, archive_core=0/66
+    "Other": 0.0188,  # canon=0, archive_core=11/682
+}
+RELEVANCE_LR = {                     # likelihood ratio by LLM relevance_category verdict
+    "core_fit": 6.0,                 # squarely the kind of result this digest is for
+    "adjacent": 1.0,                 # related but not central -> uninformative
+    "off_topic": 0.15,               # not finance / no testable content -> against
+}
+RELEVANCE_CONFIDENCE = 0.35          # posterior >= this => counts as "core" for gating
+#   Tuned so a confident core_fit verdict clears in every genuine quant topic
+#   (incl. Financial Econometrics ~0.39), while non-core Macro (~0.14) and
+#   Other (~0.10) still fail even on core_fit -- they'd need the ensemble to
+#   agree AND the topic itself to be more central. In topics with an already-
+#   strong prior (Asset Pricing ~0.60, Derivatives ~0.56, Volatility ~0.55,
+#   Portfolio Construction ~0.47), even a merely "adjacent" verdict clears --
+#   that's the prior correctly dominating a neutral update, not a bug: most
+#   work in those areas already turns out to be core-fit.
+
 # ---- Backward monthly backfill (progressive history) ----------------
 # Every run refreshes the current month, then processes ONE earlier month,
 # walking back to BACKFILL_FLOOR. BACKFILL_LLM_BATCHES caps LLM scoring calls

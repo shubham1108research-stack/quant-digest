@@ -11,6 +11,7 @@ Practitioner) latest-first. Self-hosted Newsreader serif in docs/fonts/.
 import json
 import pathlib
 
+import config
 import scoring
 
 
@@ -37,6 +38,8 @@ def _export(con) -> list[dict]:
             "seen": first_seen,
             "score": m.get("rank_score"),
             "relevance": (m.get("relevance") or {}).get("level"),
+            "relevance_category": m.get("relevance_category"),
+            "relevance_posterior": m.get("relevance_posterior"),
             "generality": (m.get("generality") or {}).get("level"),
             "contribution": (m.get("contribution") or {}).get("level"),
             "contribution_provisional": (m.get("contribution") or {}).get("provisional", True),
@@ -62,7 +65,9 @@ def build(con) -> int:
         (docs / "classics.json").write_text("[]", encoding="utf-8")
     if not (docs / "monthly.json").exists():        # placeholder until monthly runs
         (docs / "monthly.json").write_text("{}", encoding="utf-8")
-    (docs / "index.html").write_text(_INDEX, encoding="utf-8")
+    html = _INDEX.replace(
+        "__RELEVANCE_CONFIDENCE_PCT__", str(round(config.RELEVANCE_CONFIDENCE * 100)))
+    (docs / "index.html").write_text(html, encoding="utf-8")
     return len(data)
 
 
@@ -355,7 +360,7 @@ function entry(x,rank){
   const ctype=(x.novelty_type&&x.novelty_type!=='none')?' ('+esc(x.novelty_type)+')':'';
   const hasScores=(x.generality!=null||x.contribution!=null||x.testability!=null||x.novelty_posterior!=null);
   const subs=hasScores?'<div class="subs">'+[
-    _subBar('Relevance',lvl(x.relevance),(x.relevance||0)/3*100),
+    _subBar('Relevance (vs history)',x.relevance_posterior!=null?Math.round(x.relevance_posterior*100)+'%':'–',(x.relevance_posterior||0)*100),
     _subBar('Generality',lvl(x.generality),(x.generality||0)/3*100),
     _subBar('Contribution'+ctype,lvl(x.contribution)+prov,(x.contribution||0)/3*100),
     _subBar('Testability',lvl(x.testability),(x.testability||0)/3*100),
@@ -393,8 +398,11 @@ function sinceDays(n){
   const c=new Date(MAXSEEN);c.setDate(c.getDate()-(n-1));
   return c.toISOString().slice(0,10);
 }
-// Recent's bar requires relevance at ceiling (score===100) as a *gate*, so
-// every qualified item would show the same "100" -- not a differentiator.
+// Recent's bar requires the Bayesian relevance posterior to clear the same
+// confidence bar the pipeline uses for gating (config.RELEVANCE_CONFIDENCE,
+// baked in at build time -- see portal.build), so every qualified item is a
+// deliberate pass/fail against real evidence, not a flat rescaled level.
+const RELEVANCE_CONFIDENCE_PCT=__RELEVANCE_CONFIDENCE_PCT__;
 // Blend the dimensions that still vary among qualified items (generality,
 // testability, novelty-vs-history) into a display-only strength score.
 function _strengthScore(x){
@@ -404,10 +412,10 @@ function _strengthScore(x){
 function renderRecent(){
   const cs=sinceDays(7);
   const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA).filter(x=>x.score!=null&&!isPrac(x));
-  // absolute quality bar, no percentage cut: relevance at ceiling AND a
-  // genuinely novel, non-provisional contribution -- then cap to the top 10
-  // by strength so a busy week doesn't dump dozens of "good enough" papers
-  const qualified=pool.filter(x=>x.score===100&&x.contribution===3&&!x.contribution_provisional);
+  // relevance posterior at/above the confidence bar AND a genuinely novel,
+  // non-provisional contribution -- then cap to the top 10 by strength so a
+  // busy week doesn't dump dozens of "good enough" papers
+  const qualified=pool.filter(x=>x.score>=RELEVANCE_CONFIDENCE_PCT&&x.contribution===3&&!x.contribution_provisional);
   const rows=qualified.slice().sort((a,b)=>
     (b.novelty_posterior||0)-(a.novelty_posterior||0)||(b.generality||0)-(a.generality||0)||byDate(a,b)
   ).slice(0,10).map(x=>({...x,_displayScore:_strengthScore(x),_displayLabel:'strength'}));

@@ -36,8 +36,9 @@ never invent the rank" design). Concretely:
             track record, not evidence about this specific paper, so they can
             only nudge, never carry.
 
-Gate: an item needs relevance level >= 1 (not off-topic/no testable content) to
-be composite-eligible at all.
+Gate: an item needs a relevance_category other than "off_topic" (the LLM's
+independent core_fit/adjacent/off_topic verdict -- see llm.relevance_posterior)
+to be composite-eligible at all.
 
 Flow: attach_s2() fills abstract/cites/author_h/pub_year; llm_score() attaches
 the anchored rubric levels + robustness flags + topic + summary (respecting a
@@ -158,8 +159,8 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
     first. Missing quantitative terms (paper too new) redistribute their weight
     onto base_quality rather than penalising the item with a 0."""
     scored = [it for it in items
-              if _level(it, "relevance") is not None
-              and _level(it, "relevance") >= 1
+              if it.get("relevance_category") is not None
+              and it["relevance_category"] != "off_topic"
               and not is_junk(it.get("title", ""))]
     if not scored:
         return []
@@ -244,6 +245,8 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
             "if": round(if_raw, 1),
             "topic": it.get("topic", ""),
             "relevance": _level(it, "relevance"),
+            "relevance_category": it.get("relevance_category"),
+            "relevance_posterior": it.get("relevance_posterior"),
             "generality": gen_l,
             "contribution": contrib_l,
             "contribution_provisional": provisional,

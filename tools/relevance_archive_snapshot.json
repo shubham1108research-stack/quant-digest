@@ -1,0 +1,52 @@
+{
+  "topic_relevance": {
+    "Asset Pricing & Factor Models": {
+      "core": 42,
+      "n": 77
+    },
+    "Derivatives & Option Pricing": {
+      "core": 31,
+      "n": 56
+    },
+    "Financial Econometrics": {
+      "core": 3,
+      "n": 98
+    },
+    "Fixed Income & Credit": {
+      "core": 4,
+      "n": 38
+    },
+    "Fund Performance & Institutional": {
+      "core": 13,
+      "n": 86
+    },
+    "Machine Learning in Finance": {
+      "core": 14,
+      "n": 61
+    },
+    "Macro & Monetary": {
+      "core": 0,
+      "n": 66
+    },
+    "Market Efficiency & Behavioral": {
+      "core": 3,
+      "n": 51
+    },
+    "Market Microstructure & Liquidity": {
+      "core": 29,
+      "n": 73
+    },
+    "Other": {
+      "core": 11,
+      "n": 682
+    },
+    "Portfolio Construction & Optimization": {
+      "core": 43,
+      "n": 96
+    },
+    "Volatility Modeling": {
+      "core": 24,
+      "n": 44
+    }
+  }
+}

@@ -4,7 +4,9 @@ Scores each item on ANCHORED 0-3 rubric levels (never a free-floating 0-100
 guess) plus a short evidence-quoting justification -- the LLM extracts a
 judgment against an explicit anchor, it never invents a number or computes the
 final rank (that's scoring.composite_entries, pure deterministic code):
-  relevance    -- topic-fit; a GATE (item must clear >=1), not a ranking weight
+  relevance    -- topic-fit, 0-3 graded judgment (kept for its "why" and as an
+                  axis fallback level; NOT what drives the displayed rating or
+                  the Recent/Monthly gate anymore -- see relevance_category)
   generality   -- does the mechanism travel across assets/strategies/regimes,
                   or is it a narrow one-off
   contribution -- new mechanism vs. meaningful extension vs. incremental vs.
@@ -85,6 +87,15 @@ _SYSTEM = (
     "   2 = finance-adjacent and testable with public data, less central.\n"
     "   1 = tangential (macro narrative, case study, survey with no method).\n"
     "   0 = not finance, or no testable content.\n\n"
+    "relevance_category -- a SEPARATE, coarser verdict used for calibration "
+    "(independent of the relevance level above, judged fresh):\n"
+    "   'core_fit' = squarely the kind of result this digest exists for -- a "
+    "testable quant-finance result in the interest areas above.\n"
+    "   'off_topic' = not finance, or no testable content, or purely a macro/"
+    "policy narrative with no quant-finance application.\n"
+    "   'adjacent' = everything in between -- finance-relevant or uses a "
+    "relevant technique, but not squarely core (e.g. a macro-policy estimation "
+    "problem that happens to use the same toolkit a quant would).\n\n"
     "2) generality -- does the mechanism travel, or is it a one-off.\n"
     "   3 = travels across asset classes/strategies/regimes; a general tool.\n"
     "   2 = broad within one asset class; several use-cases.\n"
@@ -185,6 +196,7 @@ _SYSTEM = (
     "Return ONLY a JSON array, one object per item, no prose:\n"
     '[{"i": <int>, '
     '"relevance": {"level": 0-3, "why": "..."}, '
+    '"relevance_category": "core_fit|adjacent|off_topic", '
     '"generality": {"level": 0-3, "why": "..."}, '
     '"contribution": {"level": 0-3, "why": "...", "provisional": bool}, '
     '"novelty_type": "theory|method|empirical|none", '
@@ -266,11 +278,15 @@ def _parse(text: str) -> dict[int, dict]:
             match = str(o.get("antecedent_match") or "").strip().lower()
             if match not in config.NOVELTY_LR:
                 match = "ambiguous"                    # neutral default
+            rel_cat = str(o.get("relevance_category") or "").strip().lower()
+            if rel_cat not in config.RELEVANCE_LR:
+                rel_cat = "adjacent"                   # neutral default
             ntype = str(o.get("novelty_type") or "").strip().lower()
             if ntype not in ("theory", "method", "empirical", "none"):
                 ntype = "none"
             out[i] = {
                 "relevance": rel,
+                "relevance_category": rel_cat,
                 "generality": _axis(o, "generality", fallback_level=rel["level"]),
                 "contribution": _axis(o, "contribution", fallback_level=rel["level"]),
                 "novelty_type": ntype,
@@ -296,6 +312,21 @@ def novelty_posterior(topic: str, antecedent_match: str) -> float:
     p = config.NOVELTY_PRIOR.get(topic, config.NOVELTY_PRIOR_FALLBACK)
     p = min(max(p, 1e-6), 1 - 1e-6)                # keep odds finite
     lr = config.NOVELTY_LR.get(antecedent_match, 1.0)
+    post_odds = (p / (1 - p)) * lr
+    return post_odds / (1 + post_odds)
+
+
+def relevance_posterior(topic: str, relevance_category: str) -> float:
+    """Bayesian posterior P(core-fit | topic, relevance_category verdict):
+    same shape as novelty_posterior, but the prior blends the topic's canon
+    density AND its historical archive core-fit rate (config.RELEVANCE_PRIOR),
+    updated by the LLM's independent relevance_category as a likelihood ratio.
+    This IS rank_score (rescaled to 0-100) and the Recent/Monthly gate -- it
+    replaces the old flat relevance.level/3*100 rescale, which only ever took
+    4 values and conflated a gate with a ranking signal."""
+    p = config.RELEVANCE_PRIOR.get(topic, config.RELEVANCE_PRIOR_FALLBACK)
+    p = min(max(p, 1e-6), 1 - 1e-6)
+    lr = config.RELEVANCE_LR.get(relevance_category, 1.0)
     post_odds = (p / (1 - p)) * lr
     return post_odds / (1 + post_odds)
 
@@ -478,10 +509,15 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
     """Attach the anchored rubric levels to each item in place; return the same
     list. Each scored item gets:
       relevance/generality/contribution/testability -- {level (0-3), why[, provisional]}
+      relevance_category -- independent core_fit/adjacent/off_topic verdict,
+        the Bayesian evidence combined with the topic prior (config.
+        RELEVANCE_PRIOR) into relevance_posterior
       isolated_backtest_only/no_costs_mentioned/extreme_claimed_sharpe/
         weak_stat_support -- bool or None (None = abstract didn't say, not a red flag)
       topic, summary
-      rank_score -- relevance rescaled to 0-100 (level/3*100), kept for
+      relevance_posterior -- Bayesian P(core-fit | topic, relevance_category);
+        drives both the displayed rating and the Recent/Monthly gate
+      rank_score -- relevance_posterior rescaled to 0-100, kept for
         backward-compatible continuous consumers (e.g. Recent's ranking field)
     Unscored items get none of these, so callers can tell them apart via
     `it.get("relevance") is not None`.
@@ -542,6 +578,7 @@ def _apply_score(it: dict, s: dict) -> None:
     antecedent likelihood; non-provisional only when the posterior clears
     NOVELTY_CONFIDENCE). Shared by the triage pass and the consensus merge."""
     it["relevance"] = s["relevance"]
+    it["relevance_category"] = s["relevance_category"]
     it["generality"] = s["generality"]
     it["contribution"] = s["contribution"]
     it["novelty_type"] = s["novelty_type"]
@@ -553,7 +590,9 @@ def _apply_score(it: dict, s: dict) -> None:
     it["weak_stat_support"] = s["weak_stat_support"]
     it["topic"] = s["topic"]
     it["summary"] = s["summary"]
-    it["rank_score"] = round(s["relevance"]["level"] / 3 * 100)
+    rel_post = relevance_posterior(s["topic"], s["relevance_category"])
+    it["relevance_posterior"] = round(rel_post, 3)
+    it["rank_score"] = round(rel_post * 100)
     post = novelty_posterior(s["topic"], s["antecedent_match"])
     it["novelty_posterior"] = round(post, 3)
     it["contribution"]["provisional"] = post < config.NOVELTY_CONFIDENCE
@@ -561,6 +600,7 @@ def _apply_score(it: dict, s: dict) -> None:
 
 # ------------------------------------------- ensemble consensus (shortlist)
 _ANT_ORDER = ["matches_known", "ambiguous", "no_antecedent"]   # conservative-first
+_REL_ORDER = ["off_topic", "adjacent", "core_fit"]             # conservative-first
 _ROBUST_FLAGS = ("isolated_backtest_only", "no_costs_mentioned",
                  "extreme_claimed_sharpe", "weak_stat_support")
 
@@ -594,6 +634,8 @@ def _merge_votes(picks: list[dict]) -> tuple[dict, bool]:
              or max(c_levels) - min(c_levels) <= config.CONSENSUS_AGREE_SPREAD)
     merged = {
         "relevance": axis("relevance"),
+        "relevance_category": _majority(
+            [p["relevance_category"] for p in picks], "adjacent", _REL_ORDER),
         "generality": axis("generality"),
         "contribution": {"level": _median_level(picks, "contribution"),
                          "why": picks[0]["contribution"]["why"],
