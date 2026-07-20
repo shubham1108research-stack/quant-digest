@@ -368,7 +368,11 @@ function renderForYou(){
   const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA)
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source).toLowerCase().includes(q));
   const rows=pool.map(x=>({...x,_fy:forYouScore(x)})).filter(x=>x._fy>=2.5)
-    .sort((a,b)=>b._fy-a._fy||byDate(a,b)).slice(0,10);
+    .sort((a,b)=>b._fy-a._fy||byDate(a,b)).slice(0,10)
+    // show personal-fit match strength here, not the generic (and often
+    // unrelated) triage relevance score -- the two can legitimately
+    // disagree, and showing the wrong one reads as a contradiction
+    .map(x=>({...x,_displayScore:Math.min(100,Math.round(x._fy*10)),_displayLabel:'match'}));
   $('view').innerHTML=`<div class="dateline">For you <span class="n">· matched to trend/CTA, commodities, macro regime, factor models, Bayesian state-space, hedge-fund replication · top ${rows.length}</span></div>`+
     (rows.length?rows.map(x=>entry(x)).join(''):'<div class="empty">Nothing matched strongly in the last 3 weeks.</div>');
 }
