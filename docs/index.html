@@ -214,24 +214,29 @@ function renderRecent(){
   $('view').innerHTML=`<div class="dateline">Last 7 days · genuinely strong <span class="n">· top ${rows.length} of ${qualified.length} that cleared the bar — the rest are in Archive</span></div>`+grouped(rows);
 }
 const FORYOU_KEYWORDS=[
-  ['trend following',3],['trend-following',3],[' cta ',2],['ewma',2],
-  ['commodit',3],['multi-asset',2.5],['multi asset',2.5],['regime',2],
+  ['trend following',3],['trend premi',2],[' cta ',2],['ewma',2],
+  ['commodit',3],['multi asset',2.5],['regime',2],
   ['tactical asset allocation',2],['quality factor',2.5],['factor timing',2.5],
-  ['cross-sectional',1.5],['cross section of',1.5],['bayesian',2.5],
-  ['kalman filter',3],['state-space',2.5],['state space model',2.5],
+  ['factor tilt',2],['tilting',1.5],['equity factor',1],
+  ['profitability',2],['growth signal',1.5],['sector rotation',2],
+  ['cross sectional',1.5],['cross section of',1.5],['bayesian',2.5],
+  ['kalman filter',3],['state space',2.5],
   ['gibbs sampling',3],['dynamic model averaging',3],['hedge fund replication',3],
-  ['gold',1],['oil price',2],['oil return',2],['stock-bond correlation',2.5],
-  ['bond-equity correlation',2.5],['equity-bond correlation',2.5],
+  ['gold',1],['oil price',2],['oil return',2],['stock bond correlation',2.5],
+  ['bond equity correlation',2.5],['equity bond correlation',2.5],
   ['volatility targeting',2],['target volatility',2],['transaction cost',1],
   ['turnover',0.5],['systematic trading',1.5],['systematic alpha',1.5],
   ['regularized regression',1],['regularised regression',1],['carry trade',1.5],
   ['carry factor',1.5],['basis momentum',2],['skewness',1],['econometrics',0.5],
   ['asset pricing',0.8],['portfolio construction',1],['macro',0.6],
-  ['time-series forecasting',1],['factor investing',1.5],['momentum',1.2],
+  ['time series forecasting',1],['factor investing',1.5],['momentum',1.2],
   ['futures',0.8],['systematic macro',2],['risk premia',1.2],
 ];
+// hyphens normalized to spaces before matching so "factor-timing" and
+// "factor timing" (or any other hyphen/space title variant) both hit
+const _norm=s=>String(s||'').toLowerCase().replace(/-/g,' ');
 function forYouScore(x){
-  const text=(' '+(x.title||'')+' '+(x.summary||'')+' '+(x.topic||'')+' ').toLowerCase();
+  const text=' '+_norm((x.title||'')+' '+(x.summary||'')+' '+(x.topic||''))+' ';
   let s=0;
   FORYOU_KEYWORDS.forEach(([term,w])=>{if(text.includes(term))s+=w;});
   return s;
