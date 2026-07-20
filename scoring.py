@@ -232,7 +232,11 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
         rep_avg = sum(rep_inputs) / len(rep_inputs) if rep_inputs else 50.0
         M_rep = (1 - config.CRED_BOUND) + 2 * config.CRED_BOUND * (rep_avg / 100)
 
-        composite = blend * R * M_rep
+        # blend is already <=100 (weights sum to 1.0, each term capped at 100);
+        # R only discounts (<=1) but M_rep can BOOST up to 1+CRED_BOUND, so the
+        # product can exceed 100 -- clamp, since every consumer (the gauge,
+        # "top N" displays) treats composite as an out-of-100 scale
+        composite = min(100.0, blend * R * M_rep)
 
         out.append({
             "title": it.get("title", ""),
