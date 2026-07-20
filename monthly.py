@@ -157,10 +157,16 @@ def backfill_step(con, monthly, log) -> None:
         store.set_progress(con, target, candidates, False)
         log(f"[backfill] {target} partial: {len(remaining)} unscored; resume next run")
     else:
+        # persist every scored candidate to the permanent archive -- not just
+        # this month's top-N winners -- so Archive/dedup/a future recompute
+        # (e.g. after a scoring-logic change) can see them; previously this
+        # only lived in month_progress, which clear_progress below discards
+        to_save = store.filter_new(con, candidates)
+        store.save(con, to_save)
         store.clear_progress(con, target)
         store.kv_set(con, "backfill_earliest", target)
-        log(f"[backfill] {target} complete: {len(monthly[target])} picks; "
-            f"cursor -> {target}")
+        log(f"[backfill] {target} complete: {len(monthly[target])} picks "
+            f"({len(to_save)} new items archived); cursor -> {target}")
 
 
 def run(con, fresh, log) -> None:
