@@ -106,6 +106,10 @@ header{position:sticky;top:0;z-index:9;background:var(--ground);border-bottom:1p
   line-height:1;color:var(--faint);padding:0;margin-left:8px;vertical-align:-1px;}
 .savebtn:hover{color:var(--accent);}
 .savebtn.on{color:var(--medium);}
+.pdfbtn{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.04em;
+  color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;
+  margin-left:8px;text-decoration:none;vertical-align:1px;}
+.pdfbtn:hover{background:var(--accent);color:var(--panel);}
 footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint);
   margin-top:40px;border-top:1px solid var(--line);padding-top:16px;}
 </style>
@@ -181,6 +185,24 @@ async function syncSavedFromServer(){
     pushSavedToServer();          // reconcile anything local-only back up to KV
   }catch(e){/* offline or KV not provisioned yet -- localStorage still works standalone */}
 }
+// Link straight to the paper's own publicly-hosted PDF instead of the
+// abstract page -- we never fetch/store a copy ourselves, just resolve the
+// URL pattern of sources that are unconditionally open (arXiv, NBER working
+// papers) or already point at a PDF directly. SSRN/journal links have no
+// reliable public-PDF pattern, so they fall through to the normal link.
+function _pdfUrl(x){
+  const u=x.url||'';
+  let m=u.match(/arxiv\.org\/abs\/([^\/?#]+)/i);
+  if(m)return 'https://arxiv.org/pdf/'+m[1];
+  m=u.match(/nber\.org\/papers\/w(\d+)/i);
+  if(m)return `https://www.nber.org/system/files/working_papers/w${m[1]}/w${m[1]}.pdf`;
+  if(/\.pdf(\?|$)/i.test(u))return u;
+  return null;
+}
+function _pdfBtn(x){
+  const p=_pdfUrl(x);
+  return p?`<a class="pdfbtn" href="${esc(p)}" target="_blank" rel="noopener" title="Open the publisher's own PDF — save from there">PDF</a>`:'';
+}
 function _saveBtn(x){
   if(!x||!x.url)return'';
   const on=!!SAVED[x.url];
@@ -235,7 +257,7 @@ function entry(x,rank){
   ].join('')+'</div>':'';
   return `<div class="entry">${sc}<div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta"><span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_saveBtn(x)}</div>
+    <div class="meta"><span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_pdfBtn(x)}${_saveBtn(x)}</div>
     ${sm}${subs}</div></div>`;
 }
 function grouped(rows){
@@ -309,7 +331,7 @@ function pracEntry(x){
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
   return `<div class="entry"><div class="rail"></div><div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_saveBtn(x)}</div>
+    <div class="meta">${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_pdfBtn(x)}${_saveBtn(x)}</div>
     ${sm}</div></div>`;
 }
 function renderPractitioners(){
@@ -355,7 +377,7 @@ function monthlyEntry(x,rank){
     _subBar('Reputation',x.reputation!=null?x.reputation.toFixed(2)+'×':'–',
       x.reputation!=null?(x.reputation-0.85)/0.30*100:0),
   ].join('');
-  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_saveBtn(x)}`;
+  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_pdfBtn(x)}${_saveBtn(x)}`;
   return `<div class="entry"><div class="rail" style="--score:${band}">
       <div class="rank">${rank}</div><div class="score">${Math.round(x.composite)}</div><div class="ratebar"></div><div class="cap">composite</div></div>
     <div class="body">
@@ -395,7 +417,7 @@ function canonEntry(x){
     <div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${tag}</div>
       ${why?`<div class="summary">${esc(why)}</div>`:''}
-      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}${_saveBtn(x)}</div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}${_pdfBtn(x)}${_saveBtn(x)}</div>
     </div></div>`;
 }
 function renderCanon(g,topic){
@@ -420,7 +442,7 @@ function renderClassics(){
     (rows.length?rows.map(x=>`<div class="entry classic"><div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="cites">${fmtK(x.cites||0)}<small>cites</small></span></div>
       <div class="bar"><i style="width:${((x.cites||0)/max*100).toFixed(1)}%"></i></div>
-      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}${_saveBtn(x)}</div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}${_pdfBtn(x)}${_saveBtn(x)}</div>
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
