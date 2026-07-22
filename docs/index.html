@@ -193,6 +193,8 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
 </main>
 <script>
 let DATA=[], CLASSICS=[], MONTHLY={}, VIEW="recent", MAXSEEN="";
+let ARCHIVE_DATA=null, archiveLoading=false;
+const TOPICS=["Asset Pricing & Factor Models", "Portfolio Construction & Optimization", "Market Efficiency & Behavioral", "Derivatives & Option Pricing", "Volatility Modeling", "Fixed Income & Credit", "Market Microstructure & Liquidity", "Fund Performance & Institutional", "Machine Learning in Finance", "Financial Econometrics", "Macro & Monetary", "Other"];
 const isPrac=x=>String(x.section)==="4";   // practitioner blogs + house research
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -420,10 +422,29 @@ function renderPractitioners(){
     h+=`<div class="sechead t2">${esc(s)}<span class="cnt">${a.length}</span></div>`+a.map(pracEntry).join('');});
   $('view').innerHTML=h;
 }
+// archive.json carries the FULL history (data.json is a bounded recent
+// window -- see portal.build) and only grows; fetch it once, lazily, the
+// first time someone actually opens Archive, not on every page load.
+function loadArchive(cb){
+  if(ARCHIVE_DATA){cb();return;}
+  if(archiveLoading)return;
+  archiveLoading=true;
+  $('view').innerHTML='<div class="empty">Loading the full archive…</div>';
+  fetch('archive.json').then(r=>r.json()).then(d=>{
+    ARCHIVE_DATA=d;
+    d.forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
+    archiveLoading=false;
+    if(VIEW==='archive')cb();
+  }).catch(()=>{
+    archiveLoading=false;
+    if(VIEW==='archive')$('view').innerHTML='<div class="empty">Could not load the archive.</div>';
+  });
+}
 function renderArchive(){
+  if(!ARCHIVE_DATA){loadArchive(renderArchive);return;}
   const q=$('q').value.toLowerCase().trim();
   const t=$('topic').value||'all';
-  let rows=DATA.filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
+  let rows=ARCHIVE_DATA.filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.topic||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
   const label=t==='all'?'All topics':t;
@@ -560,8 +581,7 @@ Promise.all([
   Object.keys(MONTHLY).filter(k=>/^\d{4}-\d{2}$/.test(k)).sort().reverse()
     .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
   $('topic').add(new Option('All topics','all'));
-  [...new Set(d.filter(x=>!isPrac(x)).map(x=>x.topic||'Other'))].sort()
-    .forEach(t=>$('topic').add(new Option(t,t)));
+  TOPICS.forEach(t=>$('topic').add(new Option(t,t)));
   $('psrc').add(new Option('All sources','all'));
   [...new Set(d.filter(isPrac).map(_psource))].sort()
     .forEach(s=>$('psrc').add(new Option(s,s)));

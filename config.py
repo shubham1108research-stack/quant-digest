@@ -370,6 +370,13 @@ ROBUSTNESS_DISCOUNTS = {             # applied only when the LLM flags it True
 }
 ROBUSTNESS_FLOOR = 0.5               # R never discounts below this
 
+# How many days of the archive ship in the default-loaded docs/data.json
+# (Recent/For You/Practitioners). The full archive keeps growing forever, but
+# shipping the whole thing to the browser on every page load doesn't scale --
+# it's split into docs/archive.json instead, lazy-fetched only when the
+# Archive tab is actually opened. See portal.build().
+PORTAL_RECENT_WINDOW_DAYS = 60
+
 # Topic taxonomy for the portal's Archive tab (LLM assigns one per paper).
 # Mirrors the Classics canon topics, plus a catch-all.
 TOPICS = [

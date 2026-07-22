@@ -8,6 +8,7 @@ Each page groups entries by source category (Academic T1 / T2 / Preprints /
 Practitioner) latest-first. Self-hosted Newsreader serif in docs/fonts/.
 """
 
+import datetime as dt
 import json
 import pathlib
 
@@ -60,13 +61,31 @@ def build(con) -> int:
     data = _export(con)
     docs = pathlib.Path("docs")
     docs.mkdir(exist_ok=True)
-    (docs / "data.json").write_text(json.dumps(data, default=str), encoding="utf-8")
+
+    # data.json ships on every page load (Recent/For You/Practitioners) --
+    # keep it bounded to a recent window so it doesn't grow forever as the
+    # archive does. archive.json carries everything, lazy-fetched only when
+    # the Archive tab is opened. Windowed on the paper's own date (falling
+    # back to when we first saw it), NOT "seen" alone -- a backfilled item
+    # can be freshly persisted today but be genuinely months old, and it's
+    # the age of the CONTENT that should decide whether it ships by default.
+    # The cutoff anchors on the REAL current date, not max(dates in the
+    # archive) -- a single bad/future-dated record from an upstream source
+    # (seen: a stray "2027-04-01") would otherwise poison the whole window.
+    cutoff = (dt.date.today()
+              - dt.timedelta(days=config.PORTAL_RECENT_WINDOW_DAYS)).isoformat()
+    recent = [x for x in data if (x["date"] or x["seen"] or "")[:10] >= cutoff]
+    (docs / "data.json").write_text(json.dumps(recent, default=str), encoding="utf-8")
+    (docs / "archive.json").write_text(json.dumps(data, default=str), encoding="utf-8")
+
     if not (docs / "classics.json").exists():      # placeholder until backfill runs
         (docs / "classics.json").write_text("[]", encoding="utf-8")
     if not (docs / "monthly.json").exists():        # placeholder until monthly runs
         (docs / "monthly.json").write_text("{}", encoding="utf-8")
     html = _INDEX.replace(
-        "__RELEVANCE_CONFIDENCE_PCT__", str(round(config.RELEVANCE_CONFIDENCE * 100)))
+        "__RELEVANCE_CONFIDENCE_PCT__", str(round(config.RELEVANCE_CONFIDENCE * 100))
+    ).replace(
+        "__TOPICS_JSON__", json.dumps(config.TOPICS))
     (docs / "index.html").write_text(html, encoding="utf-8")
     return len(data)
 
@@ -266,6 +285,8 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
 </main>
 <script>
 let DATA=[], CLASSICS=[], MONTHLY={}, VIEW="recent", MAXSEEN="";
+let ARCHIVE_DATA=null, archiveLoading=false;
+const TOPICS=__TOPICS_JSON__;
 const isPrac=x=>String(x.section)==="4";   // practitioner blogs + house research
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -493,10 +514,29 @@ function renderPractitioners(){
     h+=`<div class="sechead t2">${esc(s)}<span class="cnt">${a.length}</span></div>`+a.map(pracEntry).join('');});
   $('view').innerHTML=h;
 }
+// archive.json carries the FULL history (data.json is a bounded recent
+// window -- see portal.build) and only grows; fetch it once, lazily, the
+// first time someone actually opens Archive, not on every page load.
+function loadArchive(cb){
+  if(ARCHIVE_DATA){cb();return;}
+  if(archiveLoading)return;
+  archiveLoading=true;
+  $('view').innerHTML='<div class="empty">Loading the full archive…</div>';
+  fetch('archive.json').then(r=>r.json()).then(d=>{
+    ARCHIVE_DATA=d;
+    d.forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
+    archiveLoading=false;
+    if(VIEW==='archive')cb();
+  }).catch(()=>{
+    archiveLoading=false;
+    if(VIEW==='archive')$('view').innerHTML='<div class="empty">Could not load the archive.</div>';
+  });
+}
 function renderArchive(){
+  if(!ARCHIVE_DATA){loadArchive(renderArchive);return;}
   const q=$('q').value.toLowerCase().trim();
   const t=$('topic').value||'all';
-  let rows=DATA.filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
+  let rows=ARCHIVE_DATA.filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.topic||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
   const label=t==='all'?'All topics':t;
@@ -633,8 +673,7 @@ Promise.all([
   Object.keys(MONTHLY).filter(k=>/^\\d{4}-\\d{2}$/.test(k)).sort().reverse()
     .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
   $('topic').add(new Option('All topics','all'));
-  [...new Set(d.filter(x=>!isPrac(x)).map(x=>x.topic||'Other'))].sort()
-    .forEach(t=>$('topic').add(new Option(t,t)));
+  TOPICS.forEach(t=>$('topic').add(new Option(t,t)));
   $('psrc').add(new Option('All sources','all'));
   [...new Set(d.filter(isPrac).map(_psource))].sort()
     .forEach(s=>$('psrc').add(new Option(s,s)));
