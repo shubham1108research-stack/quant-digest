@@ -79,6 +79,6 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           npx --yes wrangler@3 pages project create quant-digest \
-            --production-branch=main 2>/dev/null || true
+            --production-branch=master 2>/dev/null || true
           npx --yes wrangler@3 pages deploy docs \
-            --project-name=quant-digest --branch=main --commit-dirty=true
+            --project-name=quant-digest --branch=master --commit-dirty=true
