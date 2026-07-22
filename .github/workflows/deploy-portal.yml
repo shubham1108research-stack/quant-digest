@@ -22,3 +22,15 @@ jobs:
         run: |
           npx --yes wrangler@3 pages deploy docs \
             --project-name=quant-digest --branch=master --commit-dirty=true
+
+      - name: TEMP -- full project + deployment detail
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          curl -s "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/quant-digest" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" > /tmp/proj.json
+          echo "=== PROJECT ==="
+          python3 -c "import json; d=json.load(open('/tmp/proj.json'))['result']; print('domains:', d.get('domains')); print('source:', d.get('source')); print('build_config:', d.get('build_config')); print('production_branch:', d.get('production_branch'))"
+          curl -s "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/quant-digest/deployments?per_page=8" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" > /tmp/deps.json
+          echo "=== DEPLOYMENTS ==="
+          python3 -c "import json; d=json.load(open('/tmp/deps.json')); [print(x['id'][:8], x['environment'], x['created_on'], x.get('deployment_trigger',{}).get('type'), '->', x['url']) for x in d['result']]"
