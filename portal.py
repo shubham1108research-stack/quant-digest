@@ -229,6 +229,11 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   margin-left:8px;text-decoration:none;vertical-align:1px;display:inline-block;
   transition:background .15s,color .15s,transform .15s;}
 .pdfbtn:hover{background:var(--accent);color:var(--panel);transform:translateY(-1px);}
+.loadmore{display:block;width:100%;font-family:var(--sans);font-size:13px;font-weight:600;
+  color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:12px;margin:14px 0 0;cursor:pointer;transition:border-color .15s,color .15s;}
+.loadmore .n{color:var(--faint);font-weight:400;}
+.loadmore:hover{border-color:var(--accent);color:var(--accent);}
 footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint);
   margin-top:40px;border-top:1px solid var(--line);padding-top:16px;}
 @keyframes entryIn{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}
@@ -532,6 +537,8 @@ function loadArchive(cb){
     if(VIEW==='archive')$('view').innerHTML='<div class="empty">Could not load the archive.</div>';
   });
 }
+let archivePage=0;
+const ARCHIVE_PAGE_SIZE=100;
 function renderArchive(){
   if(!ARCHIVE_DATA){loadArchive(renderArchive);return;}
   const q=$('q').value.toLowerCase().trim();
@@ -540,8 +547,15 @@ function renderArchive(){
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.topic||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
   const label=t==='all'?'All topics':t;
+  // paginated -- rendering thousands of animated cards at once is what
+  // actually made Archive itself feel slow, independent of fetch time
+  const shownCount=Math.min(rows.length,(archivePage+1)*ARCHIVE_PAGE_SIZE);
+  const shown=rows.slice(0,shownCount);
+  const remaining=rows.length-shownCount;
+  const more=remaining>0?`<button class="loadmore" id="archmore">Show ${Math.min(ARCHIVE_PAGE_SIZE,remaining)} more <span class="n">(${remaining} left)</span></button>`:'';
   $('view').innerHTML=`<div class="dateline">Archive · ${esc(label)} <span class="n">· ${rows.length} papers · date-wise</span></div>`+
-    (rows.length?rows.map(x=>entry(x)).join(''):'<div class="empty">No matches.</div>');
+    (rows.length?shown.map(x=>entry(x)).join(''):'<div class="empty">No matches.</div>')+more;
+  if(remaining>0)$('archmore').onclick=()=>{archivePage++;renderArchive();};
 }
 function _subBar(label,valueHtml,pct){
   const w=Math.max(0,Math.min(100,pct||0));
@@ -639,7 +653,9 @@ function setView(v){
   $('jsel').style.display=v==="classics"?'':'none';
   $('cat').style.display=v==="recent"?'':'none';
   $('topic').style.display=v==="archive"?'':'none';
-  $('psrc').style.display=v==="practitioners"?'':'none';render();
+  $('psrc').style.display=v==="practitioners"?'':'none';
+  if(v==="archive")archivePage=0;
+  render();
 }
 $('t-recent').onclick=()=>setView('recent');
 $('t-foryou').onclick=()=>setView('foryou');
@@ -648,10 +664,10 @@ $('t-classics').onclick=()=>setView('classics');
 $('t-practitioners').onclick=()=>setView('practitioners');
 $('t-archive').onclick=()=>setView('archive');
 $('t-saved').onclick=()=>setView('saved');
-$('q').addEventListener('input',render);
+$('q').addEventListener('input',()=>{archivePage=0;render();});
 $('month').addEventListener('change',render);
 $('cat').addEventListener('change',render);
-$('topic').addEventListener('change',render);
+$('topic').addEventListener('change',()=>{archivePage=0;render();});
 $('psrc').addEventListener('change',render);
 $('jsel').addEventListener('change',render);
 const root=document.documentElement;

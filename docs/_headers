@@ -1,0 +1,17 @@
+/index.html
+  Cache-Control: no-cache, must-revalidate
+
+/
+  Cache-Control: no-cache, must-revalidate
+
+/data.json
+  Cache-Control: no-cache, must-revalidate
+
+/archive.json
+  Cache-Control: no-cache, must-revalidate
+
+/monthly.json
+  Cache-Control: no-cache, must-revalidate
+
+/classics.json
+  Cache-Control: no-cache, must-revalidate
