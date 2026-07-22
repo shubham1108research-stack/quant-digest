@@ -94,13 +94,18 @@ def render(items: list[dict], notes: list[str]) -> str:
     today = dt.date.today().strftime("%A, %d %b %Y")
 
     # When the LLM layer ran, hide the off-topic/noise band from the email
-    # (the portal/archive still keeps every item). Unscored items are kept.
+    # (the portal/archive still keeps every item, and unscored ones will get
+    # a real score once the LLM catches up in a later run). An item the LLM
+    # never got to triage (batch budget exhausted) has NO basis for
+    # inclusion -- keeping it "just in case" is how completely unrelated
+    # papers (medical, engineering, chemistry -- collected by broad sweeps
+    # like OpenAlex/Crossref, never triaged) used to flood the email.
     graded = any(isinstance(it.get("rank_score"), int) for it in items)
     hidden = 0
     if graded:
         kept = [it for it in items
-                if not (isinstance(it.get("rank_score"), int)
-                        and it["rank_score"] < config.MIN_SHOW_SCORE)]
+                if isinstance(it.get("rank_score"), int)
+                and it["rank_score"] >= config.MIN_SHOW_SCORE]
         hidden = len(items) - len(kept)
         items = kept
 
