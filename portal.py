@@ -450,14 +450,23 @@ function _strengthScore(x){
 function renderRecent(){
   const cs=sinceDays(7);
   const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA).filter(x=>x.score!=null&&!isPrac(x));
-  // relevance posterior at/above the confidence bar AND a genuinely novel,
-  // non-provisional contribution -- then cap to the top 10 by strength so a
-  // busy week doesn't dump dozens of "good enough" papers
-  const qualified=pool.filter(x=>x.score>=RELEVANCE_CONFIDENCE_PCT&&x.contribution===3&&!x.contribution_provisional);
-  const rows=qualified.slice().sort((a,b)=>
+  // strict lane: relevance posterior at/above the bar AND a genuinely novel,
+  // non-provisional contribution -- the "genuinely strong" set
+  const strict=pool.filter(x=>x.score>=RELEVANCE_CONFIDENCE_PCT&&x.contribution===3&&!x.contribution_provisional);
+  // trusted lane: a watched author's paper that's squarely relevant (core_fit)
+  // earns a place even at contribution 2 -- you trust the person, so a solid
+  // (not just groundbreaking) Kelly/Xiu/Feng paper shouldn't be gated out
+  const watched=pool.filter(x=>x.watchlist&&x.relevance_category==='core_fit'
+    &&!strict.includes(x));
+  const seen=new Set();
+  const top=strict.slice().sort((a,b)=>
     (b.novelty_posterior||0)-(a.novelty_posterior||0)||(b.generality||0)-(a.generality||0)||byDate(a,b)
-  ).slice(0,10).map(x=>({...x,_displayScore:_strengthScore(x),_displayLabel:'strength'}));
-  $('view').innerHTML=`<div class="dateline">Last 7 days · genuinely strong <span class="n">· top ${rows.length} of ${qualified.length} that cleared the bar — the rest are in Archive</span></div>`+grouped(rows);
+  ).slice(0,10);
+  const rows=[...watched.sort(byDate),...top]
+    .filter(x=>!seen.has(x.url)&&seen.add(x.url))
+    .map(x=>({...x,_displayScore:_strengthScore(x),_displayLabel:'strength'}));
+  const note=watched.length?` · incl. ${watched.length} from watched authors`:'';
+  $('view').innerHTML=`<div class="dateline">Last 7 days · genuinely strong <span class="n">· ${top.length} of ${strict.length} that cleared the bar${note} — the rest are in Archive</span></div>`+grouped(rows);
 }
 // NBER finance-program working papers, browsable by month (docs/nber.json,
 // built by tools/backfill_nber.py back to 2010; kept fresh for the current
