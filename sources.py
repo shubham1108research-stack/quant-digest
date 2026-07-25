@@ -69,51 +69,56 @@ def nep() -> list[dict]:
 _NBER_A = re.compile(r"<a[^>]*>([^<]+)</a>")     # strip the <a href> author markup
 
 
-def _nber_is_finance(title: str, abstract: str) -> bool:
-    text = (title + " " + abstract).lower()
-    return any(t in text for t in config.NBER_FINANCE_TERMS)
+def _nber_item(e: dict) -> dict:
+    wp = (e.get("url") or "").rsplit("/", 1)[-1]         # e.g. 'w35441'
+    return {
+        "title": _clean(e.get("title", "")),
+        "authors": _clean(", ".join(_NBER_A.findall(" ".join(e.get("authors") or [])))),
+        "abstract": _clean(e.get("abstract", "")),
+        "url": "https://www.nber.org" + (e.get("url") or ""),
+        "date": _nber_date(e.get("displaydate")),
+        "source": "nber",
+        "section": 1,
+        "nber_wp": wp,
+    }
 
 
-def nber(log=print) -> list[dict]:
-    """Paginated NBER working-paper listing over the lookback window (complete
-    coverage, unlike the old rolling RSS), keeping only finance-relevant papers
-    via a coarse keyword gate. Final relevance is still the Bayesian posterior."""
-    cut = _cutoff()
-    start = cut.date().isoformat()
-    end = dt.date.today().isoformat()
-    out, kept, seen_total = [], 0, 0
+def _nber_program(program: str, start: str, end: str, log) -> list[dict]:
+    """All NBER working papers in [start, end] tagged with one NBER PROGRAM."""
+    out = []
     for page in range(1, config.NBER_MAX_PAGES + 1):
         params = {"page": page, "perPage": config.NBER_PER_PAGE,
-                  "sortBy": "public_date", "startDate": start, "endDate": end}
+                  "sortBy": "public_date", "startDate": start, "endDate": end,
+                  "facet": f"programs:{program}"}
         r = requests.get(config.NBER_API, params=params, headers=UA, timeout=45)
         r.raise_for_status()
         results = (r.json() or {}).get("results") or []
-        if not results:
-            break
-        seen_total += len(results)
-        for e in results:
-            title = _clean(e.get("title", ""))
-            abstract = _clean(e.get("abstract", ""))
-            if not _nber_is_finance(title, abstract):
-                continue
-            authors = ", ".join(_NBER_A.findall(" ".join(e.get("authors") or [])))
-            wp = (e.get("url") or "").rsplit("/", 1)[-1]     # e.g. 'w35441'
-            out.append({
-                "title": title,
-                "authors": _clean(authors),
-                "abstract": abstract,
-                "url": "https://www.nber.org" + (e.get("url") or ""),
-                "date": _nber_date(e.get("displaydate")),
-                "source": "nber",
-                "section": 1,
-                "nber_wp": wp,
-            })
-            kept += 1
+        out += [_nber_item(e) for e in results]
         if len(results) < config.NBER_PER_PAGE:
             break
-        time.sleep(0.5)
-    log(f"[nber] {kept} finance papers kept of {seen_total} in window "
-        f"{start}..{end}")
+        time.sleep(0.4)
+    return out
+
+
+def nber(log=print, start: str | None = None, end: str | None = None) -> list[dict]:
+    """NBER working papers restricted to the finance PROGRAMS (Asset Pricing,
+    Corporate Finance, Monetary Economics, International Finance & Macro) over
+    the window -- NBER's own authoritative classification, not a keyword guess
+    (also catches methods/AP papers whose titles lack an obvious finance term).
+    Complete windowed coverage, unlike the old rolling RSS. Defaults to the
+    lookback window; explicit start/end let the portal browse a month."""
+    start = start or _cutoff().date().isoformat()
+    end = end or dt.date.today().isoformat()
+    by_uid = {}
+    for program in config.NBER_PROGRAMS:
+        try:
+            for it in _nber_program(program, start, end, log):
+                by_uid[it["nber_wp"] or it["url"]] = it   # dedup across programs
+        except Exception as e:                             # noqa: BLE001
+            log(f"[nber] program '{program}' failed: {type(e).__name__}")
+        time.sleep(0.3)
+    out = list(by_uid.values())
+    log(f"[nber] {len(out)} finance-program papers in window {start}..{end}")
     return out
 
 
@@ -532,21 +537,78 @@ def openalex_preprints(log) -> list[dict]:
 
 
 # ------------------------------------ P2: author watchlist
+def _load_roster() -> dict:
+    try:
+        return (json.load(open(os.path.join("docs", "watchlist.json"),
+                               encoding="utf-8")) or {}).get("authors", {})
+    except Exception:                                  # noqa: BLE001
+        return {}
+
+
+def _name_key(name: str) -> tuple[str, str] | None:
+    """Normalize a person name to (first_token, last_token), accent/punct
+    stripped, for robust cross-source matching (item 'Bryan T. Kelly' and
+    roster 'Bryan Kelly' both -> ('bryan','kelly'))."""
+    n = _clean(_html.unescape(name or "")).lower()
+    n = re.sub(r"[^a-z\s-]", "", n.replace(".", " "))
+    toks = [t for t in n.split() if t]
+    if len(toks) < 2:
+        return None
+    return toks[0], toks[-1]
+
+
+def watchlist_crossmatch(items: list[dict], log=print) -> int:
+    """Tag any ALREADY-COLLECTED item (from NBER/journals/SSRN/arXiv/...) whose
+    author matches a roster author as watchlist -- so a watched author's paper
+    is caught the moment it appears in ANY source, NOT only once OpenAlex
+    indexes it (OpenAlex lags weeks-months on working papers, which is why a
+    fresh Kelly NBER paper was collected but not flagged). Matches on
+    (first, last) with a first-initial fallback; the finance context of the
+    already-collected pool keeps false positives low."""
+    roster = _load_roster()
+    if not roster:
+        return 0
+    watched: dict[str, list[tuple[str, str]]] = {}     # last -> [(first, name)]
+    for v in roster.values():
+        k = _name_key(v.get("name", ""))
+        if k:
+            watched.setdefault(k[1], []).append((k[0], v.get("name", "")))
+    tagged = 0
+    for it in items:
+        if it.get("watchlist"):
+            continue                                   # already from the OA pull
+        for author in re.split(r"[;,]", it.get("authors", "") or ""):
+            k = _name_key(author)
+            if not k or k[1] not in watched:
+                continue
+            for first, name in watched[k[1]]:
+                # full first-name match, or single-initial match either way
+                if k[0] == first or (len(k[0]) == 1 and first.startswith(k[0])) \
+                        or (len(first) == 1 and k[0].startswith(first)):
+                    it["watchlist"] = True
+                    it["watchlist_author"] = name
+                    tagged += 1
+                    break
+            if it.get("watchlist"):
+                break
+    log(f"[watchlist] cross-matched {tagged} collected items to watched authors")
+    return tagged
+
+
 def watchlist(log=print) -> list[dict]:
     """Pull recent works by every author on the roster (docs/watchlist.json,
     built quarterly by tools/gen_watchlist.py), regardless of whether a source
     feed carried them -- this is the safety net so a Kelly/Xiu paper is never
     missed. Items are tagged watchlist=True + the author's name; downstream they
     jump the LLM scoring queue (never dropped by budget) and are always
-    surfaced (their relevance score is shown as a label, never a filter)."""
-    path = os.path.join("docs", "watchlist.json")
-    try:
-        roster = (json.load(open(path, encoding="utf-8")) or {}).get("authors", {})
-    except Exception as e:                             # noqa: BLE001
-        log(f"[watchlist] no roster ({type(e).__name__}); skipped")
-        return []
+    surfaced (their relevance score is shown as a label, never a filter).
+
+    This is the OpenAlex-native pull; it's complemented by
+    watchlist_crossmatch() which tags collected items from OTHER sources whose
+    author matches the roster (OpenAlex lags on fresh working papers)."""
+    roster = _load_roster()
     if not roster:
-        log("[watchlist] roster empty; skipped")
+        log("[watchlist] no/empty roster; skipped")
         return []
     since = (dt.date.today()
              - dt.timedelta(days=config.WATCHLIST_LOOKBACK_DAYS)).isoformat()
@@ -571,9 +633,86 @@ def watchlist(log=print) -> list[dict]:
             it["watchlist_author"] = name
             out.append(it)
         time.sleep(0.25)                               # polite spacing
-    log(f"[watchlist] {len(out)} works from {hit_authors}/{len(roster)} "
+    log(f"[watchlist] OpenAlex: {len(out)} works from {hit_authors}/{len(roster)} "
+        f"watched authors since {since}")
+
+    # ...then the Crossref deep pull -- covers SSRN + journals + working papers
+    # that OpenAlex hasn't indexed yet (this is what catches e.g. Kelly's AIPM)
+    try:
+        cr = _watchlist_crossref(roster, log)
+    except Exception as e:                             # noqa: BLE001
+        log(f"[watchlist] Crossref pull failed: {type(e).__name__}: {e}")
+        cr = []
+    return out + cr
+
+
+def _watchlist_crossref(roster: dict, log) -> list[dict]:
+    """For each watched author, query Crossref by name over a long window and
+    keep only works whose author (first,last) key matches AND whose title looks
+    like finance -- the two gates together strip the common-name noise Crossref
+    returns while catching OpenAlex-lagged papers (SSRN/NBER working papers)."""
+    since = (dt.date.today()
+             - dt.timedelta(days=config.WATCHLIST_CROSSREF_DAYS)).isoformat()
+    out, hit = [], 0
+    for meta in roster.values():
+        name = meta.get("name", "")
+        key = _name_key(name)
+        if not key:
+            continue
+        # default RELEVANCE sort (no sort=published) -- it surfaces THIS
+        # author's own works near the top; sorting by date instead fills the
+        # page with recent papers by unrelated same-name authors
+        params = {"query.author": name, "filter": f"from-pub-date:{since}",
+                  "rows": config.WATCHLIST_CROSSREF_ROWS,
+                  "select": "title,author,container-title,abstract,URL,DOI,created"}
+        if MAILTO:
+            params["mailto"] = MAILTO
+        try:
+            r = requests.get("https://api.crossref.org/works", params=params,
+                             headers=UA, timeout=60)
+            r.raise_for_status()
+            works = r.json()["message"]["items"]
+        except Exception as e:                         # noqa: BLE001
+            log(f"[watchlist] Crossref '{name}' failed: {type(e).__name__}")
+            continue
+        found = False
+        for w in works:
+            if not _cr_author_matches(w, key):
+                continue
+            title = _clean(" ".join(w.get("title") or []))
+            abstract = _clean(w.get("abstract", ""))
+            if not _nber_is_finance(title, abstract):  # reuse the finance gate
+                continue
+            it = _crossref_item(w, "watchlist")
+            if not it:
+                continue
+            it["section"] = 2
+            it["watchlist"] = True
+            it["watchlist_author"] = name
+            out.append(it)
+            found = True
+        hit += int(found)
+        time.sleep(0.3)                                # Crossref polite spacing
+    log(f"[watchlist] Crossref: {len(out)} works from {hit}/{len(roster)} "
         f"watched authors since {since}")
     return out
+
+
+def _cr_author_matches(work: dict, key: tuple[str, str]) -> bool:
+    first, last = key
+    for a in work.get("author") or []:
+        af = (a.get("given", "") or "").lower().split()
+        al = (a.get("family", "") or "").lower()
+        if al == last and af and (af[0] == first
+                                  or (len(first) == 1 and af[0].startswith(first))
+                                  or (len(af[0]) == 1 and first.startswith(af[0]))):
+            return True
+    return False
+
+
+def _nber_is_finance(title: str, abstract: str) -> bool:
+    text = (title + " " + abstract).lower()
+    return any(t in text for t in config.NBER_FINANCE_TERMS)
 
 
 # --------------------------------------- OpenAlex topic sweep

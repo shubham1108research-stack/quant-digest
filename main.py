@@ -81,6 +81,16 @@ def main() -> None:
     fresh = store.filter_new(con, raw)
     print(f"collected {len(raw)}, new after dedup {len(fresh)}")
 
+    # flag watched authors' papers that arrived via ANY source (NBER/journals/
+    # SSRN/arXiv), not just the OpenAlex watchlist pull -- OpenAlex lags on
+    # fresh working papers, so a new Kelly NBER paper is collected here before
+    # OpenAlex indexes it. This tags them so they get scoring priority + the
+    # Watched surfacing regardless of which feed carried them.
+    try:
+        sources.watchlist_crossmatch(fresh, log)
+    except Exception as e:                             # noqa: BLE001
+        log(f"[watchlist] cross-match failed: {type(e).__name__}: {e}")
+
     # enrich via Semantic Scholar: fills missing abstracts + attaches paper
     # citation count and author h-index (feeds the monthly composite)
     try:

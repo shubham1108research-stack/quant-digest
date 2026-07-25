@@ -15,18 +15,25 @@ NEP_URL = "https://nep.repec.org/rss/nep-{code}.rss.xml"
 
 # ---- NBER ------------------------------------------------------------
 # NBER working papers via the site's paginated JSON listing API, filtered by
-# publication date. This REPLACES the old rolling new.xml RSS feed, which only
-# ever exposed whatever was on the feed at fetch time -- so finance papers that
-# scrolled off between runs were missed permanently. The date-window API
-# returns EVERY paper for the window (paginated), giving complete coverage;
-# a finance keyword pre-filter then keeps the ~113/month all-economics volume
-# from flooding the LLM budget (final relevance is still the Bayesian posterior).
+# publication date AND by NBER PROGRAM. This REPLACES the old rolling new.xml
+# RSS feed, which only exposed whatever was on the feed at fetch time -- so
+# finance papers that scrolled off between runs were missed permanently. The
+# date-window API returns EVERY paper for the window (paginated); the program
+# facet then restricts to NBER's own finance programs -- an authoritative
+# classification, far cleaner than a keyword guess (it also catches papers a
+# keyword gate misses, e.g. a methods paper tagged Asset Pricing whose title
+# has no obvious finance term). Final relevance is still the Bayesian posterior.
 NBER_API = ("https://www.nber.org/api/v1/working_page_listing/contentType/"
             "working_paper/_/_/search")
 NBER_PER_PAGE = 100
-NBER_MAX_PAGES = 6                    # safety cap (~600 papers/window)
-# lightweight admission gate: title/abstract must mention a finance term. Coarse
-# on purpose -- it only decides what enters scoring, not the final rank.
+NBER_MAX_PAGES = 6                    # safety cap per program (~600 papers)
+NBER_PROGRAMS = [                     # NBER program facet names -> finance
+    "Asset Pricing",
+    "Corporate Finance",
+    "Monetary Economics",
+    "International Finance and Macroeconomics",
+]
+# fallback keyword gate, used ONLY if the program query fails for some reason
 NBER_FINANCE_TERMS = [
     "asset pric", "stock return", "equity", "portfolio", "factor",
     "cross-section", "cross section", "volatility", "option", "derivative",
@@ -34,8 +41,18 @@ NBER_FINANCE_TERMS = [
     "market microstructure", "liquidity", "bond", "yield", "credit spread",
     "term structure", "exchange rate", "currency", "commodity", "futures",
     "capm", "arbitrage", "sharpe", "anomal", "return predictab", "trading",
-    "financial market", "securit", "valuation", "investor", "beta",
+    "financial market", "securities", "valuation", "investor", "beta",
 ]
+
+# ---- Watchlist deep author pull (Crossref) --------------------------
+# OpenAlex lags weeks-to-months on fresh working papers, so the OpenAlex
+# watchlist pull alone misses recent-but-not-brand-new papers by watched
+# authors (e.g. Kelly's "Artificial Intelligence Asset Pricing Models", on
+# SSRN/NBER long before OpenAlex indexed it). A Crossref author query -- which
+# covers SSRN + journals -- fills that gap, filtered to the author's own
+# (first,last) name key + a finance gate to strip the common-name noise.
+WATCHLIST_CROSSREF_DAYS = 640        # ~21mo, so a landmark like AIPM (early 2025) is caught
+WATCHLIST_CROSSREF_ROWS = 60         # Crossref rows fetched per author (relevance-sorted)
 
 # ---- arXiv (Atom API, no key) ---------------------------------------
 ARXIV_CATS = ["q-fin.PR", "q-fin.PM", "q-fin.ST", "q-fin.GN", "q-fin.EC",
