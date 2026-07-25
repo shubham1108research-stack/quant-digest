@@ -131,9 +131,38 @@ def _month_item(it: dict, label: str) -> dict:
     }
 
 
+def _nber_month(month: str, log) -> list[dict]:
+    """NBER Asset Pricing WORKING PAPERS for the month, as PREPRINT candidates
+    (section 2) -- so the monthly picks include preprints, not just journals.
+    NBER's own API is reliable (unlike arXiv/OpenAlex on CI), and its working
+    papers carry the field's top authors, so they belong in the ranking."""
+    import calendar as _cal
+    import sources                                   # reuses the program-facet fetch
+    y, m = map(int, month.split("-"))
+    start, end = f"{month}-01", f"{month}-{_cal.monthrange(y, m)[1]:02d}"
+    out = []
+    for it in sources.nber(log, start=start, end=end):
+        wp = it.get("nber_wp", "")
+        out.append({
+            "title": it["title"],
+            "url": it["url"],
+            "authors": it["authors"],
+            "journal": "NBER Working Paper",
+            "journal_label": "NBER",
+            "date": it.get("date") or f"{month}-01",
+            "doi": f"10.3386/{wp}" if wp else None,
+            "cites": None,                            # filled by attach_s2/openalex
+            "abstract": (it.get("abstract") or "")[:1500],
+            "source": "nber",
+            "section": "2",                           # preprint / working paper
+        })
+    return out
+
+
 def fetch_month(month: str, log) -> list[dict]:
-    """Every tracked journal's articles published in `month` (YYYY-MM), as scoring
-    candidates (Crossref). One call per journal (~30); a bad ISSN is skipped."""
+    """Scoring candidates for `month` (YYYY-MM): every tracked journal's articles
+    (Crossref) PLUS NBER Asset Pricing working papers (preprints), so the monthly
+    picks aren't journal-only."""
     lo, hi = _month_bounds(month)
     out = []
     for label, issn in _JOURNALS.items():
@@ -149,7 +178,13 @@ def fetch_month(month: str, log) -> list[dict]:
             if mi["title"] and mi["doi"]:
                 out.append(mi)
         time.sleep(0.2)
-    log(f"  {month}: {len(out)} journal articles fetched")
+    n_journal = len(out)
+    try:
+        out += _nber_month(month, log)
+    except Exception as e:                             # noqa: BLE001
+        log(f"  [NBER] {month}: {type(e).__name__}: {e}")
+    log(f"  {month}: {n_journal} journal articles + {len(out) - n_journal} "
+        f"NBER preprints fetched")
     return out
 
 
