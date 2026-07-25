@@ -107,12 +107,16 @@ def render(items: list[dict], notes: list[str]) -> str:
     graded = any(isinstance(it.get("rank_score"), int) for it in items)
     hidden = 0
     if graded:
-        # watchlist items ALWAYS survive (you judge them yourself); everything
-        # else must be scored at/above the show threshold
-        kept = [it for it in items
-                if it.get("watchlist")
-                or (isinstance(it.get("rank_score"), int)
-                    and it["rank_score"] >= config.MIN_SHOW_SCORE)]
+        # watched-author papers survive the score threshold (you judge them),
+        # BUT a watchlist match to an OFF-TOPIC paper is a false positive
+        # (a common surname like "Gu"/"Piazzesi" matching a power-electronics
+        # paper or a PhD thesis) -- those are dropped, not surfaced.
+        def keep(it):
+            if it.get("watchlist"):
+                return it.get("relevance_category") != "off_topic"
+            return (isinstance(it.get("rank_score"), int)
+                    and it["rank_score"] >= config.MIN_SHOW_SCORE)
+        kept = [it for it in items if keep(it)]
         hidden = len(items) - len(kept)
         items = kept
 

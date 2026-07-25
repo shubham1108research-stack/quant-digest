@@ -582,9 +582,12 @@ def watchlist_crossmatch(items: list[dict], log=print) -> int:
             if not k or k[1] not in watched:
                 continue
             for first, name in watched[k[1]]:
-                # full first-name match, or single-initial match either way
-                if k[0] == first or (len(k[0]) == 1 and first.startswith(k[0])) \
-                        or (len(first) == 1 and k[0].startswith(first)):
+                # require a FULL first-name match -- an initial-only match
+                # ("S. Gu" == "Shihao Gu") produces rampant false positives on
+                # common surnames (Gu/Chen/Li/Wang), pulling in unrelated
+                # papers (power electronics, PhD theses). Both names must give a
+                # real first token and be equal.
+                if len(k[0]) > 1 and len(first) > 1 and k[0] == first:
                     it["watchlist"] = True
                     it["watchlist_author"] = name
                     tagged += 1
