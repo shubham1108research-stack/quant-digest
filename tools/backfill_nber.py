@@ -39,10 +39,6 @@ def _norm_title(t: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", (t or "").lower()).strip()
 
 
-# only chase the published version for papers already citeable enough to
-# matter for the classics list -- keeps the title-search count (and rate-limit
-# pressure) low. A paper with 5 WP-DOI cites isn't a classic either way.
-_PUBLISHED_LOOKUP_MIN = 20
 
 
 def _oa_get(params: dict, log):
@@ -90,12 +86,10 @@ def _published_cites(row: dict, log) -> None:
 
 
 def _enrich_cites(rows: list[dict], log=print) -> None:
-    """Attach OpenAlex citation counts (in place). Fast bulk pass by NBER DOI
-    (10.3386/w<n>, <=50/request, with 429 backoff), then a published-version
-    title lookup ONLY for candidates already >= _PUBLISHED_LOOKUP_MIN cites --
-    so the expensive per-paper searches stay few and don't trip rate limits.
-    Citations are the dominant classics signal; cites_per_year compares
-    vintages fairly."""
+    """Fast, reliable per-month pass: OpenAlex citation counts by NBER DOI
+    (10.3386/w<n>, <=50/request, with 429 backoff). Every paper gets a count.
+    The published-version correction (which undercounts here for since-published
+    papers) is a bounded GLOBAL post-pass in main() -- see _refine_top."""
     doi_to_row = {f"10.3386/{r['wp']}": r for r in rows if r.get("wp")}
     dois = list(doi_to_row)
     for i in range(0, len(dois), 50):
@@ -103,21 +97,33 @@ def _enrich_cites(rows: list[dict], log=print) -> None:
         data = _oa_get({"filter": "doi:" + "|".join(
             "https://doi.org/" + d for d in chunk),
             "select": "doi,cited_by_count,publication_year", "per-page": 50}, log)
-        if data is None:
-            log(f"    [cites] DOI batch {i // 50} gave up after retries")
         for w in (data or {}).get("results", []):
             doi = (w.get("doi") or "").replace("https://doi.org/", "")
             row = doi_to_row.get(doi)
             if row:
                 _set_cites(row, w.get("cited_by_count"), w.get("publication_year"))
         time.sleep(0.4)
-    # published-version pass, candidates only (keeps title searches to a few %)
-    cand = [r for r in rows if (r.get("cites") or 0) >= _PUBLISHED_LOOKUP_MIN]
-    for row in cand:
+
+
+# how many top-by-WP-cites papers get the published-version correction (a
+# bounded post-pass so it can't blow past OpenAlex rate limits no matter how
+# large the corpus). These are exactly the classic candidates.
+_REFINE_TOP_N = 300
+
+
+def _refine_top(data: dict, log=print) -> None:
+    """Global post-pass: take the highest WP-DOI-cited papers across ALL months
+    and correct each to its published version's (higher) count via a title
+    match. Bounded to _REFINE_TOP_N total lookups, so it completes reliably
+    even under OpenAlex throttling -- unlike a per-paper pass over thousands."""
+    allp = [x for v in data.values() for x in v]
+    top = sorted(allp, key=lambda x: x.get("cites") or 0, reverse=True)[:_REFINE_TOP_N]
+    for i, row in enumerate(top):
         _published_cites(row, log)
+        if i % 50 == 0:
+            log(f"    [refine] {i}/{len(top)} published-version lookups", )
         time.sleep(0.25)
-    if cand:
-        log(f"    [cites] checked published version for {len(cand)} candidates")
+    log(f"    [refine] corrected {len(top)} top candidates to published cites")
 
 
 def _months(start_ym: str, end_ym: str):
@@ -171,6 +177,9 @@ def main() -> None:
         if rows:
             data[ym] = rows
         print(f"  {ym}: {len(rows)} papers", flush=True)
+
+    # bounded global correction of the top candidates to their published cites
+    _refine_top(data)
 
     json.dump(data, open(OUT, "w", encoding="utf-8"), default=str)
     total = sum(len(v) for v in data.values())
