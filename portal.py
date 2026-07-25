@@ -461,7 +461,7 @@ function renderRecent(){
   const seen=new Set();
   const top=strict.slice().sort((a,b)=>
     (b.novelty_posterior||0)-(a.novelty_posterior||0)||(b.generality||0)-(a.generality||0)||byDate(a,b)
-  ).slice(0,10);
+  ).slice(0,20);
   const rows=[...watched.sort(byDate),...top]
     .filter(x=>!seen.has(x.url)&&seen.add(x.url))
     .map(x=>({...x,_displayScore:_strengthScore(x),_displayLabel:'strength'}));

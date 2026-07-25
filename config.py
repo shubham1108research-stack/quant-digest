@@ -559,15 +559,14 @@ RELEVANCE_LR = {                     # likelihood ratio by LLM relevance_categor
     "adjacent": 1.0,                 # related but not central -> uninformative
     "off_topic": 0.15,               # not finance / no testable content -> against
 }
-RELEVANCE_CONFIDENCE = 0.35          # posterior >= this => counts as "core" for gating
-#   Tuned so a confident core_fit verdict clears in every genuine quant topic
-#   (incl. Financial Econometrics ~0.39), while non-core Macro (~0.14) and
-#   Other (~0.10) still fail even on core_fit -- they'd need the ensemble to
-#   agree AND the topic itself to be more central. In topics with an already-
-#   strong prior (Asset Pricing ~0.60, Derivatives ~0.56, Volatility ~0.55,
-#   Portfolio Construction ~0.47), even a merely "adjacent" verdict clears --
-#   that's the prior correctly dominating a neutral update, not a bug: most
-#   work in those areas already turns out to be core-fit.
+RELEVANCE_CONFIDENCE = 0.75          # Recent's gate: relevance posterior >= this
+#   Raised to 0.75 (per request) so Recent surfaces only high-confidence
+#   relevant work -- core_fit in the strong-prior areas (Asset Pricing ~0.90,
+#   Derivatives ~0.88, Volatility ~0.88, Portfolio ~0.84, Microstructure ~0.82,
+#   ML ~0.75) clears, while weaker-topic core_fit (Financial Econometrics
+#   ~0.39, Fund Performance ~0.62) no longer does. Only gates Recent's display
+#   (the trusted watched-author lane still uses relevance_category=core_fit
+#   directly, so a Kelly/Feng paper isn't held to the 75% bar).
 
 # ---- Backward monthly backfill (progressive history) ----------------
 # Every run refreshes the current month, then processes ONE earlier month,

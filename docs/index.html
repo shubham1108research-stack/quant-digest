@@ -344,7 +344,7 @@ function sinceDays(n){
 // confidence bar the pipeline uses for gating (config.RELEVANCE_CONFIDENCE,
 // baked in at build time -- see portal.build), so every qualified item is a
 // deliberate pass/fail against real evidence, not a flat rescaled level.
-const RELEVANCE_CONFIDENCE_PCT=35;
+const RELEVANCE_CONFIDENCE_PCT=75;
 // Blend the dimensions that still vary among qualified items (generality,
 // testability, novelty-vs-history) into a display-only strength score.
 function _strengthScore(x){
@@ -365,7 +365,7 @@ function renderRecent(){
   const seen=new Set();
   const top=strict.slice().sort((a,b)=>
     (b.novelty_posterior||0)-(a.novelty_posterior||0)||(b.generality||0)-(a.generality||0)||byDate(a,b)
-  ).slice(0,10);
+  ).slice(0,20);
   const rows=[...watched.sort(byDate),...top]
     .filter(x=>!seen.has(x.url)&&seen.add(x.url))
     .map(x=>({...x,_displayScore:_strengthScore(x),_displayLabel:'strength'}));
