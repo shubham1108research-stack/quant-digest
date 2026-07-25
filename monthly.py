@@ -26,6 +26,37 @@ import store
 DOCS = pathlib.Path("docs")
 MONTHLY = DOCS / "monthly.json"
 CLASSICS = DOCS / "classics.json"
+NBER = DOCS / "nber.json"
+
+
+def update_nber_current(log) -> None:
+    """Keep the CURRENT month of docs/nber.json fresh each run (the portal's
+    NBER tab). The full 2010-> history is a one-off tools/backfill_nber.py; this
+    just refreshes the current month so new NBER finance papers appear daily."""
+    import calendar
+
+    import sources
+    data = _load(NBER, {})
+    if not isinstance(data, dict):
+        data = {}
+    ym = _this_month()
+    y, m = map(int, ym.split("-"))
+    start, end = f"{ym}-01", f"{ym}-{calendar.monthrange(y, m)[1]:02d}"
+    try:
+        items = sources.nber(log, start=start, end=end)
+    except Exception as e:                             # noqa: BLE001
+        log(f"[nber] current-month refresh failed: {type(e).__name__}: {e}")
+        return
+    by_wp = {}
+    for it in items:
+        by_wp[it.get("nber_wp") or it["url"]] = {
+            "title": it["title"], "authors": it["authors"], "url": it["url"],
+            "date": it["date"], "abstract": (it.get("abstract") or "")[:400],
+            "wp": it.get("nber_wp", "")}
+    if by_wp:
+        data[ym] = sorted(by_wp.values(), key=lambda x: x["wp"], reverse=True)
+        _save(NBER, data)
+        log(f"[nber] {ym}: {len(data[ym])} papers (current-month refresh)")
 
 
 def _load(p: pathlib.Path, default):
@@ -175,6 +206,7 @@ def run(con, fresh, log) -> None:
         monthly = {}
     for step in (lambda: refresh_present(con, fresh, monthly, log),
                  lambda: promote_seminal(fresh, log),
+                 lambda: update_nber_current(log),
                  lambda: backfill_step(con, monthly, log)):
         try:
             step()
