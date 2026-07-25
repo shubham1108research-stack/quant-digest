@@ -47,11 +47,68 @@ per-run batch budget); composite_entries() ranks and returns the top-N.
 
 import datetime as dt
 import math
+import os
 import re
+import time
+
+import requests
 
 import abstracts
 import config
 import llm
+
+_OA_UA = {"User-Agent": "quant-digest/1.0 (personal research tool)"}
+
+
+def _openalex_cites(items: list[dict], log=print) -> None:
+    """Fallback citation/author-h enrichment via OpenAlex (in place), for
+    DOI-bearing items S2 left without citations -- S2's unauthenticated pool is
+    heavily rate-limited and routinely returns nothing, silently starving the
+    composite of its citation + reputation signals. OpenAlex's polite pool is
+    reliable for the ~150 items/run the digest enriches. Bulk (<=50 DOIs)."""
+    need = [it for it in items
+            if it.get("doi") and (it.get("cites") is None or it.get("author_h") is None)]
+    if not need:
+        return
+    mail = os.environ.get("CONTACT_EMAIL") or os.environ.get("GMAIL_ADDRESS")
+    by_doi = {it["doi"].lower(): it for it in need}
+    dois = list(by_doi)
+    filled = 0
+    for i in range(0, len(dois), 50):
+        chunk = dois[i:i + 50]
+        params = {"filter": "doi:" + "|".join("https://doi.org/" + d for d in chunk),
+                  "select": "doi,cited_by_count,publication_year,authorships",
+                  "per-page": 50}
+        if mail:
+            params["mailto"] = mail
+        data = None
+        for attempt in range(4):
+            try:
+                r = requests.get("https://api.openalex.org/works", params=params,
+                                 headers=_OA_UA, timeout=45)
+                if r.status_code == 429:
+                    time.sleep(2 * (attempt + 1) + 1)
+                    continue
+                r.raise_for_status()
+                data = r.json()
+                break
+            except Exception:                          # noqa: BLE001
+                time.sleep(1.5 * (attempt + 1))
+        for w in (data or {}).get("results", []):
+            doi = (w.get("doi") or "").replace("https://doi.org/", "")
+            it = by_doi.get(doi)
+            if not it:
+                continue
+            if it.get("cites") is None and w.get("cited_by_count") is not None:
+                it["cites"] = w.get("cited_by_count")
+                filled += 1
+            # (author_h isn't on OpenAlex work authorships; S2 + prominence.py
+            # cover it -- citations are the signal being rescued here)
+            if it.get("pub_year") is None and w.get("publication_year"):
+                it["pub_year"] = w.get("publication_year")
+        time.sleep(0.4)
+    if filled:
+        log(f"[enrich] OpenAlex filled citations for {filled} items S2 missed")
 
 # Non-paper records that occasionally slip through a source (Crossref front
 # matter, a blog's own link-roundup post) and would otherwise rank on
@@ -103,6 +160,13 @@ def attach_s2(items: list[dict], log=print) -> list[dict]:
             it["author_h"] = d["author_h"]
         if it.get("pub_year") is None and d.get("year") is not None:
             it["pub_year"] = d["year"]
+    # OpenAlex fallback for anything S2 left without citations (S2's free pool
+    # is often fully rate-limited -- this keeps the composite's citation signal
+    # alive instead of silently dropping it)
+    try:
+        _openalex_cites(need, log)
+    except Exception as e:                             # noqa: BLE001
+        log(f"[enrich] OpenAlex fallback failed: {type(e).__name__}: {e}")
     return items
 
 
