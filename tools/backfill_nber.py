@@ -18,6 +18,7 @@ import calendar
 import datetime as dt
 import json
 import os
+import re
 import sys
 import time
 
@@ -34,11 +35,48 @@ _UA = {"User-Agent": "quant-digest/1.0 (personal research tool)"}
 _MAILTO = os.environ.get("CONTACT_EMAIL") or os.environ.get("GMAIL_ADDRESS")
 
 
+def _norm_title(t: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (t or "").lower()).strip()
+
+
+def _published_cites(row: dict) -> None:
+    """Most NBER papers are later published in a journal, and OpenAlex counts
+    citations against THAT version's DOI -- so the working-paper DOI count
+    severely undercounts (e.g. Stambaugh-Yu-Yuan 'The Short of It' shows ~90
+    on the WP DOI vs ~1500 published). Title-search the published version and
+    take the higher count. Guarded by a strong title match to avoid grabbing a
+    different paper's citations."""
+    want = _norm_title(row.get("title", ""))
+    if not want:
+        return
+    params = {"search": row["title"], "per-page": 5,
+              "select": "title,cited_by_count,publication_year,type"}
+    if _MAILTO:
+        params["mailto"] = _MAILTO
+    try:
+        r = requests.get("https://api.openalex.org/works", params=params,
+                         headers=_UA, timeout=30)
+        r.raise_for_status()
+        for w in r.json().get("results", []):
+            if _norm_title(w.get("title", "")) != want:     # exact normalized match only
+                continue
+            c = w.get("cited_by_count") or 0
+            if c > (row.get("cites") or 0):
+                row["cites"] = c
+                yr = w.get("publication_year") or dt.date.today().year
+                row["cites_per_year"] = round(
+                    c / max(1, dt.date.today().year - yr + 1), 1)
+            break
+    except Exception:                                       # noqa: BLE001
+        pass
+
+
 def _enrich_cites(rows: list[dict], log=print) -> None:
-    """Attach OpenAlex citation counts (in place) by NBER DOI (10.3386/w<n>) --
-    the dominant 'is this a classic?' signal. Bulk-batched (<=50 DOIs/request),
-    so a whole month is one call. Also derives cites_per_year for fair
-    cross-vintage comparison (an old paper has had longer to accrue)."""
+    """Attach OpenAlex citation counts (in place). First the fast bulk pass by
+    NBER DOI (10.3386/w<n>, <=50/request), then -- because the WP DOI badly
+    undercounts once a paper is published -- a per-paper title lookup that
+    takes the published version's higher count. Citations are the dominant
+    'is this a classic?' signal; cites_per_year fairly compares vintages."""
     doi_to_row = {f"10.3386/{r['wp']}": r for r in rows if r.get("wp")}
     dois = list(doi_to_row)
     now_year = dt.date.today().year
@@ -60,11 +98,14 @@ def _enrich_cites(rows: list[dict], log=print) -> None:
                 c = w.get("cited_by_count")
                 row["cites"] = c
                 yr = w.get("publication_year") or now_year
-                age = max(1, now_year - yr + 1)
-                row["cites_per_year"] = round((c or 0) / age, 1)
+                row["cites_per_year"] = round((c or 0) / max(1, now_year - yr + 1), 1)
         except Exception as e:                         # noqa: BLE001
-            log(f"    [cites] batch failed: {type(e).__name__}")
+            log(f"    [cites] DOI batch failed: {type(e).__name__}")
         time.sleep(0.3)
+    # published-version pass (title match); catches the journal citations
+    for row in rows:
+        _published_cites(row)
+        time.sleep(0.12)
 
 
 def _months(start_ym: str, end_ym: str):
