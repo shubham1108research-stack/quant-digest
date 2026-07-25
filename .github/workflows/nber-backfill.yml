@@ -8,6 +8,11 @@ name: NBER Backfill (one-off)
 # month fresh on its own.
 
 on:
+  # Weekly self-heal: re-pulls citation counts (which grow over time, and which
+  # a single throttled run can leave partial) from a clean runner IP, well
+  # spaced from any manual runs so OpenAlex's polite pool isn't exhausted.
+  schedule:
+    - cron: "0 7 * * 0"          # Sundays 07:00 UTC
   workflow_dispatch:
     inputs:
       start:
