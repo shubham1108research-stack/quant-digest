@@ -143,17 +143,18 @@ def _slim(it: dict) -> dict:
 
 
 def build_month(ym: str, log=print) -> list[dict]:
+    """Collect one month's NBER Asset Pricing papers (NBER API only -- fast, not
+    OpenAlex-throttled). Citation enrichment is a single GLOBAL pass in main(),
+    NOT here, so OpenAlex is hit in ~44 bulk batches total instead of ~199
+    per-month ones -- far fewer calls, far less rate-limit exposure."""
     y, m = map(int, ym.split("-"))
     start = f"{ym}-01"
     end = f"{ym}-{calendar.monthrange(y, m)[1]:02d}"
     items = sources.nber(log, start=start, end=end)
-    # newest first within the month, deduped by working-paper number
-    by_wp = {}
+    by_wp = {}                                 # newest first, deduped by WP number
     for it in items:
         by_wp[it.get("nber_wp") or it["url"]] = _slim(it)
-    rows = sorted(by_wp.values(), key=lambda x: x["wp"], reverse=True)
-    _enrich_cites(rows, log)               # citation counts -> classics signal
-    return rows
+    return sorted(by_wp.values(), key=lambda x: x["wp"], reverse=True)
 
 
 def main() -> None:
@@ -178,7 +179,11 @@ def main() -> None:
             data[ym] = rows
         print(f"  {ym}: {len(rows)} papers", flush=True)
 
-    # bounded global correction of the top candidates to their published cites
+    # ONE global citation pass over every collected paper (~44 bulk DOI batches
+    # for the whole corpus, not per-month), then the bounded top-N refinement
+    all_rows = [x for v in data.values() for x in v]
+    print(f"enriching citations for {len(all_rows)} papers...", flush=True)
+    _enrich_cites(all_rows, print)
     _refine_top(data)
 
     json.dump(data, open(OUT, "w", encoding="utf-8"), default=str)
