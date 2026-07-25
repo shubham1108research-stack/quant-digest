@@ -46,6 +46,7 @@ per-run batch budget); composite_entries() ranks and returns the top-N.
 """
 
 import datetime as dt
+import json
 import math
 import os
 import re
@@ -170,6 +171,79 @@ def attach_s2(items: list[dict], log=print) -> list[dict]:
     return items
 
 
+# ---------------------------------------------------- author score
+# A bounded 0-100 reputation signal per paper, scored on its STRONGEST author
+# (a junior lead with a star co-author still benefits). Fed by career impact
+# (h-index), recent momentum (2yr citations), being a tracked/seminal author
+# (the watchlist roster), and venue track record. It only NUDGES the composite
+# (via the bounded M_rep multiplier) -- it can lift a paper but never carry a
+# weak one, keeping prestige from dominating quality.
+_TOP_VENUES = {"journal of finance", "journal of financial economics",
+               "review of financial studies", "journal of financial and "
+               "quantitative analysis", "review of finance", "journal of "
+               "financial and quantitative", "econometrica", "american economic "
+               "review", "review of economic studies", "quarterly journal of "
+               "economics", "journal of political economy"}
+_SOURCE_BONUS = {"canon": 30, "seed": 20, "auto": 15}    # membership -> boost
+
+
+def _name_key(name: str):
+    n = re.sub(r"[^a-z\s-]", "", (name or "").lower().replace(".", " "))
+    toks = [t for t in n.split() if t]
+    return (toks[0], toks[-1]) if len(toks) >= 2 else None
+
+
+def _load_roster() -> dict:
+    """Roster keyed by (first,last) name-key -> author metadata, so a paper's
+    authors can be matched to their watchlist/canon entry."""
+    try:
+        authors = (json.loads(open(os.path.join("docs", "watchlist.json"),
+                   encoding="utf-8").read()) or {}).get("authors", {})
+    except Exception:                                  # noqa: BLE001
+        return {}
+    by_key = {}
+    for a in authors.values():
+        k = _name_key(a.get("name", ""))
+        if k:
+            by_key[k] = a
+    return by_key
+
+
+def _venue_component(meta: dict) -> float:
+    mix = meta.get("venue_mix") or {}
+    tot = sum(mix.values()) or 1
+    top = sum(n for v, n in mix.items() if v.lower() in _TOP_VENUES)
+    return 100.0 * top / tot
+
+
+def author_score(it: dict, anorm: float, roster: dict) -> float:
+    """0-100 reputation for the paper's STRONGEST author, centred so 50 is
+    neutral (no M_rep effect). Base is the best-author h-index (anorm, already a
+    max across the paper's authors); being a tracked/seminal author and recent
+    citations / top-venue track record ADD on top (never subtract -- an unknown
+    author with a median h-index sits at neutral, not penalised for obscurity).
+    """
+    # strongest roster match across the paper's authors (canon > seed > auto)
+    best = None
+    for author in re.split(r"[;,]", it.get("authors", "") or ""):
+        k = _name_key(author)
+        m = roster.get(k) if k else None
+        if m and (best is None
+                  or _SOURCE_BONUS.get(m.get("source"), 0)
+                  > _SOURCE_BONUS.get(best.get("source"), 0)):
+            best = m
+
+    base = anorm if it.get("author_h") is not None else 50.0    # 50 = neutral
+    bonus = 0.0
+    if best:
+        base = max(base, 55.0)                          # a tracked author isn't sub-neutral
+        rc = best.get("recent_cites") or 0
+        bonus = (_SOURCE_BONUS.get(best.get("source"), 0)
+                 + min(15.0, math.log10(rc + 1) / 4 * 15)   # recent momentum, +0..15
+                 + 0.08 * _venue_component(best))           # top-venue rate, +0..8
+    return max(0.0, min(100.0, base + bonus))
+
+
 def llm_score(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
     """LLM-score only the not-yet-scored, non-junk items (anchored rubric
     levels + robustness flags + topic + summary), most-cited first so a batch
@@ -235,6 +309,7 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
     nc = _norm_counts([(it.get("cites") or 0) for it in scored], logscale=True)
     na = _norm_counts([(it.get("author_h") or 0) for it in scored], logscale=False)
     if_max = max(config.JOURNAL_IMPACT.values()) or 1.0
+    roster = _load_roster()               # for the author-reputation score
 
     # real citation velocity (cites/age) -- only for items old enough to have one
     ages = [_age_years(it) for it in scored]
@@ -289,13 +364,14 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
 
         # --- M_rep: bounded reputation multiplier -- author/venue track
         # record can only nudge, never carry (this paper's own citations are
-        # already in the weighted blend above, not here)
-        rep_inputs = []
-        if it.get("author_h") is not None:
-            rep_inputs.append(anorm)
+        # already in the weighted blend above, not here). The author component
+        # is the strongest-author reputation score (h-index + recent citations
+        # + watchlist/canon membership + venue track record).
+        a_score = author_score(it, anorm, roster)
+        rep_inputs = [a_score]
         if in_table:
             rep_inputs.append(100.0 * if_raw / if_max)
-        rep_avg = sum(rep_inputs) / len(rep_inputs) if rep_inputs else 50.0
+        rep_avg = sum(rep_inputs) / len(rep_inputs)
         M_rep = (1 - config.CRED_BOUND) + 2 * config.CRED_BOUND * (rep_avg / 100)
 
         # blend is already <=100 (weights sum to 1.0, each term capped at 100);
@@ -331,6 +407,7 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
             "velocity_norm": round(vnorm, 1) if vnorm is not None else None,
             "robustness": round(R, 3),
             "reputation": round(M_rep, 3),
+            "author_score": round(a_score, 1),
             "composite": round(composite, 1),
             "summary": it.get("summary", ""),
         })

@@ -548,6 +548,7 @@ function monthlyEntry(x,rank){
     _subBar('Robustness',x.robustness!=null?Math.round(x.robustness*100)+'%':'–',(x.robustness||0)*100),
     _subBar('Reputation',x.reputation!=null?x.reputation.toFixed(2)+'×':'–',
       x.reputation!=null?(x.reputation-0.85)/0.30*100:0),
+    _subBar('Author',x.author_score!=null?Math.round(x.author_score):'–',x.author_score||0),
   ].join('');
   const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_pdfBtn(x)}${_saveBtn(x)}`;
   const cval=Math.round(x.composite);
