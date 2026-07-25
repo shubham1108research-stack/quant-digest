@@ -39,73 +39,85 @@ def _norm_title(t: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", (t or "").lower()).strip()
 
 
-def _published_cites(row: dict) -> None:
-    """Most NBER papers are later published in a journal, and OpenAlex counts
-    citations against THAT version's DOI -- so the working-paper DOI count
-    severely undercounts (e.g. Stambaugh-Yu-Yuan 'The Short of It' shows ~90
-    on the WP DOI vs ~1500 published). Title-search the published version and
-    take the higher count. Guarded by a strong title match to avoid grabbing a
-    different paper's citations."""
-    want = _norm_title(row.get("title", ""))
-    if not want:
-        return
-    params = {"search": row["title"], "per-page": 5,
-              "select": "title,cited_by_count,publication_year,type"}
+# only chase the published version for papers already citeable enough to
+# matter for the classics list -- keeps the title-search count (and rate-limit
+# pressure) low. A paper with 5 WP-DOI cites isn't a classic either way.
+_PUBLISHED_LOOKUP_MIN = 20
+
+
+def _oa_get(params: dict, log):
+    """OpenAlex GET with 429 backoff -- essential when enriching thousands of
+    papers, or the whole pass fails and citations come back null."""
     if _MAILTO:
-        params["mailto"] = _MAILTO
-    try:
-        r = requests.get("https://api.openalex.org/works", params=params,
-                         headers=_UA, timeout=30)
-        r.raise_for_status()
-        for w in r.json().get("results", []):
-            if _norm_title(w.get("title", "")) != want:     # exact normalized match only
-                continue
-            c = w.get("cited_by_count") or 0
-            if c > (row.get("cites") or 0):
-                row["cites"] = c
-                yr = w.get("publication_year") or dt.date.today().year
-                row["cites_per_year"] = round(
-                    c / max(1, dt.date.today().year - yr + 1), 1)
-            break
-    except Exception:                                       # noqa: BLE001
-        pass
-
-
-def _enrich_cites(rows: list[dict], log=print) -> None:
-    """Attach OpenAlex citation counts (in place). First the fast bulk pass by
-    NBER DOI (10.3386/w<n>, <=50/request), then -- because the WP DOI badly
-    undercounts once a paper is published -- a per-paper title lookup that
-    takes the published version's higher count. Citations are the dominant
-    'is this a classic?' signal; cites_per_year fairly compares vintages."""
-    doi_to_row = {f"10.3386/{r['wp']}": r for r in rows if r.get("wp")}
-    dois = list(doi_to_row)
-    now_year = dt.date.today().year
-    for i in range(0, len(dois), 50):
-        chunk = dois[i:i + 50]
-        params = {"filter": "doi:" + "|".join("https://doi.org/" + d for d in chunk),
-                  "select": "doi,cited_by_count,publication_year", "per-page": 50}
-        if _MAILTO:
-            params["mailto"] = _MAILTO
+        params = {**params, "mailto": _MAILTO}
+    for attempt in range(5):
         try:
             r = requests.get("https://api.openalex.org/works", params=params,
                              headers=_UA, timeout=45)
+            if r.status_code == 429:
+                time.sleep(2 * (attempt + 1) + 1)
+                continue
             r.raise_for_status()
-            for w in r.json().get("results", []):
-                doi = (w.get("doi") or "").replace("https://doi.org/", "")
-                row = doi_to_row.get(doi)
-                if not row:
-                    continue
-                c = w.get("cited_by_count")
-                row["cites"] = c
-                yr = w.get("publication_year") or now_year
-                row["cites_per_year"] = round((c or 0) / max(1, now_year - yr + 1), 1)
-        except Exception as e:                         # noqa: BLE001
-            log(f"    [cites] DOI batch failed: {type(e).__name__}")
-        time.sleep(0.3)
-    # published-version pass (title match); catches the journal citations
-    for row in rows:
-        _published_cites(row)
-        time.sleep(0.12)
+            return r.json()
+        except Exception:                              # noqa: BLE001
+            time.sleep(1.5 * (attempt + 1))
+    return None
+
+
+def _set_cites(row: dict, c, yr) -> None:
+    row["cites"] = c
+    row["cites_per_year"] = round((c or 0) / max(1, dt.date.today().year - (yr or dt.date.today().year) + 1), 1)
+
+
+def _published_cites(row: dict, log) -> None:
+    """The WP-DOI count undercounts once a paper is published (OpenAlex counts
+    citations against the JOURNAL version's DOI) -- e.g. Stambaugh-Yu-Yuan 'The
+    Short of It' is ~90 on the WP DOI vs ~1500 published. Title-search the
+    published version and take the higher count, guarded by an exact
+    normalized-title match. Only called for already-citeable candidates."""
+    want = _norm_title(row.get("title", ""))
+    if not want:
+        return
+    data = _oa_get({"search": row["title"], "per-page": 5,
+                    "select": "title,cited_by_count,publication_year"}, log)
+    for w in (data or {}).get("results", []):
+        if _norm_title(w.get("title", "")) != want:
+            continue
+        c = w.get("cited_by_count") or 0
+        if c > (row.get("cites") or 0):
+            _set_cites(row, c, w.get("publication_year"))
+        break
+
+
+def _enrich_cites(rows: list[dict], log=print) -> None:
+    """Attach OpenAlex citation counts (in place). Fast bulk pass by NBER DOI
+    (10.3386/w<n>, <=50/request, with 429 backoff), then a published-version
+    title lookup ONLY for candidates already >= _PUBLISHED_LOOKUP_MIN cites --
+    so the expensive per-paper searches stay few and don't trip rate limits.
+    Citations are the dominant classics signal; cites_per_year compares
+    vintages fairly."""
+    doi_to_row = {f"10.3386/{r['wp']}": r for r in rows if r.get("wp")}
+    dois = list(doi_to_row)
+    for i in range(0, len(dois), 50):
+        chunk = dois[i:i + 50]
+        data = _oa_get({"filter": "doi:" + "|".join(
+            "https://doi.org/" + d for d in chunk),
+            "select": "doi,cited_by_count,publication_year", "per-page": 50}, log)
+        if data is None:
+            log(f"    [cites] DOI batch {i // 50} gave up after retries")
+        for w in (data or {}).get("results", []):
+            doi = (w.get("doi") or "").replace("https://doi.org/", "")
+            row = doi_to_row.get(doi)
+            if row:
+                _set_cites(row, w.get("cited_by_count"), w.get("publication_year"))
+        time.sleep(0.4)
+    # published-version pass, candidates only (keeps title searches to a few %)
+    cand = [r for r in rows if (r.get("cites") or 0) >= _PUBLISHED_LOOKUP_MIN]
+    for row in cand:
+        _published_cites(row, log)
+        time.sleep(0.25)
+    if cand:
+        log(f"    [cites] checked published version for {len(cand)} candidates")
 
 
 def _months(start_ym: str, end_ym: str):
