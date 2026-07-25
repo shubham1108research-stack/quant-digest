@@ -37,7 +37,8 @@ def collect(existing: set) -> list[dict]:
     items: list[dict] = []
     steps = [
         ("NEP", sources.nep),
-        ("NBER", sources.nber),
+        ("NBER", lambda: sources.nber(log)),
+        ("Watchlist authors", lambda: sources.watchlist(log)),
         ("arXiv", lambda: sources.arxiv(log)),
         ("Journals/Crossref", lambda: sources.journals(log)),
         ("PMR journals", lambda: sources.pmr(log, existing)),
@@ -102,6 +103,10 @@ def main() -> None:
     n_prac = len(fresh) - len(research)
     if n_prac:
         log(f"[llm] {n_prac} practitioner items skipped (not scored)")
+
+    # watchlist authors' papers go FIRST so the LLM batch budget always scores
+    # them before the general backlog -- they must never be dropped unscored
+    research.sort(key=lambda it: bool(it.get("watchlist")), reverse=True)
 
     # optional LLM triage -- attaches rank_score/why; no-op without an API key
     llm.rank(research, log)               # mutates the shared item dicts in place

@@ -115,7 +115,9 @@ def llm_score(items: list[dict], log, max_batches: int | None = None) -> list[di
     spending LLM quota on."""
     todo = [it for it in items
             if it.get("relevance") is None and not is_junk(it.get("title", ""))]
-    todo.sort(key=lambda it: (it.get("cites") or 0), reverse=True)
+    # watchlist items FIRST (never dropped by the batch budget), then most-cited
+    todo.sort(key=lambda it: (bool(it.get("watchlist")), it.get("cites") or 0),
+              reverse=True)
     llm.rank(todo, log, max_batches=max_batches)
     return items
 

@@ -6,6 +6,8 @@ dead feed never kills the run.
 
 import datetime as dt
 import html as _html
+import json
+import os
 import re
 import time
 
@@ -64,24 +66,65 @@ def nep() -> list[dict]:
 
 
 # --------------------------------------------------------------- NBER
-def nber() -> list[dict]:
-    feed = feedparser.parse(config.NBER_RSS)
+_NBER_A = re.compile(r"<a[^>]*>([^<]+)</a>")     # strip the <a href> author markup
+
+
+def _nber_is_finance(title: str, abstract: str) -> bool:
+    text = (title + " " + abstract).lower()
+    return any(t in text for t in config.NBER_FINANCE_TERMS)
+
+
+def nber(log=print) -> list[dict]:
+    """Paginated NBER working-paper listing over the lookback window (complete
+    coverage, unlike the old rolling RSS), keeping only finance-relevant papers
+    via a coarse keyword gate. Final relevance is still the Bayesian posterior."""
     cut = _cutoff()
-    out = []
-    for e in feed.entries:
-        d = _entry_date(e)
-        if d and d < cut:
-            continue
-        out.append({
-            "title": _clean(e.get("title", "")),
-            "authors": _clean(e.get("author", "")),
-            "abstract": _clean(e.get("description", "") or e.get("summary", "")),
-            "url": e.get("link", ""),
-            "date": d.date().isoformat() if d else "",
-            "source": "nber",
-            "section": 1,
-        })
+    start = cut.date().isoformat()
+    end = dt.date.today().isoformat()
+    out, kept, seen_total = [], 0, 0
+    for page in range(1, config.NBER_MAX_PAGES + 1):
+        params = {"page": page, "perPage": config.NBER_PER_PAGE,
+                  "sortBy": "public_date", "startDate": start, "endDate": end}
+        r = requests.get(config.NBER_API, params=params, headers=UA, timeout=45)
+        r.raise_for_status()
+        results = (r.json() or {}).get("results") or []
+        if not results:
+            break
+        seen_total += len(results)
+        for e in results:
+            title = _clean(e.get("title", ""))
+            abstract = _clean(e.get("abstract", ""))
+            if not _nber_is_finance(title, abstract):
+                continue
+            authors = ", ".join(_NBER_A.findall(" ".join(e.get("authors") or [])))
+            wp = (e.get("url") or "").rsplit("/", 1)[-1]     # e.g. 'w35441'
+            out.append({
+                "title": title,
+                "authors": _clean(authors),
+                "abstract": abstract,
+                "url": "https://www.nber.org" + (e.get("url") or ""),
+                "date": _nber_date(e.get("displaydate")),
+                "source": "nber",
+                "section": 1,
+                "nber_wp": wp,
+            })
+            kept += 1
+        if len(results) < config.NBER_PER_PAGE:
+            break
+        time.sleep(0.5)
+    log(f"[nber] {kept} finance papers kept of {seen_total} in window "
+        f"{start}..{end}")
     return out
+
+
+def _nber_date(displaydate: str) -> str:
+    """NBER gives 'July 2026' (month granularity); map to the 1st of the month,
+    or fall back to today if unparseable."""
+    try:
+        return dt.datetime.strptime((displaydate or "").strip(), "%B %Y").date() \
+            .replace(day=1).isoformat()
+    except Exception:                                  # noqa: BLE001
+        return dt.date.today().isoformat()
 
 
 # -------------------------------------------------------------- arXiv
@@ -485,6 +528,51 @@ def openalex_preprints(log) -> list[dict]:
         except Exception as e:                       # noqa: BLE001
             log(f"[openalex] '{label}' failed: {type(e).__name__}: {e}")
         time.sleep(1.0)  # polite spacing between sources
+    return out
+
+
+# ------------------------------------ P2: author watchlist
+def watchlist(log=print) -> list[dict]:
+    """Pull recent works by every author on the roster (docs/watchlist.json,
+    built quarterly by tools/gen_watchlist.py), regardless of whether a source
+    feed carried them -- this is the safety net so a Kelly/Xiu paper is never
+    missed. Items are tagged watchlist=True + the author's name; downstream they
+    jump the LLM scoring queue (never dropped by budget) and are always
+    surfaced (their relevance score is shown as a label, never a filter)."""
+    path = os.path.join("docs", "watchlist.json")
+    try:
+        roster = (json.load(open(path, encoding="utf-8")) or {}).get("authors", {})
+    except Exception as e:                             # noqa: BLE001
+        log(f"[watchlist] no roster ({type(e).__name__}); skipped")
+        return []
+    if not roster:
+        log("[watchlist] roster empty; skipped")
+        return []
+    since = (dt.date.today()
+             - dt.timedelta(days=config.WATCHLIST_LOOKBACK_DAYS)).isoformat()
+    out, hit_authors = [], 0
+    for aid, meta in roster.items():
+        name = meta.get("name", aid)
+        try:
+            r = _openalex_get("https://api.openalex.org/works", {
+                "filter": f"author.id:{aid},from_publication_date:{since}",
+                "per-page": config.WATCHLIST_MAX_PER_AUTHOR,
+                "sort": "publication_date:desc",
+            }, log)
+        except Exception as e:                         # noqa: BLE001
+            log(f"[watchlist] '{name}' failed: {type(e).__name__}")
+            continue
+        works = r.json().get("results", [])
+        if works:
+            hit_authors += 1
+        for w in works:
+            it = _oa_item(w, "watchlist", 2)
+            it["watchlist"] = True
+            it["watchlist_author"] = name
+            out.append(it)
+        time.sleep(0.25)                               # polite spacing
+    log(f"[watchlist] {len(out)} works from {hit_authors}/{len(roster)} "
+        f"watched authors since {since}")
     return out
 
 

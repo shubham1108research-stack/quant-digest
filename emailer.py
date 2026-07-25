@@ -58,9 +58,13 @@ def _source_label(it: dict) -> str:
 
 def _item_card(it: dict) -> str:
     pills = ""
+    if it.get("watchlist"):
+        pills += _pill(f"★ {it.get('watchlist_author', 'watched')}", "#7a5c00")
     s = it.get("rank_score")
     if isinstance(s, int):
-        pills += _pill(str(s), _score_bg(s))
+        # for a watched item the score is a LABEL, not a gate -- say so
+        label = f"relevance {s}" if it.get("watchlist") else str(s)
+        pills += _pill(label, _score_bg(s))
     if it.get("tier"):
         pills += _pill(it["tier"], "#12203a" if it["tier"] == "T1" else "#5b6b8c")
     if it.get("prom_hindex"):
@@ -103,9 +107,12 @@ def render(items: list[dict], notes: list[str]) -> str:
     graded = any(isinstance(it.get("rank_score"), int) for it in items)
     hidden = 0
     if graded:
+        # watchlist items ALWAYS survive (you judge them yourself); everything
+        # else must be scored at/above the show threshold
         kept = [it for it in items
-                if isinstance(it.get("rank_score"), int)
-                and it["rank_score"] >= config.MIN_SHOW_SCORE]
+                if it.get("watchlist")
+                or (isinstance(it.get("rank_score"), int)
+                    and it["rank_score"] >= config.MIN_SHOW_SCORE)]
         hidden = len(items) - len(kept)
         items = kept
 
@@ -129,12 +136,25 @@ def render(items: list[dict], notes: list[str]) -> str:
                  'border-radius:7px;margin-top:14px">\U0001F4CA  Browse the full '
                  'searchable archive</a>')
 
+    # ★ Watched authors lead -- always surfaced, whatever they scored; the
+    # relevance number is shown as a label (in _item_card), never a filter.
+    watched = sorted((it for it in items if it.get("watchlist")),
+                     key=_by_score, reverse=True)
+    watched_ids = {id(it) for it in watched}
+    if watched:
+        p.append(_section("★ Watched authors — everything they published",
+                          len(watched), "#7a5c00"))
+        p += [_item_card(it) for it in watched]
+
     # Prominence division: Tier 1 / Tier 2 lead; the rest fall to source sections.
-    tier1 = sorted((it for it in items if _plevel(it) == 1), key=_by_score,
-                   reverse=True)
-    tier2 = sorted((it for it in items if _plevel(it) == 2), key=_by_score,
-                   reverse=True)
-    tiered = {id(it) for it in tier1} | {id(it) for it in tier2}
+    # (watchlist items already shown above -- exclude them from the tiers)
+    tier1 = sorted((it for it in items
+                    if _plevel(it) == 1 and id(it) not in watched_ids),
+                   key=_by_score, reverse=True)
+    tier2 = sorted((it for it in items
+                    if _plevel(it) == 2 and id(it) not in watched_ids),
+                   key=_by_score, reverse=True)
+    tiered = {id(it) for it in tier1} | {id(it) for it in tier2} | watched_ids
 
     if tier1:
         p.append(_section("★ Tier 1 — top journals, prominent authors & "

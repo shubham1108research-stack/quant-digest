@@ -14,9 +14,28 @@ NEP_CODES = ["fmk", "inv", "rmg", "ecm", "ets", "for",
 NEP_URL = "https://nep.repec.org/rss/nep-{code}.rss.xml"
 
 # ---- NBER ------------------------------------------------------------
-# RUN-1 VERIFY: confirm this feed URL resolves; if not, find the current
-# "new working papers" RSS on nber.org and update.
-NBER_RSS = "https://back.nber.org/rss/new.xml"
+# NBER working papers via the site's paginated JSON listing API, filtered by
+# publication date. This REPLACES the old rolling new.xml RSS feed, which only
+# ever exposed whatever was on the feed at fetch time -- so finance papers that
+# scrolled off between runs were missed permanently. The date-window API
+# returns EVERY paper for the window (paginated), giving complete coverage;
+# a finance keyword pre-filter then keeps the ~113/month all-economics volume
+# from flooding the LLM budget (final relevance is still the Bayesian posterior).
+NBER_API = ("https://www.nber.org/api/v1/working_page_listing/contentType/"
+            "working_paper/_/_/search")
+NBER_PER_PAGE = 100
+NBER_MAX_PAGES = 6                    # safety cap (~600 papers/window)
+# lightweight admission gate: title/abstract must mention a finance term. Coarse
+# on purpose -- it only decides what enters scoring, not the final rank.
+NBER_FINANCE_TERMS = [
+    "asset pric", "stock return", "equity", "portfolio", "factor",
+    "cross-section", "cross section", "volatility", "option", "derivative",
+    "hedge", "mutual fund", "risk premi", "expected return", "momentum",
+    "market microstructure", "liquidity", "bond", "yield", "credit spread",
+    "term structure", "exchange rate", "currency", "commodity", "futures",
+    "capm", "arbitrage", "sharpe", "anomal", "return predictab", "trading",
+    "financial market", "securit", "valuation", "investor", "beta",
+]
 
 # ---- arXiv (Atom API, no key) ---------------------------------------
 ARXIV_CATS = ["q-fin.PR", "q-fin.PM", "q-fin.ST", "q-fin.GN", "q-fin.EC",
@@ -559,3 +578,90 @@ SUBJECT_PREFIX = "[Research Digest]"
 # Pages) once docs/ is published; the local fallback works with
 # `py -m http.server 8000 --directory docs`. Empty hides the button.
 PORTAL_URL = "https://quant-digest-e62.pages.dev"  # Cloudflare Pages (login-walled)
+
+# ---- P2: Author watchlist (track specific researchers, never miss them) ----
+# Papers by these people are pulled directly from OpenAlex each run regardless
+# of whether a source feed carried them, and are never dropped by the LLM batch
+# budget. The seed list below is resolved to OpenAlex author ids ONCE by
+# tools/gen_watchlist.py (which writes docs/watchlist.json); the daily run just
+# reads that file. The roster also grows automatically -- see auto-promotion.
+#
+# A watchlisted paper still gets a relevance score, but that score is only a
+# DISPLAYED LABEL (a "relevance NN%" tag), never a filter: everything a watched
+# author publishes is surfaced so you can judge it yourself.
+WATCHLIST_LOOKBACK_DAYS = 120         # how far back the collector pulls per author
+WATCHLIST_MAX_PER_AUTHOR = 8          # cap new works pulled per author per run
+# Auto-promotion: after a quarterly refresh, anyone who recurred in our OWN
+# archive at least this many times above this composite last quarter joins the
+# roster (source="auto"). Unbounded growth, no pruning, individuals only.
+WATCHLIST_PROMOTE_MIN_PAPERS = 3
+WATCHLIST_PROMOTE_MIN_COMPOSITE = 70
+
+# Seed roster: {name, hint}. `hint` disambiguates the OpenAlex name search
+# (an institution or subfield) -- gen_watchlist.py picks the economics/finance
+# author with the strongest match. Canon authors (canon.py surname hints) are
+# folded in automatically by the generator, so they need not be repeated here.
+WATCHLIST_SEED = [
+    # ML / empirical asset pricing
+    {"name": "Bryan Kelly", "hint": "Yale asset pricing machine learning"},
+    {"name": "Dacheng Xiu", "hint": "Chicago Booth machine learning"},
+    {"name": "Shihao Gu", "hint": "empirical asset pricing machine learning"},
+    {"name": "Stefan Nagel", "hint": "Chicago Booth asset pricing"},
+    {"name": "Serhiy Kozak", "hint": "Maryland stochastic discount factor"},
+    {"name": "Stefano Giglio", "hint": "Yale factor models"},
+    {"name": "Markus Pelger", "hint": "Stanford deep learning asset pricing"},
+    {"name": "Guanhao Feng", "hint": "City University Hong Kong deep factors"},
+    {"name": "Semyon Malamud", "hint": "EPFL finance machine learning"},
+    {"name": "Doron Avramov", "hint": "Reichman machine learning anomalies"},
+    {"name": "Andreas Neuhierl", "hint": "Washington University asset pricing"},
+    # Factors / anomalies / cross-section
+    {"name": "Robert Novy-Marx", "hint": "Rochester profitability factor"},
+    {"name": "Kent Daniel", "hint": "Columbia momentum"},
+    {"name": "Kewei Hou", "hint": "Ohio State q-factor"},
+    {"name": "Lu Zhang", "hint": "Ohio State q-factor investment"},
+    {"name": "Zhiguo He", "hint": "Stanford intermediary asset pricing"},
+    {"name": "Andrew Y. Chen", "hint": "Federal Reserve replication anomalies"},
+    {"name": "Campbell Harvey", "hint": "Duke multiple testing factors"},
+    {"name": "Christopher Polk", "hint": "LSE asset pricing"},
+    {"name": "Jules van Binsbergen", "hint": "Wharton asset pricing"},
+    # Trend / managed futures / multi-asset
+    {"name": "Lasse Heje Pedersen", "hint": "AQR Copenhagen factors liquidity"},
+    {"name": "Tobias Moskowitz", "hint": "Yale time series momentum"},
+    {"name": "Andrea Frazzini", "hint": "AQR betting against beta"},
+    {"name": "Nick Baltas", "hint": "trend following risk parity multi-asset"},
+    {"name": "Antti Ilmanen", "hint": "AQR expected returns"},
+    # Volatility / derivatives
+    {"name": "Torben Andersen", "hint": "Northwestern realized volatility"},
+    {"name": "Tim Bollerslev", "hint": "Duke volatility GARCH"},
+    {"name": "Peter Carr", "hint": "NYU derivatives"},
+    {"name": "Ian Dew-Becker", "hint": "Northwestern variance risk premium"},
+    {"name": "Grigory Vilkov", "hint": "Frankfurt implied volatility"},
+    # Fixed income / credit / macro-finance
+    {"name": "Ralph Koijen", "hint": "Chicago Booth demand system asset pricing"},
+    {"name": "Sydney Ludvigson", "hint": "NYU macro finance risk premia"},
+    {"name": "Monika Piazzesi", "hint": "Stanford term structure"},
+    {"name": "Anna Cieslak", "hint": "Duke monetary policy bonds"},
+    {"name": "Hanno Lustig", "hint": "Stanford exchange rates bonds"},
+    # Econometrics / forecasting / Bayesian
+    {"name": "Francis X. Diebold", "hint": "Pennsylvania forecasting"},
+    {"name": "Allan Timmermann", "hint": "UCSD forecast combination"},
+    {"name": "Andrew Patton", "hint": "Duke financial econometrics"},
+    {"name": "Barbara Rossi", "hint": "Pompeu Fabra forecasting"},
+    {"name": "Dimitris Korobilis", "hint": "Glasgow Bayesian VAR"},
+    {"name": "Gary Koop", "hint": "Strathclyde Bayesian econometrics"},
+    # Microstructure / liquidity
+    {"name": "Terrence Hendershott", "hint": "Berkeley high frequency trading"},
+    {"name": "Albert J. Menkveld", "hint": "Vrije Universiteit market microstructure"},
+    {"name": "Marcos Lopez de Prado", "hint": "machine learning finance backtesting"},
+    # Behavioral / limits to arbitrage
+    {"name": "Nicholas Barberis", "hint": "Yale behavioral finance"},
+    {"name": "David Hirshleifer", "hint": "USC behavioral finance"},
+    {"name": "Robin Greenwood", "hint": "Harvard limits arbitrage"},
+    {"name": "Kelly Shue", "hint": "Yale behavioral finance"},
+    # Practitioner-academic (prolific)
+    {"name": "David Blitz", "hint": "Robeco factor investing"},
+    {"name": "Pim van Vliet", "hint": "Robeco low volatility"},
+    {"name": "Guido Baltussen", "hint": "Robeco Erasmus factor premia"},
+    {"name": "Rob Arnott", "hint": "Research Affiliates smart beta"},
+    {"name": "Victor DeMiguel", "hint": "London Business School portfolio optimization"},
+]

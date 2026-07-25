@@ -1,0 +1,46 @@
+name: Watchlist Refresh
+
+# Rebuilds docs/watchlist.json every quarter: re-resolves the seed + canon
+# authors to OpenAlex ids, folds in anyone auto-promoted from our own archive
+# last quarter, and refreshes each author's venue/volume/impact metrics. The
+# daily digest just reads the committed file, so this heavy OpenAlex job only
+# runs ~4x/year. Also runnable on demand via the Actions tab.
+
+on:
+  schedule:
+    - cron: "0 6 1 1,4,7,10 *"    # 06:00 UTC on the 1st of Jan/Apr/Jul/Oct
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: watchlist-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Rebuild watchlist roster
+        env:
+          CONTACT_EMAIL: ${{ secrets.GMAIL_ADDRESS }}   # OpenAlex polite pool
+        run: python tools/gen_watchlist.py
+
+      - name: Commit refreshed roster
+        run: |
+          git config user.name "digest-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/watchlist.json || true
+          git commit -m "watchlist refresh $(date -u +%F)" || echo "no changes"
+          git pull --rebase --autostash origin master || true
+          git push || (git pull --rebase --autostash origin master && git push)
