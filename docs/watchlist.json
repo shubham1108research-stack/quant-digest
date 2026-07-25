@@ -1,1 +1,904 @@
-{"generated": "pending", "authors": {}}
+{
+ "generated": "2026-Q3",
+ "authors": {
+  "A5101435735": {
+   "name": "Bryan Kelly",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 42,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "Journal of the American Statistical Association": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5050253426": {
+   "name": "Dacheng Xiu",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 40,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "Review of Financial Studies": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5025931561": {
+   "name": "Shihao Gu",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 7,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "Applied System Innovation": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5088371729": {
+   "name": "Stefan Nagel",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 46,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5076267966": {
+   "name": "Serhiy Kozak",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 13,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5013077462": {
+   "name": "Stefano Giglio",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 40,
+   "recent_cites": null,
+   "volume_1y": 3,
+   "venue_mix": {
+    "National Bureau of Economic Research": 2,
+    "working paper / preprint": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5036333323": {
+   "name": "Markus Pelger",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 19,
+   "recent_cites": null,
+   "volume_1y": 12,
+   "venue_mix": {
+    "SSRN Electronic Journal": 4,
+    "Stanford Digital Repository": 3,
+    "National Bureau of Economic Research": 2,
+    "The Journal of Finance": 1,
+    "working paper / preprint": 1,
+    "arXiv (Cornell University)": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5025484038": {
+   "name": "Guanhao Feng",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 11,
+   "recent_cites": null,
+   "volume_1y": 7,
+   "venue_mix": {
+    "arXiv (Cornell University)": 3,
+    "SSRN Electronic Journal": 2,
+    "International Journal for Parasitology Parasites and Wildlife": 1,
+    "Management Science": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5067616912": {
+   "name": "Semyon Malamud",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 24,
+   "recent_cites": null,
+   "volume_1y": 8,
+   "venue_mix": {
+    "SSRN Electronic Journal": 3,
+    "Harvard Dataverse": 2,
+    "National Bureau of Economic Research": 2,
+    "arXiv (Cornell University)": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5090728651": {
+   "name": "Doron Avramov",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 32,
+   "recent_cites": null,
+   "volume_1y": 3,
+   "venue_mix": {
+    "Journal of Banking & Finance": 1,
+    "Open MIND": 1,
+    "arXiv (Cornell University)": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5048197790": {
+   "name": "Andreas Neuhierl",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 15,
+   "recent_cites": null,
+   "volume_1y": 2,
+   "venue_mix": {
+    "Management Science": 1,
+    "SSRN Electronic Journal": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5003812290": {
+   "name": "Robert Novy\u2010Marx",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 27,
+   "recent_cites": null,
+   "volume_1y": 3,
+   "venue_mix": {
+    "Journal of Economic Literature": 1,
+    "Open MIND": 1,
+    "ICPSR Data Holdings": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5084882695": {
+   "name": "Kent Daniel",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 38,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5066035235": {
+   "name": "Kewei Hou",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 32,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "SSRN Electronic Journal": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5089595588": {
+   "name": "Zhiguo He",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 48,
+   "recent_cites": null,
+   "volume_1y": 7,
+   "venue_mix": {
+    "National Bureau of Economic Research": 2,
+    "Journal of Alloys and Compounds": 1,
+    "Computational Economics": 1,
+    "The Science of The Total Environment": 1,
+    "Chemical Engineering Journal": 1,
+    "SSRN Electronic Journal": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5078912295": {
+   "name": "Andrew Y. Chen",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 16,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5088627183": {
+   "name": "Campbell R. Harvey",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 110,
+   "recent_cites": null,
+   "volume_1y": 5,
+   "venue_mix": {
+    "Review of Financial Studies": 1,
+    "The Journal of Portfolio Management": 1,
+    "Financial Analysts Journal": 1,
+    "SSRN Electronic Journal": 1,
+    "arXiv (Cornell University)": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5059255216": {
+   "name": "Christopher Polk",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 33,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "Journal of Financial Economics": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5064777411": {
+   "name": "Jules H. van Binsbergen",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 27,
+   "recent_cites": null,
+   "volume_1y": 2,
+   "venue_mix": {
+    "Journal of Financial and Quantitative Analysis": 1,
+    "SSRN Electronic Journal": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5022954104": {
+   "name": "Lasse Heje Pedersen",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 65,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "Harvard Dataverse": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5053979330": {
+   "name": "Tobias J. Moskowitz",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 47,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5060724998": {
+   "name": "Andrea Frazzini",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 34,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5067313704": {
+   "name": "Nick Baltas",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 2,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5011439104": {
+   "name": "Antti Ilmanen",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 19,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "The Journal of Portfolio Management": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5025032749": {
+   "name": "Torben G. Andersen",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 60,
+   "recent_cites": null,
+   "volume_1y": 4,
+   "venue_mix": {
+    "Journal of Econometrics": 2,
+    "Journal of Time Series Analysis": 1,
+    "SSRN Electronic Journal": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5102799463": {
+   "name": "Tim Bollerslev",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 76,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "Journal of Financial Econometrics": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5064063645": {
+   "name": "Peter Carr",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 53,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5056939347": {
+   "name": "Ian Dew-Becker",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 22,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "National Bureau of Economic Research": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5063063698": {
+   "name": "Grigory Vilkov",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 23,
+   "recent_cites": null,
+   "volume_1y": 2,
+   "venue_mix": {
+    "Review of Financial Studies": 1,
+    "OSF Preprints (OSF Preprints)": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5083877502": {
+   "name": "Ralph S. J. Koijen",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 47,
+   "recent_cites": null,
+   "volume_1y": 2,
+   "venue_mix": {
+    "SSRN Electronic Journal": 2
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5045073684": {
+   "name": "Sydney C. Ludvigson",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 52,
+   "recent_cites": null,
+   "volume_1y": 2,
+   "venue_mix": {
+    "National Bureau of Economic Research": 1,
+    "ICPSR Data Holdings": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5076453234": {
+   "name": "Monika Piazzesi",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 39,
+   "recent_cites": null,
+   "volume_1y": 8,
+   "venue_mix": {
+    "National Bureau of Economic Research": 3,
+    "Stanford Digital Repository": 3,
+    "The Journal of Finance": 1,
+    "working paper / preprint": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5061511374": {
+   "name": "Anna Cie\u015blak",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 16,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5109307691": {
+   "name": "Hanno Lustig",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 44,
+   "recent_cites": null,
+   "volume_1y": 7,
+   "venue_mix": {
+    "National Bureau of Economic Research": 2,
+    "Stanford Digital Repository": 2,
+    "Journal of Political Economy": 1,
+    "The Journal of Economic Perspectives": 1,
+    "SSRN Electronic Journal": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5084412348": {
+   "name": "Francis X. Diebold",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 99,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "Journal of Econometrics": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5047267836": {
+   "name": "Allan Timmermann",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 75,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "SSRN Electronic Journal": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5071417682": {
+   "name": "Andrew J. Patton",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 50,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "Journal of Econometrics": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5101804566": {
+   "name": "Barbara Rossi",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 38,
+   "recent_cites": null,
+   "volume_1y": 2,
+   "venue_mix": {
+    "Econometric Theory": 1,
+    "Journal of Archaeological Science Reports": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5079472256": {
+   "name": "Dimitris Korobilis",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 26,
+   "recent_cites": null,
+   "volume_1y": 7,
+   "venue_mix": {
+    "arXiv (Cornell University)": 3,
+    "SSRN Electronic Journal": 3,
+    "Journal of Econometrics": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5066939801": {
+   "name": "Gary Koop",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 58,
+   "recent_cites": null,
+   "volume_1y": 2,
+   "venue_mix": {
+    "Journal of Business and Economic Statistics": 2
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5059226754": {
+   "name": "Terrence Hendershott",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 38,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "Journal of Financial and Quantitative Analysis": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5046473475": {
+   "name": "Albert J. Menkveld",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 29,
+   "recent_cites": null,
+   "volume_1y": 3,
+   "venue_mix": {
+    "SSRN Electronic Journal": 3
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5011615735": {
+   "name": "Marcos L\u00f3pez de Prado",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 28,
+   "recent_cites": null,
+   "volume_1y": 6,
+   "venue_mix": {
+    "The Journal of Portfolio Management": 3,
+    "SSRN Electronic Journal": 2,
+    "working paper / preprint": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5018894035": {
+   "name": "Nicholas Barberis",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 40,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5067662277": {
+   "name": "David Hirshleifer",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 71,
+   "recent_cites": null,
+   "volume_1y": 3,
+   "venue_mix": {
+    "The Journal of Finance": 1,
+    "Journal of Financial and Quantitative Analysis": 1,
+    "SSRN Electronic Journal": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5110548704": {
+   "name": "Robin Greenwood",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 41,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5034562806": {
+   "name": "Kelly Shue",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 26,
+   "recent_cites": null,
+   "volume_1y": 3,
+   "venue_mix": {
+    "American Economic Review": 1,
+    "SSRN Electronic Journal": 1,
+    "The Journal of Finance": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5074175585": {
+   "name": "David Blitz",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 26,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5021229736": {
+   "name": "Pim van Vliet",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 21,
+   "recent_cites": null,
+   "volume_1y": 2,
+   "venue_mix": {
+    "Practical Applications": 1,
+    "The Journal of Portfolio Management": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5067518819": {
+   "name": "Guido Baltussen",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 19,
+   "recent_cites": null,
+   "volume_1y": 3,
+   "venue_mix": {
+    "The Journal of Portfolio Management": 2,
+    "SSRN Electronic Journal": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5012506034": {
+   "name": "Rob Arnott",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 5,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5024937676": {
+   "name": "Victor DeMiguel",
+   "source": "seed",
+   "added": "2026-Q3",
+   "h_index": 26,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "SSRN Electronic Journal": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5010260112": {
+   "name": "Harry M. Markowitz",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5111539706": {
+   "name": "William F. Sharpe",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5112765479": {
+   "name": "John Lintner",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5109857703": {
+   "name": "Robert C. Merton",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5086549864": {
+   "name": "Stephen A. Ross",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 1,
+   "venue_mix": {
+    "working paper / preprint": 1
+   },
+   "last_refreshed": "2026-Q3"
+  },
+  "A5108663808": {
+   "name": "Robert E. Lucas",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5021845580": {
+   "name": "Douglas T. Breeden",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5037154785": {
+   "name": "Rajnish Mehra",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5071003992": {
+   "name": "Lars Peter Hansen",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5103093603": {
+   "name": "John Campbell",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5101811051": {
+   "name": "Ravi Bansal",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5091820687": {
+   "name": "Eugene F. Fama",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5052267631": {
+   "name": "Rolf W. Banz",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5074911203": {
+   "name": "Narasimhan Jegadeesh",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5062890794": {
+   "name": "Mark M. Carhart",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5080391819": {
+   "name": "J. L. Kelly",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5056320757": {
+   "name": "Philippe Jorion",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5027078567": {
+   "name": "Fischer Black",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5012343164": {
+   "name": "Olivier Ledoit",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5074380025": {
+   "name": "S\u00e9bastien Maillard",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5064999142": {
+   "name": "Paul A. Samuelson",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5111995000": {
+   "name": "Daniel Kahneman",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5074145755": {
+   "name": "Sanford J. Grossman",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5109114953": {
+   "name": "J. Bradford De Long",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  },
+  "A5110890240": {
+   "name": "Andrei Shleifer",
+   "source": "canon",
+   "added": "2026-Q3",
+   "h_index": null,
+   "recent_cites": null,
+   "volume_1y": 0,
+   "venue_mix": {},
+   "last_refreshed": "2026-Q3"
+  }
+ }
+}
