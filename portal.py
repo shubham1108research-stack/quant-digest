@@ -468,7 +468,24 @@ function nberEntry(x){
     <div class="meta">${x.authors?esc(x.authors):''}${_pdfBtn({url:x.url})}${_saveBtn({url:x.url,title:x.title,authors:x.authors})}</div>
     ${sm}</div></div>`;
 }
+let NBER_LOADED=false, nberLoading=false;
+// nber.json is ~3MB (16y of papers); fetch it lazily the first time the NBER
+// tab is opened, not on every page load -- same pattern as archive.json
+function loadNBER(cb){
+  if(NBER_LOADED){cb();return;}
+  if(nberLoading)return;
+  nberLoading=true;
+  $('view').innerHTML='<div class="empty">Loading NBER working papers…</div>';
+  fetch('nber.json').then(r=>r.json()).then(nb=>{
+    NBER=nb||{};NBER_LOADED=true;nberLoading=false;
+    $('nbermonth').innerHTML='';
+    Object.keys(NBER).filter(k=>/^\\d{4}-\\d{2}$/.test(k)).sort().reverse()
+      .forEach(m=>$('nbermonth').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
+    if(VIEW==='nber')cb();
+  }).catch(()=>{nberLoading=false;if(VIEW==='nber')$('view').innerHTML='<div class="empty">Could not load NBER data.</div>';});
+}
 function renderNBER(){
+  if(!NBER_LOADED){loadNBER(renderNBER);return;}
   const keys=Object.keys(NBER).filter(k=>/^\\d{4}-\\d{2}$/.test(k)).sort().reverse();
   if(!keys.length){$('view').innerHTML='<div class="empty">No NBER data yet — run tools/backfill_nber.py.</div>';return;}
   const m=$('nbermonth').value||keys[0];
@@ -717,14 +734,11 @@ Promise.all([
   fetch('data.json').then(r=>r.json()).catch(()=>[]),
   fetch('classics.json').then(r=>r.json()).catch(()=>[]),
   fetch('monthly.json').then(r=>r.json()).catch(()=>({})),
-  fetch('nber.json').then(r=>r.json()).catch(()=>({})),
-]).then(([d,c,mo,nb])=>{
-  DATA=d;CLASSICS=c;MONTHLY=mo||{};NBER=nb||{};
+]).then(([d,c,mo])=>{
+  DATA=d;CLASSICS=c;MONTHLY=mo||{};
   MAXSEEN=d.reduce((m,x)=>(x.seen||'')>m?(x.seen||''):m,"");
   Object.keys(MONTHLY).filter(k=>/^\\d{4}-\\d{2}$/.test(k)).sort().reverse()
     .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
-  Object.keys(NBER).filter(k=>/^\\d{4}-\\d{2}$/.test(k)).sort().reverse()
-    .forEach(m=>$('nbermonth').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
   $('topic').add(new Option('All topics','all'));
   TOPICS.forEach(t=>$('topic').add(new Option(t,t)));
   $('psrc').add(new Option('All sources','all'));

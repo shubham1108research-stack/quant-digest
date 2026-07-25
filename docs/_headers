@@ -10,6 +10,9 @@
 /archive.json
   Cache-Control: no-cache, must-revalidate
 
+/nber.json
+  Cache-Control: no-cache, must-revalidate
+
 /monthly.json
   Cache-Control: no-cache, must-revalidate
 
