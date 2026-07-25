@@ -216,15 +216,16 @@ def _venue_component(meta: dict) -> float:
     return 100.0 * top / tot
 
 
-def author_score(it: dict, anorm: float, roster: dict) -> float:
-    """0-100 reputation for the paper's STRONGEST author, centred so 50 is
-    neutral (no M_rep effect). Base is the best-author h-index (anorm, already a
-    max across the paper's authors); being a tracked/seminal author and recent
-    citations / top-venue track record ADD on top (never subtract -- an unknown
-    author with a median h-index sits at neutral, not penalised for obscurity).
-    """
-    # strongest roster match across the paper's authors (canon > seed > auto)
-    best = None
+def author_score(it: dict, roster: dict) -> float:
+    """0-100 reputation for the paper's STRONGEST author, POOL-INDEPENDENT (an
+    absolute h-index scale, not in-pool) so the SAME score applies everywhere --
+    Monthly, Recent, For You, the email. Centred so 50 is neutral (no M_rep
+    effect): h-index 25 (solid mid-career) = 50; being a tracked/seminal author
+    (roster membership) + recent citations + top-venue track record ADD on top;
+    an unknown author with an unknown/median h-index sits at neutral, never
+    penalised for obscurity. The roster h-index is used when it exceeds the
+    paper's (S2 often undercounts the best author's h)."""
+    best = None                                        # strongest roster match
     for author in re.split(r"[;,]", it.get("authors", "") or ""):
         k = _name_key(author)
         m = roster.get(k) if k else None
@@ -233,15 +234,46 @@ def author_score(it: dict, anorm: float, roster: dict) -> float:
                   > _SOURCE_BONUS.get(best.get("source"), 0)):
             best = m
 
-    base = anorm if it.get("author_h") is not None else 50.0    # 50 = neutral
+    h = it.get("author_h")
+    if best and best.get("h_index") is not None:
+        h = max(h or 0, best["h_index"])
+    h_comp = 50.0 if h is None else min(100.0, h * 2.0)   # h=25 -> 50 neutral
     bonus = 0.0
     if best:
-        base = max(base, 55.0)                          # a tracked author isn't sub-neutral
+        h_comp = max(h_comp, 55.0)                     # a tracked author isn't sub-neutral
         rc = best.get("recent_cites") or 0
         bonus = (_SOURCE_BONUS.get(best.get("source"), 0)
                  + min(15.0, math.log10(rc + 1) / 4 * 15)   # recent momentum, +0..15
                  + 0.08 * _venue_component(best))           # top-venue rate, +0..8
-    return max(0.0, min(100.0, base + bonus))
+    return max(0.0, min(100.0, h_comp + bonus))
+
+
+def rep_multiplier(a_score: float, journal_if_pct: float | None = None) -> float:
+    """The bounded ±CRED_BOUND reputation multiplier from the author score
+    (optionally blended with the journal's impact-factor percentile). 50 ->
+    1.0 (neutral). Shared by every ranking surface so reputation nudges
+    consistently and can never carry a weak paper."""
+    inputs = [a_score] + ([journal_if_pct] if journal_if_pct is not None else [])
+    rep_avg = sum(inputs) / len(inputs)
+    return (1 - config.CRED_BOUND) + 2 * config.CRED_BOUND * (rep_avg / 100)
+
+
+def annotate_reputation(items: list[dict], log=print) -> list[dict]:
+    """Attach author_score + reputation (M_rep) to every item in place, so the
+    daily surfaces (Recent, For You, email, data.json) apply the SAME author
+    nudge the Monthly composite does. Pool-independent, so values match across
+    surfaces. No-op-safe: unknown authors get the neutral 50 / 1.0."""
+    roster = _load_roster()
+    if_max = max(config.JOURNAL_IMPACT.values()) or 1.0
+    for it in items:
+        a = author_score(it, roster)
+        if_pct = None
+        jif = config.JOURNAL_IMPACT.get(it.get("journal") or it.get("source"))
+        if jif is not None:
+            if_pct = 100.0 * jif / if_max
+        it["author_score"] = round(a, 1)
+        it["reputation"] = round(rep_multiplier(a, if_pct), 3)
+    return items
 
 
 def llm_score(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
@@ -367,12 +399,8 @@ def composite_entries(items: list[dict], n: int) -> list[dict]:
         # already in the weighted blend above, not here). The author component
         # is the strongest-author reputation score (h-index + recent citations
         # + watchlist/canon membership + venue track record).
-        a_score = author_score(it, anorm, roster)
-        rep_inputs = [a_score]
-        if in_table:
-            rep_inputs.append(100.0 * if_raw / if_max)
-        rep_avg = sum(rep_inputs) / len(rep_inputs)
-        M_rep = (1 - config.CRED_BOUND) + 2 * config.CRED_BOUND * (rep_avg / 100)
+        a_score = author_score(it, roster)
+        M_rep = rep_multiplier(a_score, 100.0 * if_raw / if_max if in_table else None)
 
         # blend is already <=100 (weights sum to 1.0, each term capped at 100);
         # R only discounts (<=1) but M_rep can BOOST up to 1+CRED_BOUND, so the

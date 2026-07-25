@@ -49,6 +49,8 @@ def _export(con) -> list[dict]:
             "novelty_posterior": m.get("novelty_posterior"),
             "consensus_n": m.get("consensus_n"),
             "consensus_agree": m.get("consensus_agree"),
+            "author_score": m.get("author_score"),
+            "reputation": m.get("reputation"),
             "watchlist": bool(m.get("watchlist")),
             "watchlist_author": m.get("watchlist_author"),
             "topic": m.get("topic", ""),
@@ -402,6 +404,7 @@ function entry(x,rank){
     _subBar('Contribution'+ctype,lvl(x.contribution)+prov,(x.contribution||0)/3*100),
     _subBar('Testability',lvl(x.testability),(x.testability||0)/3*100),
     _subBar('Novelty vs history',x.novelty_posterior!=null?Math.round(x.novelty_posterior*100)+'%':'–',(x.novelty_posterior||0)*100),
+    (x.author_score!=null?_subBar('Author',Math.round(x.author_score),x.author_score):''),
   ].join('')+'</div>':'';
   const watch=x.watchlist?`<span class="wtag">★ ${esc(x.watchlist_author||'watched')}</span>`:'';
   return `<div class="entry">${sc}<div class="body">
@@ -459,8 +462,11 @@ function renderRecent(){
   const watched=pool.filter(x=>x.watchlist&&x.relevance_category==='core_fit'
     &&!strict.includes(x));
   const seen=new Set();
+  // author reputation nudges the ordering (bounded, same multiplier used in
+  // the Monthly composite) -- a strong-author paper ranks a touch higher
+  const _rk=x=>(x.novelty_posterior||0)*(x.reputation||1);
   const top=strict.slice().sort((a,b)=>
-    (b.novelty_posterior||0)-(a.novelty_posterior||0)||(b.generality||0)-(a.generality||0)||byDate(a,b)
+    _rk(b)-_rk(a)||(b.generality||0)-(a.generality||0)||byDate(a,b)
   ).slice(0,20);
   const rows=[...watched.sort(byDate),...top]
     .filter(x=>!seen.has(x.url)&&seen.add(x.url))
@@ -549,8 +555,10 @@ function renderForYou(){
   const cs=sinceDays(21);
   const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA)
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source).toLowerCase().includes(q));
+  // keyword-fit nudged by author reputation (same bounded multiplier as
+  // everywhere else), so a strong-author match ranks a touch higher
   const matched=pool.map(x=>({...x,_fy:forYouScore(x)})).filter(x=>x._fy>=2.5)
-    .sort((a,b)=>b._fy-a._fy||byDate(a,b));
+    .sort((a,b)=>b._fy*(b.reputation||1)-a._fy*(a.reputation||1)||byDate(a,b));
   // a raw keyword-sum ranking structurally favours long academic abstracts
   // over short practitioner posts (more text = more hits), so a flat top-10
   // would rarely surface a blog even when it's a genuinely strong match --

@@ -25,20 +25,26 @@ def _esc(s):
 
 
 def _plevel(it: dict) -> int:
-    """Prominence tier: 1 (top), 2 (middle), or 0 (rest)."""
+    """Prominence tier: 1 (top), 2 (middle), or 0 (rest). A strong author score
+    (>=80 top / >=65 mid -- the same reputation signal used everywhere else)
+    lifts the tier, consistent with h-index/venue already doing so."""
     score = it.get("rank_score")
     score = score if isinstance(score, int) else -1
     h = it.get("prom_hindex") or 0
-    if it.get("tier") == "T1" or h >= config.PROM_H1 or score >= config.RANK_T1:
+    a = it.get("author_score") or 0
+    if it.get("tier") == "T1" or h >= config.PROM_H1 or score >= config.RANK_T1 or a >= 80:
         return 1
-    if it.get("tier") == "T2" or h >= config.PROM_H2 or score >= config.RANK_T2:
+    if it.get("tier") == "T2" or h >= config.PROM_H2 or score >= config.RANK_T2 or a >= 65:
         return 2
     return 0
 
 
 def _by_score(it: dict):
+    # relevance score nudged by author reputation (the same bounded multiplier
+    # the Monthly composite / Recent / For You use -- consistent everywhere)
     s = it.get("rank_score")
-    return (s if isinstance(s, int) else -1, it.get("date", ""))
+    base = s if isinstance(s, int) else -1
+    return (base * (it.get("reputation") or 1), it.get("date", ""))
 
 
 def _pill(text: str, bg: str) -> str:

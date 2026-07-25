@@ -141,6 +141,15 @@ def main() -> None:
     except Exception as e:                           # noqa: BLE001
         log(f"[consensus] failed: {type(e).__name__}: {e}")
 
+    # author reputation score + bounded multiplier on every item, so Recent /
+    # For You / the email / data.json all apply the SAME author nudge the
+    # Monthly composite does (consistent, pool-independent)
+    try:
+        import scoring
+        scoring.annotate_reputation(fresh, log)
+    except Exception as e:                           # noqa: BLE001
+        log(f"[author] reputation annotate failed: {type(e).__name__}: {e}")
+
     html_body = emailer.render(fresh, NOTES)
 
     # archive first -- if SMTP fails we still keep the report and the state
