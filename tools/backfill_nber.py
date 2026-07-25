@@ -19,6 +19,9 @@ import datetime as dt
 import json
 import os
 import sys
+import time
+
+import requests
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -27,6 +30,41 @@ import sources   # noqa: E402
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    "docs", "nber.json")
+_UA = {"User-Agent": "quant-digest/1.0 (personal research tool)"}
+_MAILTO = os.environ.get("CONTACT_EMAIL") or os.environ.get("GMAIL_ADDRESS")
+
+
+def _enrich_cites(rows: list[dict], log=print) -> None:
+    """Attach OpenAlex citation counts (in place) by NBER DOI (10.3386/w<n>) --
+    the dominant 'is this a classic?' signal. Bulk-batched (<=50 DOIs/request),
+    so a whole month is one call. Also derives cites_per_year for fair
+    cross-vintage comparison (an old paper has had longer to accrue)."""
+    doi_to_row = {f"10.3386/{r['wp']}": r for r in rows if r.get("wp")}
+    dois = list(doi_to_row)
+    now_year = dt.date.today().year
+    for i in range(0, len(dois), 50):
+        chunk = dois[i:i + 50]
+        params = {"filter": "doi:" + "|".join("https://doi.org/" + d for d in chunk),
+                  "select": "doi,cited_by_count,publication_year", "per-page": 50}
+        if _MAILTO:
+            params["mailto"] = _MAILTO
+        try:
+            r = requests.get("https://api.openalex.org/works", params=params,
+                             headers=_UA, timeout=45)
+            r.raise_for_status()
+            for w in r.json().get("results", []):
+                doi = (w.get("doi") or "").replace("https://doi.org/", "")
+                row = doi_to_row.get(doi)
+                if not row:
+                    continue
+                c = w.get("cited_by_count")
+                row["cites"] = c
+                yr = w.get("publication_year") or now_year
+                age = max(1, now_year - yr + 1)
+                row["cites_per_year"] = round((c or 0) / age, 1)
+        except Exception as e:                         # noqa: BLE001
+            log(f"    [cites] batch failed: {type(e).__name__}")
+        time.sleep(0.3)
 
 
 def _months(start_ym: str, end_ym: str):
@@ -42,7 +80,7 @@ def _months(start_ym: str, end_ym: str):
 def _slim(it: dict) -> dict:
     return {"title": it["title"], "authors": it["authors"], "url": it["url"],
             "date": it["date"], "abstract": (it.get("abstract") or "")[:400],
-            "wp": it.get("nber_wp", "")}
+            "wp": it.get("nber_wp", ""), "cites": None, "cites_per_year": None}
 
 
 def build_month(ym: str, log=print) -> list[dict]:
@@ -54,7 +92,9 @@ def build_month(ym: str, log=print) -> list[dict]:
     by_wp = {}
     for it in items:
         by_wp[it.get("nber_wp") or it["url"]] = _slim(it)
-    return sorted(by_wp.values(), key=lambda x: x["wp"], reverse=True)
+    rows = sorted(by_wp.values(), key=lambda x: x["wp"], reverse=True)
+    _enrich_cites(rows, log)               # citation counts -> classics signal
+    return rows
 
 
 def main() -> None:

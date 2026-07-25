@@ -28,10 +28,7 @@ NBER_API = ("https://www.nber.org/api/v1/working_page_listing/contentType/"
 NBER_PER_PAGE = 100
 NBER_MAX_PAGES = 6                    # safety cap per program (~600 papers)
 NBER_PROGRAMS = [                     # NBER program facet names -> finance
-    "Asset Pricing",
-    "Corporate Finance",
-    "Monetary Economics",
-    "International Finance and Macroeconomics",
+    "Asset Pricing",                  # (Asset Pricing only for now, per request)
 ]
 # fallback keyword gate, used ONLY if the program query fails for some reason
 NBER_FINANCE_TERMS = [

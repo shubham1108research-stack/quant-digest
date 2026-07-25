@@ -364,12 +364,18 @@ function renderRecent(){
 // built by tools/backfill_nber.py back to 2010; kept fresh for the current
 // month by the daily digest). A raw listing -- not scored -- like a direct
 // window onto NBER's Asset Pricing / Corporate Finance / Monetary programs.
+// a working paper is a "potential classic" if it accrued citations fast for
+// its vintage (cites/yr) or a large absolute count -- the dominant signal for
+// seminal work, from real OpenAlex citation data
+const isClassic=x=>(x.cites_per_year||0)>=15||(x.cites||0)>=400;
 function nberEntry(x){
   const sm=x.abstract?`<div class="summary">${esc(x.abstract)}</div>`:'';
-  return `<div class="entry"><div class="rail"><div class="yr">${esc((x.wp||'').replace(/^w/,'w '))}</div></div>
+  const cls=isClassic(x)?`<span class="wtag" title="high citation velocity for its vintage">★ potential classic</span>`:'';
+  const cites=(x.cites!=null)?`<div class="cites">${fmtK(x.cites)}<small>cites</small></div>${x.cites_per_year!=null?`<div class="cap">${x.cites_per_year}/yr</div>`:''}`:`<div class="yr">${esc(x.wp||'')}</div>`;
+  return `<div class="entry"><div class="rail">${cites}</div>
     <div class="body">
-    <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${x.authors?esc(x.authors):''}${_pdfBtn({url:x.url})}${_saveBtn({url:x.url,title:x.title,authors:x.authors})}</div>
+    <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${cls}</div>
+    <div class="meta">${x.authors?esc(x.authors):''} · ${esc(x.wp||'')}${_pdfBtn({url:x.url})}${_saveBtn({url:x.url,title:x.title,authors:x.authors})}</div>
     ${sm}</div></div>`;
 }
 let NBER_LOADED=false, nberLoading=false;
@@ -394,9 +400,12 @@ function renderNBER(){
   if(!keys.length){$('view').innerHTML='<div class="empty">No NBER data yet — run tools/backfill_nber.py.</div>';return;}
   const m=$('nbermonth').value||keys[0];
   const q=$('q').value.toLowerCase().trim();
-  const rows=(NBER[m]||[]).filter(x=>!q||(x.title+' '+(x.authors||'')).toLowerCase().includes(q));
+  // sort by citations desc within the month so potential classics rise to top
+  const rows=(NBER[m]||[]).filter(x=>!q||(x.title+' '+(x.authors||'')).toLowerCase().includes(q))
+    .slice().sort((a,b)=>(b.cites||0)-(a.cites||0));
+  const nClassic=rows.filter(isClassic).length;
   const label=new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'});
-  $('view').innerHTML=`<div class="dateline">NBER · ${esc(label)} <span class="n">· ${rows.length} finance-program working papers · Asset Pricing · Corporate Finance · Monetary · Int'l Finance</span></div>`+
+  $('view').innerHTML=`<div class="dateline">NBER · Asset Pricing · ${esc(label)} <span class="n">· ${rows.length} working papers · by citations${nClassic?' · '+nClassic+' potential classic'+(nClassic>1?'s':''):''}</span></div>`+
     (rows.length?rows.map(nberEntry).join(''):'<div class="empty">No matches this month.</div>');
 }
 const FORYOU_KEYWORDS=[
