@@ -144,6 +144,8 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
 .loadmore:hover{border-color:var(--accent);color:var(--accent);}
 .wtag{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.04em;
   color:var(--panel);background:var(--medium);border-radius:4px;padding:1px 6px;margin-right:7px;}
+.fresh{font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--muted);
+  margin-bottom:8px;letter-spacing:.02em;}
 footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint);
   margin-top:40px;border-top:1px solid var(--line);padding-top:16px;}
 @keyframes entryIn{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}
@@ -194,7 +196,8 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
   </div>
 </header>
 <main class="wrap"><div id="view"></div>
-  <footer>Rubric scores are an ensemble consensus of multiple LLMs (Groq · Mistral ·
+  <footer><div id="freshness" class="fresh"></div>
+    Rubric scores are an ensemble consensus of multiple LLMs (Groq · Mistral ·
     OpenAI) — skim, don't trust blindly. Practitioner posts are listed as-is, not scored.
     Sources: NEP · NBER · arXiv · finance journals &amp; SSRN via Crossref · PM-Research ·
     OpenAlex · practitioner &amp; asset-manager research.
@@ -650,6 +653,12 @@ Promise.all([
 ]).then(([d,c,mo])=>{
   DATA=d;CLASSICS=c;MONTHLY=mo||{};
   MAXSEEN=d.reduce((m,x)=>(x.seen||'')>m?(x.seen||''):m,"");
+  if(MAXSEEN){
+    const days=Math.round((Date.now()-new Date(MAXSEEN))/864e5);
+    const ago=days<=0?'today':days===1?'yesterday':days+' days ago';
+    const dot=days<=2?'var(--strong)':days<=5?'var(--medium)':'var(--low)';
+    $('freshness').innerHTML=`<span style="color:${dot}">●</span> Data as of ${esc(MAXSEEN)} (${ago})`;
+  }
   Object.keys(MONTHLY).filter(k=>/^\d{4}-\d{2}$/.test(k)).sort().reverse()
     .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
   $('topic').add(new Option('All topics','all'));

@@ -20,6 +20,11 @@ import store
 
 NOTES: list[str] = []
 
+# A backup `schedule` firing is skipped if a run completed within this many
+# hours -- long enough to cover the 23:30->04:30 UTC primary/backup gap, short
+# enough that a genuinely missed day (>~1 run cycle) still triggers a backup.
+GUARD_HOURS = 18
+
 # Strip credentials/PII that an exception message (e.g. a request URL) might
 # carry before it reaches the run notes -> the archived, possibly-shared report.
 _REDACT = re.compile(r"(?i)(key=|mailto=|api[_-]?key[=:]\s*)[^&\s\"']+")
@@ -64,17 +69,26 @@ def collect(existing: set) -> list[dict]:
 def main() -> None:
     con = store.connect()
 
-    # GitHub's own `schedule` trigger is best-effort and can silently skip OR
-    # double-fire (we run two crons a few minutes apart as a redundancy against
-    # the former; this guards against the latter). Only a redundant *scheduled*
-    # firing is skipped -- a manual run (workflow_dispatch, or local/no env var)
-    # always executes, so testing/catch-up is never blocked.
-    today = dt.date.today().isoformat()
-    if (os.environ.get("GITHUB_EVENT_NAME") == "schedule"
-            and store.kv_get(con, "last_run_date") == today):
-        print(f"[guard] already ran today ({today}) via schedule; skipping "
-              f"this redundant firing")
-        return
+    # The external cron (cron-job.org, workflow_dispatch) is the primary daily
+    # trigger; GitHub's own `schedule` crons are BACKUPS that should fire only
+    # if the primary missed. Guard on a TIME WINDOW, not the calendar date: the
+    # primary runs at 23:30 UTC and the first backup at 04:30 UTC -- only 5h
+    # apart but across the UTC midnight, so a date-based guard wrongly treated
+    # them as different days and ran the whole LLM-costly pipeline TWICE daily.
+    # A manual/dispatch run always executes (guard applies to `schedule` only),
+    # so the primary and any catch-up are never blocked.
+    now = dt.datetime.now(dt.timezone.utc)
+    if os.environ.get("GITHUB_EVENT_NAME") == "schedule":
+        last = store.kv_get(con, "last_run_ts")
+        if last:
+            try:
+                hrs = (now - dt.datetime.fromisoformat(last)).total_seconds() / 3600
+            except Exception:                          # noqa: BLE001
+                hrs = 999
+            if hrs < GUARD_HOURS:
+                print(f"[guard] a run completed {hrs:.1f}h ago (< {GUARD_HOURS}h); "
+                      f"skipping this backup schedule firing")
+                return
 
     existing = {r[0] for r in con.execute("SELECT uid FROM items")}
     raw = collect(existing)
@@ -150,10 +164,11 @@ def main() -> None:
     except Exception as e:                           # noqa: BLE001
         log(f"[portal] build failed: {type(e).__name__}: {e}")
 
-    # mark today done (collection/scoring/backfill/portal all attempted) so a
-    # redundant same-day `schedule` firing skips re-doing the LLM-costly work,
-    # even if the email send below fails
-    store.kv_set(con, "last_run_date", today)
+    # stamp completion (collection/scoring/backfill/portal all attempted) so a
+    # backup `schedule` firing within GUARD_HOURS skips re-doing the LLM-costly
+    # work, even if the email send below fails
+    store.kv_set(con, "last_run_ts", now.isoformat())
+    store.kv_set(con, "last_run_date", dt.date.today().isoformat())  # display/back-compat
 
     try:
         emailer.send(html_body)
