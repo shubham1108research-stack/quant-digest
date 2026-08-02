@@ -371,13 +371,13 @@ def _groq_call(sub: list[dict], key: str) -> dict:
         r = requests.post(_GROQ_URL, headers={"Authorization": f"Bearer {key}"},
                           json=body, timeout=90)
         # 413 here is NOT a payload bug -- it's Groq's tokens-per-MINUTE cap
-        # ("Request too large ... on tokens per minute"), which recovers once
-        # the 60s window rolls over. Treat it like a rate limit and wait it out
-        # (the TPM window is ~60s, so honour retry-after or wait ~30-60s) rather
-        # than dropping the chunk -- chunk 0 is the watchlist items.
+        # ("Request too large ... on tokens per minute"). One short retry (in
+        # case the window just rolled over); if it still fails, the chunk is
+        # dropped and rank()'s cross-provider failover rescues those items via
+        # Mistral -- faster than blocking ~60s here for the window to reset.
         if r.status_code in (413, 429, 500, 503):
-            wait = int(float(r.headers.get("retry-after", 0))) or 30 * (attempt + 1)
-            time.sleep(min(wait, 65))
+            wait = int(float(r.headers.get("retry-after", 0))) or 6 * (attempt + 1)
+            time.sleep(min(wait, 20))
             continue
         r.raise_for_status()
         return _parse(r.json()["choices"][0]["message"]["content"])
@@ -547,12 +547,21 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
                 f"{len(items) - start} items left unscored")
             break
         batch = items[start:start + b]
-        scores = None
+        # Fill the batch across providers: the first provider scores what it
+        # can, then the NEXT provider is asked only for the items still missing,
+        # and so on. This rescues items a provider drops (e.g. Groq skipping its
+        # tokens-per-minute-limited chunk) instead of leaving them unscored --
+        # important because the watchlist items sort first.
+        scores: dict[int, dict] = {}
         for name, fn in _PROVIDERS:
             if name in dead:
                 continue
+            missing = [i for i in range(len(batch)) if i not in scores]
+            if not missing:
+                break
+            sub = [batch[i] for i in missing]
             try:
-                res = fn(batch, log)
+                res = fn(sub, log)
             except Exception as e:                 # noqa: BLE001
                 log(f"[llm] {name} failed on batch {start // b} "
                     f"({_err(e)}); failing over")
@@ -560,8 +569,10 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
                 continue
             if res is None:                        # provider not configured
                 continue
-            scores, _ = res, used.add(name)
-            break
+            used.add(name)
+            for local_i, s in res.items():         # map sub-index -> batch index
+                if 0 <= local_i < len(missing):
+                    scores[missing[local_i]] = s
         if not scores:
             if len(dead) == len([n for n, _ in _PROVIDERS]):
                 log("[llm] all providers exhausted; stopping")
