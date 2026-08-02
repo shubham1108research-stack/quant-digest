@@ -447,8 +447,13 @@ def practitioner(log) -> list[dict]:
 
 
 # ------------------------------------ OpenAlex (preprint repositories)
-def _openalex_get(url: str, params: dict, log) -> requests.Response:
-    """GET with linear backoff on a genuine 429 rate limit.
+def _openalex_get(url: str, params: dict, log, retries: int | None = None
+                  ) -> requests.Response:
+    """GET with linear backoff on a genuine 429 rate limit. `retries` overrides
+    config.OPENALEX_MAX_RETRIES -- callers in a hot per-item loop (the watchlist
+    author pull) pass a small value to FAIL FAST when OpenAlex is throttling the
+    runner IP, so a throttled OpenAlex can't wedge the whole run (those authors
+    are covered by the Crossref pull + the full cross-match anyway).
 
     NOTE: OpenAlex also returns 429 for a *paywalled feature* (e.g. the
     from_created_date filter needs a paid plan) -- that is not a rate limit
@@ -457,8 +462,8 @@ def _openalex_get(url: str, params: dict, log) -> requests.Response:
     if MAILTO:
         params = {**params, "mailto": MAILTO}
     last = None
-    for i in range(config.OPENALEX_MAX_RETRIES):
-        r = requests.get(url, params=params, headers=UA, timeout=60)
+    for i in range(retries if retries is not None else config.OPENALEX_MAX_RETRIES):
+        r = requests.get(url, params=params, headers=UA, timeout=30)
         last = r
         if r.status_code != 429:
             r.raise_for_status()
@@ -466,7 +471,7 @@ def _openalex_get(url: str, params: dict, log) -> requests.Response:
         if "upgrade required" in r.text.lower() or "paid plan" in r.text.lower():
             log(f"[openalex] paywalled request, not retrying: {r.text[:160]}")
             r.raise_for_status()          # raises -- caller logs & skips source
-        wait = 5 * (i + 1)
+        wait = 3 * (i + 1)
         log(f"[openalex] 429; retry {i + 1}/{config.OPENALEX_MAX_RETRIES} "
             f"after {wait}s")
         time.sleep(wait)
@@ -636,9 +641,9 @@ def watchlist(log=print) -> list[dict]:
                 "filter": f"author.id:{aid},from_publication_date:{since}",
                 "per-page": config.WATCHLIST_MAX_PER_AUTHOR,
                 "sort": "publication_date:desc",
-            }, log)
+            }, log, retries=1)                         # fail fast; don't wedge the run
         except Exception as e:                         # noqa: BLE001
-            log(f"[watchlist] '{name}' failed: {type(e).__name__}")
+            log(f"[watchlist] OpenAlex '{name}' skipped ({type(e).__name__})")
             continue
         works = r.json().get("results", [])
         if works:
