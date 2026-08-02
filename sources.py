@@ -613,10 +613,23 @@ def watchlist(log=print) -> list[dict]:
     if not roster:
         log("[watchlist] no/empty roster; skipped")
         return []
+    # deep-pull only a rotating slice this run (date-based, stateless) -- the
+    # full cross-match still runs every run, so nothing from a normal source is
+    # missed; this just spreads the slow per-author API calls across runs
+    slice_ = roster
+    per = getattr(config, "WATCHLIST_PER_RUN", 0)
+    if per and len(roster) > per:
+        import math as _math
+        ids = list(roster.items())
+        n = _math.ceil(len(ids) / per)
+        idx = (dt.date.today().toordinal() // 3) % n     # advances every ~3 days
+        slice_ = dict(ids[idx * per:(idx + 1) * per])
+        log(f"[watchlist] rotating slice {idx + 1}/{n}: {len(slice_)} of "
+            f"{len(roster)} authors this run")
     since = (dt.date.today()
              - dt.timedelta(days=config.WATCHLIST_LOOKBACK_DAYS)).isoformat()
     out, hit_authors = [], 0
-    for aid, meta in roster.items():
+    for aid, meta in slice_.items():
         name = meta.get("name", aid)
         try:
             r = _openalex_get("https://api.openalex.org/works", {
@@ -636,13 +649,14 @@ def watchlist(log=print) -> list[dict]:
             it["watchlist_author"] = name
             out.append(it)
         time.sleep(0.25)                               # polite spacing
-    log(f"[watchlist] OpenAlex: {len(out)} works from {hit_authors}/{len(roster)} "
-        f"watched authors since {since}")
+    log(f"[watchlist] OpenAlex: {len(out)} works from {hit_authors}/{len(slice_)} "
+        f"watched authors (slice) since {since}")
 
     # ...then the Crossref deep pull -- covers SSRN + journals + working papers
-    # that OpenAlex hasn't indexed yet (this is what catches e.g. Kelly's AIPM)
+    # that OpenAlex hasn't indexed yet (this is what catches e.g. Kelly's AIPM),
+    # on the SAME rotated slice
     try:
-        cr = _watchlist_crossref(roster, log)
+        cr = _watchlist_crossref(slice_, log)
     except Exception as e:                             # noqa: BLE001
         log(f"[watchlist] Crossref pull failed: {type(e).__name__}: {e}")
         cr = []

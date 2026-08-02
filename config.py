@@ -48,8 +48,12 @@ NBER_FINANCE_TERMS = [
 # SSRN/NBER long before OpenAlex indexed it). A Crossref author query -- which
 # covers SSRN + journals -- fills that gap, filtered to the author's own
 # (first,last) name key + a finance gate to strip the common-name noise.
-WATCHLIST_CROSSREF_DAYS = 640        # ~21mo, so a landmark like AIPM (early 2025) is caught
-WATCHLIST_CROSSREF_ROWS = 60         # Crossref rows fetched per author (relevance-sorted)
+# The 640-day back-catalog has been SEEDED into the archive already, so ongoing
+# runs only need a recent window to catch NEW papers -- much smaller/faster, no
+# data lost (older watched papers are already archived, and the cross-match
+# catches any watched author's paper arriving via a normal source immediately).
+WATCHLIST_CROSSREF_DAYS = 90         # ongoing window (was 640 for the one-time seed)
+WATCHLIST_CROSSREF_ROWS = 40         # Crossref rows fetched per author (relevance-sorted)
 
 # ---- arXiv (Atom API, no key) ---------------------------------------
 ARXIV_CATS = ["q-fin.PR", "q-fin.PM", "q-fin.ST", "q-fin.GN", "q-fin.EC",
@@ -605,8 +609,15 @@ PORTAL_URL = "https://quant-digest-e62.pages.dev"  # Cloudflare Pages (login-wal
 # A watchlisted paper still gets a relevance score, but that score is only a
 # DISPLAYED LABEL (a "relevance NN%" tag), never a filter: everything a watched
 # author publishes is surfaced so you can judge it yourself.
-WATCHLIST_LOOKBACK_DAYS = 120         # how far back the collector pulls per author
+WATCHLIST_LOOKBACK_DAYS = 60          # OpenAlex per-author window (was 120)
 WATCHLIST_MAX_PER_AUTHOR = 8          # cap new works pulled per author per run
+# Deep-pull only a ROTATING slice of the roster each run (the slow part is the
+# per-author OpenAlex+Crossref calls). The cross-match against collected items
+# stays FULL every run, so a watched author's paper from any normal source is
+# never missed; the deep pull just catches OpenAlex/Crossref-only papers, and
+# with a 90-day window + every-3-day runs each author is still checked many
+# times before a paper ages out. 0 = no rotation (pull all every run).
+WATCHLIST_PER_RUN = 40                # ~2 slices over the 77-author roster
 # Auto-promotion: after a quarterly refresh, anyone who recurred in our OWN
 # archive at least this many times above this composite last quarter joins the
 # roster (source="auto"). Unbounded growth, no pruning, individuals only.
