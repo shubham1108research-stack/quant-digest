@@ -481,6 +481,11 @@ def _rank_openai(batch: list[dict], log) -> dict | None:
 _PROVIDERS = [("groq", _rank_groq),
               ("mistral", _rank_mistral), ("openrouter", _rank_openrouter),
               ("openai", _rank_openai)]
+# Free tiers only -- used for the consensus multi-vote so the PAID provider
+# (OpenAI) isn't billed on every shortlist item. OpenAI stays in _PROVIDERS as
+# the last-resort TRIAGE rescuer (free-first, so you only pay for the few items
+# Groq/Mistral/OpenRouter couldn't score) -- the cheapest reliable setup.
+_FREE_PROVIDERS = [p for p in _PROVIDERS if p[0] != "openai"]
 
 
 def have_key() -> bool:
@@ -498,6 +503,15 @@ def _n_configured() -> int:
         os.environ.get("MISTRAL_API_KEY"),
         os.environ.get("OPENROUTER_API_KEY"),
         os.environ.get("OPENAI_API_KEY")))
+
+
+def _n_free_configured() -> int:
+    """Free providers with a key set -- consensus votes with these only (no paid
+    OpenAI votes), so the >=2 guard must count the free ones."""
+    return sum(bool(k) for k in (
+        os.environ.get("GROQ_API_KEY"),
+        os.environ.get("MISTRAL_API_KEY"),
+        os.environ.get("OPENROUTER_API_KEY")))
 
 
 def _err(e) -> str:
@@ -676,9 +690,9 @@ def consensus(items: list[dict], log, max_batches: int | None = None) -> list[di
     provider together and combine their independent votes. If the providers
     don't converge on contribution the item is marked provisional (uncertain).
     Mutates in place; non-shortlist items keep their triage scores."""
-    if _n_configured() < 2:
-        log("[consensus] <2 providers configured; skipping (a single vote just "
-            "re-scores the triage)")
+    if _n_free_configured() < 2:
+        log("[consensus] <2 free providers configured; skipping (a single vote "
+            "just re-scores the triage; OpenAI is excluded to avoid paid votes)")
         return items
     short = [it for it in items
              if (it.get("relevance") or {}).get("level", 0) >= config.CONSENSUS_MIN_RELEVANCE
@@ -699,7 +713,7 @@ def consensus(items: list[dict], log, max_batches: int | None = None) -> list[di
             break
         batch = short[start:start + b]
         votes = []
-        for name, fn in _PROVIDERS:
+        for name, fn in _FREE_PROVIDERS:           # free tiers only -- no paid votes
             try:
                 res = fn(batch, log)
             except Exception as e:                 # noqa: BLE001
