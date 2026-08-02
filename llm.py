@@ -370,9 +370,14 @@ def _groq_call(sub: list[dict], key: str) -> dict:
     for attempt in range(config.LLM_MAX_RETRIES + 2):
         r = requests.post(_GROQ_URL, headers={"Authorization": f"Bearer {key}"},
                           json=body, timeout=90)
-        if r.status_code in (429, 500, 503):       # rate/token limit -- wait it out
-            wait = int(float(r.headers.get("retry-after", 0))) or 15 * (attempt + 1)
-            time.sleep(min(wait, 60))
+        # 413 here is NOT a payload bug -- it's Groq's tokens-per-MINUTE cap
+        # ("Request too large ... on tokens per minute"), which recovers once
+        # the 60s window rolls over. Treat it like a rate limit and wait it out
+        # (the TPM window is ~60s, so honour retry-after or wait ~30-60s) rather
+        # than dropping the chunk -- chunk 0 is the watchlist items.
+        if r.status_code in (413, 429, 500, 503):
+            wait = int(float(r.headers.get("retry-after", 0))) or 30 * (attempt + 1)
+            time.sleep(min(wait, 65))
             continue
         r.raise_for_status()
         return _parse(r.json()["choices"][0]["message"]["content"])
