@@ -8,11 +8,10 @@ name: NBER Backfill (one-off)
 # month fresh on its own.
 
 on:
-  # Weekly self-heal: re-pulls citation counts (which grow over time, and which
-  # a single throttled run can leave partial) from a clean runner IP, well
-  # spaced from any manual runs so OpenAlex's polite pool isn't exhausted.
-  schedule:
-    - cron: "0 7 * * 0"          # Sundays 07:00 UTC
+  # Manual-only now (the weekly self-heal was dropped to conserve free CI
+  # minutes -- it's a heavy ~30-90 min OpenAlex pull). Trigger it yourself
+  # occasionally to refresh NBER citation counts, or after a program/floor
+  # change. Citations grow slowly, so monthly-ish by hand is plenty.
   workflow_dispatch:
     inputs:
       start:
@@ -29,7 +28,7 @@ concurrency:
 
 jobs:
   backfill:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4

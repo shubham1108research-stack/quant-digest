@@ -2,18 +2,21 @@ name: Research Digest
 
 on:
   schedule:
-    # PRIMARY trigger is an EXTERNAL cron (cron-job.org) that fires a
-    # workflow_dispatch daily at 23:30 UTC / 05:00 IST -- precise and reliable,
-    # unlike GitHub's own best-effort cron (which fired ~8h late on 2026-07-19).
-    # GitHub's cron is kept ONLY as a conditional backup: two attempts spaced 5h
-    # apart, a few hours AFTER the primary window. main.py's once-per-day guard
-    # (store.kv "last_run_date", schedule events only) makes each a fast no-op
-    # when the digest already ran that day -- so these do real work ONLY if the
-    # external primary missed. The `concurrency` group below serialises any
-    # overlap so a late/batched tick can't race the guard.
-    - cron: "30 4 * * *"   # 04:30 UTC = 10:00 IST -- backup 1 (5h after primary)
-    - cron: "30 9 * * *"   # 09:30 UTC = 15:00 IST -- backup 2 (another 5h later)
-  workflow_dispatch: {}
+    # Runs EVERY 3 DAYS to stay well within the free CI budget. Cadence is
+    # enforced in code, not by the cron: main.py skips any run that starts
+    # within config.DIGEST_MIN_INTERVAL_HOURS (~3 days) of the last one, so it
+    # doesn't matter that the external cron (cron-job.org) or these backups fire
+    # more often -- only the first firing after the 3-day window does real work.
+    # The rest exit in a few seconds. Trigger a run NOW anytime via
+    # workflow_dispatch with force=true.
+    - cron: "30 4 */3 * *"   # 04:30 UTC every 3rd day-of-month -- backup 1
+    - cron: "30 9 */3 * *"   # 09:30 UTC every 3rd day-of-month -- backup 2
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Run now, ignoring the 3-day interval guard"
+        type: boolean
+        default: false
 
 # Only one digest run at a time: a delayed/batched cron tick queues behind the
 # running one (never cancels it), then hits the once-per-day guard and exits --
@@ -27,7 +30,7 @@ permissions:
 
 jobs:
   digest:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     env:
       # dormant until you add the Cloudflare secrets (see README/Setup)
       CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -45,9 +48,10 @@ jobs:
 
       - name: Run digest
         env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}  # lets main.py's once-per-day
-          #   guard skip a same-day redundant "schedule" firing; manual runs (event
-          #   "workflow_dispatch") always execute regardless of the guard.
+          # main.py enforces the ~3-day cadence: it skips unless >=
+          # DIGEST_MIN_INTERVAL_HOURS since the last run, OR FORCE_RUN=true
+          # (set from the workflow's `force` input for an on-demand run).
+          FORCE_RUN: ${{ github.event.inputs.force }}
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT: ${{ secrets.DIGEST_RECIPIENT }}

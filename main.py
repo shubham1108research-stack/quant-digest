@@ -20,10 +20,11 @@ import store
 
 NOTES: list[str] = []
 
-# A backup `schedule` firing is skipped if a run completed within this many
-# hours -- long enough to cover the 23:30->04:30 UTC primary/backup gap, short
-# enough that a genuinely missed day (>~1 run cycle) still triggers a backup.
-GUARD_HOURS = 18
+# The digest runs every ~3 days (to stay well within free CI minutes). A CI run
+# that starts within this many hours of the last completed run is skipped in a
+# few seconds -- so it doesn't matter how often the cron(s) fire. A manual
+# force run (FORCE_RUN=true) or a local run always executes.
+DIGEST_MIN_INTERVAL_HOURS = 68        # ~2.8 days -- a touch under 3 for jitter
 
 # Strip credentials/PII that an exception message (e.g. a request URL) might
 # carry before it reaches the run notes -> the archived, possibly-shared report.
@@ -69,25 +70,25 @@ def collect(existing: set) -> list[dict]:
 def main() -> None:
     con = store.connect()
 
-    # The external cron (cron-job.org, workflow_dispatch) is the primary daily
-    # trigger; GitHub's own `schedule` crons are BACKUPS that should fire only
-    # if the primary missed. Guard on a TIME WINDOW, not the calendar date: the
-    # primary runs at 23:30 UTC and the first backup at 04:30 UTC -- only 5h
-    # apart but across the UTC midnight, so a date-based guard wrongly treated
-    # them as different days and ran the whole LLM-costly pipeline TWICE daily.
-    # A manual/dispatch run always executes (guard applies to `schedule` only),
-    # so the primary and any catch-up are never blocked.
+    # Every-3-days cadence, enforced HERE (not by the cron) to stay within free
+    # CI minutes: skip if a run completed within DIGEST_MIN_INTERVAL_HOURS,
+    # however often the crons fire. FORCE_RUN=true (the workflow's `force`
+    # input) runs on demand; a local run (no GITHUB_ACTIONS) always runs, so
+    # testing/catch-up is never blocked.
     now = dt.datetime.now(dt.timezone.utc)
-    if os.environ.get("GITHUB_EVENT_NAME") == "schedule":
+    force = os.environ.get("FORCE_RUN") == "true"
+    in_ci = os.environ.get("GITHUB_ACTIONS") == "true"
+    if in_ci and not force:
         last = store.kv_get(con, "last_run_ts")
         if last:
             try:
                 hrs = (now - dt.datetime.fromisoformat(last)).total_seconds() / 3600
             except Exception:                          # noqa: BLE001
-                hrs = 999
-            if hrs < GUARD_HOURS:
-                print(f"[guard] a run completed {hrs:.1f}h ago (< {GUARD_HOURS}h); "
-                      f"skipping this backup schedule firing")
+                hrs = 1e9
+            if hrs < DIGEST_MIN_INTERVAL_HOURS:
+                print(f"[guard] last run {hrs:.1f}h ago (< "
+                      f"{DIGEST_MIN_INTERVAL_HOURS}h); skipping (force=true to "
+                      f"override)")
                 return
 
     existing = {r[0] for r in con.execute("SELECT uid FROM items")}
@@ -174,7 +175,7 @@ def main() -> None:
         log(f"[portal] build failed: {type(e).__name__}: {e}")
 
     # stamp completion (collection/scoring/backfill/portal all attempted) so a
-    # backup `schedule` firing within GUARD_HOURS skips re-doing the LLM-costly
+    # firing within DIGEST_MIN_INTERVAL_HOURS skips re-doing the LLM-costly
     # work, even if the email send below fails
     store.kv_set(con, "last_run_ts", now.isoformat())
     store.kv_set(con, "last_run_date", dt.date.today().isoformat())  # display/back-compat
