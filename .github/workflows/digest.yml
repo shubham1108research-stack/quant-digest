@@ -31,6 +31,11 @@ permissions:
 jobs:
   digest:
     runs-on: ubuntu-latest
+    # Hard backstop: the code has its own time budgets (collection fail-fasts,
+    # LLM triage/consensus cap at ~65min total), so a healthy run finishes in
+    # well under an hour. This ceiling just ensures a pathological wedge fails in
+    # ~2h instead of burning the full GitHub default of 6h.
+    timeout-minutes: 120
     env:
       # dormant until you add the Cloudflare secrets (see README/Setup)
       CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

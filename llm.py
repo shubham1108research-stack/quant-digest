@@ -371,11 +371,14 @@ def _groq_call(sub: list[dict], key: str) -> dict:
         r = requests.post(_GROQ_URL, headers={"Authorization": f"Bearer {key}"},
                           json=body, timeout=90)
         # 413 here is NOT a payload bug -- it's Groq's tokens-per-MINUTE cap
-        # ("Request too large ... on tokens per minute"). One short retry (in
-        # case the window just rolled over); if it still fails, the chunk is
-        # dropped and rank()'s cross-provider failover rescues those items via
-        # Mistral -- faster than blocking ~60s here for the window to reset.
-        if r.status_code in (413, 429, 500, 503):
+        # ("Request too large ... on tokens per minute"). It won't clear within
+        # a run when the free tier is drained, so DON'T retry it: give up on the
+        # chunk immediately and let rank()'s cross-provider failover rescue those
+        # items via Mistral. (Retrying 413 with backoff x every chunk x every
+        # batch is what wedged a run for 6h; fail-fast is the fix.)
+        if r.status_code == 413:
+            return {}
+        if r.status_code in (429, 500, 503):
             wait = int(float(r.headers.get("retry-after", 0))) or 6 * (attempt + 1)
             time.sleep(min(wait, 20))
             continue
@@ -555,10 +558,16 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
 
     b = config.LLM_RANK_BATCH
     ranked, used, dead, batches = 0, set(), set(), 0
+    budget = getattr(config, "LLM_RANK_BUDGET_S", 0)
+    t0 = time.monotonic()
     for start in range(0, len(items), b):
         if max_batches is not None and batches >= max_batches:
             log(f"[llm] batch budget {max_batches} reached; "
                 f"{len(items) - start} items left unscored")
+            break
+        if budget and time.monotonic() - t0 > budget:
+            log(f"[llm] time budget {budget // 60}min reached; "
+                f"{len(items) - start} items left unscored (next run picks them up)")
             break
         batch = items[start:start + b]
         # Fill the batch across providers: the first provider scores what it
@@ -706,9 +715,15 @@ def consensus(items: list[dict], log, max_batches: int | None = None) -> list[di
 
     b = config.LLM_RANK_BATCH
     refined = converged = batches = 0
+    budget = getattr(config, "LLM_CONSENSUS_BUDGET_S", 0)
+    t0 = time.monotonic()
     for start in range(0, len(short), b):
         if max_batches is not None and batches >= max_batches:
             log(f"[consensus] batch budget {max_batches} reached; "
+                f"{len(short) - start} shortlist items keep triage scores")
+            break
+        if budget and time.monotonic() - t0 > budget:
+            log(f"[consensus] time budget {budget // 60}min reached; "
                 f"{len(short) - start} shortlist items keep triage scores")
             break
         batch = short[start:start + b]

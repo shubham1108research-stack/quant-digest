@@ -288,6 +288,12 @@ OPENAI_MODEL = "gpt-5.4-mini"
 LLM_RANK_BATCH = 40          # items scored per API call
 LLM_MAX_RETRIES = 3          # retries (with backoff) on 429/5xx
 LLM_BATCH_PAUSE = 6          # seconds between calls -- stay under free-tier RPM
+# Wall-clock backstop so a run can NEVER wedge for hours when every free tier is
+# rate-limited (what caused a 6h hang). When triage exceeds this, it stops and
+# leaves the rest unscored for the next run -- watchlist items sort first, so
+# they're always scored within the budget. 0 = no limit.
+LLM_RANK_BUDGET_S = 45 * 60      # ~45 min hard cap on the daily triage pass
+LLM_CONSENSUS_BUDGET_S = 20 * 60  # ~20 min hard cap on the consensus re-score
 
 # ---- Ensemble consensus (shortlist only) ----------------------------
 # The bulk triage (llm.rank) scores every item with the first available
