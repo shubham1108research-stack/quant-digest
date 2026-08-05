@@ -292,8 +292,14 @@ LLM_BATCH_PAUSE = 6          # seconds between calls -- stay under free-tier RPM
 # rate-limited (what caused a 6h hang). When triage exceeds this, it stops and
 # leaves the rest unscored for the next run -- watchlist items sort first, so
 # they're always scored within the budget. 0 = no limit.
-LLM_RANK_BUDGET_S = 45 * 60      # ~45 min hard cap on the daily triage pass
-LLM_CONSENSUS_BUDGET_S = 20 * 60  # ~20 min hard cap on the consensus re-score
+LLM_RANK_BUDGET_S = 35 * 60      # per-pass cap on the daily triage
+LLM_CONSENSUS_BUDGET_S = 15 * 60  # per-pass cap on the consensus re-score
+# Single wall-clock cap across EVERY LLM pass in a run (triage + consensus +
+# the monthly re-scores). The per-pass budgets above don't compose -- four
+# stacked passes overran the 120min job timeout by seconds -- so this global
+# ceiling is the real guarantee the run finishes with room for portal + email +
+# deploy. llm.start_run_budget() stamps it once at the top of scoring.
+LLM_RUN_BUDGET_S = 55 * 60       # ~55 min total LLM; leaves ~65min for the rest
 
 # ---- Ensemble consensus (shortlist only) ----------------------------
 # The bulk triage (llm.rank) scores every item with the first available

@@ -527,6 +527,25 @@ def _err(e) -> str:
     return f"{type(e).__name__} {code}: {body}".strip() if body else type(e).__name__
 
 
+_run_deadline: float | None = None      # single wall-clock cap across ALL passes
+
+
+def start_run_budget(seconds: float | None = None) -> None:
+    """Stamp ONE wall-clock deadline shared by every LLM pass this run -- the
+    main triage + consensus AND the monthly re-scores. Per-call budgets don't
+    compose (four stacked passes overran the CI job timeout by seconds); this
+    global cap keeps total LLM time bounded no matter how many passes run.
+    Call once before the first llm.rank(). seconds=None uses LLM_RUN_BUDGET_S;
+    0/falsy disables (local runs)."""
+    global _run_deadline
+    s = seconds if seconds is not None else getattr(config, "LLM_RUN_BUDGET_S", 0)
+    _run_deadline = (time.monotonic() + s) if s else None
+
+
+def _run_budget_left() -> bool:
+    return _run_deadline is None or time.monotonic() < _run_deadline
+
+
 def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
     """Attach the anchored rubric levels to each item in place; return the same
     list. Each scored item gets:
@@ -568,6 +587,10 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
         if budget and time.monotonic() - t0 > budget:
             log(f"[llm] time budget {budget // 60}min reached; "
                 f"{len(items) - start} items left unscored (next run picks them up)")
+            break
+        if not _run_budget_left():
+            log(f"[llm] run-wide LLM budget spent; {len(items) - start} items "
+                f"left unscored (watchlist/promising items sorted first)")
             break
         batch = items[start:start + b]
         # Fill the batch across providers: the first provider scores what it
@@ -724,6 +747,10 @@ def consensus(items: list[dict], log, max_batches: int | None = None) -> list[di
             break
         if budget and time.monotonic() - t0 > budget:
             log(f"[consensus] time budget {budget // 60}min reached; "
+                f"{len(short) - start} shortlist items keep triage scores")
+            break
+        if not _run_budget_left():
+            log(f"[consensus] run-wide LLM budget spent; "
                 f"{len(short) - start} shortlist items keep triage scores")
             break
         batch = short[start:start + b]

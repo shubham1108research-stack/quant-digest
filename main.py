@@ -133,6 +133,11 @@ def main() -> None:
     # them before the general backlog -- they must never be dropped unscored
     research.sort(key=lambda it: bool(it.get("watchlist")), reverse=True)
 
+    # one wall-clock budget shared by EVERY LLM pass below (triage, consensus,
+    # and monthly's re-scores) so they can't compound past the CI job timeout
+    import config
+    llm.start_run_budget(config.LLM_RUN_BUDGET_S)
+
     # optional LLM triage -- attaches rank_score/why; no-op without an API key
     llm.rank(research, log)               # mutates the shared item dicts in place
     # ensemble consensus on the promising shortlist (>=2 providers): multiple
