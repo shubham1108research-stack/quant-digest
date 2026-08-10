@@ -171,6 +171,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
     <div class="navtabs">
       <button id="t-recent" class="on">Recent</button>
       <button id="t-foryou">For You</button>
+      <button id="t-watched">Watched</button>
       <button id="t-nber">NBER</button>
       <button id="t-monthly">Monthly</button>
       <button id="t-classics">Classics</button>
@@ -375,6 +376,23 @@ function renderRecent(){
     .map(x=>({...x,_displayScore:_strengthScore(x),_displayLabel:'strength'}));
   const note=watched.length?` · incl. ${watched.length} from watched authors`:'';
   $('view').innerHTML=`<div class="dateline">Last 7 days · genuinely strong <span class="n">· ${top.length} of ${strict.length} that cleared the bar${note} — the rest are in Archive</span></div>`+grouped(rows);
+}
+// Watched authors -- everything your roster published, mirroring the email's
+// "★ Watched authors" section: you trust the person, so anything they wrote
+// that isn't off-topic is surfaced, whatever it scored. UNLIKE Recent's trusted
+// lane this is NOT gated to the last 7 days or to core_fit -- it's the full
+// standing feed of your roster (same rule as emailer._keep: watchlist item kept
+// iff relevance_category !== 'off_topic', dropping name-match false positives).
+function renderWatched(){
+  const w=DATA.filter(x=>x.watchlist&&x.relevance_category&&x.relevance_category!=='off_topic'&&!isPrac(x));
+  const seen=new Set();
+  const rows=w.sort(byDate)
+    .filter(x=>!seen.has(x.url)&&seen.add(x.url))
+    // for a watched paper the score is a LABEL not a gate -- say "relevance N"
+    .map(x=>({...x,_displayScore:x.score,_displayLabel:'relevance'}));
+  const roster=new Set(rows.map(x=>x.watchlist_author).filter(Boolean));
+  const note=roster.size?` from ${roster.size} watched author${roster.size===1?'':'s'}`:'';
+  $('view').innerHTML=`<div class="dateline">Watched authors · everything they published <span class="n">· ${rows.length} paper${rows.length===1?'':'s'}${note} — off-topic name-matches filtered out</span></div>`+(rows.length?grouped(rows):'<div class="empty">No watched-author papers yet — they appear here as your roster publishes.</div>');
 }
 // NBER finance-program working papers, browsable by month (docs/nber.json,
 // built by tools/backfill_nber.py back to 2010; kept fresh for the current
@@ -626,9 +644,9 @@ function renderClassics(){
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
-function render(){VIEW==="monthly"?renderMonthly():VIEW==="foryou"?renderForYou():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
+function render(){VIEW==="monthly"?renderMonthly():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 function setView(v){
-  VIEW=v;['recent','foryou','nber','monthly','classics','practitioners','archive','saved'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  VIEW=v;['recent','foryou','watched','nber','monthly','classics','practitioners','archive','saved'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
   $('month').style.display=v==="monthly"?'':'none';
   $('nbermonth').style.display=v==="nber"?'':'none';
   $('jsel').style.display=v==="classics"?'':'none';
@@ -640,6 +658,7 @@ function setView(v){
 }
 $('t-recent').onclick=()=>setView('recent');
 $('t-foryou').onclick=()=>setView('foryou');
+$('t-watched').onclick=()=>setView('watched');
 $('t-nber').onclick=()=>setView('nber');
 $('t-monthly').onclick=()=>setView('monthly');
 $('t-classics').onclick=()=>setView('classics');
