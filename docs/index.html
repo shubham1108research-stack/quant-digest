@@ -442,24 +442,52 @@ function renderNBER(){
   $('view').innerHTML=`<div class="dateline">NBER · Asset Pricing · ${esc(label)} <span class="n">· ${rows.length} working papers · by citations${nClassic?' · '+nClassic+' potential classic'+(nClassic>1?'s':''):''}</span></div>`+
     (rows.length?rows.map(nberEntry).join(''):'<div class="empty">No matches this month.</div>');
 }
+// Tuned for a SYSTEMATIC-MACRO / CTA desk (QRT macro): the identity themes are
+// trend, carry, FX, rates/term premium, commodities, and macro regime/nowcasting
+// -- weighted highest. Cross-asset methods the desk actually uses (regime-
+// switching, state-space, nowcasting) stay strong. The equity cross-sectional
+// factor zoo is kept only lightly (it's adjacent, not the job).
 const FORYOU_KEYWORDS=[
-  ['trend following',3],['trend premi',2],[' cta ',2],['ewma',2],
-  ['commodit',3],['multi asset',2.5],['regime',2],
-  ['tactical asset allocation',2],['quality factor',2.5],['factor timing',2.5],
-  ['factor tilt',2],['tilting',1.5],['equity factor',1],
-  ['profitability',2],['growth signal',1.5],['sector rotation',2],
-  ['cross sectional',1.5],['cross section of',1.5],['bayesian',2.5],
-  ['kalman filter',3],['state space',2.5],
-  ['gibbs sampling',3],['dynamic model averaging',3],['hedge fund replication',3],
-  ['gold',1],['oil price',2],['oil return',2],['stock bond correlation',2.5],
-  ['bond equity correlation',2.5],['equity bond correlation',2.5],
-  ['volatility targeting',2],['target volatility',2],['transaction cost',1],
-  ['turnover',0.5],['systematic trading',1.5],['systematic alpha',1.5],
-  ['regularized regression',1],['regularised regression',1],['carry trade',1.5],
-  ['carry factor',1.5],['basis momentum',2],['skewness',1],['econometrics',0.5],
-  ['asset pricing',0.8],['portfolio construction',1],['macro',0.6],
-  ['time series forecasting',1],['factor investing',1.5],['momentum',1.2],
-  ['futures',0.8],['systematic macro',2],['risk premia',1.2],
+  // --- Trend / CTA / managed futures (core identity) ---
+  ['trend following',3],['time series momentum',3],['managed futures',3],
+  [' cta ',2.5],['trend premi',2.5],['momentum',1.5],['ewma',1.5],
+  ['volatility targeting',2.5],['target volatility',2.5],['risk parity',2.5],
+  ['drawdown',1.5],['crisis alpha',3],['divergent',0.6],
+  // --- Systematic / global macro, cross-asset ---
+  ['systematic macro',3],['global macro',3],['cross asset',2.5],['multi asset',2.5],
+  ['macro',1.2],['macroeconomic',1.5],['risk premia',2],['risk premium',1.5],
+  ['value and momentum',2.5],['everywhere',0.8],
+  // --- Carry (FX / rates / commodity) ---
+  ['carry trade',3],['carry factor',2.5],['currency carry',3],['fx carry',3],
+  // --- FX ---
+  ['currency',2.5],['exchange rate',2],['dollar factor',2.5],
+  ['uncovered interest',2.5],['purchasing power parity',1.5],['covered interest',1.5],
+  // --- Rates / fixed income ---
+  ['term premium',3],['bond risk premi',3],['yield curve',2.5],['term structure',2.5],
+  ['treasury',1.5],['duration',1],['inflation',2.5],['real rate',2],['breakeven',2],
+  // --- Commodities ---
+  ['commodit',3],['backwardation',2.5],['contango',2.5],['roll yield',2.5],
+  ['hedging pressure',2.5],['convenience yield',2],['basis momentum',2.5],
+  ['oil price',1.5],['oil return',1.5],['gold',1],['futures',1],
+  // --- Macro regime / cycle / policy / nowcasting ---
+  ['regime',2.5],['regime switching',3],['markov switching',3],['business cycle',2.5],
+  ['recession',1.5],['nowcast',3],['monetary policy',2.5],['central bank',2],
+  ['fomc',2],['quantitative tightening',2],['fiscal',1.5],['positioning',2],
+  ['commitment of traders',2.5],['cftc',2],
+  // --- Methods the desk uses (Bayesian state-space, forecasting) ---
+  ['bayesian',2],['kalman filter',2.5],['state space',2.5],['dynamic factor model',2.5],
+  ['mixed frequency',2.5],['midas',2],['dynamic model averaging',2.5],
+  ['forecast combination',2],['time series forecasting',1.5],['vector autoregression',1.5],
+  ['gibbs sampling',1.5],['hedge fund replication',2],
+  // --- Cross-asset correlation / diversification ---
+  ['stock bond correlation',2.5],['bond equity correlation',2.5],
+  ['equity bond correlation',2.5],['diversification',1],
+  // --- Portfolio / execution (support, lower) ---
+  ['portfolio construction',1.2],['transaction cost',1],['turnover',0.5],
+  ['systematic trading',1.5],['systematic alpha',1.5],['tactical asset allocation',2],
+  // --- Equity cross-section: adjacent only, deliberately light ---
+  ['factor timing',1.2],['factor investing',1],['equity factor',0.6],
+  ['cross section of',0.8],['asset pricing',0.6],['econometrics',0.5],
 ];
 // hyphens normalized to spaces before matching so "factor-timing" and
 // "factor timing" (or any other hyphen/space title variant) both hit
@@ -491,7 +519,7 @@ function renderForYou(){
     // unrelated) triage relevance score -- the two can legitimately
     // disagree, and showing the wrong one reads as a contradiction
     .map(x=>({...x,_displayScore:Math.min(100,Math.round(x._fy*10)),_displayLabel:'match'}));
-  $('view').innerHTML=`<div class="dateline">For you <span class="n">· matched to trend/CTA, commodities, macro regime, factor models, Bayesian state-space, hedge-fund replication · top ${rows.length}, across journals/preprints/practitioner</span></div>`+
+  $('view').innerHTML=`<div class="dateline">For you <span class="n">· systematic macro / CTA — trend, carry, FX, rates &amp; term premium, commodities, macro regime &amp; nowcasting, Bayesian state-space · top ${rows.length}, across journals/preprints/practitioner</span></div>`+
     (rows.length?byCategory(rows,(a,b)=>(b._fy||0)-(a._fy||0)):'<div class="empty">Nothing matched strongly in the last 3 weeks.</div>');
 }
 const _psource=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'').trim()||'Other';
