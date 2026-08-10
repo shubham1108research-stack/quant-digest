@@ -273,6 +273,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
       <button id="t-nber">NBER</button>
       <button id="t-monthly">Monthly</button>
       <button id="t-classics">Classics</button>
+      <button id="t-anchors">Anchors</button>
       <button id="t-practitioners">Practitioners</button>
       <button id="t-archive">Archive</button>
       <button id="t-saved">Saved</button>
@@ -491,6 +492,64 @@ function renderWatched(){
   const roster=new Set(rows.map(x=>x.watchlist_author).filter(Boolean));
   const note=roster.size?` from ${roster.size} watched author${roster.size===1?'':'s'}`:'';
   $('view').innerHTML=`<div class="dateline">Watched authors · everything they published <span class="n">· ${rows.length} paper${rows.length===1?'':'s'}${note} — off-topic name-matches filtered out</span></div>`+(rows.length?grouped(rows):'<div class="empty">No watched-author papers yet — they appear here as your roster publishes.</div>');
+}
+// Anchors -- a hand-curated shelf of foundational BOOKS for a systematic-macro
+// / CTA desk (the QRT macro role). Static, not from the digest feed: these are
+// the mental-model texts you read once and keep, while the feed keeps you
+// current. Each has the publisher/author page; a free PDF/companion link is
+// added ONLY where one is legitimately free (author-hosted or open access) --
+// no pirated scans.
+const ANCHORS=[
+  {grp:'Orientation — how a macro book thinks',items:[
+    {t:'Expected Returns: An Investor’s Guide to Harvesting Market Rewards',by:'Antti Ilmanen',yr:2011,
+     why:'The single best orientation for a systematic-macro quant: every risk premium — value, carry, trend, volatility — across every asset class, framed the way the desk frames it. Read this first.',
+     url:'https://www.aqr.com/Insights/Research/Book/Expected-Returns-An-Investors-Guide-to-Harvesting-Market-Rewards',ul:'AQR',
+     pdf:'https://rpc.cfainstitute.org/sites/default/files/-/media/documents/book/rf-publication/2012/rf-v2012-n1-1-pdf.PDF',pl:'free CFA monograph (condensed)'},
+    {t:'Investing Amid Low Expected Returns',by:'Antti Ilmanen',yr:2022,
+     why:'The 2022 update to the above — same lens, recalibrated for a low-premium, post-ZIRP world. Keeps the mental model current.',
+     url:'https://www.wiley.com/en-us/Investing+Amid+Low+Expected+Returns:+Making+the+Most+When+Markets+Offer+the+Least-p-9781119860198',ul:'Wiley'},
+    {t:'Efficiently Inefficient: How Smart Money Invests and Market Prices Are Determined',by:'Lasse Heje Pedersen',yr:2015,
+     why:'Strategy-by-strategy playbook — trend, carry, value/momentum, global macro, arbitrage — with interviews of the managers who run them. Pedersen is on your Watched roster.',
+     url:'https://press.princeton.edu/books/hardcover/9780691166193/efficiently-inefficient',ul:'Princeton UP'},
+  ]},
+  {grp:'Systematic & CTA craft',items:[
+    {t:'Trend Following with Managed Futures: The Search for Crisis Alpha',by:'Alex Greyserman & Kathryn Kaminski',yr:2014,
+     why:'The book on trend/CTA: 800 years of trend evidence, the theoretical foundations, and the crisis-alpha convexity argument for why a macro book carries trend at all.',
+     url:'https://www.wiley.com/en-us/Trend+Following+with+Managed+Futures:+The+Search+for+Crisis+Alpha-p-9781118890974',ul:'Wiley'},
+    {t:'Advanced Futures Trading Strategies',by:'Robert Carver',yr:2023,
+     why:'A modern systematic-futures cookbook — 30 tested strategies across 100+ instruments — from an ex-Man AHL PM. The most practical CTA implementation text there is.',
+     url:'https://harriman-house.com/authors/robert-carver/advanced-futures-trading-strategies/9780857199683',ul:'Harriman House'},
+    {t:'Active Portfolio Management: A Quantitative Approach',by:'Richard Grinold & Ronald Kahn',yr:2000,
+     why:'The quant-craft bible: information ratio and the Fundamental Law of Active Management (IR ≈ IC·√breadth) — how to turn raw forecasts into sized positions.',
+     url:'https://www.amazon.com/Active-Portfolio-Management-Quantitative-Controlling/dp/0070248826',ul:'McGraw-Hill'},
+  ]},
+  {grp:'Foundations — theory, econometrics, time series',items:[
+    {t:'Asset Pricing (Revised Edition)',by:'John H. Cochrane',yr:2005,
+     why:'The theory anchor: everything reduces to p = E[m·x]. The stochastic-discount-factor view that unifies bonds, equities and macro risk under one equation.',
+     url:'https://press.princeton.edu/books/ebook/9781400845743/asset-pricing',ul:'Princeton UP',
+     pdf:'https://www.johnhcochrane.com/asset-pricing-phd-class-stanford-edition',pl:'free PhD course (notes + video)'},
+    {t:'Time Series Analysis',by:'James D. Hamilton',yr:1994,
+     why:'The state-space bible: VARs, the Kalman filter, and Markov regime-switching — precisely the machinery for nowcasting the macro state and modelling regimes.',
+     url:'https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis',ul:'Princeton UP'},
+    {t:'Asset Management: A Systematic Approach to Factor Investing',by:'Andrew Ang',yr:2014,
+     why:'Factors as the organising principle across every asset class — bridges academic factor theory and how a systematic desk actually allocates capital.',
+     url:'https://global.oup.com/academic/product/asset-management-9780199959327',ul:'Oxford UP'},
+  ]},
+];
+function renderAnchors(){
+  const q=$('q').value.toLowerCase().trim();
+  const card=x=>{
+    const pdf=x.pdf?` · <a href="${x.pdf}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">⭳ ${esc(x.pl||'PDF')}</a>`:'';
+    return `<div class="entry"><div class="body">
+      <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.t)}</a>
+      <div class="meta"><span class="j">${esc(x.by)}</span> · ${x.yr} · <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.ul)}</a>${pdf}</div>
+      <div class="summary">${esc(x.why)}</div></div></div>`;
+  };
+  const match=x=>!q||(x.t+' '+x.by+' '+x.why).toLowerCase().includes(q);
+  const secs=ANCHORS.map(g=>{const it=g.items.filter(match);return it.length?
+    `<div class="sechead t1">${esc(g.grp)}<span class="cnt">${it.length}</span></div>`+it.map(card).join(''):'';
+  }).join('');
+  $('view').innerHTML=`<div class="dateline">Anchors <span class="n">· foundational books for a systematic-macro / CTA desk — read once and keep, while the feed keeps you current · free PDF linked where legitimately available</span></div>`+(secs||'<div class="empty">No matches.</div>');
 }
 // NBER finance-program working papers, browsable by month (docs/nber.json,
 // built by tools/backfill_nber.py back to 2010; kept fresh for the current
@@ -770,9 +829,9 @@ function renderClassics(){
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
-function render(){VIEW==="monthly"?renderMonthly():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
+function render(){VIEW==="monthly"?renderMonthly():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 function setView(v){
-  VIEW=v;['recent','foryou','watched','nber','monthly','classics','practitioners','archive','saved'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  VIEW=v;['recent','foryou','watched','anchors','nber','monthly','classics','practitioners','archive','saved'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
   $('month').style.display=v==="monthly"?'':'none';
   $('nbermonth').style.display=v==="nber"?'':'none';
   $('jsel').style.display=v==="classics"?'':'none';
@@ -788,6 +847,7 @@ $('t-watched').onclick=()=>setView('watched');
 $('t-nber').onclick=()=>setView('nber');
 $('t-monthly').onclick=()=>setView('monthly');
 $('t-classics').onclick=()=>setView('classics');
+$('t-anchors').onclick=()=>setView('anchors');
 $('t-practitioners').onclick=()=>setView('practitioners');
 $('t-archive').onclick=()=>setView('archive');
 $('t-saved').onclick=()=>setView('saved');
