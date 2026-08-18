@@ -197,6 +197,12 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   border:1px solid var(--line);border-radius:20px;padding:7px 13px;cursor:pointer;text-align:left;
   transition:border-color .15s,color .15s;}
 .exq:hover{border-color:var(--accent);color:var(--accent);}
+.cachetag{font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);background:var(--line);border-radius:20px;
+  padding:3px 9px;margin-left:10px;vertical-align:middle;}
+.reask{font-family:var(--sans);font-size:11px;color:var(--muted);background:none;
+  border:0;cursor:pointer;text-decoration:underline;margin-left:6px;padding:0;}
+.reask:hover{color:var(--accent);}
 .qa{margin:22px 0 8px;padding-top:18px;border-top:1px solid var(--line);}
 .qa:first-of-type{border-top:0;}
 .qq{font-family:var(--serif);font-size:20px;font-weight:600;line-height:1.35;margin-bottom:12px;}
@@ -688,18 +694,56 @@ function retrieve(qv,k){
   }
   return picks;
 }
+// ---- Ask memory -------------------------------------------------------
+// Once a paper has been read its text is kept, so later questions that surface
+// the same paper cost nothing: no shard re-fetch, no re-reading. Answers are
+// kept too, keyed by the question's content words, so repeating a question is
+// instant. Both live in localStorage next to the Saved bucket, LRU-evicted to
+// stay well inside the ~5 MB quota.
+let READ={},ANS={};
+try{READ=JSON.parse(localStorage.getItem('qd_read_v1')||'{}');}catch(e){READ={};}
+try{ANS=JSON.parse(localStorage.getItem('qd_ans_v1')||'{}');}catch(e){ANS={};}
+const READ_MAX=1200,ANS_MAX=60;
+function _evict(o,max){
+  const ks=Object.keys(o);
+  if(ks.length>max){
+    ks.sort((a,b)=>(o[a].t||0)-(o[b].t||0));
+    ks.slice(0,ks.length-max).forEach(k=>{delete o[k];});
+  }
+  return o;
+}
+function persistRead(){try{localStorage.setItem('qd_read_v1',JSON.stringify(_evict(READ,READ_MAX)));}catch(e){}}
+function persistAns(){try{localStorage.setItem('qd_ans_v1',JSON.stringify(_evict(ANS,ANS_MAX)));}catch(e){}}
+// order-insensitive key: "trend decay evidence" == "evidence of trend decay"
+function qKey(q){
+  return qTerms(q).slice().sort().join(' ');
+}
+function readCount(){return Object.keys(READ).length;}
 // Full abstracts live in row-indexed shards (docs/abs/N.json) so we can pull
 // the real text for the handful of finalists without shipping ~12 MB of
-// abstracts to every visitor. Only the shards the picks land in are fetched.
+// abstracts to every visitor. Papers already in READ skip the network entirely.
 const ABS_SHARD={};
-async function loadAbstracts(rows){
-  const need=[...new Set(rows.map(r=>Math.floor(r/VEC_SHARD)))].filter(s=>!(s in ABS_SHARD));
-  await Promise.all(need.map(s=>
-    fetch('abs/'+s+'.json').then(r=>r.json()).then(j=>{ABS_SHARD[s]=j;})
-      .catch(()=>{ABS_SHARD[s]={};})));
+async function loadAbstracts(picks){
+  const miss=picks.filter(p=>!(READ[p.uid]&&READ[p.uid].a));
+  if(miss.length){
+    const need=[...new Set(miss.map(p=>Math.floor(p._row/VEC_SHARD)))]
+      .filter(s=>!(s in ABS_SHARD));
+    await Promise.all(need.map(s=>
+      fetch('abs/'+s+'.json').then(r=>r.json()).then(j=>{ABS_SHARD[s]=j;})
+        .catch(()=>{ABS_SHARD[s]={};})));
+    miss.forEach(p=>{
+      const sh=ABS_SHARD[Math.floor(p._row/VEC_SHARD)]||{};
+      const a=sh[String(p._row)]||'';
+      if(a)READ[p.uid]={a:a,t:Date.now()};
+    });
+    persistRead();
+  }
   const out={};
-  rows.forEach(r=>{const sh=ABS_SHARD[Math.floor(r/VEC_SHARD)]||{};out[r]=sh[String(r)]||'';});
-  return out;
+  picks.forEach(p=>{
+    const r=READ[p.uid];
+    if(r){out[p.uid]=r.a;r.t=Date.now();}else{out[p.uid]='';}
+  });
+  return {abs:out,fetched:miss.length,reused:picks.length-miss.length};
 }
 const _mdEsc=s=>esc(s);
 function md(t,ti){
@@ -719,9 +763,17 @@ function md(t,ti){
   if(ul)h+='</ul>';
   return h;
 }
-async function doAsk(q){
+async function doAsk(q,force){
   if(asking||!q.trim())return;
   if(!VEC||!VEC_UIDS){renderAsk('The semantic index has not been built yet — run the "Semantic Index" workflow once.');return;}
+  // asked before? replay it rather than paying for the same answer twice
+  const key=qKey(q),hit=force?null:ANS[key];
+  if(hit){
+    hit.t=Date.now();persistAns();
+    ASK_THREAD.unshift({q:q,state:'done',answer:hit.answer,cached:true,
+      sources:(hit.uids||[]).map(u=>ITEM_BY_UID[u]).filter(Boolean)});
+    renderAsk();return;
+  }
   asking=true;
   ASK_THREAD.unshift({q:q,state:'retrieving'});
   renderAsk();
@@ -746,10 +798,12 @@ async function doAsk(q){
     ASK_THREAD[0].state='reading';
     renderAsk();
     // pull the FULL abstracts for the finalists (archive.json only carries a
-    // 400-char summary; answering from a third of the text was the old flaw)
-    let full={};
-    try{ full=await loadAbstracts(picks.map(p=>p._row)); }catch(e){ full={}; }
-    picks.forEach(p=>{p._full=full[p._row]||'';});
+    // 400-char summary; answering from a third of the text was the old flaw).
+    // Papers read for an earlier question come straight from memory.
+    let got={abs:{},fetched:0,reused:0};
+    try{ got=await loadAbstracts(picks); }catch(e){ got={abs:{},fetched:0,reused:0}; }
+    picks.forEach(p=>{p._full=got.abs[p.uid]||'';});
+    ASK_THREAD[0].reused=got.reused;
     ASK_THREAD[0].state='thinking';
     renderAsk();
     const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
@@ -758,6 +812,9 @@ async function doAsk(q){
     const aj=await ar.json();
     if(!ar.ok)throw new Error(aj.error||'answer failed');
     ASK_THREAD[0].answer=aj.answer;ASK_THREAD[0].state='done';
+    // remember it: the same question later replays instead of re-answering
+    ANS[key]={answer:aj.answer,uids:picks.map(p=>p.uid),t:Date.now()};
+    persistAns();
   }catch(e){
     ASK_THREAD[0].error=String(e.message||e);ASK_THREAD[0].state='error';
   }
@@ -778,7 +835,7 @@ function renderAsk(notice){
     let body='';
     if(t.state==='retrieving')body='<div class="thinking">Searching '+(VEC_UIDS?VEC_UIDS.length.toLocaleString():'the')+' papers…</div>';
     else if(t.state==='reading')body='<div class="thinking">Ranked '+(t.scanned||0)+' candidates · pulling full abstracts for the top '+(t.sources||[]).length+'…</div>';
-    else if(t.state==='thinking')body='<div class="thinking">Reading '+(t.sources||[]).length+' full abstracts…</div>';
+    else if(t.state==='thinking')body='<div class="thinking">Reading '+(t.sources||[]).length+' full abstracts'+(t.reused?' ('+t.reused+' already in memory)':'')+'…</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
     else body='<div class="answer">'+md(t.answer,ti)+'</div>';
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
@@ -786,7 +843,9 @@ function renderAsk(notice){
         <div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
         <div class="meta"><span class="j">${esc(jlabel(p))}</span>${p.authors?' · '+esc(p.authors):''} · ${esc(p.date||p.seen||'')}${p.score!=null?' · rated '+p.score:''}</div></div></div>`
     ).join(''):'';
-    return `<div class="qa"><div class="qq">${esc(t.q)}</div>${body}${src}</div>`;
+    const badge=t.cached?`<span class="cachetag" title="answered from this browser's memory — nothing was re-read">from memory</span>
+      <button class="reask" data-q="${esc(t.q)}" title="Ignore the stored answer and ask again">ask again</button>`:'';
+    return `<div class="qa"><div class="qq">${esc(t.q)}${badge}</div>${body}${src}</div>`;
   }).join('');
   $('view').innerHTML=`<div class="dateline">Ask the archive <span class="n">· ${VEC_UIDS?VEC_UIDS.length.toLocaleString():'—'} papers indexed · searched in your browser, ranked by similarity + your own paper scores + keyword fit; only the question and the top ${ASK_DEEP} full abstracts are sent for synthesis</span></div>
     <div class="askbox"><textarea id="askq" rows="2" placeholder="Ask anything about the archive — e.g. what does the evidence say about trend decay?"></textarea>
@@ -795,6 +854,7 @@ function renderAsk(notice){
   const ta=$('askq');
   if(ta){ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askSubmit();}};ta.focus();}
   document.querySelectorAll('.exq').forEach(b=>b.onclick=()=>doAsk(b.dataset.q));
+  document.querySelectorAll('.reask').forEach(b=>b.onclick=()=>doAsk(b.dataset.q,true));
 }
 // NBER finance-program working papers, browsable by month (docs/nber.json,
 // built by tools/backfill_nber.py back to 2010; kept fresh for the current
