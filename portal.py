@@ -601,7 +601,7 @@ function renderAnchors(){
 // adds -- a few milliseconds locally, and nothing but the question leaves the
 // page until we have the shortlist. /api/ask (a Cloudflare Pages Function
 // holding the API key) only embeds the question and writes the final synthesis.
-let VEC=null,VEC_UIDS=null,ITEM_BY_UID={},indexLoading=false;
+let VEC=null,VEC_UIDS=null,VEC_DIM=0,ITEM_BY_UID={},indexLoading=false;
 let ASK_THREAD=[],asking=false;
 const ASK_K=16;                       // papers retrieved per question
 const ASK_EXAMPLES=[
@@ -619,7 +619,7 @@ function loadIndex(cb){
     fetch('vec.bin').then(r=>r.arrayBuffer()),
     ARCHIVE_DATA?Promise.resolve(ARCHIVE_DATA):fetch('archive.json').then(r=>r.json()),
   ]).then(([meta,buf,arch])=>{
-    VEC_UIDS=meta.uids;VEC=new Int8Array(buf);
+    VEC_UIDS=meta.uids;VEC=new Int8Array(buf);VEC_DIM=meta.dim||0;
     ARCHIVE_DATA=arch;
     arch.forEach(x=>{if(x.uid)ITEM_BY_UID[x.uid]=x;if(x.url)ITEM_BY_URL[x.url]=x;});
     indexLoading=false;
@@ -677,6 +677,10 @@ async function doAsk(q){
       body:JSON.stringify({mode:'embed',q:q})});
     const ej=await er.json();
     if(!er.ok)throw new Error(ej.error||'embed failed');
+    // a width mismatch means query and index are in different vector spaces --
+    // retrieval would return confident nonsense, so refuse rather than guess
+    if(VEC_DIM&&ej.vec.length!==VEC_DIM)
+      throw new Error('the question embedded to '+ej.vec.length+' dimensions but the index is '+VEC_DIM+'-dimensional — rebuild the index (Semantic Index workflow) so both use the same model');
     const picks=retrieve(ej.vec,ASK_K);
     ASK_THREAD[0].sources=picks;ASK_THREAD[0].state='thinking';
     renderAsk();

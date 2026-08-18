@@ -16,8 +16,8 @@
  * they never reach the page, and the route sits behind Cloudflare Access.
  */
 
-const EMBED_MODEL = "gemini-embedding-2";   // must match tools/embed.py
-const EMBED_DIM = 256;                      // must match tools/embed.py
+const EMBED_MODEL = "mistral-embed";        // must match tools/embed.py
+const EMBED_DIM = 256;                      // requested width; see embed() note
 const MISTRAL_MODEL = "mistral-small-latest";
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const MAX_CTX = 16;                         // papers passed to the model
@@ -44,25 +44,25 @@ Rules:
 - Write for a professional quant: dense, concrete, no hedging boilerplate, no
   restating the question. Markdown, short paragraphs or tight bullets.`;
 
+// The query MUST be embedded by the same model/width as docs/vec.bin, or it
+// lands in a different vector space and retrieval silently returns nonsense.
+// We ask for the same width tools/embed.py asks for; the browser then checks
+// the returned length against vec.json (the file that knows the real width)
+// and refuses to search on a mismatch.
 async function embed(text, key) {
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/" +
-              EMBED_MODEL + ":embedContent";
-  const r = await fetch(url, {
+  const r = await fetch("https://api.mistral.ai/v1/embeddings", {
     method: "POST",
-    headers: { "x-goog-api-key": key, "content-type": "application/json" },
+    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
     body: JSON.stringify({
-      content: { parts: [{ text: text }] },
-      embedContentConfig: { outputDimensionality: EMBED_DIM },
+      model: EMBED_MODEL,
+      input: [text],
+      output_dimension: EMBED_DIM,
     }),
   });
   if (!r.ok) throw new Error(`embed ${r.status}: ${(await r.text()).slice(0, 200)}`);
   const j = await r.json();
-  const v = (j.embedding && j.embedding.values) ||
-            (j.embeddings && j.embeddings[0] && j.embeddings[0].values);
-  if (!v) throw new Error("embedding response had no values");
-  if (v.length !== EMBED_DIM) {
-    throw new Error(`embedding is ${v.length}d but the index is ${EMBED_DIM}d`);
-  }
+  const v = j.data && j.data[0] && j.data[0].embedding;
+  if (!v) throw new Error("embedding response had no vector");
   return v;
 }
 
@@ -129,10 +129,10 @@ export async function onRequestPost({ request, env }) {
 
   try {
     if (body.mode === "embed") {
-      if (!env.GEMINI_API_KEY) {
-        return json({ error: "GEMINI_API_KEY is not set on this Pages project." }, 503);
+      if (!env.MISTRAL_API_KEY) {
+        return json({ error: "MISTRAL_API_KEY is not set on this Pages project." }, 503);
       }
-      return json({ vec: await embed(q, env.GEMINI_API_KEY) });
+      return json({ vec: await embed(q, env.MISTRAL_API_KEY) });
     }
     if (body.mode === "answer") {
       const ctx = Array.isArray(body.ctx) ? body.ctx.slice(0, MAX_CTX) : [];

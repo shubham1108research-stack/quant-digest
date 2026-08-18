@@ -2,12 +2,13 @@
 """Semantic index over the whole archive: embed every paper once, ship a compact
 int8 matrix the portal can search entirely in the browser.
 
-Provider is Gemini (gemini-embedding-2) because it is free-tier and supports
-Matryoshka truncation -- we ask for 256 dimensions instead of the native 3072.
-That matters a lot here: 8.4k papers x 3072 dims x 4 bytes would be ~103 MB,
-hopeless for a static page, while 256-dim int8 is ~2 MB. Cosine over unit
-vectors is just a dot product and int8 rounding is monotonic, so ranking
-quality survives the compression.
+Provider is Mistral (mistral-embed) -- the free tier that is actually live on
+this account (OpenAI has no credits, the Gemini key's service account is
+disabled). We request output_dimension=256 but do not trust it: support is
+model-dependent, so _probe() measures the real width once and everything keys
+off that. Width matters -- 8.4k papers x 1024 dims x 4 bytes is ~34 MB, hopeless
+for a static page, while 256-dim int8 is ~2 MB. Cosine over unit vectors is just
+a dot product and int8 rounding is monotonic, so ranking survives the squeeze.
 
 Vectors are cached in state.db keyed by (uid, model, dim), so a paper is
 embedded exactly ONCE ever -- a re-run only pays for genuinely new items, and
@@ -35,13 +36,13 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 import scoring  # noqa: E402  (repo root on path above)
 import store    # noqa: E402
 
-MODEL = "gemini-embedding-2"
-DIM = 256                    # Matryoshka truncation (native is 3072)
-BATCH = 64                   # contents per batchEmbedContents call
+MODEL = "mistral-embed"
+WANT_DIM = 256               # requested width; the API may ignore it (see _probe)
+DIM = 0                      # actual width, resolved at runtime by _probe()
+BATCH = 24                   # inputs per call; keeps a request well inside limits
 MAX_CHARS = 1600             # per paper; abstracts past this add little signal
 PAUSE = 1.0                  # seconds between batches -- stay under free-tier RPM
-_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{MODEL}:batchEmbedContents")
+_URL = "https://api.mistral.ai/v1/embeddings"
 
 _CACHE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS embeddings (
@@ -73,8 +74,8 @@ def _text(m: dict, title: str) -> str:
 
 def _quantise(vec: list[float]) -> bytes:
     """Unit-normalise then map to int8, so the client can rank with plain
-    integer dot products. (Gemini already normalises truncated dims; doing it
-    again is cheap and makes the file correct regardless of provider.)"""
+    integer dot products. Normalising unconditionally keeps the file correct
+    whatever the provider does about normalisation itself."""
     norm = sum(v * v for v in vec) ** 0.5 or 1.0
     out = bytearray(len(vec))
     for i, v in enumerate(vec):
@@ -83,27 +84,47 @@ def _quantise(vec: list[float]) -> bytes:
     return bytes(out)
 
 
+_send_dim = True             # flipped off if the API rejects output_dimension
+
+
+def _post(texts: list[str], key: str):
+    body = {"model": MODEL, "input": texts}
+    if _send_dim:
+        body["output_dimension"] = WANT_DIM
+    return requests.post(
+        _URL,
+        headers={"Authorization": f"Bearer {key}",
+                 "Content-Type": "application/json"},
+        json=body, timeout=120,
+    )
+
+
+def _probe(key: str) -> int:
+    """Resolve the ACTUAL embedding width once, up front. output_dimension is
+    model-dependent on Mistral, so rather than assume, ask for the narrow width
+    and measure what comes back -- the cache table and the shipped index are
+    both keyed on the real number, and the portal reads it from vec.json."""
+    global _send_dim
+    r = _post(["dimension probe"], key)
+    if not r.ok and _send_dim and ("output_dimension" in r.text
+                                   or r.status_code in (400, 422)):
+        log("[embed] output_dimension rejected; falling back to native width")
+        _send_dim = False
+        r = _post(["dimension probe"], key)
+    if not r.ok:
+        raise RuntimeError(f"probe failed HTTP {r.status_code}: {r.text[:300]}")
+    d = len(r.json()["data"][0]["embedding"])
+    log(f"[embed] {MODEL} returns {d}-dim vectors"
+        f"{' (truncated as requested)' if _send_dim and d == WANT_DIM else ''}")
+    return d
+
+
 def _embed_batch(texts: list[str], key: str) -> list[list[float]]:
-    body = {"requests": [
-        {"model": f"models/{MODEL}",
-         "content": {"parts": [{"text": t}]},
-         "embedContentConfig": {"outputDimensionality": DIM}}
-        for t in texts
-    ]}
     last = ""
     for attempt in range(6):
-        r = requests.post(
-            _URL,
-            headers={"x-goog-api-key": key, "Content-Type": "application/json"},
-            json=body, timeout=120,
-        )
+        r = _post(texts, key)
         if r.status_code == 429:
             last = r.text[:400].replace("\n", " ")
-            if "quota" in last.lower() and "exceeded" in last.lower() \
-                    and "per day" in last.lower():
-                raise RuntimeError(
-                    f"Gemini DAILY quota exhausted -- resume tomorrow (progress "
-                    f"is cached in state.db, so nothing is lost). API said: {last}")
             wait = min(90, 10 * (attempt + 1))
             log(f"  rate-limited (429): {last[:180]}")
             log(f"  retrying in {wait}s")
@@ -116,20 +137,32 @@ def _embed_batch(texts: list[str], key: str) -> list[list[float]]:
         if not r.ok:
             raise RuntimeError(f"embeddings HTTP {r.status_code}: "
                                f"{r.text[:400]}")
-        out = [e["values"] for e in r.json()["embeddings"]]
+        data = sorted(r.json()["data"], key=lambda d: d["index"])
+        out = [d["embedding"] for d in data]
         if out and len(out[0]) != DIM:
             raise RuntimeError(
-                f"asked for {DIM} dims but got {len(out[0])} -- the "
-                f"outputDimensionality field was ignored; check the request shape")
+                f"index is {DIM}-dim but the API returned {len(out[0])} -- "
+                f"mixing widths would corrupt retrieval")
         return out
     raise RuntimeError(f"embeddings API kept failing after retries. Last: {last}")
 
 
 def main() -> None:
+    global DIM
     rebuild = "--rebuild" in sys.argv
-    key = os.environ.get("GEMINI_API_KEY")
+    key = os.environ.get("MISTRAL_API_KEY")
     con = store.connect()
     con.executescript(_CACHE_SCHEMA)
+
+    # resolve the real vector width BEFORE touching the cache -- every cache
+    # lookup and the shipped index are keyed on it
+    if key:
+        DIM = _probe(key)
+    else:
+        row = con.execute("SELECT dim FROM embeddings WHERE model=? LIMIT 1",
+                          (MODEL,)).fetchone()
+        DIM = row[0] if row else WANT_DIM
+
     if rebuild:
         con.execute("DELETE FROM embeddings WHERE model=? AND dim=?", (MODEL, DIM))
         con.commit()
@@ -154,7 +187,7 @@ def main() -> None:
     log(f"[embed] {len(cached)} cached, {len(todo)} to embed ({MODEL} @ {DIM}d)")
 
     if todo and not key:
-        log("[embed] GEMINI_API_KEY not set -- writing index from cache only")
+        log("[embed] MISTRAL_API_KEY not set -- writing index from cache only")
         todo = []
 
     done = 0
