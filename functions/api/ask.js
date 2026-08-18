@@ -9,15 +9,15 @@
  *   mode:"answer"  -> given the question + the papers the browser retrieved,
  *                     synthesise an answer with inline [n] citations.
  *
- * Providers are the free tiers already used by the pipeline: Gemini for
- * embeddings (must match tools/embed.py exactly, or the query lands in a
- * different vector space and retrieval silently returns nonsense), Mistral for
- * synthesis with Groq as a fallback. Keys are Pages secrets read from env --
- * they never reach the page, and the route sits behind Cloudflare Access.
+ * Providers are the free tiers that are actually live on this account:
+ * mistral-embed for embeddings (must match tools/embed.py exactly -- same model
+ * AND width, or the query lands in a different vector space and retrieval
+ * silently returns nonsense) and mistral-small for synthesis, with Groq as a
+ * fallback. Keys are Pages secrets read from env -- they never reach the page,
+ * and the route sits behind Cloudflare Access.
  */
 
 const EMBED_MODEL = "mistral-embed";        // must match tools/embed.py
-const EMBED_DIM = 256;                      // requested width; see embed() note
 const MISTRAL_MODEL = "mistral-small-latest";
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const MAX_CTX = 12;                         // papers deep-read for the answer
@@ -44,11 +44,15 @@ Rules:
 - Write for a professional quant: dense, concrete, no hedging boilerplate, no
   restating the question. Markdown, short paragraphs or tight bullets.`;
 
-// The query MUST be embedded by the same model/width as docs/vec.bin, or it
+// The query MUST be embedded by the same model AND width as docs/vec.bin, or it
 // lands in a different vector space and retrieval silently returns nonsense.
-// We ask for the same width tools/embed.py asks for; the browser then checks
-// the returned length against vec.json (the file that knows the real width)
-// and refuses to search on a mismatch.
+//
+// Deliberately does NOT send output_dimension: mistral-embed rejects it with a
+// 400 ("This model does not support output_dimension"), and tools/embed.py hits
+// the same wall and falls back to the native width -- so the index is native
+// width too. Asking for a narrower query vector here would 400, or worse,
+// succeed one day and silently mismatch the index. The browser verifies the
+// returned length against vec.json before searching.
 async function embed(text, key) {
   const r = await fetch("https://api.mistral.ai/v1/embeddings", {
     method: "POST",
@@ -56,7 +60,6 @@ async function embed(text, key) {
     body: JSON.stringify({
       model: EMBED_MODEL,
       input: [text],
-      output_dimension: EMBED_DIM,
     }),
   });
   if (!r.ok) throw new Error(`embed ${r.status}: ${(await r.text()).slice(0, 200)}`);
