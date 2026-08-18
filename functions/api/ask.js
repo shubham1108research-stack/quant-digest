@@ -27,7 +27,9 @@ const GROQ_MODEL = "llama-3.3-70b-versatile";
 // Paid tier, used only if ANTHROPIC_API_KEY is set. Switch to "claude-sonnet-5"
 // for ~2.5x lower cost per question at close to the same synthesis quality.
 const CLAUDE_MODEL = "claude-opus-4-8";
-const MAX_CTX = 12;                         // papers deep-read for the answer
+const MAX_CTX = 48;   // papers cited in the answer (a few read in full, the
+                      // rest contributing a scanned finding)
+const MAX_SCAN = 16;  // papers screened per scan call; the browser fans out
 const MAX_Q = 500;                          // question length guard
 
 const json = (obj, status = 200) =>
@@ -140,6 +142,67 @@ async function chat(url, key, model, question, ctx) {
   return (await r.json()).choices[0].message.content;
 }
 
+// Breadth pass. Reading only the top handful risks missing a paper whose
+// abstract ranks 20th overall but contains the one number that answers the
+// question. So a wider set is SCANNED first: each paper is checked for anything
+// bearing on the question, and only the papers that actually have something are
+// carried into the final synthesis. Cheap because the output is a sentence per
+// paper, not an essay -- and it makes the reading set evidence-driven rather
+// than a fixed cutoff.
+const SCAN_SYSTEM = `You are screening research papers for a quantitative researcher.
+
+For each numbered paper, decide whether it contains anything that genuinely bears on
+the question -- a finding, a number, a mechanism, a contradiction, a null result.
+
+If it does: extract that specific content in one or two dense sentences. Keep effect
+sizes, Sharpes, t-stats, sample periods and asset classes verbatim where present.
+If it does not: omit the paper entirely. Being on the same broad topic is NOT enough.
+
+Reply with ONLY a JSON array, no prose:
+[{"i":<id>,"f":"<the specific relevant content>"}]
+Omit every paper with nothing relevant. An empty array [] is a valid, useful answer.`;
+
+function parseFindings(txt) {
+  const m = String(txt || "").match(/\[[\s\S]*\]/);      // tolerate stray prose
+  if (!m) return [];
+  try {
+    const a = JSON.parse(m[0]);
+    return Array.isArray(a) ? a.filter((x) => x && x.f) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+async function scan(question, papers, env) {
+  const listing = papers.map((p) =>
+    `id=${p.i} | ${p.title}\n   ${(p.text || "").replace(/\s+/g, " ").slice(0, 1500)}`
+  ).join("\n\n");
+  const msgs = [
+    { role: "system", content: SCAN_SYSTEM },
+    { role: "user", content: `Question: ${question}\n\nPapers:\n\n${listing}` },
+  ];
+  const attempts = [];
+  if (env.MISTRAL_API_KEY) {
+    attempts.push(["https://api.mistral.ai/v1/chat/completions",
+                   env.MISTRAL_API_KEY, MISTRAL_MODEL]);
+  }
+  if (env.GROQ_API_KEY) {
+    attempts.push(["https://api.groq.com/openai/v1/chat/completions",
+                   env.GROQ_API_KEY, GROQ_MODEL]);
+  }
+  for (const [url, key, model] of attempts) {
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+        body: JSON.stringify({ model: model, temperature: 0, messages: msgs }),
+      });
+      if (r.ok) return parseFindings((await r.json()).choices[0].message.content);
+    } catch (_) { /* next provider */ }
+  }
+  return [];
+}
+
 // Claude speaks a different protocol to the OpenAI-shaped endpoints: system is
 // a top-level field (not a message), the version header is required, and the
 // reply is a content-block array rather than choices[].
@@ -212,12 +275,17 @@ export async function onRequestPost({ request, env }) {
       }
       return json({ vec: await embed(q, env.MISTRAL_API_KEY) });
     }
+    if (body.mode === "scan") {
+      const papers = Array.isArray(body.papers) ? body.papers.slice(0, MAX_SCAN) : [];
+      if (!papers.length) return json({ error: "no papers supplied" }, 400);
+      return json({ found: await scan(q, papers, env) });
+    }
     if (body.mode === "answer") {
       const ctx = Array.isArray(body.ctx) ? body.ctx.slice(0, MAX_CTX) : [];
       if (!ctx.length) return json({ error: "no context papers supplied" }, 400);
       return json({ answer: await answer(q, ctx, env) });
     }
-    return json({ error: "mode must be 'embed' or 'answer'" }, 400);
+    return json({ error: "mode must be 'embed', 'scan' or 'answer'" }, 400);
   } catch (e) {
     return json({ error: String((e && e.message) || e) }, 502);
   }

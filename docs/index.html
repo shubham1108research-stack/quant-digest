@@ -515,7 +515,9 @@ let ASK_THREAD=[],asking=false;
 // and a keyword hit-rate against the question, then keep the finalists. No
 // extra LLM call to rank -- the model is spent only on the final synthesis.
 const ASK_RECALL=200;                 // candidates pulled by embedding similarity
-const ASK_DEEP=12;                    // finalists actually read for the answer
+const ASK_SCAN=48;                    // papers actually examined for content
+const ASK_DEEP=12;                    // papers read in full (top of the ranking)
+const SCAN_BATCH=16;                  // papers per screening call; fanned out in parallel
 // weights: relevance to the QUESTION dominates; the archive's own quality score
 // breaks ties so a strong paper outranks a mediocre one on equal topical fit
 const W_SIM=0.55,W_KW=0.30,W_QUALITY=0.15;
@@ -693,22 +695,47 @@ async function doAsk(q,force){
     const terms=qTerms(q);
     cands.forEach(c=>{c._rank=askRank(c,terms);});
     cands.sort((a,b)=>b._rank-a._rank);
-    const picks=cands.slice(0,ASK_DEEP);
-    ASK_THREAD[0].sources=picks;ASK_THREAD[0].scanned=cands.length;
-    ASK_THREAD[0].state='reading';
+    const scanSet=cands.slice(0,ASK_SCAN);
+    ASK_THREAD[0].scanned=cands.length;ASK_THREAD[0].state='reading';
     renderAsk();
-    // pull the FULL abstracts for the finalists (archive.json only carries a
-    // 400-char summary; answering from a third of the text was the old flaw).
-    // Papers read for an earlier question come straight from memory.
+    // pull the FULL abstracts for the whole examined set (archive.json only
+    // carries a 400-char summary). Papers read for an earlier question come
+    // straight from memory.
     let got={abs:{},fetched:0,reused:0};
-    try{ got=await loadAbstracts(picks); }catch(e){ got={abs:{},fetched:0,reused:0}; }
-    picks.forEach(p=>{p._full=got.abs[p.uid]||'';});
+    try{ got=await loadAbstracts(scanSet); }catch(e){ got={abs:{},fetched:0,reused:0}; }
+    scanSet.forEach(p=>{p._full=got.abs[p.uid]||'';});
     ASK_THREAD[0].reused=got.reused;
+    // Top of the ranking is read in full. Everything else is SCREENED: a paper
+    // ranked 30th can still hold the one number that answers the question, and
+    // a fixed top-N cutoff would never see it. Only papers that actually turn
+    // out to hold something relevant get carried into the answer, so the
+    // reading set is decided by content rather than by rank.
+    const deep=scanSet.slice(0,ASK_DEEP);
+    const rest=scanSet.slice(ASK_DEEP).filter(p=>p._full);
+    let extra=[],foundBy={};
+    if(rest.length){
+      ASK_THREAD[0].state='scanning';ASK_THREAD[0].scanning=rest.length;
+      renderAsk();
+      const batches=[];
+      for(let i=0;i<rest.length;i+=SCAN_BATCH)batches.push(rest.slice(i,i+SCAN_BATCH));
+      const res=await Promise.all(batches.map(b=>
+        fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({mode:'scan',q:q,
+            papers:b.map(p=>({i:p._row,title:p.title,text:p._full}))})})
+        .then(r=>r.json()).then(j=>j.found||[]).catch(()=>[])));
+      res.flat().forEach(f=>{if(f&&f.i!=null&&f.f)foundBy[f.i]=String(f.f);});
+      extra=rest.filter(p=>foundBy[p._row]);
+    }
+    // citation order must match the context order exactly: full reads first,
+    // then the screened papers that had something
+    const picks=deep.concat(extra);
+    ASK_THREAD[0].sources=picks;ASK_THREAD[0].extra=extra.length;
     ASK_THREAD[0].state='thinking';
     renderAsk();
     const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({mode:'answer',q:q,ctx:picks.map(p=>({title:p.title,authors:p.authors,
-        date:p.date,source:p.source,topic:p.topic,summary:p._full||p.summary}))})});
+        date:p.date,source:p.source,topic:p.topic,
+        summary:foundBy[p._row]||p._full||p.summary}))})});
     const aj=await ar.json();
     if(!ar.ok)throw new Error(aj.error||'answer failed');
     ASK_THREAD[0].answer=aj.answer;ASK_THREAD[0].state='done';
@@ -735,7 +762,8 @@ function renderAsk(notice){
     let body='';
     if(t.state==='retrieving')body='<div class="thinking">Searching '+(VEC_UIDS?VEC_UIDS.length.toLocaleString():'the')+' papers…</div>';
     else if(t.state==='reading')body='<div class="thinking">Ranked '+(t.scanned||0)+' candidates · pulling full abstracts for the top '+(t.sources||[]).length+'…</div>';
-    else if(t.state==='thinking')body='<div class="thinking">Reading '+(t.sources||[]).length+' full abstracts'+(t.reused?' ('+t.reused+' already in memory)':'')+'…</div>';
+    else if(t.state==='scanning')body='<div class="thinking">Screening '+(t.scanning||0)+' further papers for relevant content…</div>';
+    else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' papers'+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' · '+t.reused+' from memory':'')+'…</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
     else body='<div class="answer">'+md(t.answer,ti)+'</div>';
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
@@ -747,7 +775,7 @@ function renderAsk(notice){
       <button class="reask" data-q="${esc(t.q)}" title="Ignore the stored answer and ask again">ask again</button>`:'';
     return `<div class="qa"><div class="qq">${esc(t.q)}${badge}</div>${body}${src}</div>`;
   }).join('');
-  $('view').innerHTML=`<div class="dateline">Ask the archive <span class="n">· ${VEC_UIDS?VEC_UIDS.length.toLocaleString():'—'} papers indexed · searched in your browser, ranked by similarity + your own paper scores + keyword fit; only the question and the top ${ASK_DEEP} full abstracts are sent for synthesis</span></div>
+  $('view').innerHTML=`<div class="dateline">Ask the archive <span class="n">· ${VEC_UIDS?VEC_UIDS.length.toLocaleString():'—'} papers indexed · searched in your browser, ranked by similarity + your own paper scores + keyword fit; top ${ASK_DEEP} read in full and the next ${ASK_SCAN-ASK_DEEP} screened for relevant content</span></div>
     <div class="askbox"><textarea id="askq" rows="2" placeholder="Ask anything about the archive — e.g. what does the evidence say about trend decay?"></textarea>
       <button id="asksend" ${asking?'disabled':''}>${asking?'…':'Ask'}</button></div>${note}${chips}${thread}`;
   const send=$('asksend');if(send)send.onclick=askSubmit;
