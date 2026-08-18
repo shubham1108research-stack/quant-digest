@@ -37,7 +37,7 @@ import store    # noqa: E402
 
 MODEL = "text-embedding-3-small"
 DIM = 256                    # Matryoshka truncation -- 6x smaller than native
-BATCH = 128                  # inputs per API call
+BATCH = 32                   # inputs per call; small enough for a low-tier TPM cap
 MAX_CHARS = 1600             # per paper; abstracts past this add little signal
 _URL = "https://api.openai.com/v1/embeddings"
 
@@ -81,7 +81,8 @@ def _quantise(vec: list[float]) -> bytes:
 
 
 def _embed_batch(texts: list[str], key: str) -> list[list[float]]:
-    for attempt in range(5):
+    last = ""
+    for attempt in range(6):
         r = requests.post(
             _URL,
             headers={"Authorization": f"Bearer {key}",
@@ -89,15 +90,28 @@ def _embed_batch(texts: list[str], key: str) -> list[list[float]]:
             json={"model": MODEL, "input": texts, "dimensions": DIM},
             timeout=90,
         )
-        if r.status_code in (429, 500, 502, 503):
-            wait = min(30, 4 * (attempt + 1))
-            log(f"  rate-limited ({r.status_code}); retrying in {wait}s")
+        if r.status_code == 429:
+            last = r.text[:400].replace("\n", " ")
+            # a spent balance also returns 429, but retrying it is pointless --
+            # it never clears within a run. Fail loudly instead of burning the
+            # whole backoff ladder and reporting a misleading "rate limit".
+            if "insufficient_quota" in last or "exceeded your current quota" in last:
+                raise RuntimeError(
+                    "OpenAI rejected the request for QUOTA/BILLING, not rate "
+                    f"limiting -- add credit or use a different key. API said: {last}")
+            wait = min(60, 5 * (attempt + 1))
+            log(f"  rate-limited (429): {last[:200]}")
+            log(f"  retrying in {wait}s")
             time.sleep(wait)
+            continue
+        if r.status_code in (500, 502, 503):
+            last = r.text[:200].replace("\n", " ")
+            time.sleep(min(30, 4 * (attempt + 1)))
             continue
         r.raise_for_status()
         data = sorted(r.json()["data"], key=lambda d: d["index"])
         return [d["embedding"] for d in data]
-    raise RuntimeError("embeddings API kept failing after retries")
+    raise RuntimeError(f"embeddings API kept failing after retries. Last response: {last}")
 
 
 def main() -> None:
