@@ -78,7 +78,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python tools/embed.py
 
       - name: Commit state + report archive + portal

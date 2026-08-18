@@ -2,15 +2,16 @@
 """Semantic index over the whole archive: embed every paper once, ship a compact
 int8 matrix the portal can search entirely in the browser.
 
-Why int8 at 256 dims: 5.8k papers x 1536 dims x 4 bytes = 36 MB, far too heavy
-for a static page. text-embedding-3-small supports Matryoshka truncation, so we
-ask for 256 dims and quantise each unit vector to int8 -> ~1.5 MB. Cosine on
-unit vectors is just a dot product, and int8 rounding is monotonic, so ranking
-quality is essentially unchanged while the file becomes shippable.
+Provider is Gemini (gemini-embedding-2) because it is free-tier and supports
+Matryoshka truncation -- we ask for 256 dimensions instead of the native 3072.
+That matters a lot here: 8.4k papers x 3072 dims x 4 bytes would be ~103 MB,
+hopeless for a static page, while 256-dim int8 is ~2 MB. Cosine over unit
+vectors is just a dot product and int8 rounding is monotonic, so ranking
+quality survives the compression.
 
-Vectors are cached in state.db keyed by (uid, model), so a paper is embedded
-exactly ONCE ever -- a re-run only pays for genuinely new items (fractions of a
-cent). The full 5.8k-item cold build costs roughly $0.03.
+Vectors are cached in state.db keyed by (uid, model, dim), so a paper is
+embedded exactly ONCE ever -- a re-run only pays for genuinely new items, and
+changing model/dim naturally invalidates rather than silently mixing spaces.
 
 Outputs:
   docs/vec.bin   int8 matrix, row-major, n x DIM (no header -- pure payload)
@@ -23,7 +24,6 @@ Usage:  python tools/embed.py            (incremental; embeds only what's new)
 import json
 import os
 import pathlib
-import sqlite3
 import struct
 import sys
 import time
@@ -35,11 +35,13 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 import scoring  # noqa: E402  (repo root on path above)
 import store    # noqa: E402
 
-MODEL = "text-embedding-3-small"
-DIM = 256                    # Matryoshka truncation -- 6x smaller than native
-BATCH = 32                   # inputs per call; small enough for a low-tier TPM cap
+MODEL = "gemini-embedding-2"
+DIM = 256                    # Matryoshka truncation (native is 3072)
+BATCH = 64                   # contents per batchEmbedContents call
 MAX_CHARS = 1600             # per paper; abstracts past this add little signal
-_URL = "https://api.openai.com/v1/embeddings"
+PAUSE = 1.0                  # seconds between batches -- stay under free-tier RPM
+_URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{MODEL}:batchEmbedContents")
 
 _CACHE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS embeddings (
@@ -57,7 +59,7 @@ def log(m: str) -> None:
 
 
 def _text(m: dict, title: str) -> str:
-    """What we actually embed: title carries the topic, the abstract carries the
+    """What we actually embed: the title carries the subject, the abstract the
     method and findings. Falls back through abstract -> LLM summary -> title."""
     body = (m.get("abstract") or "").strip() or (m.get("summary") or "").strip()
     topic = (m.get("topic") or "").strip()
@@ -70,8 +72,9 @@ def _text(m: dict, title: str) -> str:
 
 
 def _quantise(vec: list[float]) -> bytes:
-    """Unit-normalise then map to int8. Cosine over unit vectors is a dot
-    product, so the client can rank with plain integer dot products."""
+    """Unit-normalise then map to int8, so the client can rank with plain
+    integer dot products. (Gemini already normalises truncated dims; doing it
+    again is cheap and makes the file correct regardless of provider.)"""
     norm = sum(v * v for v in vec) ** 0.5 or 1.0
     out = bytearray(len(vec))
     for i, v in enumerate(vec):
@@ -81,42 +84,50 @@ def _quantise(vec: list[float]) -> bytes:
 
 
 def _embed_batch(texts: list[str], key: str) -> list[list[float]]:
+    body = {"requests": [
+        {"model": f"models/{MODEL}",
+         "content": {"parts": [{"text": t}]},
+         "embedContentConfig": {"outputDimensionality": DIM}}
+        for t in texts
+    ]}
     last = ""
     for attempt in range(6):
         r = requests.post(
             _URL,
-            headers={"Authorization": f"Bearer {key}",
-                     "Content-Type": "application/json"},
-            json={"model": MODEL, "input": texts, "dimensions": DIM},
-            timeout=90,
+            headers={"x-goog-api-key": key, "Content-Type": "application/json"},
+            json=body, timeout=120,
         )
         if r.status_code == 429:
             last = r.text[:400].replace("\n", " ")
-            # a spent balance also returns 429, but retrying it is pointless --
-            # it never clears within a run. Fail loudly instead of burning the
-            # whole backoff ladder and reporting a misleading "rate limit".
-            if "insufficient_quota" in last or "exceeded your current quota" in last:
+            if "quota" in last.lower() and "exceeded" in last.lower() \
+                    and "per day" in last.lower():
                 raise RuntimeError(
-                    "OpenAI rejected the request for QUOTA/BILLING, not rate "
-                    f"limiting -- add credit or use a different key. API said: {last}")
-            wait = min(60, 5 * (attempt + 1))
-            log(f"  rate-limited (429): {last[:200]}")
+                    f"Gemini DAILY quota exhausted -- resume tomorrow (progress "
+                    f"is cached in state.db, so nothing is lost). API said: {last}")
+            wait = min(90, 10 * (attempt + 1))
+            log(f"  rate-limited (429): {last[:180]}")
             log(f"  retrying in {wait}s")
             time.sleep(wait)
             continue
         if r.status_code in (500, 502, 503):
             last = r.text[:200].replace("\n", " ")
-            time.sleep(min(30, 4 * (attempt + 1)))
+            time.sleep(min(30, 5 * (attempt + 1)))
             continue
-        r.raise_for_status()
-        data = sorted(r.json()["data"], key=lambda d: d["index"])
-        return [d["embedding"] for d in data]
-    raise RuntimeError(f"embeddings API kept failing after retries. Last response: {last}")
+        if not r.ok:
+            raise RuntimeError(f"embeddings HTTP {r.status_code}: "
+                               f"{r.text[:400]}")
+        out = [e["values"] for e in r.json()["embeddings"]]
+        if out and len(out[0]) != DIM:
+            raise RuntimeError(
+                f"asked for {DIM} dims but got {len(out[0])} -- the "
+                f"outputDimensionality field was ignored; check the request shape")
+        return out
+    raise RuntimeError(f"embeddings API kept failing after retries. Last: {last}")
 
 
 def main() -> None:
     rebuild = "--rebuild" in sys.argv
-    key = os.environ.get("OPENAI_API_KEY")
+    key = os.environ.get("GEMINI_API_KEY")
     con = store.connect()
     con.executescript(_CACHE_SCHEMA)
     if rebuild:
@@ -140,21 +151,31 @@ def main() -> None:
     cached = {r[0] for r in con.execute(
         "SELECT uid FROM embeddings WHERE model=? AND dim=?", (MODEL, DIM))}
     todo = [(u, t) for u, t in papers if u not in cached and t.strip()]
-    log(f"[embed] {len(cached)} cached, {len(todo)} to embed")
+    log(f"[embed] {len(cached)} cached, {len(todo)} to embed ({MODEL} @ {DIM}d)")
 
     if todo and not key:
-        log("[embed] OPENAI_API_KEY not set -- writing index from cache only")
+        log("[embed] GEMINI_API_KEY not set -- writing index from cache only")
         todo = []
 
-    for i in range(0, len(todo), BATCH):
-        chunk = todo[i:i + BATCH]
-        vecs = _embed_batch([t for _, t in chunk], key)
-        con.executemany(
-            "INSERT OR REPLACE INTO embeddings (uid, model, dim, vec) VALUES (?,?,?,?)",
-            [(u, MODEL, DIM, _quantise(v)) for (u, _), v in zip(chunk, vecs)],
-        )
-        con.commit()
-        log(f"[embed] {min(i + BATCH, len(todo))}/{len(todo)}")
+    done = 0
+    try:
+        for i in range(0, len(todo), BATCH):
+            chunk = todo[i:i + BATCH]
+            vecs = _embed_batch([t for _, t in chunk], key)
+            con.executemany(
+                "INSERT OR REPLACE INTO embeddings (uid, model, dim, vec) "
+                "VALUES (?,?,?,?)",
+                [(u, MODEL, DIM, _quantise(v)) for (u, _), v in zip(chunk, vecs)],
+            )
+            con.commit()
+            done = min(i + BATCH, len(todo))
+            if done % (BATCH * 10) == 0 or done == len(todo):
+                log(f"[embed] {done}/{len(todo)}")
+            time.sleep(PAUSE)
+    except Exception as e:                              # noqa: BLE001
+        # a daily-quota stop is normal on a cold build: keep what we embedded,
+        # write the partial index, and let the next run continue from the cache
+        log(f"[embed] stopped early after {done}: {type(e).__name__}: {e}")
 
     # emit the shipping index, ordered exactly like the .bin rows
     have = dict(con.execute(
@@ -171,7 +192,9 @@ def main() -> None:
     (docs / "vec.bin").write_bytes(bytes(blob))
     (docs / "vec.json").write_text(json.dumps(
         {"model": MODEL, "dim": DIM, "n": len(uids), "uids": uids}), encoding="utf-8")
-    log(f"[embed] wrote docs/vec.bin ({len(blob) / 1e6:.2f} MB, {len(uids)} vectors)")
+    pct = (100.0 * len(uids) / len(papers)) if papers else 0.0
+    log(f"[embed] wrote docs/vec.bin ({len(blob) / 1e6:.2f} MB, "
+        f"{len(uids)}/{len(papers)} papers = {pct:.0f}% coverage)")
 
 
 if __name__ == "__main__":
