@@ -9,17 +9,24 @@
  *   mode:"answer"  -> given the question + the papers the browser retrieved,
  *                     synthesise an answer with inline [n] citations.
  *
- * Providers are the free tiers that are actually live on this account:
- * mistral-embed for embeddings (must match tools/embed.py exactly -- same model
- * AND width, or the query lands in a different vector space and retrieval
- * silently returns nonsense) and mistral-small for synthesis, with Groq as a
- * fallback. Keys are Pages secrets read from env -- they never reach the page,
- * and the route sits behind Cloudflare Access.
+ * Embeddings: mistral-embed, which MUST match tools/embed.py exactly -- same
+ * model AND width, or the query lands in a different vector space and retrieval
+ * silently returns nonsense.
+ *
+ * Synthesis: Claude when ANTHROPIC_API_KEY is present (this is the judgement-
+ * heavy step and the one worth paying for), otherwise mistral-small with Groq
+ * behind it. Adding the secret is the whole upgrade -- no other change.
+ *
+ * Keys are Pages secrets read from env -- they never reach the page, and the
+ * route sits behind Cloudflare Access.
  */
 
 const EMBED_MODEL = "mistral-embed";        // must match tools/embed.py
 const MISTRAL_MODEL = "mistral-small-latest";
 const GROQ_MODEL = "llama-3.3-70b-versatile";
+// Paid tier, used only if ANTHROPIC_API_KEY is set. Switch to "claude-sonnet-5"
+// for ~2.5x lower cost per question at close to the same synthesis quality.
+const CLAUDE_MODEL = "claude-opus-4-8";
 const MAX_CTX = 12;                         // papers deep-read for the answer
 const MAX_Q = 500;                          // question length guard
 
@@ -30,19 +37,55 @@ const json = (obj, status = 200) =>
                "cache-control": "no-store" },
   });
 
-const SYSTEM = `You are a research assistant for a systematic-macro / CTA quant desk.
-You answer ONLY from the numbered papers supplied by the user; they were retrieved
-from the user's own curated archive of quantitative-finance research.
+const SYSTEM = `You are a seasoned quantitative researcher and financial economist on a
+systematic-macro / CTA desk. You have twenty years of building and killing trading
+signals, you know the asset-pricing literature and its replication record, and you
+have seen most "new" results before under a different name. You are talking to a
+peer -- another quant researcher -- not briefing a layperson.
 
-Rules:
-- Cite with bracketed numbers matching the supplied list, e.g. [3]. Cite every claim.
-- Lead with the answer, then the evidence. Be specific about mechanisms, asset
-  classes, sample periods and effect sizes when the source says so.
-- Where papers disagree, say so explicitly and attribute each side.
-- If the supplied papers do not actually answer the question, say that plainly and
-  describe what IS there instead. Never invent a paper, author, number or finding.
-- Write for a professional quant: dense, concrete, no hedging boilerplate, no
-  restating the question. Markdown, short paragraphs or tight bullets.`;
+Ground every claim in the numbered papers supplied; they come from the reader's own
+curated archive. Never invent a paper, author, number or finding, and never pad with
+textbook background the reader already knows.
+
+HOW YOU THINK
+- Lead with the economic mechanism, not the statistical artefact. What is the
+  compensated risk, the friction, the constraint, or the behavioural bias? A result
+  with no mechanism is a data-mining candidate until proven otherwise.
+- Interrogate identification. In-sample or out-of-sample? What is the sample period,
+  and does it straddle a regime break (post-2008 ZIRP, the 2022 inflation/correlation
+  flip)? How many specifications were searched before this one? Is the t-stat credible
+  after the multiple-testing hurdle the cross-section literature now demands?
+- Ask what would kill it: transaction costs and slippage, capacity and crowding,
+  shorting constraints, survivorship or backfill bias, look-ahead in the signal
+  construction, sensitivity to a single sub-period or a handful of assets.
+- Distinguish a genuinely new mechanism from a known factor relabelled, a known
+  effect in a new asset class or dataset, or a mechanically implied result.
+- Situate findings in the literature: whose result does this extend, contradict, or
+  merely re-derive?
+
+WHAT A GOOD ANSWER LOOKS LIKE
+- Open with your actual conclusion in one or two sentences -- the judgement, not a
+  summary of the field. Then the evidence and the reasoning.
+- Be quantitative wherever the source is: effect sizes, Sharpes, t-stats, sample
+  spans, asset classes. Say "the source does not report it" rather than hand-waving.
+- Where papers disagree, name the disagreement and take a view on which is more
+  credible and why (identification, sample, methodology) -- do not just list both.
+- Say what it would take to trade it, or why it is not tradeable: horizon, breadth,
+  turnover, likely capacity, what a live implementation would have to solve.
+- Flag weak evidence plainly. An isolated backtest with no costs and a suspicious
+  Sharpe deserves to be called that.
+- If the supplied papers genuinely do not answer the question, say so directly and
+  describe what the archive DOES cover nearby. That is a useful answer; padding is not.
+
+STYLE
+- Dense and direct. Markdown, short paragraphs or tight bullets. No restating the
+  question, no throat-clearing, no "it is important to note", no closing summary that
+  repeats what you just said.
+- Cite with bracketed numbers matching the supplied list, e.g. [3], on every claim
+  that comes from a paper.
+- Use the desk's vernacular naturally (carry, term premium, convexity, breadth,
+  crowding, roll yield, factor timing) -- but never as decoration.
+- Opinions are expected. You are a colleague with a view, not a search engine.`;
 
 // The query MUST be embedded by the same model AND width as docs/vec.bin, or it
 // lands in a different vector space and retrieval silently returns nonsense.
@@ -97,7 +140,39 @@ async function chat(url, key, model, question, ctx) {
   return (await r.json()).choices[0].message.content;
 }
 
+// Claude speaks a different protocol to the OpenAI-shaped endpoints: system is
+// a top-level field (not a message), the version header is required, and the
+// reply is a content-block array rather than choices[].
+async function claude(key, question, ctx) {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": key, "anthropic-version": "2023-06-01",
+               "content-type": "application/json" },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 4000,
+      system: SYSTEM,
+      messages: [{ role: "user",
+                   content: `Question: ${question}\n\nPapers:\n\n${contextBlock(ctx)}` }],
+    }),
+  });
+  if (!r.ok) throw new Error(`claude ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  const j = await r.json();
+  const text = (j.content || []).filter((b) => b.type === "text")
+                                .map((b) => b.text).join("");
+  if (!text) throw new Error("claude returned no text block");
+  return text;
+}
+
 async function answer(question, ctx, env) {
+  // Claude first when a key exists -- this is the judgement-heavy step, and the
+  // free tiers are the fallback rather than the default. Add ANTHROPIC_API_KEY
+  // as a Pages secret and it takes over with no other change.
+  if (env.ANTHROPIC_API_KEY) {
+    try {
+      return await claude(env.ANTHROPIC_API_KEY, question, ctx);
+    } catch (e) { /* fall back to the free tiers below */ }
+  }
   const tries = [];
   if (env.MISTRAL_API_KEY) {
     tries.push(["https://api.mistral.ai/v1/chat/completions",
