@@ -41,6 +41,7 @@ WANT_DIM = 256               # requested width; the API may ignore it (see _prob
 DIM = 0                      # actual width, resolved at runtime by _probe()
 BATCH = 24                   # inputs per call; keeps a request well inside limits
 MAX_CHARS = 1600             # per paper; abstracts past this add little signal
+SHARD = 64                   # vector rows per abstract shard (~90 KB each)
 PAUSE = 1.0                  # seconds between batches -- stay under free-tier RPM
 _URL = "https://api.mistral.ai/v1/embeddings"
 
@@ -224,7 +225,38 @@ def main() -> None:
     docs.mkdir(exist_ok=True)
     (docs / "vec.bin").write_bytes(bytes(blob))
     (docs / "vec.json").write_text(json.dumps(
-        {"model": MODEL, "dim": DIM, "n": len(uids), "uids": uids}), encoding="utf-8")
+        {"model": MODEL, "dim": DIM, "n": len(uids), "shard": SHARD,
+         "uids": uids}), encoding="utf-8")
+
+    # Full abstracts, sharded to match the vector ROW ORDER. Ask needs the real
+    # abstract (median ~1.4k chars) for the handful of papers it finally reads,
+    # not the 400-char summary that ships in archive.json -- but shipping every
+    # abstract would be a ~12 MB download. Sharding by row index means the
+    # client can grab just the few blocks its picks land in: no hashing needed
+    # on either side, because retrieval already knows each paper's row.
+    absdir = docs / "abs"
+    absdir.mkdir(exist_ok=True)
+    for old in absdir.glob("*.json"):
+        old.unlink()
+    meta_by_uid = {}
+    for uid, title, meta in rows:
+        try:
+            meta_by_uid[uid] = json.loads(meta)
+        except Exception:                            # noqa: BLE001
+            meta_by_uid[uid] = {}
+    n_abs = 0
+    for start in range(0, len(uids), SHARD):
+        block = {}
+        for off, uid in enumerate(uids[start:start + SHARD]):
+            m = meta_by_uid.get(uid) or {}
+            text = (m.get("abstract") or "").strip()
+            if text:
+                n_abs += 1
+            block[str(start + off)] = text[:6000]     # cap pathological outliers
+        (absdir / f"{start // SHARD}.json").write_text(
+            json.dumps(block), encoding="utf-8")
+    log(f"[embed] wrote {len(uids) // SHARD + 1} abstract shards "
+        f"({n_abs} papers have full text)")
     pct = (100.0 * len(uids) / len(papers)) if papers else 0.0
     log(f"[embed] wrote docs/vec.bin ({len(blob) / 1e6:.2f} MB, "
         f"{len(uids)}/{len(papers)} papers = {pct:.0f}% coverage)")

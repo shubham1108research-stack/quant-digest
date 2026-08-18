@@ -601,9 +601,44 @@ function renderAnchors(){
 // adds -- a few milliseconds locally, and nothing but the question leaves the
 // page until we have the shortlist. /api/ask (a Cloudflare Pages Function
 // holding the API key) only embeds the question and writes the final synthesis.
-let VEC=null,VEC_UIDS=null,VEC_DIM=0,ITEM_BY_UID={},indexLoading=false;
+let VEC=null,VEC_UIDS=null,VEC_DIM=0,VEC_SHARD=64,ITEM_BY_UID={},indexLoading=false;
 let ASK_THREAD=[],asking=false;
-const ASK_K=16;                       // papers retrieved per question
+// Two-stage selection, both stages free and instant because they reuse work the
+// pipeline already did. Stage 1: cosine recall over every paper. Stage 2: blend
+// that similarity with the paper's OWN pipeline scores (strength, reputation)
+// and a keyword hit-rate against the question, then keep the finalists. No
+// extra LLM call to rank -- the model is spent only on the final synthesis.
+const ASK_RECALL=200;                 // candidates pulled by embedding similarity
+const ASK_DEEP=12;                    // finalists actually read for the answer
+// weights: relevance to the QUESTION dominates; the archive's own quality score
+// breaks ties so a strong paper outranks a mediocre one on equal topical fit
+const W_SIM=0.55,W_KW=0.30,W_QUALITY=0.15;
+const ASK_STOP=new Set(('the a an of and or to in on for with is are be as by at from that this what which how does do did why '
+ +'when we our their its it also than then these those between across over under more most less least there here into out '
+ +'about after before during any some all can could would should may might will shall must have has had been being').split(' '));
+function qTerms(q){
+  return [...new Set(String(q||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\\s+/)
+    .filter(t=>t.length>2&&!ASK_STOP.has(t)))];
+}
+function kwHit(terms,text){
+  if(!terms.length||!text)return 0;
+  const t=' '+String(text).toLowerCase()+' ';
+  let n=0;terms.forEach(w=>{if(t.indexOf(w)>=0)n++;});
+  return n/terms.length;
+}
+// the archive's own verdict on the paper, independent of the question
+function askQuality(x){
+  const scored=(x.generality!=null||x.testability!=null||x.novelty_posterior!=null);
+  // unscored papers sit just below average rather than being buried -- ~42% of
+  // the archive is still unscored, and some of it is genuinely relevant
+  const q=scored?_strengthScore(x)/100:0.45;
+  return Math.max(0,Math.min(1.2,q*(x.reputation||1)));
+}
+function askRank(x,terms){
+  const sim=Math.max(0,Math.min(1,(x._sim||0)/(127*127)));
+  const kw=0.6*kwHit(terms,x.title)+0.4*kwHit(terms,x.summary);
+  return W_SIM*sim+W_KW*kw+W_QUALITY*askQuality(x);
+}
 const ASK_EXAMPLES=[
   "What does the archive say about the stock-bond correlation flip?",
   "Is there evidence trend following has decayed since 2010?",
@@ -619,7 +654,7 @@ function loadIndex(cb){
     fetch('vec.bin').then(r=>r.arrayBuffer()),
     ARCHIVE_DATA?Promise.resolve(ARCHIVE_DATA):fetch('archive.json').then(r=>r.json()),
   ]).then(([meta,buf,arch])=>{
-    VEC_UIDS=meta.uids;VEC=new Int8Array(buf);VEC_DIM=meta.dim||0;
+    VEC_UIDS=meta.uids;VEC=new Int8Array(buf);VEC_DIM=meta.dim||0;VEC_SHARD=meta.shard||64;
     ARCHIVE_DATA=arch;
     arch.forEach(x=>{if(x.uid)ITEM_BY_UID[x.uid]=x;if(x.url)ITEM_BY_URL[x.url]=x;});
     indexLoading=false;
@@ -631,6 +666,10 @@ function loadIndex(cb){
 }
 // cosine over unit vectors == dot product; int8 rounding is monotonic, so the
 // 1/127 scale factor is irrelevant to the ranking and never applied
+// Stage 1 -- recall by cosine over every indexed paper. Each candidate carries
+// its raw dot product (_sim) and its vector row (_row, which addresses the
+// abstract shard), so the blend stage has everything it needs without a
+// second pass over the matrix.
 function retrieve(qv,k){
   const dim=qv.length,n=VEC_UIDS.length,out=[];
   for(let i=0;i<n;i++){
@@ -640,13 +679,27 @@ function retrieve(qv,k){
   }
   out.sort((a,b)=>b[0]-a[0]);
   const seen=new Set(),picks=[];
-  for(const [,i] of out){
+  for(const [sim,i] of out){
     const it=ITEM_BY_UID[VEC_UIDS[i]];
     if(!it||seen.has(it.title))continue;
-    seen.add(it.title);picks.push(it);
+    seen.add(it.title);
+    picks.push(Object.assign({},it,{_row:i,_sim:sim}));
     if(picks.length>=k)break;
   }
   return picks;
+}
+// Full abstracts live in row-indexed shards (docs/abs/N.json) so we can pull
+// the real text for the handful of finalists without shipping ~12 MB of
+// abstracts to every visitor. Only the shards the picks land in are fetched.
+const ABS_SHARD={};
+async function loadAbstracts(rows){
+  const need=[...new Set(rows.map(r=>Math.floor(r/VEC_SHARD)))].filter(s=>!(s in ABS_SHARD));
+  await Promise.all(need.map(s=>
+    fetch('abs/'+s+'.json').then(r=>r.json()).then(j=>{ABS_SHARD[s]=j;})
+      .catch(()=>{ABS_SHARD[s]={};})));
+  const out={};
+  rows.forEach(r=>{const sh=ABS_SHARD[Math.floor(r/VEC_SHARD)]||{};out[r]=sh[String(r)]||'';});
+  return out;
 }
 const _mdEsc=s=>esc(s);
 function md(t,ti){
@@ -681,12 +734,27 @@ async function doAsk(q){
     // retrieval would return confident nonsense, so refuse rather than guess
     if(VEC_DIM&&ej.vec.length!==VEC_DIM)
       throw new Error('the question embedded to '+ej.vec.length+' dimensions but the index is '+VEC_DIM+'-dimensional — rebuild the index (Semantic Index workflow) so both use the same model');
-    const picks=retrieve(ej.vec,ASK_K);
-    ASK_THREAD[0].sources=picks;ASK_THREAD[0].state='thinking';
+    // stage 1: broad recall by similarity
+    const cands=retrieve(ej.vec,ASK_RECALL);
+    // stage 2: re-order by question-relevance BLENDED with the archive's own
+    // scores -- free, instant, and it reuses work the pipeline already did
+    const terms=qTerms(q);
+    cands.forEach(c=>{c._rank=askRank(c,terms);});
+    cands.sort((a,b)=>b._rank-a._rank);
+    const picks=cands.slice(0,ASK_DEEP);
+    ASK_THREAD[0].sources=picks;ASK_THREAD[0].scanned=cands.length;
+    ASK_THREAD[0].state='reading';
+    renderAsk();
+    // pull the FULL abstracts for the finalists (archive.json only carries a
+    // 400-char summary; answering from a third of the text was the old flaw)
+    let full={};
+    try{ full=await loadAbstracts(picks.map(p=>p._row)); }catch(e){ full={}; }
+    picks.forEach(p=>{p._full=full[p._row]||'';});
+    ASK_THREAD[0].state='thinking';
     renderAsk();
     const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({mode:'answer',q:q,ctx:picks.map(p=>({title:p.title,authors:p.authors,
-        date:p.date,source:p.source,topic:p.topic,summary:p.summary}))})});
+        date:p.date,source:p.source,topic:p.topic,summary:p._full||p.summary}))})});
     const aj=await ar.json();
     if(!ar.ok)throw new Error(aj.error||'answer failed');
     ASK_THREAD[0].answer=aj.answer;ASK_THREAD[0].state='done';
@@ -709,7 +777,8 @@ function renderAsk(notice){
   const thread=ASK_THREAD.map((t,ti)=>{
     let body='';
     if(t.state==='retrieving')body='<div class="thinking">Searching '+(VEC_UIDS?VEC_UIDS.length.toLocaleString():'the')+' papers…</div>';
-    else if(t.state==='thinking')body='<div class="thinking">Reading '+(t.sources||[]).length+' papers…</div>';
+    else if(t.state==='reading')body='<div class="thinking">Ranked '+(t.scanned||0)+' candidates · pulling full abstracts for the top '+(t.sources||[]).length+'…</div>';
+    else if(t.state==='thinking')body='<div class="thinking">Reading '+(t.sources||[]).length+' full abstracts…</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
     else body='<div class="answer">'+md(t.answer,ti)+'</div>';
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
@@ -719,7 +788,7 @@ function renderAsk(notice){
     ).join(''):'';
     return `<div class="qa"><div class="qq">${esc(t.q)}</div>${body}${src}</div>`;
   }).join('');
-  $('view').innerHTML=`<div class="dateline">Ask the archive <span class="n">· ${VEC_UIDS?VEC_UIDS.length.toLocaleString():'—'} papers indexed · retrieval runs in your browser; only the question and the ${ASK_K} matched abstracts are sent for synthesis</span></div>
+  $('view').innerHTML=`<div class="dateline">Ask the archive <span class="n">· ${VEC_UIDS?VEC_UIDS.length.toLocaleString():'—'} papers indexed · searched in your browser, ranked by similarity + your own paper scores + keyword fit; only the question and the top ${ASK_DEEP} full abstracts are sent for synthesis</span></div>
     <div class="askbox"><textarea id="askq" rows="2" placeholder="Ask anything about the archive — e.g. what does the evidence say about trend decay?"></textarea>
       <button id="asksend" ${asking?'disabled':''}>${asking?'…':'Ask'}</button></div>${note}${chips}${thread}`;
   const send=$('asksend');if(send)send.onclick=askSubmit;

@@ -20,7 +20,7 @@ const EMBED_MODEL = "mistral-embed";        // must match tools/embed.py
 const EMBED_DIM = 256;                      // requested width; see embed() note
 const MISTRAL_MODEL = "mistral-small-latest";
 const GROQ_MODEL = "llama-3.3-70b-versatile";
-const MAX_CTX = 16;                         // papers passed to the model
+const MAX_CTX = 12;                         // papers deep-read for the answer
 const MAX_Q = 500;                          // question length guard
 
 const json = (obj, status = 200) =>

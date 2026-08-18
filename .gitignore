@@ -17,3 +17,9 @@ venv/
 # Fetched full-text PDFs -- NEVER commit these. The repo is public, and these
 # are third-party copyrighted works; they live locally only (tools/fetch_pdfs.py).
 pdfs/
+
+# Generated search index -- rebuilt from the state.db vector cache on every
+# deploy (tools/embed.py), so committing it would add ~18 MB of new git blobs
+# per run for zero benefit.
+docs/vec.bin
+docs/abs/

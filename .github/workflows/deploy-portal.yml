@@ -15,6 +15,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      # vec.bin / abs/ are gitignored -- rebuild them from the state.db vector
+      # cache (no API calls when nothing is new) so a standalone deploy still
+      # ships a working Ask tab
+      - name: Rebuild search index from cache
+        run: python tools/embed.py
+
       - name: Deploy docs/ to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
