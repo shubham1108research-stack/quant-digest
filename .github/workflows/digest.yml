@@ -70,6 +70,17 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python main.py
 
+      # keep the Ask tab's semantic index current: vectors are cached in
+      # state.db, so this only embeds papers collected today (fractions of a
+      # cent). Never fails the run -- a stale index still answers, just without
+      # the newest papers.
+      - name: Update semantic index
+        if: always()
+        continue-on-error: true
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python tools/embed.py
+
       - name: Commit state + report archive + portal
         if: always()
         run: |

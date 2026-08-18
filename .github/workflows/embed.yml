@@ -1,0 +1,67 @@
+name: Semantic Index
+
+# Builds docs/vec.bin -- the embedding index behind the portal's Ask tab (and,
+# later, themes / similar-papers / the idea graph). Vectors are cached in
+# state.db, so the first run embeds the whole archive (~$0.03) and every run
+# after that only pays for genuinely new papers.
+#
+# It also syncs OPENAI_API_KEY into the Pages project as an encrypted secret, so
+# the /api/ask Function can call the API without the key ever touching the page.
+
+on:
+  workflow_dispatch:
+    inputs:
+      rebuild:
+        description: "Re-embed everything from scratch (ignores the cache)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: semantic-index
+  cancel-in-progress: false
+
+jobs:
+  embed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Build the embedding index
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python tools/embed.py ${{ github.event.inputs.rebuild == 'true' && '--rebuild' || '' }}
+
+      - name: Commit the index
+        run: |
+          git config user.name "digest-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/vec.bin docs/vec.json state.db || true
+          git commit -m "semantic index $(date -u +%F)" || echo "no changes"
+          git pull --rebase --autostash origin master || true
+          git push || (git pull --rebase --autostash origin master && git push)
+
+      # the Function reads this from env; it is never exposed to the browser
+      - name: Sync the API key to the Pages project
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          printf '%s' "$OPENAI_API_KEY" | npx --yes wrangler@3 pages secret put \
+            OPENAI_API_KEY --project-name=quant-digest
+
+      - name: Deploy portal (docs/ + functions/)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --yes wrangler@3 pages deploy docs \
+            --project-name=quant-digest --branch=master --commit-dirty=true

@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   redo:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4

@@ -82,6 +82,46 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
 .dateline{font-family:var(--sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted);margin:26px 0 2px;display:flex;align-items:center;gap:10px;}
 .dateline .n{font-variant-numeric:tabular-nums;color:var(--faint);}
+/* ---- Ask tab ---- */
+.askbox{display:flex;gap:10px;align-items:flex-end;margin:14px 0 6px;padding:12px;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;}
+.askbox textarea{flex:1;resize:vertical;min-height:46px;font-family:var(--serif);font-size:16px;
+  line-height:1.5;color:var(--ink);background:transparent;border:0;outline:0;padding:4px 2px;}
+.askbox button{font-family:var(--sans);font-size:12.5px;font-weight:600;letter-spacing:.02em;
+  padding:9px 20px;border-radius:20px;border:1px solid var(--ink);background:var(--ink);
+  color:var(--panel);cursor:pointer;transition:opacity .15s;}
+.askbox button:hover:not(:disabled){opacity:.82;}
+.askbox button:disabled{opacity:.45;cursor:default;}
+.askex{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;}
+.exq{font-family:var(--sans);font-size:12px;color:var(--muted);background:var(--panel);
+  border:1px solid var(--line);border-radius:20px;padding:7px 13px;cursor:pointer;text-align:left;
+  transition:border-color .15s,color .15s;}
+.exq:hover{border-color:var(--accent);color:var(--accent);}
+.qa{margin:22px 0 8px;padding-top:18px;border-top:1px solid var(--line);}
+.qa:first-of-type{border-top:0;}
+.qq{font-family:var(--serif);font-size:20px;font-weight:600;line-height:1.35;margin-bottom:12px;}
+.answer{font-size:16.5px;line-height:1.62;}
+.answer p{margin:0 0 12px;}
+.answer ul{margin:0 0 12px;padding-left:22px;}
+.answer li{margin:0 0 6px;}
+.answer code{font-size:.9em;background:var(--line);padding:1px 5px;border-radius:4px;}
+a.cite{font-family:var(--sans);font-size:11px;font-weight:600;vertical-align:super;
+  text-decoration:none;color:var(--accent);padding:0 1px;}
+.thinking{font-family:var(--sans);font-size:13px;color:var(--muted);padding:6px 0;}
+.thinking::after{content:'';display:inline-block;width:1em;text-align:left;
+  animation:dots 1.2s steps(4,end) infinite;}
+@keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}}
+.askerr{font-family:var(--sans);font-size:13px;color:#b4442e;background:rgba(180,68,46,.07);
+  border:1px solid rgba(180,68,46,.25);border-radius:10px;padding:10px 12px;}
+.srch{font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint);margin:20px 0 8px;}
+.src{display:grid;grid-template-columns:26px 1fr;gap:10px;padding:9px 0;
+  border-top:1px solid var(--line);font-size:14.5px;}
+.src .sn{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--faint);
+  padding-top:3px;font-variant-numeric:tabular-nums;}
+.src a{color:var(--ink);text-decoration:none;font-weight:600;}
+.src a:hover{color:var(--accent);}
+.src .meta{font-family:var(--sans);font-size:11.5px;color:var(--muted);margin-top:2px;}
 .sechead{font-size:19px;font-weight:600;margin:30px 0 4px;padding-bottom:7px;
   border-bottom:1px solid var(--ink);display:flex;justify-content:space-between;align-items:baseline;}
 .sechead .cnt{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
@@ -170,6 +210,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
     <div class="doublerule"></div>
     <div class="navtabs">
       <button id="t-recent" class="on">Recent</button>
+      <button id="t-ask">Ask</button>
       <button id="t-foryou">For You</button>
       <button id="t-watched">Watched</button>
       <button id="t-nber">NBER</button>
@@ -453,6 +494,135 @@ function renderAnchors(){
   }).join('');
   $('view').innerHTML=`<div class="dateline">Anchors <span class="n">· foundational books for a systematic-macro / CTA desk — read once and keep, while the feed keeps you current · free PDF linked where legitimately available</span></div>`+(secs||'<div class="empty">No matches.</div>');
 }
+// ---------------------------------------------------------------- Ask
+// A research agent over the whole archive. Retrieval happens HERE, in the
+// browser: docs/vec.bin is an int8 matrix (one 256-dim unit vector per paper,
+// built by tools/embed.py), so ranking 5.8k papers is ~1.5M integer multiply-
+// adds -- a few milliseconds locally, and nothing but the question leaves the
+// page until we have the shortlist. /api/ask (a Cloudflare Pages Function
+// holding the API key) only embeds the question and writes the final synthesis.
+let VEC=null,VEC_UIDS=null,ITEM_BY_UID={},indexLoading=false;
+let ASK_THREAD=[],asking=false;
+const ASK_K=16;                       // papers retrieved per question
+const ASK_EXAMPLES=[
+  "What does the archive say about the stock-bond correlation flip?",
+  "Is there evidence trend following has decayed since 2010?",
+  "What drives commodity carry beyond backwardation?",
+  "Summarise recent work on term premium estimation.",
+];
+function loadIndex(cb){
+  if(VEC&&ARCHIVE_DATA){cb();return;}
+  if(indexLoading)return;
+  indexLoading=true;
+  Promise.all([
+    fetch('vec.json').then(r=>r.json()),
+    fetch('vec.bin').then(r=>r.arrayBuffer()),
+    ARCHIVE_DATA?Promise.resolve(ARCHIVE_DATA):fetch('archive.json').then(r=>r.json()),
+  ]).then(([meta,buf,arch])=>{
+    VEC_UIDS=meta.uids;VEC=new Int8Array(buf);
+    ARCHIVE_DATA=arch;
+    arch.forEach(x=>{if(x.uid)ITEM_BY_UID[x.uid]=x;if(x.url)ITEM_BY_URL[x.url]=x;});
+    indexLoading=false;
+    if(VIEW==='ask')cb();
+  }).catch(()=>{
+    indexLoading=false;
+    if(VIEW==='ask')renderAsk('The semantic index has not been built yet — run the "Semantic Index" workflow once.');
+  });
+}
+// cosine over unit vectors == dot product; int8 rounding is monotonic, so the
+// 1/127 scale factor is irrelevant to the ranking and never applied
+function retrieve(qv,k){
+  const dim=qv.length,n=VEC_UIDS.length,out=[];
+  for(let i=0;i<n;i++){
+    let s=0,off=i*dim;
+    for(let j=0;j<dim;j++)s+=qv[j]*VEC[off+j];
+    out.push([s,i]);
+  }
+  out.sort((a,b)=>b[0]-a[0]);
+  const seen=new Set(),picks=[];
+  for(const [,i] of out){
+    const it=ITEM_BY_UID[VEC_UIDS[i]];
+    if(!it||seen.has(it.title))continue;
+    seen.add(it.title);picks.push(it);
+    if(picks.length>=k)break;
+  }
+  return picks;
+}
+const _mdEsc=s=>esc(s);
+function md(t,ti){
+  const lines=String(t||'').split('\n');let h='',ul=false;
+  for(let raw of lines){
+    let l=_mdEsc(raw.trim());
+    l=l.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>');
+    // anchor citations to THIS answer's source list, not the newest one's
+    l=l.replace(/\[(\d+)\]/g,'<a class="cite" href="#src-'+ti+'-$1">[$1]</a>');
+    if(/^[-*]\s+/.test(raw.trim())){
+      if(!ul){h+='<ul>';ul=true;}
+      h+='<li>'+l.replace(/^[-*]\s+/,'')+'</li>';continue;
+    }
+    if(ul){h+='</ul>';ul=false;}
+    if(l)h+='<p>'+l+'</p>';
+  }
+  if(ul)h+='</ul>';
+  return h;
+}
+async function doAsk(q){
+  if(asking||!q.trim())return;
+  if(!VEC||!VEC_UIDS){renderAsk('The semantic index has not been built yet — run the "Semantic Index" workflow once.');return;}
+  asking=true;
+  ASK_THREAD.unshift({q:q,state:'retrieving'});
+  renderAsk();
+  try{
+    const er=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({mode:'embed',q:q})});
+    const ej=await er.json();
+    if(!er.ok)throw new Error(ej.error||'embed failed');
+    const picks=retrieve(ej.vec,ASK_K);
+    ASK_THREAD[0].sources=picks;ASK_THREAD[0].state='thinking';
+    renderAsk();
+    const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({mode:'answer',q:q,ctx:picks.map(p=>({title:p.title,authors:p.authors,
+        date:p.date,source:p.source,topic:p.topic,summary:p.summary}))})});
+    const aj=await ar.json();
+    if(!ar.ok)throw new Error(aj.error||'answer failed');
+    ASK_THREAD[0].answer=aj.answer;ASK_THREAD[0].state='done';
+  }catch(e){
+    ASK_THREAD[0].error=String(e.message||e);ASK_THREAD[0].state='error';
+  }
+  asking=false;renderAsk();
+}
+function askSubmit(){
+  const el=$('askq');const q=el.value;el.value='';doAsk(q);
+}
+function renderAsk(notice){
+  if(!VEC||!ARCHIVE_DATA){
+    if(!notice){loadIndex(renderAsk);
+      $('view').innerHTML='<div class="empty">Loading the semantic index…</div>';return;}
+  }
+  const note=notice?`<div class="askerr">${esc(notice)}</div>`:'';
+  const chips=ASK_THREAD.length?'':'<div class="askex">'+ASK_EXAMPLES.map(e=>
+    `<button class="exq" data-q="${esc(e)}">${esc(e)}</button>`).join('')+'</div>';
+  const thread=ASK_THREAD.map((t,ti)=>{
+    let body='';
+    if(t.state==='retrieving')body='<div class="thinking">Searching '+(VEC_UIDS?VEC_UIDS.length.toLocaleString():'the')+' papers…</div>';
+    else if(t.state==='thinking')body='<div class="thinking">Reading '+(t.sources||[]).length+' papers…</div>';
+    else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
+    else body='<div class="answer">'+md(t.answer,ti)+'</div>';
+    const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
+      `<div class="src" id="src-${ti}-${i+1}"><span class="sn">${i+1}</span>
+        <div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
+        <div class="meta"><span class="j">${esc(jlabel(p))}</span>${p.authors?' · '+esc(p.authors):''} · ${esc(p.date||p.seen||'')}${p.score!=null?' · rated '+p.score:''}</div></div></div>`
+    ).join(''):'';
+    return `<div class="qa"><div class="qq">${esc(t.q)}</div>${body}${src}</div>`;
+  }).join('');
+  $('view').innerHTML=`<div class="dateline">Ask the archive <span class="n">· ${VEC_UIDS?VEC_UIDS.length.toLocaleString():'—'} papers indexed · retrieval runs in your browser; only the question and the ${ASK_K} matched abstracts are sent for synthesis</span></div>
+    <div class="askbox"><textarea id="askq" rows="2" placeholder="Ask anything about the archive — e.g. what does the evidence say about trend decay?"></textarea>
+      <button id="asksend" ${asking?'disabled':''}>${asking?'…':'Ask'}</button></div>${note}${chips}${thread}`;
+  const send=$('asksend');if(send)send.onclick=askSubmit;
+  const ta=$('askq');
+  if(ta){ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askSubmit();}};ta.focus();}
+  document.querySelectorAll('.exq').forEach(b=>b.onclick=()=>doAsk(b.dataset.q));
+}
 // NBER finance-program working papers, browsable by month (docs/nber.json,
 // built by tools/backfill_nber.py back to 2010; kept fresh for the current
 // month by the daily digest). A raw listing -- not scored -- like a direct
@@ -731,9 +901,9 @@ function renderClassics(){
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
-function render(){VIEW==="monthly"?renderMonthly():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
+function render(){VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 function setView(v){
-  VIEW=v;['recent','foryou','watched','anchors','nber','monthly','classics','practitioners','archive','saved'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  VIEW=v;['recent','ask','foryou','watched','anchors','nber','monthly','classics','practitioners','archive','saved'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
   $('month').style.display=v==="monthly"?'':'none';
   $('nbermonth').style.display=v==="nber"?'':'none';
   $('jsel').style.display=v==="classics"?'':'none';
@@ -744,6 +914,7 @@ function setView(v){
   render();
 }
 $('t-recent').onclick=()=>setView('recent');
+$('t-ask').onclick=()=>setView('ask');
 $('t-foryou').onclick=()=>setView('foryou');
 $('t-watched').onclick=()=>setView('watched');
 $('t-nber').onclick=()=>setView('nber');
