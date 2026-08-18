@@ -13,3 +13,7 @@ venv/
 
 # Local Claude Code tool settings (not part of the project)
 .claude/
+
+# Fetched full-text PDFs -- NEVER commit these. The repo is public, and these
+# are third-party copyrighted works; they live locally only (tools/fetch_pdfs.py).
+pdfs/
