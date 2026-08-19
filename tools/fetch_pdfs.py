@@ -245,6 +245,10 @@ def download(uid, pdf_url):
     not a file -- check the magic bytes, never the content-type header alone."""
     safe = re.sub(r"[^A-Za-z0-9._-]", "_", uid)[:120]
     dest = OUT / f"{safe}.pdf"
+    # create the directory HERE, not only in main(): tools/fulltext.py imports
+    # this function directly, and relying on the caller to have prepared the
+    # directory failed every download in that path
+    dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists() and dest.stat().st_size > 1000:
         return "ok", str(dest), dest.stat().st_size
     try:
