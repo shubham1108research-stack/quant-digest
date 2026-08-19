@@ -68,14 +68,15 @@ def _safe(uid):
 
 
 def grobid_tei(pdf_path, url):
-    """PDF -> TEI XML. consolidateHeader fixes up title/authors against
-    Crossref; citation consolidation is off because it is slow and we already
-    have the metadata."""
+    """PDF -> TEI XML, parsed entirely locally inside the container."""
     with open(pdf_path, "rb") as fh:
         r = requests.post(
             f"{url}/api/processFulltextDocument",
             files={"input": (os.path.basename(pdf_path), fh, "application/pdf")},
-            data={"consolidateHeader": "1", "consolidateCitations": "0",
+            # consolidation is OFF: it makes GROBID call Crossref from inside
+            # the container for metadata we already hold, turning a local parse
+            # into a network dependency that fails the whole document.
+            data={"consolidateHeader": "0", "consolidateCitations": "0",
                   "segmentSentences": "0"},
             timeout=300,
         )
@@ -119,9 +120,13 @@ def tei_passages(tei_xml):
 
 
 def pick_papers(con, limit):
-    """Highest-value first: papers the archive rates well, watched authors, and
-    recent work -- the ones a question is most likely to land on. Papers already
-    parsed are skipped."""
+    """Best papers we can ACTUALLY GET, not simply the best papers.
+
+    Ranking on archive score alone selects for published journal articles --
+    which is exactly the paywalled subset -- and the first trial duly spent 46
+    of 60 attempts on papers with no free PDF. So an availability prior is part
+    of the ranking: arXiv and NBER are near-certain, a bare DOI is a coin flip.
+    Papers already parsed are skipped."""
     done = {r[0] for r in con.execute(
         "SELECT uid FROM fulltext WHERE status='ok'")}
     rows = con.execute(
@@ -140,7 +145,19 @@ def pick_papers(con, limit):
         nov = m.get("novelty_posterior") or 0
         rep = m.get("reputation") or 1.0
         watch = 0.25 if m.get("watchlist") else 0.0
-        scored.append(((rank + nov) * rep + watch, seen or "", uid, title, url))
+        u = url or ""
+        if uid.startswith("arxiv:") or "arxiv.org" in u or "RePEc:arx:" in u:
+            avail = 1.0
+        elif "nber.org/papers" in u:
+            avail = 0.9
+        elif uid.startswith("doi:"):
+            avail = 0.35
+        else:
+            avail = 0.2
+        quality = (rank + nov) * rep + watch
+        # availability is weighted heavily: a paper we cannot fetch is not a
+        # cheaper parse, it is a wasted one
+        scored.append((quality + 1.5 * avail, seen or "", uid, title, url))
     scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
     return [(u, t, url) for _, _, u, t, url in scored[:limit]]
 
@@ -197,6 +214,8 @@ def main():
             tally["ok"] += 1
         except Exception as e:                  # noqa: BLE001
             tally["grobid_error"] += 1
+            if tally["grobid_error"] <= 5:      # first few, so a failure is diagnosable
+                log(f"[ft] {uid} failed: {type(e).__name__}: {str(e)[:300]}")
             con.execute("INSERT OR REPLACE INTO fulltext (uid,status,passages,words)"
                         " VALUES (?,?,?,?)", (uid, "grobid_error", 0, 0))
         if i % 10 == 0:
