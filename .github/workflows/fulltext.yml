@@ -33,9 +33,13 @@ jobs:
     timeout-minutes: 330
     services:
       grobid:
-        image: lfoppiano/grobid:0.8.1
+        # CRF-only build (~500 MB). The default/full image bundles the deep
+        # learning models at ~8 GB and never came up inside the runner's 7 GB
+        # of RAM. CRF is enough for structure extraction, which is all we need.
+        image: grobid/grobid:0.9.1-crf
         ports:
           - 8070:8070
+        options: --init --ulimit core=0
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -49,11 +53,16 @@ jobs:
         run: |
           for i in $(seq 1 60); do
             if curl -sf http://localhost:8070/api/isalive >/dev/null; then
-              echo "GROBID alive after ${i}0s"; exit 0
+              echo "GROBID alive after $((i*5))s"; exit 0
             fi
-            sleep 10
+            sleep 5
           done
-          echo "GROBID never came up"; exit 1
+          echo "GROBID never came up -- container state and logs follow:"
+          docker ps --all --filter "ancestor=grobid/grobid:0.9.1-crf"             --format '{{.ID}} {{.Status}}' || true
+          for c in $(docker ps -aq); do
+            echo "--- logs $c ---"; docker logs --tail 60 "$c" 2>&1 || true
+          done
+          exit 1
 
       - name: Parse PDFs into passages
         env:
