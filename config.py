@@ -737,7 +737,10 @@ SLEEVES = {
         "commodity roll yield, convenience yield, normal backwardation, credit "
         "carry. Tag this whenever a yield/roll differential is a subject of the "
         "paper, in ANY asset class, even if the paper is also about that asset "
-        "class's modelling"),
+        "class's modelling. NOT carry: a pricing or valuation SPREAD between "
+        "two otherwise similar securities (a green-bond premium, an issuer "
+        "premium, a liquidity discount) -- that is a relative-value or credit "
+        "question, not a return earned from holding"),
     "fx": (
         "currencies -- exchange-rate determination or forecasting, the dollar "
         "factor, intervention, EM currencies, PPP, currency hedging"),
