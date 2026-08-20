@@ -1,0 +1,34 @@
+name: Sleeve Check (sample, no writes)
+
+# Scores a stratified SAMPLE with the new sleeve / desk_fit fields and prints it
+# for review. Deliberately writes nothing to the archive: both earlier attempts
+# at this classification failed invisibly, so the sample is reviewed before the
+# taxonomy is baked into 8,466 papers.
+
+on:
+  workflow_dispatch:
+    inputs:
+      n:
+        description: "Sample size"
+        required: false
+        default: "120"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Score the sample
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python tools/sleeve_check.py --n ${{ github.event.inputs.n || 120 }}
