@@ -1,0 +1,53 @@
+name: Ask Model Bake-off
+
+# Runs a fixed set of test cases against several candidate models through the
+# existing OpenRouter key and uploads a BLIND report (Model A/B/C/D, key at the
+# end) for grading.
+#
+# The report is an artifact rather than a commit: it embeds paper text, and the
+# repo is public.
+
+on:
+  workflow_dispatch:
+    inputs:
+      cases:
+        description: "Limit number of cases (0 = all 5)"
+        required: false
+        default: "0"
+      models:
+        description: "Limit number of models (0 = all 4)"
+        required: false
+        default: "0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bakeoff
+  cancel-in-progress: false
+
+jobs:
+  bakeoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Run the bake-off
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          python tools/bakeoff.py \
+            --cases ${{ github.event.inputs.cases || 0 }} \
+            --models ${{ github.event.inputs.models || 0 }}
+
+      - name: Upload the blind report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bakeoff-report
+          path: bakeoff-report.md
+          retention-days: 30

@@ -23,3 +23,7 @@ pdfs/
 # per run for zero benefit.
 docs/vec.bin
 docs/abs/
+
+# Blind bake-off report -- embeds paper text and the repo is public; it is a
+# workflow artifact, not a commit.
+bakeoff-report.md
