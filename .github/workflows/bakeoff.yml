@@ -18,6 +18,10 @@ on:
         description: "Limit number of models (0 = all 4)"
         required: false
         default: "0"
+      slugs:
+        description: "Comma-separated model slugs (blank = the 4 candidates)"
+        required: false
+        default: ""
 
 permissions:
   contents: read

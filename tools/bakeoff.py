@@ -252,6 +252,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cases", type=int, default=0, help="limit cases (dry run)")
     ap.add_argument("--models", type=int, default=0, help="limit models (dry run)")
+    ap.add_argument("--slugs", default="",
+                    help="comma-separated slugs to use instead of CANDIDATES "
+                         "(for validating the harness on a free model)")
     args = ap.parse_args()
 
     key = os.environ.get("OPENROUTER_API_KEY")
@@ -263,7 +266,8 @@ def main():
 
     con = store.connect()
     cases = build_cases(con)
-    models = CANDIDATES[:args.models] if args.models else CANDIDATES
+    pool = [x.strip() for x in args.slugs.split(',') if x.strip()] or CANDIDATES
+    models = pool[:args.models] if args.models else pool
     if args.cases:
         cases = cases[:args.cases]
     validate(models, key)
