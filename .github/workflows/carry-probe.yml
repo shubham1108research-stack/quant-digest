@@ -1,0 +1,25 @@
+name: Carry Probe (model vs prompt)
+
+# Controlled test: does the carry/rates boundary fail because the MODEL cannot
+# make the distinction, or because the rule is buried in a large prompt? Same
+# papers, asked with a focused prompt. Writes nothing.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python tools/carry_probe.py
