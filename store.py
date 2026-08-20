@@ -145,6 +145,35 @@ def clear_progress(con, month: str) -> None:
     con.commit()
 
 
+def update_meta(con, uid: str, patch: dict) -> bool:
+    """Merge fields into an archived row's meta JSON.
+
+    save() is INSERT OR IGNORE by design -- re-collecting a paper must never
+    clobber the scores already attached to it -- but that leaves no way to
+    ENRICH a row after first sight. Backfilling an abstract onto a row that was
+    collected without one needs exactly that, so this is the narrow update path:
+    it merges named fields and touches nothing else. Empty values are ignored,
+    so a failed lookup can't blank out data that is already there.
+
+    Caller commits, so a bulk backfill is one transaction rather than thousands.
+    """
+    row = con.execute("SELECT meta FROM items WHERE uid=?", (uid,)).fetchone()
+    if not row:
+        return False
+    try:
+        m = json.loads(row[0]) if row[0] else {}
+    except Exception:                                  # noqa: BLE001
+        m = {}
+    clean = {k: v for k, v in (patch or {}).items()
+             if v not in (None, "", [], {})}
+    if not clean:
+        return False
+    m.update(clean)
+    con.execute("UPDATE items SET meta=? WHERE uid=?",
+                (json.dumps(m, default=str), uid))
+    return True
+
+
 def save(con, items: list[dict]) -> None:
     for it in items:
         con.execute(

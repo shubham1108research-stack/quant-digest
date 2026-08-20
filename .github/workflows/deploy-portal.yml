@@ -23,7 +23,13 @@ jobs:
       # vec.bin / abs/ are gitignored -- rebuild them from the state.db vector
       # cache (no API calls when nothing is new) so a standalone deploy still
       # ships a working Ask tab
-      - name: Rebuild search index from cache
+      # The key is required, not optional: without it embed.py writes the index
+      # from cache alone, so any paper whose vector was invalidated (e.g. by an
+      # abstract backfill) silently vanishes from search while the deploy still
+      # reports success.
+      - name: Rebuild search index
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: python tools/embed.py
 
       - name: Deploy docs/ to Cloudflare Pages
