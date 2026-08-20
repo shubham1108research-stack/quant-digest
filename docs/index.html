@@ -201,7 +201,12 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
   *{animation-duration:.001ms!important;animation-iteration-count:1!important;
     transition-duration:.001ms!important;scroll-behavior:auto!important;}
 }
+.katex{font-size:1.02em;}
+.katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;}
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
 <header>
@@ -647,6 +652,20 @@ async function loadAbstracts(picks){
   });
   return {abs:out,fetched:miss.length,reused:picks.length-miss.length};
 }
+// The prompt now invites LaTeX, so it has to render -- otherwise a moment
+// condition arrives on screen as raw backslashes. Guarded because the CDN
+// scripts load with `defer` and a question can be answered before they land.
+function typesetMath(el){
+  if(!el||typeof renderMathInElement!=='function')return;
+  try{
+    renderMathInElement(el,{delimiters:[
+      {left:'$$',right:'$$',display:true},
+      {left:'\\[',right:'\\]',display:true},
+      {left:'$',right:'$',display:false},
+      {left:'\\(',right:'\\)',display:false},
+    ],throwOnError:false,ignoredTags:['script','style','textarea','pre','code']});
+  }catch(e){}
+}
 const _mdEsc=s=>esc(s);
 function md(t,ti){
   const lines=String(t||'').split('\n');let h='',ul=false;
@@ -735,7 +754,10 @@ async function doAsk(q,force){
     const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({mode:'answer',q:q,ctx:picks.map(p=>({title:p.title,authors:p.authors,
         date:p.date,source:p.source,topic:p.topic,
-        summary:foundBy[p._row]||p._full||p.summary}))})});
+        summary:foundBy[p._row]||p._full||p.summary,
+        // tell the agent HOW MUCH text is behind each source, so it can refuse a
+        // specification question on an abstract instead of inventing one
+        depth:p._passages?'full':(p._full?'abstract':'summary_only')}))})});
     const aj=await ar.json();
     if(!ar.ok)throw new Error(aj.error||'answer failed');
     ASK_THREAD[0].answer=aj.answer;ASK_THREAD[0].state='done';
@@ -765,7 +787,7 @@ function renderAsk(notice){
     else if(t.state==='scanning')body='<div class="thinking">Screening '+(t.scanning||0)+' further papers for relevant content…</div>';
     else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' papers'+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' · '+t.reused+' from memory':'')+'…</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
-    else body='<div class="answer">'+md(t.answer,ti)+'</div>';
+    else body='<div class="answer">'+md(t.answer,ti)+'</div>';   // math typeset after insert
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
       `<div class="src" id="src-${ti}-${i+1}"><span class="sn">${i+1}</span>
         <div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
@@ -783,6 +805,7 @@ function renderAsk(notice){
   if(ta){ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askSubmit();}};ta.focus();}
   document.querySelectorAll('.exq').forEach(b=>b.onclick=()=>doAsk(b.dataset.q));
   document.querySelectorAll('.reask').forEach(b=>b.onclick=()=>doAsk(b.dataset.q,true));
+  typesetMath($('view'));
 }
 // NBER finance-program working papers, browsable by month (docs/nber.json,
 // built by tools/backfill_nber.py back to 2010; kept fresh for the current
