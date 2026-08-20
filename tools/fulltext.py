@@ -154,7 +154,21 @@ def pick_papers(con, limit):
             avail = 0.35
         else:
             avail = 0.2
-        quality = (rank + nov) * rep + watch
+        # Curated papers are valuable BY CONSTRUCTION, not by score. The
+        # classics and NBER working papers were ingested unscored, so a pure
+        # quality ranking gave them zero and a run of 400 picked none of them
+        # -- it preferred already-scored arXiv papers. Their standing is the
+        # reason they were curated; it does not need an LLM to confirm it.
+        # classics rank above NBER: fewer of them, and they are the reference
+        # layer everything else gets compared against. NBER is close behind and
+        # far more numerous, so without the gap it would fill every batch.
+        if m.get("classic"):
+            curated = 4.5
+        elif m.get("source") == "NBER":
+            curated = 3.0
+        else:
+            curated = 0.0
+        quality = (rank + nov) * rep + watch + curated
         # availability is weighted heavily: a paper we cannot fetch is not a
         # cheaper parse, it is a wasted one
         scored.append((quality + 1.5 * avail, seen or "", uid, title, url))
