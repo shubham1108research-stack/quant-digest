@@ -79,12 +79,16 @@ def main():
     llm.start_run_budget(0)                # dedicated job: no shared deadline
     llm.rank(sample, log)
 
-    scored = [r for r in sample if r.get("sleeve")]
+    scored = [r for r in sample if r.get("sleeves")]
     log(f"\n[check] scored {len(scored)}/{len(sample)}\n")
 
+    # multi-label: a paper appears under EVERY sleeve it carries
     by = collections.defaultdict(list)
     for r in scored:
-        by[r["sleeve"]].append(r)
+        for k in r["sleeves"]:
+            by[k].append(r)
+    ntags = collections.Counter(len(r["sleeves"]) for r in scored)
+    log(f"[check] tags per paper: {dict(sorted(ntags.items()))}")
 
     log("=" * 72)
     for key in config.SLEEVES:
@@ -93,17 +97,20 @@ def main():
         log(f"\n### {key}  ({len(items)} papers)  desk_fit "
             f"{dict(sorted(fits.items(), reverse=True))}")
         for r in sorted(items, key=lambda x: -x.get("desk_fit", 0))[:8]:
-            sec = f" +{r['sleeve_2']}" if r.get("sleeve_2") else ""
-            log(f"   fit={r.get('desk_fit',0)}{sec:<6} {r['title'][:78]}")
+            also = [k for k in r["sleeves"] if k != key]
+            tag = ("+" + ",".join(also)) if also else ""
+            log(f"   fit={r.get('desk_fit',0)} {tag:<22} {r['title'][:66]}")
     log("\n" + "=" * 72)
 
     # the boundary that has broken twice -- show it explicitly
     log("\n### CARRY-BOUNDARY papers and where they landed")
+    n_carry = 0
     for r in scored:
         if any(k in hay(r) for k in CARRY_PROBE):
-            sec = f" +{r['sleeve_2']}" if r.get("sleeve_2") else ""
-            log(f"   {r['sleeve']:<14}{sec:<6} fit={r.get('desk_fit',0)}  "
-                f"{r['title'][:66]}")
+            tags = ",".join(r["sleeves"])
+            n_carry += "carry" in r["sleeves"]
+            log(f"   {tags:<34} fit={r.get('desk_fit',0)}  {r['title'][:56]}")
+    log(f"\n   -> {n_carry} of these carry the 'carry' tag")
 
     log("\n[check] nothing was written to the archive -- review, adjust "
         "config.SLEEVES, re-run, then backfill.")

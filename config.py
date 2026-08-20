@@ -712,76 +712,71 @@ WATCHLIST_SEED = [
 
 # ---- Desk sleeves: the SECOND classification -------------------------
 # The existing rubric answers "is this good quant research?" -- deliberately
-# desk-agnostic. This answers the separate question "is this relevant to MY
-# desk?". The two are orthogonal: a first-rate microstructure paper scores high
-# on the first and 1 on desk_fit.
+# desk-agnostic. This answers the separate question "which parts of MY book does
+# this touch, and how usable is it here?". The two are orthogonal: a first-rate
+# microstructure paper scores high on the first and 1 on desk_fit.
 #
-# The BOUNDARY RULES matter more than the names. A keyword pass over this
-# archive found 2 Carry papers while 162 carry-adjacent ones existed, because
-# the literature says "convenience yield", "forward premium" and "roll yield",
-# essentially never "carry trade". An embedding pass drifted for the same
-# reason -- proximity is not a definition. So each sleeve below states what it
-# CLAIMS, and the contested boundaries are spelled out explicitly.
+# MULTI-LABEL, and that is the whole design. Sleeves overlap in reality -- a
+# paper on Eurozone bond convenience yields is genuinely carry AND rates; one on
+# currency exposure under interest-parity deviations is genuinely carry AND fx.
+# Earlier single-label attempts all failed the same way: forcing a paper to LOSE
+# one true tag to WIN another, then treating the loss as a misclassification.
+# There is no boundary to police once a paper can hold every tag that fits.
+#
+# So each definition below is an independent membership test -- "does this paper
+# involve X?" -- not a slot competing with the others.
 SLEEVES = {
     "trend_cta": (
-        "Trend / CTA -- time-series momentum, managed futures, trend-following "
-        "systems, volatility targeting and vol scaling, crisis alpha and "
-        "long-convexity payoffs, breakout and moving-average rules, CTA "
-        "replication and capacity."),
+        "time-series momentum, trend-following or managed-futures systems, "
+        "volatility targeting and vol scaling, crisis alpha and long-convexity "
+        "payoffs, breakout and moving-average rules, CTA replication"),
     "carry": (
-        "Carry -- ANY strategy earning a yield/roll differential, in ANY asset "
-        "class. Includes FX carry and the forward premium anomaly; uncovered "
-        "interest parity failures; bond and term-premium carry EARNED AS A "
-        "RETURN; commodity roll yield, convenience yield and normal "
-        "backwardation; credit carry. If the paper is about the RETURN from "
-        "holding, it is carry, whatever the asset."),
+        "the RETURN EARNED FROM HOLDING an asset -- a yield, roll or interest "
+        "differential. FX carry and the forward premium, deviations from "
+        "interest parity, term premium treated as a harvestable return, "
+        "commodity roll yield, convenience yield, normal backwardation, credit "
+        "carry. Tag this whenever a yield/roll differential is a subject of the "
+        "paper, in ANY asset class, even if the paper is also about that asset "
+        "class's modelling"),
     "fx": (
-        "FX (non-carry) -- exchange-rate determination and forecasting, the "
-        "dollar factor, intervention, EM currencies, PPP. Use 'carry' instead "
-        "when the paper is about the carry return itself."),
+        "currencies -- exchange-rate determination or forecasting, the dollar "
+        "factor, intervention, EM currencies, PPP, currency hedging"),
     "rates_credit": (
-        "Rates & Credit -- yield-curve and term-structure MODELLING, duration "
-        "and convexity, credit spreads and default risk, sovereign risk, "
-        "monetary transmission to bond markets. Use 'carry' instead when the "
-        "term premium is treated as a harvestable return rather than modelled."),
+        "interest rates and credit -- yield-curve and term-structure modelling, "
+        "duration and convexity, credit spreads, default and sovereign risk, "
+        "monetary transmission to bond markets"),
     "commodities": (
-        "Commodities -- theory of storage, hedging pressure, inventories, "
-        "energy/metals/agriculture, futures curve shape. Use 'carry' when the "
-        "subject is roll yield or convenience yield as a return source."),
+        "commodity markets -- theory of storage, hedging pressure, inventories, "
+        "energy, metals, agriculture, futures curve shape"),
     "macro_regime": (
-        "Macro regime & nowcasting -- business cycle, recessions, monetary and "
-        "fiscal policy, inflation dynamics and expectations, regime switching, "
-        "nowcasting from macro data, positioning and flow data (CFTC/COT)."),
+        "the macro state -- business cycle, recessions, monetary and fiscal "
+        "policy, inflation dynamics and expectations, regime switching, "
+        "nowcasting from macro data, positioning and flow data"),
     "cross_asset": (
-        "Cross-asset & allocation -- risk parity, stock-bond correlation and "
-        "its regimes, multi-asset allocation, diversification, portfolio "
-        "construction across asset classes."),
+        "allocation across asset classes -- risk parity, stock-bond correlation "
+        "and its regimes, multi-asset portfolio construction, diversification"),
     "vol_options": (
-        "Volatility & Options -- implied and realized volatility, the variance "
-        "risk premium, option-implied information, volatility surfaces, "
-        "options strategies, VIX."),
+        "volatility and options -- implied and realized volatility, the variance "
+        "risk premium, option-implied information, volatility surfaces, VIX"),
     "equity_xs": (
-        "Equity cross-section -- equity factors and anomalies, characteristics, "
-        "the cross-section of stock returns, factor zoo and replication."),
+        "the equity cross-section -- equity factors and anomalies, "
+        "characteristics, factor zoo and replication"),
     "microstructure": (
-        "Microstructure & execution -- order flow, limit-order books, "
-        "liquidity, market impact, transaction-cost modelling, high-frequency "
-        "trading, market making."),
+        "market plumbing -- order flow, limit-order books, liquidity, market "
+        "impact, transaction-cost modelling, high-frequency trading"),
     "other": (
-        "Other quant finance -- genuinely none of the above (corporate finance, "
-        "banking, real estate, crypto-specific, ESG, household finance, or "
-        "outside finance entirely)."),
+        "none of the above -- corporate finance, banking, real estate, "
+        "crypto-specific, ESG, household finance, or outside finance entirely"),
 }
+SLEEVES_MAX = 3          # tags per paper; more than this is not a judgement
 
 # desk_fit -- how usable this is on a systematic macro / CTA desk, judged
 # SEPARATELY from research quality.
 DESK_FIT_ANCHORS = (
     "3 = directly usable on a systematic macro/CTA desk: a tradeable signal, a "
-    "portfolio/risk technique, or a method the desk would actually apply, in "
-    "one of the desk's sleeves (trend, carry, FX, rates, commodities, macro "
-    "regime, cross-asset).\n"
-    "2 = relevant background for those sleeves -- context, a stylised fact, or "
-    "an input the desk would want to know, but not directly applicable.\n"
+    "portfolio/risk technique, or a method the desk would actually apply.\n"
+    "2 = relevant background -- context, a stylised fact, or an input the desk "
+    "would want to know, but not directly applicable.\n"
     "1 = adjacent quant finance, outside the desk's sleeves (e.g. a strong "
     "equity-anomaly or microstructure paper).\n"
     "0 = not relevant to this desk at all."

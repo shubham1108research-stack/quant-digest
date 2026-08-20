@@ -74,26 +74,18 @@ def _known_frameworks_block() -> str:
 
 def _sleeve_block() -> str:
     """Desk-sleeve anchors, generated from config.SLEEVES so the taxonomy has
-    one home. The boundary rules carry the weight here: 'carry' has to claim
-    convenience yield, roll yield and forward premium explicitly, or the model
-    files them under commodities/rates exactly as a keyword pass did."""
+    one home. MULTI-LABEL by design: sleeves overlap, and every single-label
+    attempt failed by forcing a paper to lose one true tag to win another."""
     lines = "\n".join(f"  {k} -- {v}" for k, v in config.SLEEVES.items())
     return (
-        "DESK SLEEVES -- which part of a systematic macro / CTA book this "
-        "paper belongs to. Choose the SINGLE best primary sleeve, and a "
-        "secondary only if the paper genuinely spans two:\n" + lines +
-        "\n\nBOUNDARY RULES (these decide the hard cases):\n"
-        "  - Term premium treated as a RETURN you harvest -> carry. Term "
-        "structure MODELLED -> rates_credit.\n"
-        "  - FX carry -> sleeve=carry, sleeve_2=fx.\n"
-        "  - Convenience yield, roll yield, normal backwardation, forward "
-        "premium -> carry (NOT commodities/rates), because the subject is the "
-        "return from holding.\n"
-        "  - A method paper takes the sleeve of its APPLICATION (ML on equity "
-        "factors -> equity_xs); novelty_type already records that it is a "
-        "method.\n"
-        "  - Use 'other' honestly rather than forcing a fit.\n\n"
-        "desk_fit -- usability on a systematic macro/CTA desk, judged "
+        "DESK SLEEVES -- which parts of a systematic macro / CTA book this "
+        "paper touches. These OVERLAP: tag EVERY sleeve that genuinely "
+        "applies, not just the closest one. A paper on bond convenience yields "
+        "is both 'carry' and 'rates_credit'; one on currency exposure under "
+        "interest-parity deviations is both 'carry' and 'fx'. Typically 1-3 "
+        f"tags, at most {config.SLEEVES_MAX}. Use 'other' alone only when none "
+        "genuinely apply.\n" + lines +
+        "\n\ndesk_fit -- usability on a systematic macro/CTA desk, judged "
         "SEPARATELY from research quality (a first-rate microstructure paper "
         "is desk_fit 1):\n" + config.DESK_FIT_ANCHORS
     )
@@ -234,7 +226,7 @@ _SYSTEM = (
     '"antecedent_match": "matches_known|ambiguous|no_antecedent", '
     '"isolated_backtest_only": bool_or_null, "no_costs_mentioned": bool_or_null, '
     '"extreme_claimed_sharpe": bool_or_null, "weak_stat_support": bool_or_null, '
-    '"sleeve": "<one of the sleeve keys>", "sleeve_2": "<key or null>", '
+    '"sleeves": ["<sleeve key>", ...], '
     '"desk_fit": {"level": 0-3, "why": "..."}, '
     '"topic": "<topic>", "summary": "<one sentence>"}]'
 )
@@ -316,12 +308,17 @@ def _parse(text: str) -> dict[int, dict]:
             ntype = str(o.get("novelty_type") or "").strip().lower()
             if ntype not in ("theory", "method", "empirical", "none"):
                 ntype = "none"
-            sleeve = str(o.get("sleeve") or "").strip().lower()
-            if sleeve not in config.SLEEVES:
-                sleeve = "other"               # never invent a sleeve
-            sleeve2 = str(o.get("sleeve_2") or "").strip().lower()
-            if sleeve2 not in config.SLEEVES or sleeve2 == sleeve:
-                sleeve2 = ""                   # secondary is optional
+            raw = o.get("sleeves") or []
+            if isinstance(raw, str):           # tolerate a bare string
+                raw = [raw]
+            sleeves, seen_s = [], set()
+            for k in raw:
+                k = str(k).strip().lower()
+                if k in config.SLEEVES and k not in seen_s:
+                    seen_s.add(k)
+                    sleeves.append(k)
+            sleeves = [k for k in sleeves if k != "other"][:config.SLEEVES_MAX] \
+                or ["other"]                   # 'other' only when alone
             out[i] = {
                 "relevance": rel,
                 "relevance_category": rel_cat,
@@ -334,8 +331,7 @@ def _parse(text: str) -> dict[int, dict]:
                 "no_costs_mentioned": _bool_or_null(o.get("no_costs_mentioned")),
                 "extreme_claimed_sharpe": _bool_or_null(o.get("extreme_claimed_sharpe")),
                 "weak_stat_support": _bool_or_null(o.get("weak_stat_support")),
-                "sleeve": sleeve,
-                "sleeve_2": sleeve2,
+                "sleeves": sleeves,
                 "desk_fit": _axis(o, "desk_fit", fallback_level=0),
                 "topic": topic,
                 "summary": str(o.get("summary") or o.get("why", "")).strip()[:280],
@@ -703,8 +699,7 @@ def _apply_score(it: dict, s: dict) -> None:
     it["topic"] = s["topic"]
     # the SECOND classification: which part of the desk's book this belongs to,
     # and how usable it is there -- judged separately from research quality
-    it["sleeve"] = s.get("sleeve", "other")
-    it["sleeve_2"] = s.get("sleeve_2", "")
+    it["sleeves"] = s.get("sleeves") or ["other"]
     it["desk_fit"] = (s.get("desk_fit") or {}).get("level", 0)
     it["summary"] = s["summary"]
     rel_post = relevance_posterior(s["topic"], s["relevance_category"])
@@ -765,8 +760,10 @@ def _merge_votes(picks: list[dict]) -> tuple[dict, bool]:
         # consensus rebuilds the score dict from scratch, so the sleeve fields
         # have to be merged here too -- omitting them silently reset the
         # shortlist (the papers that matter most) to sleeve="other"
-        "sleeve": _majority([p.get("sleeve", "other") for p in picks], "other"),
-        "sleeve_2": _majority([p.get("sleeve_2", "") for p in picks], ""),
+        # multi-label: keep a tag when at least half the voters chose it
+        "sleeves": ([k for k in config.SLEEVES
+                     if sum(k in (p.get("sleeves") or []) for p in picks) * 2
+                     >= len(picks)] or ["other"]),
         "desk_fit": {"level": _median_level(picks, "desk_fit"),
                      "why": (picks[0].get("desk_fit") or {}).get("why", "")},
         "summary": picks[0]["summary"],
