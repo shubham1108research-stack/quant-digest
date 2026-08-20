@@ -21,17 +21,20 @@ two minutes. This script does not attempt to bypass any paywall.
 
 Everything is resumable: each attempt's outcome is recorded in state.db, so a
 re-run only touches papers that are new or previously failed. Downloads are
-rate-limited per host and verified to be real PDFs (a paywall interstitial that
-returns 200 with HTML is recorded as a miss, not saved as a corrupt file).
+rate-limited per host, gated on that host's robots.txt, and verified to be real
+PDFs (a paywall interstitial that returns 200 with HTML is recorded as a miss,
+not saved as a corrupt file).
 
   python tools/fetch_pdfs.py                 # resolve + download everything new
   python tools/fetch_pdfs.py --resolve-only  # find URLs, download nothing
   python tools/fetch_pdfs.py --limit 200     # small trial run
   python tools/fetch_pdfs.py --retry-failed  # re-attempt previous failures
+  python tools/fetch_pdfs.py --url <link>    # ad-hoc: verify one link, no DB
 """
 
 import argparse
 import collections
+import hashlib
 import json
 import os
 import pathlib
@@ -41,6 +44,8 @@ import sqlite3
 import sys
 import threading
 import time
+import urllib.robotparser as robotparser
+from urllib.parse import urlsplit
 
 import requests
 import xml.etree.ElementTree as ET
@@ -61,6 +66,10 @@ HOST_DELAY = {                   # seconds between hits on the same host
     "default": 0.5,
 }
 
+# statuses a re-run must never retry, even under --retry-failed: "ok" is done,
+# and a host that told us not to fetch will still be telling us that tomorrow
+TERMINAL = {"ok", "robots_disallow"}
+
 ARXIV = re.compile(r"arxiv\.org/abs/([^/?#]+)", re.I)
 NBER = re.compile(r"nber\.org/papers/w(\d+)", re.I)
 IS_PDF = re.compile(r"\.pdf(\?|$)", re.I)
@@ -78,6 +87,8 @@ CREATE TABLE IF NOT EXISTS pdfs (
 """
 
 _lock = threading.Lock()
+_robots_lock = threading.Lock()
+_robots: dict[str, robotparser.RobotFileParser | None] = {}
 _last_hit: dict[str, float] = {}
 _counts: collections.Counter = collections.Counter()
 
@@ -102,13 +113,55 @@ def _polite(u):
         _last_hit[h] = time.time()
 
 
+def _allowed(url):
+    """Check robots.txt for the host we are about to DOWNLOAD from.
+
+    Only the download path is gated -- never the metadata APIs (Unpaywall,
+    OpenAlex, Semantic Scholar, CORE, the arXiv API). Those are published for
+    exactly this kind of client and their robots.txt is aimed at search
+    crawlers; obeying it there would disable the resolver for no benefit.
+
+    Fail OPEN when robots.txt is missing or unreachable -- plenty of university
+    and repository servers simply 404 it -- and fail CLOSED only on an explicit
+    Disallow. Fetched with requests rather than RobotFileParser.read() so it
+    inherits a timeout: a hung robots.txt would otherwise stall a worker.
+    """
+    p = urlsplit(url or "")
+    if p.scheme not in ("http", "https") or not p.netloc:
+        return False
+    key = p.netloc.lower()
+    with _robots_lock:
+        seen, rp = key in _robots, _robots.get(key)
+    if not seen:
+        rp = robotparser.RobotFileParser()
+        try:
+            r = requests.get(f"{p.scheme}://{p.netloc}/robots.txt",
+                             headers={"User-Agent": UA}, timeout=15)
+            if r.status_code == 200 and r.text.strip():
+                rp.parse(r.text.splitlines())
+            else:
+                rp = None                       # nothing published -> allowed
+        except Exception:                       # noqa: BLE001
+            rp = None                           # unreachable -> allowed
+        with _robots_lock:
+            _robots[key] = rp
+    if rp is None:
+        return True
+    try:
+        # RobotFileParser matches the token before the first "/", so our
+        # "quant-digest/1.0 (...)" is compared as "quant-digest"
+        return rp.can_fetch(UA, url)
+    except Exception:                           # noqa: BLE001
+        return True
+
+
 def _norm_title(t):
     return re.sub(r"[^a-z0-9]+", " ", (t or "").lower()).strip()
 
 
 def _get(u, headers_extra=None, **kw):
     _polite(u)
-    h = {"User-Agent": UA}
+    h = {"User-Agent": UA, "Accept": "application/pdf,*/*"}
     if headers_extra:
         h.update(headers_extra)
     return requests.get(u, headers=h, timeout=45, **kw)

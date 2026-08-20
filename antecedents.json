@@ -1,0 +1,442 @@
+[
+ {
+  "title": "Prospect Theory: An Analysis of Decision under Risk",
+  "authors": "Daniel Kahneman",
+  "year": "1979",
+  "cites": 47662,
+  "note": "Loss aversion and probability weighting; root of behavioral finance.",
+  "type": "Theory"
+ },
+ {
+  "title": "The Pricing of Options and Corporate Liabilities",
+  "authors": "Fischer Black",
+  "year": "1973",
+  "cites": 29587,
+  "note": "Black-Scholes: closed-form option pricing by replication.",
+  "type": "Theory"
+ },
+ {
+  "title": "Autoregressive Conditional Heteroscedasticity with Estimates of the Variance of United Kingdom Inflation",
+  "authors": "Robert F. Engle",
+  "year": "1982",
+  "cites": 20792,
+  "note": "ARCH: models time-varying, clustering volatility.",
+  "type": "Method"
+ },
+ {
+  "title": "A Heteroskedasticity-Consistent Covariance Matrix Estimator and a Direct Test for Heteroskedasticity",
+  "authors": "Halbert White",
+  "year": "1980",
+  "cites": 18417,
+  "note": "White standard errors robust to heteroskedasticity.",
+  "type": "Method"
+ },
+ {
+  "title": "A Simple, Positive Semi-Definite, Heteroskedasticity and Autocorrelation Consistent Covariance Matrix",
+  "authors": "Whitney K. Newey",
+  "year": "1987",
+  "cites": 15279,
+  "note": "Newey-West HAC standard errors.",
+  "type": "Method"
+ },
+ {
+  "title": "Efficient Capital Markets: A Review of Theory and Empirical Work",
+  "authors": "Eugene F. Fama",
+  "year": "1970",
+  "cites": 13507,
+  "note": "Defines weak/semi-strong/strong market efficiency.",
+  "type": "Theory"
+ },
+ {
+  "title": "Conditional Heteroskedasticity in Asset Returns: A New Approach",
+  "authors": "Daniel B. Nelson",
+  "year": "1991",
+  "cites": 10467,
+  "note": "EGARCH captures the asymmetric leverage effect.",
+  "type": "Method"
+ },
+ {
+  "title": "Continuous Auctions and Insider Trading",
+  "authors": "Albert S. Kyle",
+  "year": "1985",
+  "cites": 10070,
+  "note": "Kyle's lambda: how informed trading moves prices.",
+  "type": "Theory"
+ },
+ {
+  "title": "Large Sample Properties of Generalized Method of Moments Estimators",
+  "authors": "Lars Peter Hansen",
+  "year": "1982",
+  "cites": 9584,
+  "note": "GMM: estimation from moment conditions, ubiquitous in finance.",
+  "type": "Method"
+ },
+ {
+  "title": "A Closed-Form Solution for Options with Stochastic Volatility with Applications to Bond and Currency Options",
+  "authors": "Steven L. Heston",
+  "year": "1993",
+  "cites": 9186,
+  "note": "The Heston model: analytic stochastic-volatility option prices.",
+  "type": "Method"
+ },
+ {
+  "title": "A Theory of the Term Structure of Interest Rates",
+  "authors": "John C. Cox",
+  "year": "1985",
+  "cites": 8602,
+  "note": "The CIR model: square-root, non-negative short rates.",
+  "type": "Theory"
+ },
+ {
+  "title": "Capital Asset Prices: A Theory of Market Equilibrium under Conditions of Risk",
+  "authors": "William F. Sharpe",
+  "year": "1964",
+  "cites": 7543,
+  "note": "The CAPM: expected return is linear in market beta.",
+  "type": "Theory"
+ },
+ {
+  "title": "The Valuation of Risk Assets and the Selection of Risky Investments in Stock Portfolios and Capital Budgets",
+  "authors": "John Lintner",
+  "year": "1965",
+  "cites": 6977,
+  "note": "Independent derivation of the CAPM equilibrium.",
+  "type": "Theory"
+ },
+ {
+  "title": "An Intertemporal Capital Asset Pricing Model",
+  "authors": "Robert C. Merton",
+  "year": "1973",
+  "cites": 6800,
+  "note": "ICAPM: hedging demands against shifting investment opportunities.",
+  "type": "Theory"
+ },
+ {
+  "title": "Distribution of the Estimators for Autoregressive Time Series with a Unit Root",
+  "authors": "David A. Dickey",
+  "year": "1979",
+  "cites": 6688,
+  "note": "The Dickey-Fuller test for non-stationarity.",
+  "type": "Method"
+ },
+ {
+  "title": "Noise Trader Risk in Financial Markets",
+  "authors": "J. Bradford De Long",
+  "year": "1990",
+  "cites": 6440,
+  "note": "Irrational traders can persist and move prices.",
+  "type": "Theory"
+ },
+ {
+  "title": "Lifetime Portfolio Selection under Uncertainty: The Continuous-Time Case",
+  "authors": "Robert C. Merton",
+  "year": "1969",
+  "cites": 5384,
+  "note": "Dynamic optimal allocation; foundation of continuous-time finance.",
+  "type": "Theory"
+ },
+ {
+  "title": "On the Impossibility of Informationally Efficient Markets",
+  "authors": "Sanford J. Grossman",
+  "year": "1980",
+  "cites": 5333,
+  "note": "If prices reveal all information, no one is paid to gather it.",
+  "type": "Theory"
+ },
+ {
+  "title": "Asset Prices in an Exchange Economy",
+  "authors": "Robert E. Lucas",
+  "year": "1978",
+  "cites": 5192,
+  "note": "Consumption-based pricing: assets priced by the marginal utility of consumption.",
+  "type": "Theory"
+ },
+ {
+  "title": "Portfolio Selection",
+  "authors": "Harry M. Markowitz",
+  "year": "1952",
+  "cites": 4570,
+  "note": "Mean-variance framework; risk as return variance and the efficient frontier.",
+  "type": "Theory"
+ },
+ {
+  "title": "Modeling and Forecasting Realized Volatility",
+  "authors": "Torben G. Andersen",
+  "year": "2003",
+  "cites": 3987,
+  "note": "Realized volatility from high-frequency returns.",
+  "type": "Method"
+ },
+ {
+  "title": "Valuing American Options by Simulation: A Simple Least-Squares Approach",
+  "authors": "Francis A. Longstaff",
+  "year": "2001",
+  "cites": 3334,
+  "note": "Least-squares Monte Carlo for early-exercise claims.",
+  "type": "Method"
+ },
+ {
+  "title": "Bond Pricing and the Term Structure of Interest Rates: A New Methodology for Contingent Claims Valuation",
+  "authors": "David Heath",
+  "year": "1992",
+  "cites": 3208,
+  "note": "HJM: arbitrage-free modeling of the whole forward curve.",
+  "type": "Theory"
+ },
+ {
+  "title": "Parsimonious Modeling of Yield Curves",
+  "authors": "Charles R. Nelson",
+  "year": "1987",
+  "cites": 3024,
+  "note": "Nelson-Siegel: a low-parameter yield-curve fit.",
+  "type": "Method"
+ },
+ {
+  "title": "On the Pricing of Corporate Debt: The Risk Structure of Interest Rates",
+  "authors": "Robert C. Merton",
+  "year": "1974",
+  "cites": 2827,
+  "note": "Structural credit risk: equity as an option on firm assets.",
+  "type": "Theory"
+ },
+ {
+  "title": "A Simple Implicit Measure of the Effective Bid-Ask Spread in an Efficient Market",
+  "authors": "Richard Roll",
+  "year": "1984",
+  "cites": 2766,
+  "note": "Estimates the spread from return autocovariance.",
+  "type": "Method"
+ },
+ {
+  "title": "Modeling Term Structures of Defaultable Bonds",
+  "authors": "Darrell Duffie",
+  "year": "1999",
+  "cites": 2595,
+  "note": "Reduced-form intensity-based default modeling.",
+  "type": "Method"
+ },
+ {
+  "title": "... and the Cross-Section of Expected Returns",
+  "authors": "Campbell R. Harvey",
+  "year": "2016",
+  "cites": 2110,
+  "note": "Multiple-testing critique: most 'factors' fail a proper t-hurdle.",
+  "type": "Method"
+ },
+ {
+  "title": "Global Portfolio Optimization",
+  "authors": "Fischer Black",
+  "year": "1992",
+  "cites": 1857,
+  "note": "Black-Litterman: blend equilibrium priors with investor views.",
+  "type": "Method"
+ },
+ {
+  "title": "The Adaptive Markets Hypothesis",
+  "authors": "Andrew W. Lo",
+  "year": "2004",
+  "cites": 1651,
+  "note": "Efficiency as evolving with market ecology, not absolute.",
+  "type": "Theory"
+ },
+ {
+  "title": "A New Interpretation of Information Rate",
+  "authors": "J. L. Kelly",
+  "year": "1956",
+  "cites": 1631,
+  "note": "The Kelly criterion: log-optimal growth bet sizing.",
+  "type": "Method"
+ },
+ {
+  "title": "Measuring the Information Content of Stock Trades",
+  "authors": "JOEL HASBROUCK",
+  "year": "1991",
+  "cites": 1398,
+  "note": "VAR decomposition of the price impact of trades.",
+  "type": "Method"
+ },
+ {
+  "title": "Implications of Security Market Data for Models of Dynamic Economies",
+  "authors": "Lars Peter Hansen",
+  "year": "1991",
+  "cites": 1227,
+  "note": "Hansen-Jagannathan bounds on the pricing kernel from asset data.",
+  "type": "Method"
+ },
+ {
+  "title": "The Markowitz Optimization Enigma: Is Optimized Optimal?",
+  "authors": "Richard O. Michaud",
+  "year": "1989",
+  "cites": 1090,
+  "note": "Names the estimation-error problem: optimizers maximize error.",
+  "type": "Method"
+ },
+ {
+  "title": "Bayes-Stein Estimation for Portfolio Analysis",
+  "authors": "Philippe Jorion",
+  "year": "1986",
+  "cites": 1009,
+  "note": "Shrinking expected-return estimates to tame optimizer error.",
+  "type": "Method"
+ },
+ {
+  "title": "Theory of the firm: Managerial behavior, agency costs and ownership structure",
+  "authors": "Michael C. Jensen",
+  "year": "1976",
+  "cites": 44582,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Corporate financing and investment decisions when firms have information that investors do not have",
+  "authors": "Stewart C. Myers",
+  "year": "1984",
+  "cites": 13177,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "On the Relation between the Expected Value and the Volatility of the Nominal Excess Return on Stocks",
+  "authors": "LAWRENCE R. GLOSTEN",
+  "year": "1993",
+  "cites": 11346,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Determinants of corporate borrowing",
+  "authors": "Stewart C. Myers",
+  "year": "1977",
+  "cites": 8264,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "A five-factor asset pricing model",
+  "authors": "Eugene F. Fama",
+  "year": "2015",
+  "cites": 6923,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Coherent Measures of Risk",
+  "authors": "Philippe Artzner",
+  "year": "1999",
+  "cites": 6549,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "The Modern Industrial Revolution, Exit, and the Failure of Internal Control Systems",
+  "authors": "MICHAEL C. JENSEN",
+  "year": "1993",
+  "cites": 6274,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Optimization of conditional value-at-risk",
+  "authors": "R. Tyrrell Rockafellar",
+  "year": "2000",
+  "cites": 5144,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "New Evidence on Measuring Financial Constraints: Moving Beyond the KZ Index",
+  "authors": "Charles J. Hadlock",
+  "year": "2010",
+  "cites": 5026,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Industry costs of equity",
+  "authors": "Eugene F. Fama",
+  "year": "1997",
+  "cites": 4817,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Women in the boardroom and their impact on governance and performance\u2606",
+  "authors": "Ren\u00e9e B. Adams",
+  "year": "2009",
+  "cites": 4796,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Management ownership and market valuation",
+  "authors": "Randall Morck",
+  "year": "1988",
+  "cites": 4688,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Using daily stock returns",
+  "authors": "Stephen J. Brown",
+  "year": "1985",
+  "cites": 4668,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Higher market valuation of companies with a small board of directors",
+  "authors": "David Yermack",
+  "year": "1996",
+  "cites": 4505,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "What Do We Know about Capital Structure? Some Evidence from International Data",
+  "authors": "RAGHURAM G. RAJAN",
+  "year": "1995",
+  "cites": 4420,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Option pricing when underlying stock returns are discontinuous",
+  "authors": "Robert C. Merton",
+  "year": "1976",
+  "cites": 4420,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Multifactor Explanations of Asset Pricing Anomalies",
+  "authors": "EUGENE F. FAMA",
+  "year": "1996",
+  "cites": 4391,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "A Simple Model of Capital Market Equilibrium with Incomplete Information",
+  "authors": "ROBERT C. MERTON",
+  "year": "1987",
+  "cites": 4285,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Efficient Capital Markets: II",
+  "authors": "EUGENE F. FAMA",
+  "year": "1991",
+  "cites": 4123,
+  "note": "",
+  "type": ""
+ },
+ {
+  "title": "Investor protection and corporate governance",
+  "authors": "Rafael La Porta",
+  "year": "2000",
+  "cites": 4118,
+  "note": "",
+  "type": ""
+ }
+]
