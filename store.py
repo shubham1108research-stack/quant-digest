@@ -34,7 +34,10 @@ def norm_title(t: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", (t or "").lower()).strip()
 
 
-_ARXIV_DOI = re.compile(r"^10\.48550/arxiv\.([\d.]+)$", re.I)
+# the version suffix has to be part of the PATTERN, not stripped afterwards:
+# "[\d.]+$" simply fails to match 10.48550/arxiv.2606.28891v1, so it fell
+# through to a "doi:" uid and silently escaped dedup against the same paper
+_ARXIV_DOI = re.compile(r"^10\.48550/arxiv\.([\d.]+?)(?:v\d+)?$", re.I)
 _ARXIV_URL = re.compile(r"arxiv\.org/abs/([\d.]+)", re.I)
 _ARXIV_REPEC = re.compile(r"RePEc:arx:papers:([\d.]+)", re.I)
 
@@ -47,7 +50,11 @@ def make_uid(item: dict) -> str:
     # silently escapes dedup against the paper collected directly from arXiv
     m = _ARXIV_DOI.match(doi)
     if m:
-        return "arxiv:" + m.group(1)
+        # strip the version suffix HERE too, not only on the arxiv_id path
+        # below: a DataCite doi of 10.48550/arxiv.2606.28891v1 was producing
+        # "arxiv:2606.28891v1" while the same paper collected straight from
+        # arXiv produced "arxiv:2606.28891", so dedup never saw them as one
+        return "arxiv:" + re.sub(r"v\d+$", "", m.group(1))
     aid = item.get("arxiv_id") or ""
     if not aid:
         # last resort: some collectors (OpenAlex sweeps, mailing-list

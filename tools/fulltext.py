@@ -223,6 +223,14 @@ def main():
             log(f"[ft] {i}/{len(todo)} · parsed {tally['ok']}")
     con.commit()
 
+    # manifest: the portal needs to know which papers have full text BEFORE
+    # deciding what to fetch, and probing 8k urls to find out is not an option
+    have = [r[0] for r in con.execute(
+        "SELECT uid FROM fulltext WHERE status='ok' ORDER BY uid")]
+    (OUT / "index.json").write_text(
+        json.dumps({"n": len(have), "uids": have}), encoding="utf-8")
+    log(f"[ft] manifest: {len(have)} papers with full text")
+
     total = con.execute("SELECT count(*), sum(passages), sum(words) "
                         "FROM fulltext WHERE status='ok'").fetchone()
     log("\n=== outcome ===")

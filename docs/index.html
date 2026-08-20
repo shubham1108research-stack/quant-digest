@@ -97,6 +97,9 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   border:1px solid var(--line);border-radius:20px;padding:7px 13px;cursor:pointer;text-align:left;
   transition:border-color .15s,color .15s;}
 .exq:hover{border-color:var(--accent);color:var(--accent);}
+.ftag{font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--panel);background:var(--ink);border-radius:20px;
+  padding:2px 7px;margin-right:7px;}
 .cachetag{font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.08em;
   text-transform:uppercase;color:var(--muted);background:var(--line);border-radius:20px;
   padding:3px 9px;margin-left:10px;vertical-align:middle;}
@@ -629,6 +632,67 @@ function readCount(){return Object.keys(READ).length;}
 // Full abstracts live in row-indexed shards (docs/abs/N.json) so we can pull
 // the real text for the handful of finalists without shipping ~12 MB of
 // abstracts to every visitor. Papers already in READ skip the network entirely.
+// ---- full text ---------------------------------------------------------
+// Papers parsed by GROBID have their passages in docs/ft/<uid>.json. The
+// manifest says which, so the client never probes for files that don't exist.
+let FT_SET=null,ftLoading=false;
+const FT_CACHE={};
+const FT_PAPERS=8;                    // papers to open at passage depth
+const FT_PASSAGES=10;                 // passages carried into the answer
+function loadFtIndex(){
+  if(FT_SET||ftLoading)return Promise.resolve();
+  ftLoading=true;
+  return fetch('ft/index.json').then(r=>r.json())
+    .then(j=>{FT_SET=new Set(j.uids||[]);ftLoading=false;})
+    .catch(()=>{FT_SET=new Set();ftLoading=false;});
+}
+async function loadPassages(picks){
+  const want=picks.filter(p=>FT_SET&&FT_SET.has(p.uid)).slice(0,FT_PAPERS);
+  await Promise.all(want.filter(p=>!(p.uid in FT_CACHE)).map(p=>
+    fetch('ft/'+p.uid.replace(/[^A-Za-z0-9._-]/g,'_').slice(0,120)+'.json')
+      .then(r=>r.json()).then(j=>{FT_CACHE[p.uid]=j.p||[];})
+      .catch(()=>{FT_CACHE[p.uid]=[];})));
+  // The same paper can sit in the archive twice (an arXiv id and a title hash
+  // for the mailing-list copy), so identical passages arrive twice and would
+  // burn two context slots and two citation numbers on one source. Dedupe on
+  // the text itself, which catches it regardless of why the uids differ.
+  const out=[],seenTxt=new Set();
+  want.forEach(p=>{(FT_CACHE[p.uid]||[]).forEach((ps,k)=>{
+    const t=ps.t||'';
+    const key=t.slice(0,160);
+    if(!t||seenTxt.has(key))return;
+    seenTxt.add(key);
+    out.push({paper:p,sec:ps.s||'',text:t,k:k});});});
+  return out;
+}
+// BM25 over the candidate passages. Lexical scoring is the right tool at this
+// level: within one paper every passage is topically identical, so what marks
+// the relevant one is the presence of specific terms -- exactly what embeddings
+// blur and BM25 sharpens. Length normalisation is well behaved here because
+// passages are near-uniform (~220 words) rather than mixing abstracts with
+// full papers, which is where the b parameter starts to matter.
+function bm25(terms,docs,k1,b){
+  k1=k1||1.5;b=b||0.75;
+  const N=docs.length;
+  if(!N||!terms.length)return [];
+  const toks=docs.map(d=>String(d.text||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean));
+  const avgdl=toks.reduce((s,t)=>s+t.length,0)/N;
+  const df={};
+  terms.forEach(t=>{df[t]=toks.reduce((n,tk)=>n+(tk.indexOf(t)>=0?1:0),0);});
+  return docs.map((d,i)=>{
+    const tk=toks[i],len=tk.length||1;
+    let s=0;
+    terms.forEach(t=>{
+      const n=df[t];
+      if(!n)return;
+      let f=0;for(let j=0;j<tk.length;j++)if(tk[j]===t)f++;
+      if(!f)return;
+      const idf=Math.log(1+(N-n+0.5)/(n+0.5));
+      s+=idf*(f*(k1+1))/(f+k1*(1-b+b*len/avgdl));
+    });
+    return Object.assign({},d,{_bm25:s});
+  }).filter(d=>d._bm25>0).sort((a,b2)=>b2._bm25-a._bm25);
+}
 const ABS_SHARD={};
 async function loadAbstracts(picks){
   const miss=picks.filter(p=>!(READ[p.uid]&&READ[p.uid].a));
@@ -747,17 +811,45 @@ async function doAsk(q,force){
     }
     // citation order must match the context order exactly: full reads first,
     // then the screened papers that had something
-    const picks=deep.concat(extra);
-    ASK_THREAD[0].sources=picks;ASK_THREAD[0].extra=extra.length;
+    // Deep-read layer: for papers GROBID has parsed, pull the actual passages
+    // and let BM25 pick which ones bear on the question. These are the only
+    // sources that may support a specification-level claim, so they lead.
+    let psg=[];
+    try{
+      await loadFtIndex();
+      const cand=await loadPassages(scanSet);
+      if(cand.length){
+        ASK_THREAD[0].state='passages';ASK_THREAD[0].npsg=cand.length;
+        renderAsk();
+        psg=bm25(terms,cand).slice(0,FT_PASSAGES);
+      }
+    }catch(e){ psg=[]; }
+    // abstracts still carry breadth, but yield room when real passages exist --
+    // the synthesis context is finite and a passage outranks an abstract
+    const nAbs=psg.length?6:ASK_DEEP;
+    const picks=deep.slice(0,nAbs).concat(extra);
+    // the displayed source list MUST mirror ctx order exactly, or [n] resolves
+    // to the wrong paper -- passages lead there, so they lead here too
+    ASK_THREAD[0].sources=psg.map(x=>Object.assign({},x.paper,
+        {_sec:x.sec,_depth:'full'})).concat(picks);
+    ASK_THREAD[0].extra=extra.length;
+    ASK_THREAD[0].passages=psg;
     ASK_THREAD[0].state='thinking';
     renderAsk();
-    const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({mode:'answer',q:q,ctx:picks.map(p=>({title:p.title,authors:p.authors,
+    // Passages lead the context so their citation numbers come first, and the
+    // section label travels with them -- a specification claim has to be
+    // attributable to "Section 4.2", not to the paper in general.
+    const ctx=psg.map(x=>({title:x.paper.title+(x.sec?' — '+x.sec:''),
+        authors:x.paper.authors,date:x.paper.date,source:x.paper.source,
+        topic:x.paper.topic,summary:x.text,depth:'full'}))
+      .concat(picks.map(p=>({title:p.title,authors:p.authors,
         date:p.date,source:p.source,topic:p.topic,
         summary:foundBy[p._row]||p._full||p.summary,
         // tell the agent HOW MUCH text is behind each source, so it can refuse a
         // specification question on an abstract instead of inventing one
-        depth:p._passages?'full':(p._full?'abstract':'summary_only')}))})});
+        depth:p._full?'abstract':'summary_only'})));
+    const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({mode:'answer',q:q,ctx:ctx})});
     const aj=await ar.json();
     if(!ar.ok)throw new Error(aj.error||'answer failed');
     ASK_THREAD[0].answer=aj.answer;ASK_THREAD[0].state='done';
@@ -785,13 +877,14 @@ function renderAsk(notice){
     if(t.state==='retrieving')body='<div class="thinking">Searching '+(VEC_UIDS?VEC_UIDS.length.toLocaleString():'the')+' papers…</div>';
     else if(t.state==='reading')body='<div class="thinking">Ranked '+(t.scanned||0)+' candidates · pulling full abstracts for the top '+(t.sources||[]).length+'…</div>';
     else if(t.state==='scanning')body='<div class="thinking">Screening '+(t.scanning||0)+' further papers for relevant content…</div>';
-    else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' papers'+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' · '+t.reused+' from memory':'')+'…</div>';
+    else if(t.state==='passages')body='<div class="thinking">Reading full text · ranking '+(t.npsg||0)+' passages…</div>';
+    else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' sources'+((t.passages||[]).length?' ('+t.passages.length+' full-text passages)':'')+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' · '+t.reused+' from memory':'')+'…</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
     else body='<div class="answer">'+md(t.answer,ti)+'</div>';   // math typeset after insert
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
       `<div class="src" id="src-${ti}-${i+1}"><span class="sn">${i+1}</span>
         <div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
-        <div class="meta"><span class="j">${esc(jlabel(p))}</span>${p.authors?' · '+esc(p.authors):''} · ${esc(p.date||p.seen||'')}${p.score!=null?' · rated '+p.score:''}</div></div></div>`
+        <div class="meta">${p._depth==='full'?`<span class="ftag" title="full text — may support specification-level claims">full text${p._sec?' · '+esc(p._sec):''}</span>`:''}<span class="j">${esc(jlabel(p))}</span>${p.authors?' · '+esc(p.authors):''} · ${esc(p.date||p.seen||'')}${p.score!=null?' · rated '+p.score:''}</div></div></div>`
     ).join(''):'';
     const badge=t.cached?`<span class="cachetag" title="answered from this browser's memory — nothing was re-read">from memory</span>
       <button class="reask" data-q="${esc(t.q)}" title="Ignore the stored answer and ask again">ask again</button>`:'';
