@@ -70,7 +70,10 @@ jobs:
           GROBID_URL: http://localhost:8070
         run: python tools/fulltext.py --limit ${{ github.event.inputs.limit || 200 }}
 
+      # always: a long run that times out must not discard its passages.
+      # A previous job lost 103 papers to a commit gated on success.
       - name: Commit the passage corpus
+        if: always()
         run: |
           git config user.name "digest-bot"
           git config user.email "actions@users.noreply.github.com"

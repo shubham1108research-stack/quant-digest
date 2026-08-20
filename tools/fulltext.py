@@ -127,8 +127,11 @@ def pick_papers(con, limit):
     of 60 attempts on papers with no free PDF. So an availability prior is part
     of the ranking: arXiv and NBER are near-certain, a bare DOI is a coin flip.
     Papers already parsed are skipped."""
+    # skip what is already parsed AND what has already been shown to have no
+    # reachable PDF -- resolution rarely changes, and retrying 283 paywalled
+    # classics every run spends the budget on lookups that cannot succeed
     done = {r[0] for r in con.execute(
-        "SELECT uid FROM fulltext WHERE status='ok'")}
+        "SELECT uid FROM fulltext WHERE status IN ('ok','no_pdf')")}
     rows = con.execute(
         "SELECT uid, title, url, meta, first_seen FROM items").fetchall()
     scored = []
