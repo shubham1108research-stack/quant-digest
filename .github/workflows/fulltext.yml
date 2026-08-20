@@ -79,7 +79,9 @@ jobs:
         run: |
           git config user.name "digest-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add docs/ft state.db || true
+          # docs/ft only: text files merge, state.db is binary and
+          # a concurrent writer makes the rebase unresolvable
+          git add docs/ft || true
           git commit -m "full text: passages $(date -u +%F)" || echo "no changes"
           git pull --rebase --autostash origin master || true
           git push || (git pull --rebase --autostash origin master && git push)

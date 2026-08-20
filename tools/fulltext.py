@@ -127,10 +127,14 @@ def pick_papers(con, limit):
     of 60 attempts on papers with no free PDF. So an availability prior is part
     of the ranking: arXiv and NBER are near-certain, a bare DOI is a coin flip.
     Papers already parsed are skipped."""
-    # skip what is already parsed AND what has already been shown to have no
-    # reachable PDF -- resolution rarely changes, and retrying 283 paywalled
-    # classics every run spends the budget on lookups that cannot succeed
-    done = {r[0] for r in con.execute(
+    # The skip list is derived from the PASSAGE FILES on disk, not only from the
+    # fulltext table. Those files are the real output; the table is bookkeeping.
+    # Deriving it this way lets the workflow commit docs/ft alone and leave
+    # state.db untouched -- state.db is binary, and a concurrent writer turns
+    # every commit into an unmergeable rebase conflict that discards the run.
+    # A 1,946-paper parse was lost to exactly that.
+    done = {f.stem for f in OUT.glob("*.json") if f.stem != "index"}
+    done |= {r[0] for r in con.execute(
         "SELECT uid FROM fulltext WHERE status IN ('ok','no_pdf')")}
     rows = con.execute(
         "SELECT uid, title, url, meta, first_seen FROM items").fetchall()
