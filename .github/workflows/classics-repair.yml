@@ -1,0 +1,44 @@
+name: Classics Metadata Repair
+
+# The classics ingest ran locally and OpenAlex throttled it after ~77 lookups,
+# so most of the 309 ingested classics carry no DOI and no abstract. This
+# re-looks-them-up from a fresh runner IP, Crossref first (far more tolerant of
+# volume), OpenAlex only for abstracts Crossref lacks.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max items to repair (0 = all)"
+        required: false
+        default: "0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: classics-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Repair classic metadata
+        env:
+          CONTACT_EMAIL: ${{ secrets.GMAIL_ADDRESS }}
+        run: python tools/ingest_classics.py --repair --limit ${{ github.event.inputs.limit || 0 }}
+      - name: Commit
+        run: |
+          git config user.name "digest-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state.db || true
+          git commit -m "classics metadata repair $(date -u +%F)" || echo "no changes"
+          git pull --rebase --autostash origin master || true
+          git push || (git pull --rebase --autostash origin master && git push)
