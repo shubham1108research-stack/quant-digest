@@ -30,3 +30,6 @@ bakeoff-report.md
 
 # rendered bake-off page (built from the artifact report)
 bakeoff.html
+
+# your own PDFs, parsed by tools/ingest_dropped.py -- never committed
+pdfs/manual/
