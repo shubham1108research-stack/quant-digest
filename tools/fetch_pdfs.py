@@ -192,8 +192,15 @@ def _title_to_doi(title):
         return None
 
 
-def resolve(uid, url, title=None):
-    """Return a PDF url for this paper, or None if there's no free copy."""
+def resolve(uid, url, title=None, doi=None):
+    """Return a PDF url for this paper, or None if there's no free copy.
+
+    `doi` may come from the item's METADATA, which is not the same as its uid.
+    217 classics carry a DOI added by a later repair pass while keeping the
+    title-hash uid they were inserted with; reading the DOI from the uid alone
+    silently skipped Unpaywall, OpenAlex, Semantic Scholar and CORE for every
+    one of them, and recorded the result as "no free copy".
+    """
     u = url or ""
     m = ARXIV.search(u)
     if m or uid.startswith("arxiv:"):
@@ -211,8 +218,8 @@ def resolve(uid, url, title=None):
     if IS_PDF.search(u):
         return u
 
-    doi = uid[4:] if uid.startswith("doi:") else None
-    if not doi:                                     # title-hash uid -> identify it
+    doi = (doi or "").strip() or (uid[4:] if uid.startswith("doi:") else None)
+    if not doi:                                     # no identifier -> identify it
         got = _title_to_doi(title)
         if not got:
             return None

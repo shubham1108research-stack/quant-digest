@@ -174,9 +174,10 @@ def pick_papers(con, limit):
         quality = (rank + nov) * rep + watch + curated
         # availability is weighted heavily: a paper we cannot fetch is not a
         # cheaper parse, it is a wasted one
-        scored.append((quality + 1.5 * avail, seen or "", uid, title, url))
+        scored.append((quality + 1.5 * avail, seen or "", uid, title, url,
+                       m.get("doi", "")))
     scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
-    return [(u, t, url) for _, _, u, t, url in scored[:limit]]
+    return [(u, t, url, d) for _, _, u, t, url, d in scored[:limit]]
 
 
 def main():
@@ -201,9 +202,9 @@ def main():
     log(f"[ft] {len(todo)} papers queued (highest-value first)")
 
     tally = collections.Counter()
-    for i, (uid, title, url) in enumerate(todo, 1):
+    for i, (uid, title, url, doi) in enumerate(todo, 1):
         try:
-            pdf_url = fetch_pdfs.resolve(uid, url, title)
+            pdf_url = fetch_pdfs.resolve(uid, url, title, doi)
             if not pdf_url:
                 tally["no_pdf"] += 1
                 con.execute("INSERT OR REPLACE INTO fulltext (uid,status,passages,words)"
