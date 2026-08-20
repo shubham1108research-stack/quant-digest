@@ -78,7 +78,9 @@ REPEC_ARXIV = re.compile(r"RePEc:arx:papers:([\d.]+)", re.I)
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS pdfs (
     uid    TEXT PRIMARY KEY,
-    status TEXT,               -- ok | no_source | http_error | not_pdf | too_big
+    status TEXT,               -- ok | no_source | robots_disallow | http_403 |
+                               -- http_429 | http_error | html_not_pdf |
+                               -- not_pdf | too_big
     url    TEXT,
     path   TEXT,
     bytes  INTEGER,
@@ -304,14 +306,30 @@ def download(uid, pdf_url):
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists() and dest.stat().st_size > 1000:
         return "ok", str(dest), dest.stat().st_size
+    if not _allowed(pdf_url):
+        return "robots_disallow", None, 0
     try:
         r = _get(pdf_url, stream=True, allow_redirects=True)
-    except Exception as e:                          # noqa: BLE001
+    except Exception:                               # noqa: BLE001
         return "http_error", None, 0
+    # 403/429 get their own status rather than a flat http_error: they mean the
+    # host is GATING us (entitlement / back off), not that the link is dead --
+    # a different fix, so it deserves a different line in the tally
+    if r.status_code in (403, 429):
+        return f"http_{r.status_code}", None, 0
     if not r.ok:
         return "http_error", None, 0
+    declared = int(r.headers.get("content-length") or 0)
+    if declared > MAX_MB * 1024 * 1024:
+        return "too_big", None, declared      # don't stream it just to reject it
     head = r.raw.read(5, decode_content=True) if hasattr(r, "raw") else b""
     if not head.startswith(b"%PDF"):
+        # Content-Type lies constantly in both directions, so the magic bytes
+        # decide. Separate a landing page / cookie wall from arbitrary junk:
+        # HTML here means a human could probably still get the file.
+        peek = (head + next(r.iter_content(512), b"")).lstrip()[:300].lower()
+        if b"<html" in peek or b"<!doctype" in peek:
+            return "html_not_pdf", None, 0
         return "not_pdf", None, 0
     total = len(head)
     tmp = dest.with_suffix(".part")
@@ -335,9 +353,22 @@ def main():
     ap.add_argument("--retry-failed", action="store_true")
     ap.add_argument("--shuffle", action="store_true",
                     help="sample randomly (for measuring coverage)")
+    ap.add_argument("--url", help="fetch one URL and report why it did or did "
+                                  "not work; touches neither the DB nor state")
     args = ap.parse_args()
 
     OUT.mkdir(exist_ok=True)
+
+    if args.url:
+        # ad-hoc probe: the fastest way to answer "is this link actually a PDF,
+        # and if not, what is it?" without queueing a run against the archive
+        uid = "adhoc_" + hashlib.sha1(args.url.encode()).hexdigest()[:12]
+        st, path, n = download(uid, args.url)
+        log(f"{'OK  ' if st == 'ok' else 'FAIL'}  {st}  {args.url}")
+        if path:
+            log(f"      {n // 1024} KB -> {path}")
+        sys.exit(0 if st == "ok" else 1)
+
     con = store.connect()
     con.executescript(_SCHEMA)
 
@@ -348,7 +379,7 @@ def main():
     todo = []
     for uid, url, title in rows:
         st = done.get(uid)
-        if st == "ok":
+        if st in TERMINAL:
             continue
         if st and not args.retry_failed:
             continue
@@ -410,6 +441,14 @@ def main():
     log("\n=== outcome ===")
     for k, v in tally.most_common():
         log(f"  {v:6d}  {k}")
+    gated = sum(tally.get(k, 0) for k in
+                ("http_403", "http_429", "html_not_pdf", "robots_disallow"))
+    if gated:
+        log("")
+        log(f"  {gated} of these were GATED rather than missing (403/429, a "
+            f"landing page, or robots.txt). A free copy may well exist -- that "
+            f"is a text-and-data-mining entitlement conversation with those "
+            f"hosts, not a scraping problem.")
     total_ok = sum(1 for s in done.values() if s == "ok") + tally.get("ok", 0)
     log(f"\n  {total_ok}/{len(rows)} papers now have a local PDF "
         f"({100.0*total_ok/max(1,len(rows)):.1f}%), {mb:.0f} MB fetched this run")

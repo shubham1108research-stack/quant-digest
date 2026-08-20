@@ -182,6 +182,42 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
 .dateline{font-family:var(--sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted);margin:26px 0 2px;display:flex;align-items:center;gap:10px;}
 .dateline .n{font-variant-numeric:tabular-nums;color:var(--faint);}
+/* ---- two-level navigation ---- */
+.subtabs{display:flex;gap:5px;padding:0 0 10px;flex-wrap:wrap;}
+.subtabs button{font-family:var(--sans);font-size:12px;font-weight:500;
+  letter-spacing:.01em;color:var(--muted);background:transparent;
+  border:1px solid transparent;border-radius:16px;padding:5px 12px;
+  cursor:pointer;transition:color .15s,background .15s;}
+.subtabs button:hover:not(.on){color:var(--accent);background:var(--line2);}
+.subtabs button.on{color:var(--accent);background:var(--panel);
+  border-color:var(--line);font-weight:600;}
+.subtabs button[hidden]{display:none;}
+
+/* ---- responsive: the portal previously had NO width breakpoints, so on a
+   phone the score rail, sub-bars and nav all competed for a 360px column ---- */
+@media (max-width:960px){
+  .wrap{padding-left:16px;padding-right:16px;}
+  .entry{grid-template-columns:44px 1fr;gap:12px;padding:14px;}
+}
+@media (max-width:640px){
+  body{font-size:16px;}
+  /* the score rail costs a third of the width on a phone; put the number
+     inline above the title instead of beside it */
+  .entry{grid-template-columns:1fr;gap:8px;padding:14px 15px;}
+  .rail{display:flex;align-items:center;gap:10px;text-align:left;padding:0;}
+  .gauge{width:38px;height:38px;flex:none;}
+  .cap{margin:0;}
+  .subs{grid-template-columns:1fr 1fr;}
+  .navtabs button{padding:7px 13px;}            /* >=44px touch target */
+  .subtabs button{padding:7px 12px;}
+  .navtools{gap:6px;}
+  .navtools select,.searchwrap input{max-width:100%;}
+  h1,.brand{font-size:22px;}
+  .askbox{flex-direction:column;align-items:stretch;}
+  .askbox button{width:100%;padding:11px;}
+  .src{grid-template-columns:22px 1fr;}
+}
+
 /* ---- Ask tab ---- */
 .askbox{display:flex;gap:10px;align-items:flex-end;margin:14px 0 6px;padding:12px;
   background:var(--panel);border:1px solid var(--line);border-radius:14px;}
@@ -322,18 +358,24 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
       <button class="toggle" id="toggle">Dark</button>
     </div>
     <div class="doublerule"></div>
-    <div class="navtabs">
+    <div class="navtabs" role="tablist" aria-label="Sections">
+      <button id="g-papers" class="on">Papers</button>
+      <button id="g-ask">Ask</button>
+      <button id="g-shelf">Shelf</button>
+      <button id="g-saved">Saved</button>
+    </div>
+    <div class="subtabs" id="subtabs">
       <button id="t-recent" class="on">Recent</button>
-      <button id="t-ask">Ask</button>
       <button id="t-foryou">For You</button>
       <button id="t-watched">Watched</button>
       <button id="t-nber">NBER</button>
       <button id="t-monthly">Monthly</button>
-      <button id="t-classics">Classics</button>
-      <button id="t-anchors">Anchors</button>
       <button id="t-practitioners">Practitioners</button>
       <button id="t-archive">Archive</button>
-      <button id="t-saved">Saved</button>
+      <button id="t-classics">Classics</button>
+      <button id="t-anchors">Anchors</button>
+      <button id="t-ask" hidden></button>
+      <button id="t-saved" hidden></button>
     </div>
     <div class="navtools">
       <select id="cat" title="Category" style="display:none">
@@ -1279,8 +1321,42 @@ function renderClassics(){
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
 function render(){VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
+// Eleven flat tabs gave every destination the same weight and scrolled half of
+// them off screen. They group by INTENT: read what's new, question the corpus,
+// consult the standing reference, revisit your own picks. Ask and Saved are
+// groups of one -- they are modes, not lists, so they get no sub-row.
+const GROUPS={
+  papers:['recent','foryou','watched','nber','monthly','practitioners','archive'],
+  ask:['ask'],
+  shelf:['classics','anchors'],
+  saved:['saved'],
+};
+const GROUP_OF={};
+Object.entries(GROUPS).forEach(([g,vs])=>vs.forEach(v=>{GROUP_OF[v]=g;}));
+const ALL_VIEWS=Object.values(GROUPS).flat();
+
+function setGroup(g){
+  Object.keys(GROUPS).forEach(k=>$('g-'+k).classList.toggle('on',k===g));
+  // a one-view group has nothing to choose between, so hide the sub-row
+  const multi=GROUPS[g].length>1;
+  $('subtabs').style.display=multi?'':'none';
+  ALL_VIEWS.forEach(v=>{
+    const b=$('t-'+v);
+    if(b)b.hidden=!(multi&&GROUPS[g].indexOf(v)>=0);
+  });
+  if(GROUPS[g].indexOf(VIEW)<0)setView(GROUPS[g][0]);
+}
+
 function setView(v){
-  VIEW=v;['recent','ask','foryou','watched','anchors','nber','monthly','classics','practitioners','archive','saved'].forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  VIEW=v;ALL_VIEWS.forEach(k=>$('t-'+k).classList.toggle('on',k===v));
+  const g=GROUP_OF[v];
+  Object.keys(GROUPS).forEach(k=>$('g-'+k).classList.toggle('on',k===g));
+  const multi=GROUPS[g].length>1;
+  $('subtabs').style.display=multi?'':'none';
+  ALL_VIEWS.forEach(k=>{
+    const b=$('t-'+k);
+    if(b)b.hidden=!(multi&&GROUPS[g].indexOf(k)>=0);
+  });
   $('month').style.display=v==="monthly"?'':'none';
   $('nbermonth').style.display=v==="nber"?'':'none';
   $('jsel').style.display=v==="classics"?'':'none';
@@ -1290,6 +1366,7 @@ function setView(v){
   if(v==="archive")archivePage=0;
   render();
 }
+Object.keys(GROUPS).forEach(g=>{$('g-'+g).onclick=()=>setGroup(g);});
 $('t-recent').onclick=()=>setView('recent');
 $('t-ask').onclick=()=>setView('ask');
 $('t-foryou').onclick=()=>setView('foryou');
