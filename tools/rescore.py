@@ -31,6 +31,7 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
+import config  # noqa: E402
 import llm     # noqa: E402
 import scoring  # noqa: E402
 import store   # noqa: E402
@@ -95,7 +96,12 @@ def main():
     if not llm.have_key():
         raise SystemExit("no LLM provider key set")
 
-    llm.start_run_budget(0)          # dedicated job: no shared wall-clock cap
+    # A dedicated backfill must not inherit the digest's time budgets. There
+    # are TWO: the run-wide deadline and a per-pass cap (LLM_RANK_BUDGET_S,
+    # 35min). Disabling only the first still stopped this run at 240 of 600.
+    llm.start_run_budget(0)
+    config.LLM_RANK_BUDGET_S = 0
+    config.LLM_CONSENSUS_BUDGET_S = 0
     llm.rank(todo, log)
 
     written = invalidated = 0

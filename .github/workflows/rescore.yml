@@ -17,7 +17,9 @@ permissions:
   contents: write
 
 concurrency:
-  group: rescore
+  # state.db is binary: concurrent writers rebase into an
+  # unmergeable conflict and one run's work is discarded
+  group: state-db
   cancel-in-progress: false
 
 jobs:
