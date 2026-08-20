@@ -277,10 +277,14 @@ GROQ_BATCH = 5                           # smaller requests -> less likely to tr
                                          # (413 on ~25 items) -- its provider fn
                                          # sub-chunks the batch to this size
 MISTRAL_MODEL = "mistral-small-latest"   # Mistral (fallback if MISTRAL_API_KEY set)
-# OpenRouter (last fallback if OPENROUTER_API_KEY set): one key fronts many
-# models incl. free tiers. Swap for any OpenRouter model id; ":free" variants
-# have low daily caps but cost nothing -- fine for a last-resort provider.
-OPENROUTER_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
+# OpenRouter is now the PRIMARY provider, fronting DeepSeek. Chosen by a blind
+# five-case bake-off (tools/bakeoff.py) against Gemini Flash, GPT-5 Mini and
+# Claude Sonnet 5: every model refused the fabrication trap correctly, so the
+# safety property lives in the prompt rather than the model, which left cost and
+# concision to decide. DeepSeek scored joint-second on judgement at roughly a
+# fifth of the price, and was the most concise. One key fronts every model, so
+# swapping candidates later is a one-line change.
+OPENROUTER_MODEL = "deepseek/deepseek-v3.2"
 # OpenAI (paid; last in triage order so the free providers carry the 1500-item
 # bulk and OpenAI cost only hits the ~250-item consensus shortlist). Reliable,
 # high-quality ensemble vote. Set OPENAI_API_KEY.

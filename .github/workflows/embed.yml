@@ -59,8 +59,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          for k in MISTRAL_API_KEY GROQ_API_KEY; do
+          for k in OPENROUTER_API_KEY MISTRAL_API_KEY GROQ_API_KEY; do
             printf '%s' "${!k}" | npx --yes wrangler@3 pages secret put "$k" --project-name=quant-digest
           done
 

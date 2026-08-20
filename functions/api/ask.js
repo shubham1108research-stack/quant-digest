@@ -13,15 +13,19 @@
  * model AND width, or the query lands in a different vector space and retrieval
  * silently returns nonsense.
  *
- * Synthesis: Claude when ANTHROPIC_API_KEY is present (this is the judgement-
- * heavy step and the one worth paying for), otherwise mistral-small with Groq
- * behind it. Adding the secret is the whole upgrade -- no other change.
+ * Synthesis and screening: DeepSeek via OpenRouter, chosen by a blind five-case
+ * bake-off (tools/bakeoff.py). Every candidate refused the fabrication trap
+ * correctly, so the safety property lives in this prompt rather than in the
+ * model -- which left cost and concision to decide. Mistral and Groq sit behind
+ * it as free-tier rescue; setting ANTHROPIC_API_KEY overrides with Claude.
  *
  * Keys are Pages secrets read from env -- they never reach the page, and the
  * route sits behind Cloudflare Access.
  */
 
 const EMBED_MODEL = "mistral-embed";        // must match tools/embed.py
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_MODEL = "deepseek/deepseek-v3.2";  // must match config.OPENROUTER_MODEL
 const MISTRAL_MODEL = "mistral-small-latest";
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 // Paid tier, used only if ANTHROPIC_API_KEY is set. Switch to "claude-sonnet-5"
@@ -55,7 +59,10 @@ TWO CAPABILITIES, NEVER BLURRED
 Each source is tagged with the depth of text behind it:
   depth: full          -- full-text passages. Specification-level claims allowed:
                           equations, lag structures, sample windows, coefficients,
-                          t-stats, robustness details. Quote the source verbatim.
+                          t-stats, robustness details. REQUIRED: put the exact
+                          sentence you are relying on in quotation marks next to
+                          the claim. A specification claim with no verbatim quote
+                          is not acceptable -- quote it or do not make it.
   depth: abstract      -- the abstract only. You may state what the paper claims to
                           find, its topic and its asset class. You may NOT state its
                           specification, lag structure, exact sample, coefficients or
@@ -211,6 +218,9 @@ async function scan(question, papers, env) {
     { role: "user", content: `Question: ${question}\n\nPapers:\n\n${listing}` },
   ];
   const attempts = [];
+  if (env.OPENROUTER_API_KEY) {
+    attempts.push([OPENROUTER_URL, env.OPENROUTER_API_KEY, OPENROUTER_MODEL]);
+  }
   if (env.MISTRAL_API_KEY) {
     attempts.push(["https://api.mistral.ai/v1/chat/completions",
                    env.MISTRAL_API_KEY, MISTRAL_MODEL]);
@@ -257,15 +267,20 @@ async function claude(key, question, ctx) {
 }
 
 async function answer(question, ctx, env) {
-  // Claude first when a key exists -- this is the judgement-heavy step, and the
-  // free tiers are the fallback rather than the default. Add ANTHROPIC_API_KEY
-  // as a Pages secret and it takes over with no other change.
+  // Claude only if a key is explicitly set -- an opt-in override, not the
+  // default. Left in place because switching back is then one secret.
   if (env.ANTHROPIC_API_KEY) {
     try {
       return await claude(env.ANTHROPIC_API_KEY, question, ctx);
-    } catch (e) { /* fall back to the free tiers below */ }
+    } catch (e) { /* fall through */ }
   }
   const tries = [];
+  // DeepSeek via OpenRouter is the chosen default: it matched the field on the
+  // refusal test that matters and was the most concise, at a fraction of the
+  // price. Mistral and Groq stay behind it as free-tier rescue.
+  if (env.OPENROUTER_API_KEY) {
+    tries.push([OPENROUTER_URL, env.OPENROUTER_API_KEY, OPENROUTER_MODEL]);
+  }
   if (env.MISTRAL_API_KEY) {
     tries.push(["https://api.mistral.ai/v1/chat/completions",
                 env.MISTRAL_API_KEY, MISTRAL_MODEL]);

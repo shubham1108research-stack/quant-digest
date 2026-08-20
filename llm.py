@@ -19,9 +19,11 @@ doesn't say -- absence of information is never treated as a red flag):
   weak_stat_support
 
 Two passes: (1) rank() TRIAGES every item with the first provider in the chain
-that responds (Gemini -> Groq -> Mistral -> OpenRouter -> OpenAI, free-first so
-paid OpenAI only backstops); (2) consensus() re-scores just the promising
-SHORTLIST with ALL providers together and combines their votes, flagging
+that responds (OpenRouter/DeepSeek -> Mistral -> Groq -> OpenAI). DeepSeek leads
+because a blind bake-off found every candidate refused the fabrication trap
+correctly, which left cost and concision to decide; the free tiers behind it
+rescue anything it drops. (2) consensus() re-scores just the promising SHORTLIST
+with the voting providers together and combines their votes, flagging
 disagreement as provisional. Entirely optional: dormant unless a provider key
 is set, and every failure path degrades to the plain no-LLM feed rather than
 breaking the run.
@@ -481,14 +483,23 @@ def _rank_openai(batch: list[dict], log) -> dict | None:
 # Gemini disabled for now (the key's service account is deleted -> 401 every
 # batch). _rank_gemini is kept above; re-add ("gemini", _rank_gemini) here with
 # a valid AIza key to re-enable.
-_PROVIDERS = [("groq", _rank_groq),
-              ("mistral", _rank_mistral), ("openrouter", _rank_openrouter),
+# OpenRouter (fronting DeepSeek) leads: it is the chosen primary, and at
+# DeepSeek prices the whole bulk pass costs cents. Mistral and Groq follow as
+# free-tier rescue for anything it drops; OpenAI trails and is currently dead
+# (no credits) but costs nothing to leave in the chain.
+_PROVIDERS = [("openrouter", _rank_openrouter),
+              ("mistral", _rank_mistral), ("groq", _rank_groq),
               ("openai", _rank_openai)]
 # Free tiers only -- used for the consensus multi-vote so the PAID provider
 # (OpenAI) isn't billed on every shortlist item. OpenAI stays in _PROVIDERS as
 # the last-resort TRIAGE rescuer (free-first, so you only pay for the few items
 # Groq/Mistral/OpenRouter couldn't score) -- the cheapest reliable setup.
-_FREE_PROVIDERS = [p for p in _PROVIDERS if p[0] != "openai"]
+# Providers cheap enough to vote on EVERY shortlist item. Not the same as
+# "free" any more -- OpenRouter/DeepSeek is paid, but a consensus round over the
+# ~250-item shortlist runs to a few cents, so excluding it would cost accuracy
+# to save nothing. OpenAI stays out: it is the one provider priced high enough
+# for per-item voting to matter.
+_VOTE_PROVIDERS = [p for p in _PROVIDERS if p[0] != "openai"]
 
 
 def have_key() -> bool:
@@ -508,9 +519,9 @@ def _n_configured() -> int:
         os.environ.get("OPENAI_API_KEY")))
 
 
-def _n_free_configured() -> int:
-    """Free providers with a key set -- consensus votes with these only (no paid
-    OpenAI votes), so the >=2 guard must count the free ones."""
+def _n_vote_configured() -> int:
+    """Providers eligible to vote in consensus with a key set -- the >=2 guard
+    counts these, since a single vote is just a re-score of the triage."""
     return sum(bool(k) for k in (
         os.environ.get("GROQ_API_KEY"),
         os.environ.get("MISTRAL_API_KEY"),
@@ -722,9 +733,9 @@ def consensus(items: list[dict], log, max_batches: int | None = None) -> list[di
     provider together and combine their independent votes. If the providers
     don't converge on contribution the item is marked provisional (uncertain).
     Mutates in place; non-shortlist items keep their triage scores."""
-    if _n_free_configured() < 2:
-        log("[consensus] <2 free providers configured; skipping (a single vote "
-            "just re-scores the triage; OpenAI is excluded to avoid paid votes)")
+    if _n_vote_configured() < 2:
+        log("[consensus] <2 voting providers configured; skipping (a single "
+            "vote just re-scores the triage)")
         return items
     short = [it for it in items
              if (it.get("relevance") or {}).get("level", 0) >= config.CONSENSUS_MIN_RELEVANCE
@@ -755,7 +766,7 @@ def consensus(items: list[dict], log, max_batches: int | None = None) -> list[di
             break
         batch = short[start:start + b]
         votes = []
-        for name, fn in _FREE_PROVIDERS:           # free tiers only -- no paid votes
+        for name, fn in _VOTE_PROVIDERS:           # cheap providers only
             try:
                 res = fn(batch, log)
             except Exception as e:                 # noqa: BLE001
