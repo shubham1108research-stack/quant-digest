@@ -121,19 +121,45 @@ def load_passages():
     return out
 
 
-def pick(rows, terms, n, seen):
-    """Deterministic topical selection: score by how many query terms appear,
-    take the best n that haven't already been used in another case."""
+def pick(rows, terms, n, seen, need_title=True):
+    """Deterministic topical selection.
+
+    Title matches are weighted far above body mentions, and by default a paper
+    must match in its TITLE to qualify. That matters for the discriminating
+    power of the test: if the supplied papers are obviously irrelevant, every
+    model refuses and the case proves nothing. The refusal test is only
+    meaningful when the papers are genuinely about the topic asked -- i.e. when
+    fabricating a plausible specification is tempting.
+    """
     scored = []
     for r in rows:
         if r.get("uid") in seen:
             continue
-        hay = (r["title"] + " " + r["summary"]).lower()
-        hits = sum(1 for t in terms if t in hay)
-        if hits:
-            scored.append((hits, len(r["summary"]), r))
+        title = r["title"].lower()
+        body = r["summary"].lower()
+        t_hits = sum(1 for t in terms if t in title)
+        b_hits = sum(1 for t in terms if t in body)
+        if need_title and not t_hits:
+            continue
+        if not (t_hits or b_hits):
+            continue
+        scored.append((t_hits * 5 + b_hits, len(r["summary"]), r))
     scored.sort(key=lambda x: (-x[0], -x[1]))
-    got = [r for _, _, r in scored[:n]]
+    # the archive holds some papers twice under different uids, so dedupe on the
+    # title too -- a duplicated source wastes a context slot and gives one paper
+    # two citation numbers
+    got, seen_titles = [], set()
+    for _, _, r in scored:
+        key = re.sub(r"[^a-z0-9]+", " ", r["title"].lower()).strip()[:80]
+        if key in seen_titles:
+            continue
+        seen_titles.add(key)
+        got.append(r)
+        if len(got) >= n:
+            break
+    if len(got) < n and need_title:          # relax rather than return too few
+        got += pick(rows, terms, n - len(got), seen | {g.get("uid") for g in got},
+                    need_title=False)
     for r in got:
         seen.add(r.get("uid"))
     return got
