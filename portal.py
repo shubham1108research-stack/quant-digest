@@ -182,6 +182,13 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
 .dateline{font-family:var(--sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted);margin:26px 0 2px;display:flex;align-items:center;gap:10px;}
 .dateline .n{font-variant-numeric:tabular-nums;color:var(--faint);}
+/* a card with no score has no rail to show, so it spans the full width */
+.entry.flat{grid-template-columns:1fr;}
+.ntag{display:inline-block;font-family:var(--sans);font-size:10px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  background:var(--line2);border-radius:3px;padding:2px 7px;margin-bottom:7px;}
+.ntag.wait{color:var(--faint);background:transparent;border:1px dashed var(--line);}
+
 /* ---- two-level navigation ---- */
 .subtabs{display:flex;gap:5px;padding:0 0 10px;flex-wrap:wrap;}
 .subtabs button{font-family:var(--sans);font-size:12px;font-weight:500;
@@ -492,7 +499,18 @@ function entry(x,rank){
   const rk=rank?`<div class="rank">${rank}</div>`:'';
   const dv=x._displayScore!=null?x._displayScore:x.score;
   const cap=x._displayLabel||'rating';
-  const sc=(dv!=null)?`<div class="rail">${rk}<div class="gauge" style="--pct:${dv};--gc:${bandColor(dv)}"><span>${dv}</span></div><div class="cap">${cap}</div></div>`:`<div class="rail">${rk}</div>`;
+  // 55% of the archive is unscored, and every one of those cards reserved a
+  // 52px rail to display nothing. A card with no score drops the column
+  // entirely and marks WHY it has none, which is more informative than a gap:
+  // a practitioner post is never scored, an unscored paper is merely waiting.
+  const prac=isPrac(x);
+  const cls=(dv!=null)?'entry':'entry flat';
+  const badge=(dv!=null)?'':(prac
+    ? '<span class="ntag">practitioner</span>'
+    : '<span class="ntag wait">not yet scored</span>');
+  const sc=(dv!=null)
+    ?`<div class="rail">${rk}<div class="gauge" style="--pct:${dv};--gc:${bandColor(dv)}"><span>${dv}</span></div><div class="cap">${cap}</div></div>`
+    :(rk?`<div class="rail">${rk}</div>`:'');
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
   const who=x.authors?' · '+esc(x.authors):'';
   const lvl=v=>v==null?'–':v+'/3';
@@ -508,7 +526,7 @@ function entry(x,rank){
     (x.author_score!=null?_subBar('Author',Math.round(x.author_score),x.author_score):''),
   ].join('')+'</div>':'';
   const watch=x.watchlist?`<span class="wtag">★ ${esc(x.watchlist_author||'watched')}</span>`:'';
-  return `<div class="entry">${sc}<div class="body">
+  return `<div class="${cls}">${sc}<div class="body">${badge}
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
     <div class="meta">${watch}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_pdfBtn(x)}${_saveBtn(x)}</div>
     ${sm}${subs}</div></div>`;
