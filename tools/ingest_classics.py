@@ -114,7 +114,9 @@ def lookup(title, year):
     OpenAlex had started refusing, and a bare `return None` made that
     indistinguishable from "paper not found".
     """
-    for attempt in range(5):
+    if _throttled["n"] >= 3:
+        return None                # circuit open: OpenAlex is refusing this IP
+    for attempt in range(2):       # bulk loop -- fail fast, never grind
         try:
             r = requests.get("https://api.openalex.org/works",
                              params={"filter": "title.search:" + title[:180],
@@ -129,9 +131,10 @@ def lookup(title, year):
             continue
         if r.status_code in (429, 403, 503):
             _throttled["n"] += 1
-            wait = min(90, 15 * (attempt + 1))
-            log(f"   ! OpenAlex {r.status_code} (throttled); waiting {wait}s")
-            time.sleep(wait)
+            if _throttled["n"] == 3:
+                log("   ! OpenAlex throttling repeatedly -- disabling it for "
+                    "the rest of this run; Crossref carries on alone")
+            time.sleep(3)
             continue
         if not r.ok:
             log(f"   ! OpenAlex HTTP {r.status_code}")
@@ -223,10 +226,10 @@ def main():
                 continue
             if patch and store.update_meta(con, uid, patch):
                 fixed += 1
-            if i % 25 == 0:
-                con.commit()
+            if i % 20 == 0:
+                con.commit()       # partial progress survives a timeout
                 log(f"[repair] {i}/{len(broken)} ({fixed} fixed, "
-                    f"{_throttled['n']} throttle waits)")
+                    f"openalex_throttles={_throttled['n']})")
             time.sleep(1.2)                        # slower than the first run
         con.commit()
         log(f"\n[repair] fixed {fixed}/{len(broken)}; {gotabs} gained an abstract")

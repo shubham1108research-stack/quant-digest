@@ -23,7 +23,7 @@ concurrency:
 jobs:
   repair:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,7 +34,10 @@ jobs:
         env:
           CONTACT_EMAIL: ${{ secrets.GMAIL_ADDRESS }}
         run: python tools/ingest_classics.py --repair --limit ${{ github.event.inputs.limit || 0 }}
+      # always: the previous run fixed 103 papers and lost every one of
+      # them, because cancellation skipped a commit gated on success
       - name: Commit
+        if: always()
         run: |
           git config user.name "digest-bot"
           git config user.email "actions@users.noreply.github.com"
