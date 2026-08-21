@@ -56,6 +56,10 @@ def _export(con) -> list[dict]:
             "watchlist": bool(m.get("watchlist")),
             "watchlist_author": m.get("watchlist_author"),
             "topic": m.get("topic", ""),
+            # the second classification: which parts of the desk's book this
+            # touches, and how usable it is there
+            "sleeves": m.get("sleeves") or [],
+            "desk_fit": m.get("desk_fit"),
             # practitioners aren't LLM-summarised -> fall back to their RSS blurb
             "summary": m.get("summary") or m.get("why") or (m.get("abstract") or "")[:400],
         })
@@ -93,10 +97,30 @@ def build(con) -> int:
     html = _INDEX.replace(
         "__RELEVANCE_CONFIDENCE_PCT__", str(round(config.RELEVANCE_CONFIDENCE * 100))
     ).replace(
-        "__TOPICS_JSON__", json.dumps(config.TOPICS))
+        "__TOPICS_JSON__", json.dumps(config.TOPICS)
+    ).replace(
+        "__SLEEVES_JSON__", json.dumps(
+            [[k, SLEEVE_LABEL.get(k, k)] for k in config.SLEEVES]))
     (docs / "index.html").write_text(html, encoding="utf-8")
     return len(data)
 
+
+# Short display names for the desk sleeves. config.SLEEVES holds the LLM-facing
+# definitions -- paragraphs, deliberately verbose, so a classifier can draw the
+# boundary. A facet needs something that fits in a dropdown.
+SLEEVE_LABEL = {
+    "trend_cta":      "Trend / CTA",
+    "carry":          "Carry",
+    "fx":             "FX",
+    "rates_credit":   "Rates & credit",
+    "commodities":    "Commodities",
+    "macro_regime":   "Macro regime",
+    "cross_asset":    "Cross-asset",
+    "vol_options":    "Vol & options",
+    "equity_xs":      "Equity cross-section",
+    "microstructure": "Microstructure",
+    "other":          "Other",
+}
 
 _INDEX = """<!doctype html>
 <html lang="en">
@@ -174,11 +198,11 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   border:1px solid var(--line);border-radius:20px;padding:6px 10px 6px 28px;width:190px;max-width:42vw;
   transition:border-color .15s,box-shadow .15s;}
 #q:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent);}
-#month,#cat,#jsel,#topic{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--muted);
+#month,#cat,#jsel,#topic,#sleeve{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--muted);
   background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px 12px;
   cursor:pointer;max-width:44vw;transition:border-color .15s,color .15s;}
-#cat:hover,#month:hover,#jsel:hover,#topic:hover{border-color:var(--accent);color:var(--accent);}
-#cat:focus,#month:focus,#jsel:focus,#topic:focus{outline:0;border-color:var(--accent);}
+#cat:hover,#month:hover,#jsel:hover,#topic:hover,#sleeve:hover{border-color:var(--accent);color:var(--accent);}
+#cat:focus,#month:focus,#jsel:focus,#topic:focus,#sleeve:focus{outline:0;border-color:var(--accent);}
 .dateline{font-family:var(--sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted);margin:26px 0 2px;display:flex;align-items:center;gap:10px;}
 .dateline .n{font-variant-numeric:tabular-nums;color:var(--faint);}
@@ -297,6 +321,15 @@ a.cite{font-family:var(--sans);font-size:11px;font-weight:600;vertical-align:sup
 .title:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
 .meta{font-family:var(--sans);font-size:11.5px;letter-spacing:.02em;color:var(--muted);margin-top:4px;}
 .meta .j{color:var(--ink);font-weight:500;}
+.sleeves{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0 0;}
+.sl{font-family:var(--sans);font-size:10.5px;font-weight:650;letter-spacing:.02em;
+  padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);
+  white-space:nowrap;}
+/* filled, not merely coloured: desk fit is the one signal here worth spotting
+   from a distance, and an outline chip among outline chips does not carry */
+.sl.fit{border-color:transparent;background:color-mix(in srgb,var(--accent) 14%,transparent);
+  color:var(--accent);}
+.sl.fitn{border-color:transparent;background:var(--accent);color:var(--panel);}
 .summary{font-size:15px;line-height:1.5;color:var(--ink);margin-top:7px;max-width:63ch;}
 .empty{color:var(--muted);font-style:italic;padding:56px 0;text-align:center;}
 .entry.classic{grid-template-columns:1fr;}
@@ -391,6 +424,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
         <option value="1">Academic · Tier 2</option>
         <option value="2">Preprints &amp; working papers</option>
       </select>
+      <select id="sleeve" title="Desk sleeve" style="display:none"></select>
       <select id="topic" title="Topic" style="display:none"></select>
       <select id="psrc" title="Source" style="display:none"></select>
       <select id="jsel" title="Journal" style="display:none"></select>
@@ -413,6 +447,8 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
 let DATA=[], CLASSICS=[], MONTHLY={}, NBER={}, VIEW="recent", MAXSEEN="";
 let ARCHIVE_DATA=null, archiveLoading=false;
 const TOPICS=__TOPICS_JSON__;
+const SLEEVES=__SLEEVES_JSON__;
+const SLEEVE_LABEL=Object.fromEntries(SLEEVES);
 const isPrac=x=>String(x.section)==="4";   // practitioner blogs + house research
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -479,7 +515,7 @@ function toggleSave(ev,btn){
 }
 function renderSaved(){
   const q=$('q').value.toLowerCase().trim();
-  const rows=Object.values(SAVED)
+  const rows=sleeveFilter(Object.values(SAVED))
     .filter(x=>!q||(x.title+' '+(x.authors||'')+' '+(x.source||x.journal||'')).toLowerCase().includes(q))
     .sort((a,b)=>(b._savedAt||0)-(a._savedAt||0));
   $('view').innerHTML=`<div class="dateline">Saved <span class="n">· ${rows.length} papers · this browser only</span></div>`+
@@ -526,15 +562,32 @@ function entry(x,rank){
     (x.author_score!=null?_subBar('Author',Math.round(x.author_score),x.author_score):''),
   ].join('')+'</div>':'';
   const watch=x.watchlist?`<span class="wtag">★ ${esc(x.watchlist_author||'watched')}</span>`:'';
+  // sleeve chips: 'other' is the classifier's null answer, so showing it adds
+  // nothing. desk_fit 2+ means usable on the desk, and gets a filled chip.
+  const sl=(x.sleeves||[]).filter(k=>k!=='other');
+  const fit=(x.desk_fit||0)>=2;
+  const chips=sl.length?'<div class="sleeves">'+sl.map(k=>
+    `<span class="sl${fit?' fit':''}">${esc(SLEEVE_LABEL[k]||k)}</span>`).join('')+
+    (fit?`<span class="sl fitn" title="usable on the desk">desk ${x.desk_fit}/3</span>`:'')+'</div>':'';
   return `<div class="${cls}">${sc}<div class="body">${badge}
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
     <div class="meta">${watch}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_pdfBtn(x)}${_saveBtn(x)}</div>
-    ${sm}${subs}</div></div>`;
+    ${chips}${sm}${subs}</div></div>`;
+}
+// Desk sleeves are MULTI-LABEL -- a paper can be carry AND fx at once -- so this
+// is a membership test, not equality. Papers with no labels yet are HIDDEN when
+// a sleeve is chosen rather than shown: an unlabelled paper is not evidence of
+// belonging, and the backfill is still filling them in.
+function sleeveFilter(rows){
+  const s=$('sleeve').value||'all';
+  if(s==='all')return rows;
+  if(s==='fit')return rows.filter(x=>(x.desk_fit||0)>=2);
+  return rows.filter(x=>(x.sleeves||[]).indexOf(s)>=0);
 }
 function grouped(rows){
   const q=$('q').value.toLowerCase().trim();
   const cf=$('cat').value;
-  rows=rows.filter(x=>!q||(x.title+' '+x.authors+' '+x.source).toLowerCase().includes(q));
+  rows=sleeveFilter(rows).filter(x=>!q||(x.title+' '+x.authors+' '+x.source).toLowerCase().includes(q));
   const g=[[],[],[],[]]; rows.forEach(x=>g[catOf(x)].push(x));
   let h='';
   g.forEach((a,i)=>{ if(!a.length||(cf!=="all"&&String(i)!==cf))return; a.sort(byDate);
@@ -546,6 +599,7 @@ function grouped(rows){
 // category filter of its own, and that select's stale value from a
 // previous Recent-tab visit would otherwise silently hide whole sections)
 function byCategory(rows,sortFn){
+  rows=sleeveFilter(rows);
   const g=[[],[],[],[]]; rows.forEach(x=>g[catOf(x)].push(x));
   let h='';
   g.forEach((a,i)=>{ if(!a.length)return; a.sort(sortFn||byDate);
@@ -1234,7 +1288,7 @@ function renderArchive(){
   if(!ARCHIVE_DATA){loadArchive(renderArchive);return;}
   const q=$('q').value.toLowerCase().trim();
   const t=$('topic').value||'all';
-  let rows=ARCHIVE_DATA.filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
+  let rows=sleeveFilter(ARCHIVE_DATA).filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.topic||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
   const label=t==='all'?'All topics':t;
@@ -1365,6 +1419,10 @@ function setGroup(g){
   if(GROUPS[g].indexOf(VIEW)<0)setView(GROUPS[g][0]);
 }
 
+// Only the views whose records actually carry the labels. nber.json and
+// monthly.json are written by separate exporters that don't include sleeves,
+// so offering the facet there would be a control that silently does nothing.
+const SLEEVE_VIEWS=['recent','foryou','watched','archive','saved'];
 function setView(v){
   VIEW=v;ALL_VIEWS.forEach(k=>$('t-'+k).classList.toggle('on',k===v));
   const g=GROUP_OF[v];
@@ -1380,6 +1438,9 @@ function setView(v){
   $('jsel').style.display=v==="classics"?'':'none';
   $('cat').style.display=v==="recent"?'':'none';
   $('topic').style.display=v==="archive"?'':'none';
+  // unlike the other facets this one is not view-specific: sleeves are a
+  // property of the paper, so it applies anywhere papers are listed
+  $('sleeve').style.display=SLEEVE_VIEWS.indexOf(v)>=0?'':'none';
   $('psrc').style.display=v==="practitioners"?'':'none';
   if(v==="archive")archivePage=0;
   render();
@@ -1401,6 +1462,7 @@ $('month').addEventListener('change',render);
 $('nbermonth').addEventListener('change',render);
 $('cat').addEventListener('change',render);
 $('topic').addEventListener('change',()=>{archivePage=0;render();});
+$('sleeve').addEventListener('change',()=>{archivePage=0;render();});
 $('psrc').addEventListener('change',render);
 $('jsel').addEventListener('change',render);
 const root=document.documentElement;
@@ -1429,6 +1491,11 @@ Promise.all([
     .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
   $('topic').add(new Option('All topics','all'));
   TOPICS.forEach(t=>$('topic').add(new Option(t,t)));
+  $('sleeve').add(new Option('All sleeves','all'));
+  $('sleeve').add(new Option('— desk fit 2+ —','fit'));
+  // no per-sleeve counts in the labels: the same select filters Recent, For
+  // You and the full archive, so any one count would be wrong on two of them
+  SLEEVES.filter(([k])=>k!=='other').forEach(([k,lab])=>$('sleeve').add(new Option(lab,k)));
   $('psrc').add(new Option('All sources','all'));
   [...new Set(d.filter(isPrac).map(_psource))].sort()
     .forEach(s=>$('psrc').add(new Option(s,s)));
