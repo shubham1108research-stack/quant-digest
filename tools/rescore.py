@@ -102,12 +102,56 @@ def main():
     llm.start_run_budget(0)
     config.LLM_RANK_BUDGET_S = 0
     config.LLM_CONSENSUS_BUDGET_S = 0
-    llm.rank(todo, log)
-
     written = invalidated = 0
     sleeves = collections.Counter()
     fits = collections.Counter()
+
+    _persisted = set()
+
+    def persist(batch, _seen=_persisted):
+        """Write one completed batch and COMMIT it.
+
+        This runs per batch, not once at the end, because the end may never
+        arrive: a backfill of the whole archive takes hours, and a run killed
+        at its workflow timeout used to lose every score it had paid for --
+        all of it still sitting in memory. Committing per batch turns a
+        timeout from a total loss into a partial one, and the next run simply
+        picks up the papers still outstanding."""
+        nonlocal written, invalidated
+        for it in batch:
+            if it["uid"] in _seen:
+                continue
+            if not it.get("sleeves") and it.get("rank_score") is None:
+                continue                               # provider skipped it
+            _seen.add(it["uid"])
+            patch = {k: it[k] for k in SCORE_FIELDS if k in it}
+            if not patch:
+                continue
+            if store.update_meta(con, it["uid"], patch):
+                written += 1
+                for sl in (it.get("sleeves") or []):
+                    sleeves[sl] += 1
+                fits[it.get("desk_fit", 0)] += 1
+            # embedding text is title + topic + abstract; a new summary or a
+            # changed topic makes the cached vector stale
+            if (not it["_had_summary"] and it.get("summary")) or \
+                    (it.get("topic") and it["topic"] != it["_old_topic"]):
+                try:
+                    con.execute("DELETE FROM embeddings WHERE uid=?", (it["uid"],))
+                    invalidated += 1
+                except Exception:                      # noqa: BLE001
+                    pass
+        con.commit()
+        if written and written % 200 < len(batch):
+            log(f"[rescore] checkpoint: {written} written so far")
+
+    llm.rank(todo, log, on_batch=persist)
+
+    # anything rank() scored but never handed to a checkpoint is caught here;
+    # persist() records what it wrote so nothing is counted or written twice
     for it in todo:
+        if it["uid"] in _persisted:
+            continue
         if not it.get("sleeves") and it.get("rank_score") is None:
             continue                                   # provider skipped it
         patch = {k: it[k] for k in SCORE_FIELDS if k in it}

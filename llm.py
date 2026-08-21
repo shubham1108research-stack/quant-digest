@@ -610,7 +610,8 @@ def _run_budget_left() -> bool:
     return _run_deadline is None or time.monotonic() < _run_deadline
 
 
-def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
+def rank(items: list[dict], log, max_batches: int | None = None,
+         on_batch=None) -> list[dict]:
     """Attach the anchored rubric levels to each item in place; return the same
     list. Each scored item gets:
       relevance/generality/contribution/testability -- {level (0-3), why[, provisional]}
@@ -693,6 +694,15 @@ def rank(items: list[dict], log, max_batches: int | None = None) -> list[dict]:
             if i in scores:
                 _apply_score(it, scores[i])
                 ranked += 1
+        # Hand the caller each batch AS IT COMPLETES so it can be persisted.
+        # Without this the whole pass lives in memory until rank() returns, and
+        # a run killed at its timeout loses every score it paid for -- which is
+        # exactly what happened to a five-hour backfill of 10,855 papers.
+        if on_batch is not None:
+            try:
+                on_batch([it for i, it in enumerate(batch) if i in scores])
+            except Exception as e:                 # noqa: BLE001
+                log(f"[llm] checkpoint failed ({_err(e)}); continuing")
         time.sleep(config.LLM_BATCH_PAUSE)         # stay under free-tier RPM
     log(f"[llm] ranked {ranked}/{len(items)} via {', '.join(sorted(used)) or 'none'}")
     return items
