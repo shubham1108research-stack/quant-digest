@@ -120,7 +120,46 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   .navtools{gap:6px;}
   .navtools select,.searchwrap input{max-width:100%;}
   h1,.brand{font-size:22px;}
-  .askbox{flex-direction:column;align-items:stretch;}
+  /* --- Ask: conversations, and the outside literature --- */
+.chatbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0 4px;}
+.newchat{font-family:var(--sans);font-size:11.5px;font-weight:700;letter-spacing:.02em;
+  color:var(--accent);background:transparent;border:1px dashed var(--accent);
+  border-radius:999px;padding:5px 12px;cursor:pointer;}
+.newchat:hover{background:color-mix(in srgb,var(--accent) 10%,transparent);}
+.chatpill{display:inline-flex;align-items:center;gap:7px;max-width:230px;
+  font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--muted);
+  background:var(--panel);border:1px solid var(--line);border-radius:999px;
+  padding:5px 11px;cursor:pointer;transition:border-color .15s,color .15s;}
+.chatpill>:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chatpill:hover{border-color:var(--accent);color:var(--accent);}
+.chatpill.on{background:var(--accent);border-color:var(--accent);color:var(--panel);}
+.chatpill .x{opacity:0;font-size:10px;padding:0 2px;border-radius:3px;transition:opacity .12s;}
+.chatpill:hover .x{opacity:.7;}
+.chatpill .x:hover{opacity:1;background:color-mix(in srgb,currentColor 22%,transparent);}
+.outtog{display:flex;align-items:center;gap:7px;margin:8px 2px 0;
+  font-family:var(--sans);font-size:11.5px;color:var(--muted);cursor:pointer;}
+.outtog input{accent-color:var(--accent);cursor:pointer;}
+/* the outside block is deliberately not styled like a source: these are papers
+   we do NOT hold, and the difference has to be visible before it is read */
+.srch.osh{margin-top:22px;color:var(--cite);}
+.osrc{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;
+  padding:11px 13px;margin:7px 0;border:1px dashed var(--line);border-radius:11px;
+  background:color-mix(in srgb,var(--cite) 4%,transparent);}
+.osb{min-width:0;}
+.osb a{font-family:var(--serif);font-size:14.5px;color:var(--ink);text-decoration:none;
+  line-height:1.35;}
+.osb a:hover{color:var(--accent);text-decoration:underline;}
+.oabs{font-size:12.5px;line-height:1.5;color:var(--muted);margin-top:5px;max-width:70ch;}
+.oatag{color:var(--strong);font-weight:650;}
+.addbtn{flex:0 0 auto;font-family:var(--sans);font-size:11px;font-weight:700;
+  letter-spacing:.02em;color:var(--panel);background:var(--accent);border:0;
+  border-radius:7px;padding:6px 11px;cursor:pointer;transition:opacity .15s;}
+.addbtn:hover{opacity:.86;}
+.addbtn.done,.addbtn:disabled{background:var(--line);color:var(--muted);cursor:default;}
+.xtag{font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;margin-right:7px;padding:1px 5px;border-radius:4px;
+  color:var(--cite);background:color-mix(in srgb,var(--cite) 14%,transparent);}
+.askbox{flex-direction:column;align-items:stretch;}
   .askbox button{width:100%;padding:11px;}
   .src{grid-template-columns:22px 1fr;}
 }
@@ -735,7 +774,59 @@ function renderAnchors(){
 // page until we have the shortlist. /api/ask (a Cloudflare Pages Function
 // holding the API key) only embeds the question and writes the final synthesis.
 let VEC=null,VEC_UIDS=null,VEC_DIM=0,VEC_SHARD=64,ITEM_BY_UID={},indexLoading=false;
-let ASK_THREAD=[],asking=false;
+// Ask is a CONVERSATION, not a series of one-shot queries. Turns are kept in
+// order and replayed to the model, so "why?" or "what about costs?" resolve
+// against what was actually said instead of starting cold every time.
+const CHATS_KEY='qd_chats_v1', QUEUE_KEY='qd_queued_v1';
+const CHAT_MAX=20;         // conversations kept in this browser
+const CHAT_TURNS=12;       // turns persisted per conversation
+const HIST_SEND=6;         // turns replayed to the model
+const OUTSIDE_SHOW=8;      // outside hits listed under an answer
+const OUTSIDE_CTX=4;       // outside hits the agent is allowed to see
+let CHATS=[],CHAT_ID=null,asking=false,ASK_OUTSIDE=true,QUEUED={};
+const curChat=()=>CHATS.find(c=>c.id===CHAT_ID)||CHATS[0];
+const curTurns=()=>{const c=curChat();return c?(c.turns=c.turns||[]):[];};
+function newChat(quiet){
+  const c={id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+           title:'New conversation',ts:Date.now(),turns:[]};
+  CHATS.unshift(c);CHAT_ID=c.id;
+  if(CHATS.length>CHAT_MAX)CHATS.length=CHAT_MAX;
+  if(!quiet){saveChats();renderAsk();}
+  return c;
+}
+function loadChats(){
+  try{CHATS=JSON.parse(localStorage.getItem(CHATS_KEY)||'[]')||[];}catch(e){CHATS=[];}
+  if(!Array.isArray(CHATS)||!CHATS.length)CHATS=[];
+  CHATS.forEach(c=>{c.turns=c.turns||[];});
+  if(!CHATS.length)newChat(true); else CHAT_ID=CHATS[0].id;
+  try{QUEUED=JSON.parse(localStorage.getItem(QUEUE_KEY)||'{}')||{};}catch(e){QUEUED={};}
+}
+function saveChats(){
+  // Only what is needed to REDRAW and to REPLAY. A turn's passages and full
+  // source records are re-derivable and are by far the biggest part of it,
+  // and localStorage is a ~5MB budget already shared with Saved and the
+  // answer cache -- persisting everything would evict the conversations.
+  try{
+    localStorage.setItem(CHATS_KEY,JSON.stringify(CHATS.slice(0,CHAT_MAX).map(c=>({
+      id:c.id,title:c.title,ts:c.ts,
+      turns:(c.turns||[]).filter(t=>t.state==='done').slice(-CHAT_TURNS).map(t=>({
+        q:t.q,answer:t.answer,state:'done',ts:t.ts,cached:t.cached,
+        sources:(t.sources||[]).map(x=>({title:x.title,url:x.url,authors:x.authors,
+          date:x.date,seen:x.seen,source:x.source,score:x.score,uid:x.uid,
+          _depth:x._depth,_sec:x._sec})),
+        outside:(t.outside||[]).slice(0,OUTSIDE_SHOW)}))
+    }))));
+  }catch(e){}
+}
+function persistQueued(){try{localStorage.setItem(QUEUE_KEY,JSON.stringify(QUEUED));}catch(e){}}
+// Everything the archive already holds, so an outside hit that is simply a
+// paper we own is never offered as a discovery.
+function knownUids(){
+  const s=new Set(VEC_UIDS||[]);
+  (ARCHIVE_DATA||[]).forEach(x=>{if(x.uid)s.add(String(x.uid).toLowerCase());});
+  (VEC_UIDS||[]).forEach(u=>s.add(String(u).toLowerCase()));
+  return s;
+}
 // Two-stage selection, both stages free and instant because they reuse work the
 // pipeline already did. Stage 1: cosine recall over every paper. Stage 2: blend
 // that similarity with the paper's OWN pipeline scores (strength, reputation)
@@ -970,16 +1061,21 @@ function md(t,ti){
 async function doAsk(q,force){
   if(asking||!q.trim())return;
   if(!VEC||!VEC_UIDS){renderAsk('The semantic index has not been built yet — run the "Semantic Index" workflow once.');return;}
-  // asked before? replay it rather than paying for the same answer twice
-  const key=qKey(q),hit=force?null:ANS[key];
+  const turns=curTurns();
+  // The cache is keyed by question alone, so it is only safe on the FIRST turn.
+  // Mid-conversation the same words mean something different -- "and in FX?"
+  // depends entirely on what came before -- and replaying a stored answer there
+  // would silently ignore the thread.
+  const key=qKey(q),hit=(force||turns.length)?null:ANS[key];
   if(hit){
     hit.t=Date.now();persistAns();
-    ASK_THREAD.unshift({q:q,state:'done',answer:hit.answer,cached:true,
+    turns.push({q:q,state:'done',answer:hit.answer,cached:true,ts:Date.now(),
       sources:(hit.uids||[]).map(u=>ITEM_BY_UID[u]).filter(Boolean)});
-    renderAsk();return;
+    titleChat();saveChats();renderAsk();return;
   }
   asking=true;
-  ASK_THREAD.unshift({q:q,state:'retrieving'});
+  const turn={q:q,state:'retrieving',ts:Date.now()};
+  turns.push(turn);titleChat();
   renderAsk();
   try{
     const er=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
@@ -998,7 +1094,7 @@ async function doAsk(q,force){
     cands.forEach(c=>{c._rank=askRank(c,terms);});
     cands.sort((a,b)=>b._rank-a._rank);
     const scanSet=cands.slice(0,ASK_SCAN);
-    ASK_THREAD[0].scanned=cands.length;ASK_THREAD[0].state='reading';
+    turn.scanned=cands.length;turn.state='reading';
     renderAsk();
     // pull the FULL abstracts for the whole examined set (archive.json only
     // carries a 400-char summary). Papers read for an earlier question come
@@ -1006,7 +1102,7 @@ async function doAsk(q,force){
     let got={abs:{},fetched:0,reused:0};
     try{ got=await loadAbstracts(scanSet); }catch(e){ got={abs:{},fetched:0,reused:0}; }
     scanSet.forEach(p=>{p._full=got.abs[p.uid]||'';});
-    ASK_THREAD[0].reused=got.reused;
+    turn.reused=got.reused;
     // Top of the ranking is read in full. Everything else is SCREENED: a paper
     // ranked 30th can still hold the one number that answers the question, and
     // a fixed top-N cutoff would never see it. Only papers that actually turn
@@ -1016,7 +1112,7 @@ async function doAsk(q,force){
     const rest=scanSet.slice(ASK_DEEP).filter(p=>p._full);
     let extra=[],foundBy={};
     if(rest.length){
-      ASK_THREAD[0].state='scanning';ASK_THREAD[0].scanning=rest.length;
+      turn.state='scanning';turn.scanning=rest.length;
       renderAsk();
       const batches=[];
       for(let i=0;i<rest.length;i+=SCAN_BATCH)batches.push(rest.slice(i,i+SCAN_BATCH));
@@ -1038,7 +1134,7 @@ async function doAsk(q,force){
       await loadFtIndex();
       const cand=await loadPassages(scanSet);
       if(cand.length){
-        ASK_THREAD[0].state='passages';ASK_THREAD[0].npsg=cand.length;
+        turn.state='passages';turn.npsg=cand.length;
         renderAsk();
         psg=bm25(terms,cand).slice(0,FT_PASSAGES);
       }
@@ -1049,11 +1145,11 @@ async function doAsk(q,force){
     const picks=deep.slice(0,nAbs).concat(extra);
     // the displayed source list MUST mirror ctx order exactly, or [n] resolves
     // to the wrong paper -- passages lead there, so they lead here too
-    ASK_THREAD[0].sources=psg.map(x=>Object.assign({},x.paper,
+    turn.sources=psg.map(x=>Object.assign({},x.paper,
         {_sec:x.sec,_depth:'full'})).concat(picks);
-    ASK_THREAD[0].extra=extra.length;
-    ASK_THREAD[0].passages=psg;
-    ASK_THREAD[0].state='thinking';
+    turn.extra=extra.length;
+    turn.passages=psg;
+    turn.state='thinking';
     renderAsk();
     // Passages lead the context so their citation numbers come first, and the
     // section label travels with them -- a specification claim has to be
@@ -1067,57 +1163,163 @@ async function doAsk(q,force){
         // tell the agent HOW MUCH text is behind each source, so it can refuse a
         // specification question on an abstract instead of inventing one
         depth:p._full?'abstract':'summary_only'})));
+    // The archive is a curated slice, not the literature. Look outside for what
+    // it does not hold, and let the agent SEE the best few -- marked as not
+    // held, so it can say "there is a 2024 paper you do not have that does
+    // exactly this" instead of pretending the gap is not there.
+    let outside=[];
+    if(ASK_OUTSIDE){
+      turn.state='outside';renderAsk();
+      try{
+        const or_=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({mode:'outside',q:q})});
+        const oj=await or_.json();
+        if(or_.ok){
+          const known=knownUids();
+          outside=(oj.hits||[]).filter(h=>h.uid&&!known.has(String(h.uid).toLowerCase()))
+                               .slice(0,OUTSIDE_SHOW);
+        }
+      }catch(e){ outside=[]; }
+    }
+    turn.outside=outside;
+    const ctxAll=ctx.concat(outside.slice(0,OUTSIDE_CTX).map(h=>({
+      title:h.title,authors:h.authors,date:h.year?String(h.year):'',
+      source:h.venue||h.via,summary:h.abstract||'',depth:'abstract',external:true})));
+    // the source list must mirror ctx order exactly or [n] resolves to the
+    // wrong paper -- the outside hits are appended in both, in the same order
+    turn.sources=(turn.sources||[]).concat(outside.slice(0,OUTSIDE_CTX).map(h=>({
+      title:h.title,url:h.url,authors:h.authors,date:h.year?String(h.year):'',
+      source:h.venue||'',uid:h.uid,_external:true})));
+    turn.state='thinking';renderAsk();
     const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({mode:'answer',q:q,ctx:ctx})});
+      body:JSON.stringify({mode:'answer',q:q,ctx:ctxAll,
+        // prior turns, oldest first, so a follow-up resolves against the thread
+        history:turns.slice(0,-1).filter(t=>t.state==='done')
+                     .slice(-HIST_SEND).map(t=>({q:t.q,a:t.answer||''}))})});
     const aj=await ar.json();
     if(!ar.ok)throw new Error(aj.error||'answer failed');
-    ASK_THREAD[0].answer=aj.answer;ASK_THREAD[0].state='done';
-    // remember it: the same question later replays instead of re-answering
-    ANS[key]={answer:aj.answer,uids:picks.map(p=>p.uid),t:Date.now()};
-    persistAns();
+    turn.answer=aj.answer;turn.state='done';
+    // cache the FIRST turn only, for the same reason it is only read there
+    if(!turns.slice(0,-1).length){
+      ANS[key]={answer:aj.answer,uids:picks.map(p=>p.uid),t:Date.now()};
+      persistAns();
+    }
+    saveChats();
   }catch(e){
-    ASK_THREAD[0].error=String(e.message||e);ASK_THREAD[0].state='error';
+    turn.error=String(e.message||e);turn.state='error';
   }
-  asking=false;renderAsk();
+  asking=false;saveChats();renderAsk();
 }
 function askSubmit(){
   const el=$('askq');const q=el.value;el.value='';doAsk(q);
 }
+// The first question a conversation asks is what it is about, so it names it.
+function titleChat(){
+  const c=curChat();if(!c)return;
+  const t=(c.turns||[])[0];
+  if(t&&t.q&&(c.title==='New conversation'||!c.title))
+    c.title=t.q.length>52?t.q.slice(0,52).replace(/\s+\S*$/,'')+'…':t.q;
+}
+function switchChat(id){CHAT_ID=id;renderAsk();}
+function deleteChat(id,ev){
+  ev.stopPropagation();
+  CHATS=CHATS.filter(c=>c.id!==id);
+  if(!CHATS.length)newChat(true);
+  if(!CHATS.some(c=>c.id===CHAT_ID))CHAT_ID=CHATS[0].id;
+  saveChats();renderAsk();
+}
+// Adding a paper is a WRITE to the archive, so the browser does not do it: the
+// Function dispatches the repo's ingest workflow, and the paper arrives through
+// the same resolver, scorer and dedup as everything else.
+async function addPaper(btn){
+  const id=btn.dataset.add;
+  btn.disabled=true;btn.textContent='adding…';
+  try{
+    const r=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({mode:'ingest',ids:[id]})});
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error||'ingest failed');
+    QUEUED[id]=Date.now();persistQueued();
+    btn.textContent='queued';btn.classList.add('done');
+    toast('Queued — it enters the archive on the next ingest run.');
+  }catch(e){
+    btn.disabled=false;btn.textContent='+ Add';
+    toast(String(e.message||e).slice(0,140));
+  }
+}
+function outsideCard(h){
+  const q=QUEUED[h.uid];
+  const bits=[h.venue||h.via,h.year||'',h.cites?fmtK(h.cites)+' cites':''].filter(Boolean);
+  return `<div class="osrc">
+    <div class="osb"><a href="${esc(h.url)}" target="_blank" rel="noopener">${esc(h.title)}</a>
+      <div class="meta">${h.authors?esc(h.authors)+' · ':''}${esc(bits.join(' · '))}${h.oa?' · <span class="oatag">open access</span>':''}</div>
+      ${h.abstract?`<div class="oabs">${esc(h.abstract.slice(0,320))}${h.abstract.length>320?'…':''}</div>`:''}
+    </div>
+    <button class="addbtn${q?' done':''}" data-add="${esc(h.uid)}" ${q?'disabled':''}
+      title="Resolve it and add it to the archive">${q?'queued':'+ Add'}</button></div>`;
+}
+let _lastTurns=-1;
 function renderAsk(notice){
   if(!VEC||!ARCHIVE_DATA){
     if(!notice){loadIndex(renderAsk);
       $('view').innerHTML='<div class="empty">Loading the semantic index…</div>';return;}
   }
+  if(!CHATS.length)newChat(true);
+  const turns=curTurns();
   const note=notice?`<div class="askerr">${esc(notice)}</div>`:'';
-  const chips=ASK_THREAD.length?'':'<div class="askex">'+ASK_EXAMPLES.map(e=>
+  const chips=turns.length?'':'<div class="askex">'+ASK_EXAMPLES.map(e=>
     `<button class="exq" data-q="${esc(e)}">${esc(e)}</button>`).join('')+'</div>';
-  const thread=ASK_THREAD.map((t,ti)=>{
+  const bar=`<div class="chatbar">
+    <button class="newchat" id="newchat">+ New conversation</button>
+    ${CHATS.slice(0,8).map(c=>`<button class="chatpill${c.id===CHAT_ID?' on':''}" data-chat="${esc(c.id)}">${esc(c.title||'Untitled')}<span class="x" data-del="${esc(c.id)}" title="Delete">✕</span></button>`).join('')}
+  </div>`;
+  const thread=turns.map((t,ti)=>{
     let body='';
     if(t.state==='retrieving')body='<div class="thinking">Searching '+(VEC_UIDS?VEC_UIDS.length.toLocaleString():'the')+' papers…</div>';
     else if(t.state==='reading')body='<div class="thinking">Ranked '+(t.scanned||0)+' candidates · pulling full abstracts for the top '+(t.sources||[]).length+'…</div>';
     else if(t.state==='scanning')body='<div class="thinking">Screening '+(t.scanning||0)+' further papers for relevant content…</div>';
     else if(t.state==='passages')body='<div class="thinking">Reading full text · ranking '+(t.npsg||0)+' passages…</div>';
+    else if(t.state==='outside')body='<div class="thinking">Searching the outside literature (OpenAlex, arXiv)…</div>';
     else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' sources'+((t.passages||[]).length?' ('+t.passages.length+' full-text passages)':'')+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' · '+t.reused+' from memory':'')+'…</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
     else body='<div class="answer">'+md(t.answer,ti)+'</div>';   // math typeset after insert
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
       `<div class="src" id="src-${ti}-${i+1}"><span class="sn">${i+1}</span>
         <div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
-        <div class="meta">${p._depth==='full'?`<span class="ftag" title="full text — may support specification-level claims">full text${p._sec?' · '+esc(p._sec):''}</span>`:''}<span class="j">${esc(jlabel(p))}</span>${p.authors?' · '+esc(p.authors):''} · ${esc(p.date||p.seen||'')}${p.score!=null?' · rated '+p.score:''}</div></div></div>`
+        <div class="meta">${p._depth==='full'?`<span class="ftag" title="full text — may support specification-level claims">full text${p._sec?' · '+esc(p._sec):''}</span>`:''}${p._external?'<span class="xtag" title="found by live search — not held in the archive">not in archive</span>':''}<span class="j">${esc(jlabel(p))}</span>${p.authors?' · '+esc(p.authors):''} · ${esc(p.date||p.seen||'')}${p.score!=null?' · rated '+p.score:''}</div></div></div>`
     ).join(''):'';
+    const out=(t.state==='done'&&(t.outside||[]).length)
+      ?`<div class="srch osh">Not in your archive <span class="n">· ${t.outside.length} from a live search · add anything worth keeping</span></div>`
+        +t.outside.map(outsideCard).join('')
+      :'';
     const badge=t.cached?`<span class="cachetag" title="answered from this browser's memory — nothing was re-read">from memory</span>
       <button class="reask" data-q="${esc(t.q)}" title="Ignore the stored answer and ask again">ask again</button>`:'';
-    return `<div class="qa"><div class="qq">${esc(t.q)}${badge}</div>${body}${src}</div>`;
+    return `<div class="qa"><div class="qq">${esc(t.q)}${badge}</div>${body}${src}${out}</div>`;
   }).join('');
-  $('view').innerHTML=`<div class="dateline">Ask the archive <span class="n">· ${VEC_UIDS?VEC_UIDS.length.toLocaleString():'—'} papers indexed · searched in your browser, ranked by similarity + your own paper scores + keyword fit; top ${ASK_DEEP} read in full and the next ${ASK_SCAN-ASK_DEEP} screened for relevant content</span></div>
-    <div class="askbox"><textarea id="askq" rows="2" placeholder="Ask anything about the archive — e.g. what does the evidence say about trend decay?"></textarea>
-      <button id="asksend" ${asking?'disabled':''}>${asking?'…':'Ask'}</button></div>${note}${chips}${thread}`;
+  const follow=turns.length?' · follow-ups keep the thread':'';
+  $('view').innerHTML=`<div class="dateline">Ask the archive <span class="n">· ${VEC_UIDS?VEC_UIDS.length.toLocaleString():'—'} papers indexed · searched in your browser, ranked by similarity + your own paper scores + keyword fit; top ${ASK_DEEP} read in full and the next ${ASK_SCAN-ASK_DEEP} screened${follow}</span></div>
+    ${bar}${note}${chips}${thread}
+    <div class="askbox"><textarea id="askq" rows="2" placeholder="${turns.length?'Follow up — it remembers this conversation':'Ask anything about the archive — e.g. what does the evidence say about trend decay?'}"></textarea>
+      <button id="asksend" ${asking?'disabled':''}>${asking?'…':'Ask'}</button></div>
+    <label class="outtog"><input type="checkbox" id="outtog" ${ASK_OUTSIDE?'checked':''}> Also search outside the archive (OpenAlex, arXiv)</label>`;
   const send=$('asksend');if(send)send.onclick=askSubmit;
   const ta=$('askq');
   if(ta){ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askSubmit();}};ta.focus();}
+  const tog=$('outtog');if(tog)tog.onchange=()=>{ASK_OUTSIDE=tog.checked;};
+  const nc=$('newchat');if(nc)nc.onclick=()=>newChat();
+  document.querySelectorAll('[data-chat]').forEach(b=>b.onclick=()=>switchChat(b.dataset.chat));
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>deleteChat(b.dataset.del,e));
   document.querySelectorAll('.exq').forEach(b=>b.onclick=()=>doAsk(b.dataset.q));
   document.querySelectorAll('.reask').forEach(b=>b.onclick=()=>doAsk(b.dataset.q,true));
+  document.querySelectorAll('.addbtn:not(.done)').forEach(b=>b.onclick=()=>addPaper(b));
   typesetMath($('view'));
+  // a new turn now appears at the BOTTOM, so bring it into view rather than
+  // leaving the reader looking at the top of a conversation they have read
+  if(turns.length!==_lastTurns){
+    _lastTurns=turns.length;
+    const last=$('view').querySelector('.qa:last-of-type');
+    if(last)last.scrollIntoView({block:'start',behavior:'smooth'});
+  }
 }
 // NBER finance-program working papers, browsable by month (docs/nber.json,
 // built by tools/backfill_nber.py back to 2010; kept fresh for the current
@@ -1280,6 +1482,7 @@ function loadArchive(cb){
   fetch('archive.json').then(r=>r.json()).then(d=>{
     ARCHIVE_DATA=d;
     PINS=loadPins();rebuildViews();renderPinTabs();renderTagbar();
+  loadChats();
   $('tagbar').hidden=!(SLEEVE_VIEWS.indexOf(VIEW)>=0||VIEW.slice(0,3)==='sl:');
   d.forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
     archiveLoading=false;

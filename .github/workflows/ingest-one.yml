@@ -1,0 +1,66 @@
+name: Ingest Papers On Request
+
+# The write end of the portal's "add to the archive" button. Ask searches the
+# outside literature when the archive does not cover a question; the button
+# dispatches the chosen identifiers here, and they enter through the same path
+# as every other paper -- one uid, a real abstract, then scores and sleeve
+# labels on the next rescore.
+#
+# Dispatched by functions/api/ask.js (mode: "ingest") using GH_TOKEN, and
+# runnable by hand with a comma-separated list.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: "Comma-separated doi: / arxiv: identifiers"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  # state.db is binary: concurrent writers rebase into an
+  # unmergeable conflict and one run's work is discarded
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Resolve and insert
+        run: python tools/ingest_one.py --ids "${{ github.event.inputs.ids }}"
+
+      # A newly added paper is invisible to Ask until it has a vector, and the
+      # whole point of adding it was to be able to ask about it. Cached, so this
+      # embeds only what just arrived.
+      - name: Update semantic index
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: python tools/embed.py
+
+      - name: Commit
+        if: always()
+        run: |
+          git config user.name "digest-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state.db docs/ || true
+          git commit -m "ingest on request $(date -u +%F)" || echo "nothing to commit"
+          git pull --rebase --autostash origin master || true
+          git push || (git pull --rebase --autostash origin master && git push)
+
+      - name: Deploy portal
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --yes wrangler@3 pages deploy docs \
+            --project-name=quant-digest --branch=master --commit-dirty=true

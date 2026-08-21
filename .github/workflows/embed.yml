@@ -62,8 +62,13 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # lets the Ask tab's "add to the archive" button dispatch
+          # ingest-one.yml. Absent, the button reports it is not configured and
+          # everything else in Ask carries on working.
+          GH_TOKEN: ${{ secrets.INGEST_DISPATCH_TOKEN }}
         run: |
-          for k in OPENROUTER_API_KEY MISTRAL_API_KEY GROQ_API_KEY; do
+          for k in OPENROUTER_API_KEY MISTRAL_API_KEY GROQ_API_KEY GH_TOKEN; do
+            [ -n "${!k}" ] || { echo "skipping $k (not set)"; continue; }
             printf '%s' "${!k}" | npx --yes wrangler@3 pages secret put "$k" --project-name=quant-digest
           done
 
