@@ -256,6 +256,10 @@ a.cite{font-family:var(--sans);font-size:11px;font-weight:600;vertical-align:sup
   line-height:1;color:var(--faint);padding:0;margin-left:8px;vertical-align:-1px;transition:color .15s,transform .15s;}
 .savebtn:hover{color:var(--accent);transform:scale(1.18);}
 .savebtn.on{color:var(--medium);}
+.ftmark{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;margin-left:8px;padding:1px 6px;border-radius:4px;
+  color:var(--cite);background:color-mix(in srgb,var(--cite) 12%,transparent);
+  white-space:nowrap;}
 .pdfbtn{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.04em;
   color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;
   margin-left:8px;text-decoration:none;vertical-align:1px;display:inline-block;
@@ -398,7 +402,24 @@ function _pdfUrl(x){
   m=u.match(/nber\.org\/papers\/w(\d+)/i);
   if(m)return `https://www.nber.org/system/files/working_papers/w${m[1]}/w${m[1]}.pdf`;
   if(/\.pdf(\?|$)/i.test(u))return u;
+  // The url is not the only thing that identifies a paper. Anything ingested
+  // BY DOI -- the classics, most of the NBER block -- carries a doi: uid and a
+  // doi.org link, so matching the url alone missed several hundred papers
+  // whose PDF is perfectly derivable from the identifier itself.
+  const id=x.uid||'';
+  m=id.match(/^doi:10\.3386\/w(\d+)$/i);
+  if(m)return `https://www.nber.org/system/files/working_papers/w${m[1]}/w${m[1]}.pdf`;
+  m=id.match(/^doi:10\.48550\/arxiv\.(.+?)(?:v\d+)?$/i);
+  if(m)return 'https://arxiv.org/pdf/'+m[1];
+  m=id.match(/^arxiv:(.+?)(?:v\d+)?$/i);
+  if(m)return 'https://arxiv.org/pdf/'+m[1];
   return null;
+}
+// We parsed this paper's PDF into passages, so Ask can quote it by section
+// rather than paraphrase an abstract. That is worth knowing BEFORE you ask.
+function _ftBtn(x){
+  return (FT_SET&&x.uid&&FT_SET.has(x.uid))
+    ?'<span class="ftmark" title="Full text parsed - Ask can quote this paper by section">full text</span>':'';
 }
 function _pdfBtn(x){
   const p=_pdfUrl(x);
@@ -480,7 +501,7 @@ function entry(x,rank){
     (fit?`<span class="sl fitn" title="usable on the desk">desk ${x.desk_fit}/3</span>`:'')+'</div>':'';
   return `<div class="${cls}">${sc}<div class="body">${badge}
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${watch}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_pdfBtn(x)}${_saveBtn(x)}</div>
+    <div class="meta">${watch}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
     ${chips}${sm}${subs}</div></div>`;
 }
 // Desk sleeves are MULTI-LABEL -- a paper can be carry AND fx at once -- so this
@@ -690,7 +711,9 @@ function renderAnchors(){
   const q=$('q').value.toLowerCase().trim();
   const card=x=>{
     const pdf=x.pdf?` · <a href="${x.pdf}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">⭳ ${esc(x.pl||'PDF')}</a>`:'';
-    return `<div class="entry"><div class="body">
+    // "flat": these cards carry no score rail, and plain .entry reserves a
+    // 52px column for one -- which squeezed every anchor into a third of the card
+    return `<div class="entry flat"><div class="body">
       <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.t)}</a>
       <div class="meta"><span class="j">${esc(x.by)}</span> · ${x.yr} · <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.ul)}</a>${pdf}</div>
       <div class="summary">${esc(x.why)}</div></div></div>`;
@@ -1226,7 +1249,7 @@ function pracEntry(x){
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
   return `<div class="entry"><div class="rail"></div><div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_pdfBtn(x)}${_saveBtn(x)}</div>
+    <div class="meta">${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
     ${sm}</div></div>`;
 }
 function renderPractitioners(){
@@ -1321,7 +1344,7 @@ function monthlyEntry(x,rank){
       x.reputation!=null?(x.reputation-0.85)/0.30*100:0),
     _subBar('Author',x.author_score!=null?Math.round(x.author_score):'–',x.author_score||0),
   ].join('');
-  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_pdfBtn(x)}${_saveBtn(x)}`;
+  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}`;
   const cval=Math.round(x.composite);
   return `<div class="entry"><div class="rail">
       <div class="rank">${rank}</div><div class="gauge" style="--pct:${cval};--gc:${band}"><span>${cval}</span></div><div class="cap">composite</div></div>
@@ -1362,7 +1385,7 @@ function canonEntry(x){
     <div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${tag}</div>
       ${why?`<div class="summary">${esc(why)}</div>`:''}
-      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}${_pdfBtn(x)}${_saveBtn(x)}</div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
     </div></div>`;
 }
 function renderCanon(g,topic){
@@ -1387,7 +1410,7 @@ function renderClassics(){
     (rows.length?rows.map(x=>`<div class="entry classic"><div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="cites">${fmtK(x.cites||0)}<small>cites</small></span></div>
       <div class="bar"><i style="width:${((x.cites||0)/max*100).toFixed(1)}%"></i></div>
-      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}${_pdfBtn(x)}${_saveBtn(x)}</div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
@@ -1479,6 +1502,7 @@ Promise.all([
   fetch('data.json').then(r=>r.json()).catch(()=>[]),
   fetch('classics.json').then(r=>r.json()).catch(()=>[]),
   fetch('monthly.json').then(r=>r.json()).catch(()=>({})),
+  loadFtIndex(),
 ]).then(([d,c,mo])=>{
   DATA=d;CLASSICS=c;MONTHLY=mo||{};
   MAXSEEN=d.reduce((m,x)=>(x.seen||'')>m?(x.seen||''):m,"");
