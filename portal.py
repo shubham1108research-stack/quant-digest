@@ -198,11 +198,11 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   border:1px solid var(--line);border-radius:20px;padding:6px 10px 6px 28px;width:190px;max-width:42vw;
   transition:border-color .15s,box-shadow .15s;}
 #q:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent);}
-#month,#cat,#jsel,#topic,#sleeve{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--muted);
+#month,#cat,#jsel,#topic{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--muted);
   background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px 12px;
   cursor:pointer;max-width:44vw;transition:border-color .15s,color .15s;}
-#cat:hover,#month:hover,#jsel:hover,#topic:hover,#sleeve:hover{border-color:var(--accent);color:var(--accent);}
-#cat:focus,#month:focus,#jsel:focus,#topic:focus,#sleeve:focus{outline:0;border-color:var(--accent);}
+#cat:hover,#month:hover,#jsel:hover,#topic:hover{border-color:var(--accent);color:var(--accent);}
+#cat:focus,#month:focus,#jsel:focus,#topic:focus{outline:0;border-color:var(--accent);}
 .dateline{font-family:var(--sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted);margin:26px 0 2px;display:flex;align-items:center;gap:10px;}
 .dateline .n{font-variant-numeric:tabular-nums;color:var(--faint);}
@@ -321,10 +321,33 @@ a.cite{font-family:var(--sans);font-size:11px;font-weight:600;vertical-align:sup
 .title:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
 .meta{font-family:var(--sans);font-size:11.5px;letter-spacing:.02em;color:var(--muted);margin-top:4px;}
 .meta .j{color:var(--ink);font-weight:500;}
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:60;
+  font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--panel);
+  background:var(--ink);padding:9px 16px;border-radius:8px;pointer-events:none;
+  opacity:0;transition:opacity .18s,transform .18s;
+  box-shadow:0 8px 26px -12px rgba(0,0,0,.5);}
+#toast.on{opacity:1;transform:translate(-50%,0);}
+@media (prefers-reduced-motion:reduce){#toast{transition:none;}}
+.tagbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 0;}
+.tag{display:inline-flex;align-items:center;gap:0;font-family:var(--sans);font-size:11.5px;
+  font-weight:650;letter-spacing:.02em;color:var(--muted);background:var(--panel);
+  border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer;
+  transition:border-color .15s,color .15s,background .15s;}
+.tag:hover{border-color:var(--accent);color:var(--accent);}
+.tag.on{background:var(--accent);border-color:var(--accent);color:var(--panel);}
+/* the pin is a second control inside the tag, so it gets its own hit area and
+   must not inherit the tag's click */
+.tag .pin{margin-left:7px;margin-right:-3px;opacity:0;font-size:13px;line-height:1;
+  padding:0 2px;border-radius:4px;transition:opacity .12s;}
+.tag:hover .pin,.tag.pinned .pin{opacity:.75;}
+.tag .pin:hover{opacity:1;background:color-mix(in srgb,currentColor 18%,transparent);}
+.tag.pinned{border-style:solid;border-color:color-mix(in srgb,var(--accent) 45%,var(--line));}
 .sleeves{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0 0;}
 .sl{font-family:var(--sans);font-size:10.5px;font-weight:650;letter-spacing:.02em;
   padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);
-  white-space:nowrap;}
+  white-space:nowrap;cursor:pointer;transition:border-color .15s,color .15s;}
+.sl:hover{border-color:var(--accent);color:var(--accent);}
+.sl.fitn{cursor:default;}
 /* filled, not merely coloured: desk fit is the one signal here worth spotting
    from a distance, and an outline chip among outline chips does not carry */
 .sl.fit{border-color:transparent;background:color-mix(in srgb,var(--accent) 14%,transparent);
@@ -417,6 +440,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
       <button id="t-ask" hidden></button>
       <button id="t-saved" hidden></button>
     </div>
+    <div class="tagbar" id="tagbar" hidden></div>
     <div class="navtools">
       <select id="cat" title="Category" style="display:none">
         <option value="all">All categories</option>
@@ -424,7 +448,6 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
         <option value="1">Academic · Tier 2</option>
         <option value="2">Preprints &amp; working papers</option>
       </select>
-      <select id="sleeve" title="Desk sleeve" style="display:none"></select>
       <select id="topic" title="Topic" style="display:none"></select>
       <select id="psrc" title="Source" style="display:none"></select>
       <select id="jsel" title="Journal" style="display:none"></select>
@@ -449,6 +472,16 @@ let ARCHIVE_DATA=null, archiveLoading=false;
 const TOPICS=__TOPICS_JSON__;
 const SLEEVES=__SLEEVES_JSON__;
 const SLEEVE_LABEL=Object.fromEntries(SLEEVES);
+const PINS_KEY='qd_pins_v1', PIN_MAX=4;
+let SLEEVE='all', PINS=[];
+const BASE_PAPERS=['recent','foryou','watched','nber','monthly','practitioners','archive'];
+let _toastT=null;
+function toast(msg){
+  let el=$('toast');
+  if(!el){el=document.createElement('div');el.id='toast';document.body.appendChild(el);}
+  el.textContent=msg;el.classList.add('on');
+  clearTimeout(_toastT);_toastT=setTimeout(()=>el.classList.remove('on'),2600);
+}
 const isPrac=x=>String(x.section)==="4";   // practitioner blogs + house research
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -567,7 +600,7 @@ function entry(x,rank){
   const sl=(x.sleeves||[]).filter(k=>k!=='other');
   const fit=(x.desk_fit||0)>=2;
   const chips=sl.length?'<div class="sleeves">'+sl.map(k=>
-    `<span class="sl${fit?' fit':''}">${esc(SLEEVE_LABEL[k]||k)}</span>`).join('')+
+    `<span class="sl${fit?' fit':''}" data-sleeve="${k}" title="Filter to ${esc(SLEEVE_LABEL[k]||k)}">${esc(SLEEVE_LABEL[k]||k)}</span>`).join('')+
     (fit?`<span class="sl fitn" title="usable on the desk">desk ${x.desk_fit}/3</span>`:'')+'</div>':'';
   return `<div class="${cls}">${sc}<div class="body">${badge}
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
@@ -578,12 +611,82 @@ function entry(x,rank){
 // is a membership test, not equality. Papers with no labels yet are HIDDEN when
 // a sleeve is chosen rather than shown: an unlabelled paper is not evidence of
 // belonging, and the backfill is still filling them in.
-function sleeveFilter(rows){
-  const s=$('sleeve').value||'all';
+function sleeveFilter(rows,force){
+  const s=force||SLEEVE;
   if(s==='all')return rows;
   if(s==='fit')return rows.filter(x=>(x.desk_fit||0)>=2);
   return rows.filter(x=>(x.sleeves||[]).indexOf(s)>=0);
 }
+// A sleeve is worth a permanent tab once you read it daily, and worth nothing
+// once you don't -- so which ones get promoted is the reader's call, not a
+// build-time decision. Pins live in this browser, like Saved.
+function loadPins(){
+  try{return JSON.parse(localStorage.getItem(PINS_KEY)||'[]').filter(k=>SLEEVE_LABEL[k]);}
+  catch(e){return[];}
+}
+function savePins(){try{localStorage.setItem(PINS_KEY,JSON.stringify(PINS));}catch(e){}}
+function setSleeve(k){
+  SLEEVE=(SLEEVE===k)?'all':k;
+  // choosing a sleeve from a pinned tab's view would be two filters fighting;
+  // step back to Archive, where the tag rail is the only thing filtering
+  if(VIEW.slice(0,3)==='sl:'){setView('archive');return;}
+  archivePage=0;renderTagbar();render();
+}
+function togglePin(k,ev){
+  ev.stopPropagation();
+  const i=PINS.indexOf(k);
+  if(i>=0){
+    PINS.splice(i,1);
+    const b=$('t-sl:'+k); if(b)b.remove();
+    if(VIEW==='sl:'+k){savePins();rebuildViews();setView('archive');renderTagbar();return;}
+  } else {
+    if(PINS.length>=PIN_MAX){toast('Up to '+PIN_MAX+' pinned sleeves — unpin one first.');return;}
+    PINS.push(k);
+  }
+  savePins();rebuildViews();renderPinTabs();renderTagbar();
+}
+// GROUPS is what setGroup/setView iterate, so a pinned sleeve has to become a
+// real view there, not a special case bolted onto the render switch
+function rebuildViews(){
+  GROUPS.papers=BASE_PAPERS.concat(PINS.map(k=>'sl:'+k));
+  Object.keys(GROUP_OF).forEach(k=>delete GROUP_OF[k]);
+  Object.entries(GROUPS).forEach(([g,vs])=>vs.forEach(v=>{GROUP_OF[v]=g;}));
+  ALL_VIEWS.length=0;Object.values(GROUPS).flat().forEach(v=>ALL_VIEWS.push(v));
+}
+function renderPinTabs(){
+  PINS.forEach(k=>{
+    if($('t-sl:'+k))return;
+    const b=document.createElement('button');
+    b.id='t-sl:'+k;b.textContent=SLEEVE_LABEL[k]||k;
+    b.onclick=()=>setView('sl:'+k);
+    $('subtabs').insertBefore(b,$('t-ask'));
+  });
+}
+function renderTagbar(){
+  const on=VIEW.slice(0,3)==='sl:'?VIEW.slice(3):SLEEVE;
+  const mk=(k,lab,pinnable)=>{
+    const cls='tag'+(on===k?' on':'')+(PINS.indexOf(k)>=0?' pinned':'');
+    const pin=pinnable?`<span class="pin" data-pin="${k}" title="${
+      PINS.indexOf(k)>=0?'Unpin':'Pin as a tab'}">${PINS.indexOf(k)>=0?'✕':'+'}</span>`:'';
+    return `<button class="${cls}" data-sleeve="${k}">${esc(lab)}${pin}</button>`;
+  };
+  $('tagbar').innerHTML=mk('all','All',false)+mk('fit','Desk fit 2+',false)+
+    SLEEVES.filter(([k])=>k!=='other').map(([k,lab])=>mk(k,lab,true)).join('');
+}
+// one delegated listener rather than one per tag, since the rail is rebuilt on
+// every click and per-node handlers would leak with it
+$('tagbar').addEventListener('click',e=>{
+  const pin=e.target.closest('[data-pin]');
+  if(pin){togglePin(pin.dataset.pin,e);return;}
+  const t=e.target.closest('[data-sleeve]');
+  if(t)setSleeve(t.dataset.sleeve);
+});
+// the chips on a card are the same filter, reached from the paper that
+// prompted the thought rather than from the rail
+$('view').addEventListener('click',e=>{
+  const c=e.target.closest('.sl[data-sleeve]');
+  if(c)setSleeve(c.dataset.sleeve);
+});
 function grouped(rows){
   const q=$('q').value.toLowerCase().trim();
   const cf=$('cat').value;
@@ -1274,7 +1377,9 @@ function loadArchive(cb){
   $('view').innerHTML='<div class="empty">Loading the full archive…</div>';
   fetch('archive.json').then(r=>r.json()).then(d=>{
     ARCHIVE_DATA=d;
-    d.forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
+    PINS=loadPins();rebuildViews();renderPinTabs();renderTagbar();
+  $('tagbar').hidden=!(SLEEVE_VIEWS.indexOf(VIEW)>=0||VIEW.slice(0,3)==='sl:');
+  d.forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
     archiveLoading=false;
     if(VIEW==='archive')cb();
   }).catch(()=>{
@@ -1284,6 +1389,24 @@ function loadArchive(cb){
 }
 let archivePage=0;
 const ARCHIVE_PAGE_SIZE=100;
+// A pinned sleeve is the archive narrowed to one sleeve -- same records, same
+// sort. It exists as its own tab so it survives a reload and a tab switch,
+// which a transient filter does not.
+function renderSleeve(key){
+  if(!ARCHIVE_DATA){loadArchive(()=>renderSleeve(key));return;}
+  const q=$('q').value.toLowerCase().trim();
+  const rows=sleeveFilter(ARCHIVE_DATA,key).filter(x=>!isPrac(x))
+    .filter(x=>!q||(x.title+' '+x.authors+' '+x.source).toLowerCase().includes(q))
+    .slice().sort(byDate);
+  const shownCount=Math.min(rows.length,(archivePage+1)*ARCHIVE_PAGE_SIZE);
+  const remaining=rows.length-shownCount;
+  const more=remaining>0?`<button class="loadmore" id="slmore">Show ${Math.min(ARCHIVE_PAGE_SIZE,remaining)} more <span class="n">(${remaining} left)</span></button>`:'';
+  const nfit=rows.filter(x=>(x.desk_fit||0)>=2).length;
+  $('view').innerHTML=`<div class="dateline">${esc(SLEEVE_LABEL[key]||key)} <span class="n">· ${rows.length} paper${rows.length===1?'':'s'} · ${nfit} at desk fit 2+ · date-wise</span></div>`+
+    (rows.length?rows.slice(0,shownCount).map(x=>entry(x)).join('')
+      :'<div class="empty">Nothing labelled with this sleeve yet — the backfill is still running.</div>')+more;
+  if(remaining>0)$('slmore').onclick=()=>{archivePage++;renderSleeve(key);};
+}
 function renderArchive(){
   if(!ARCHIVE_DATA){loadArchive(renderArchive);return;}
   const q=$('q').value.toLowerCase().trim();
@@ -1392,7 +1515,8 @@ function renderClassics(){
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
-function render(){VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
+function render(){if(VIEW.slice(0,3)==='sl:'){renderSleeve(VIEW.slice(3));return;}
+  VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 // Eleven flat tabs gave every destination the same weight and scrolled half of
 // them off screen. They group by INTENT: read what's new, question the corpus,
 // consult the standing reference, revisit your own picks. Ask and Saved are
@@ -1439,10 +1563,12 @@ function setView(v){
   $('cat').style.display=v==="recent"?'':'none';
   $('topic').style.display=v==="archive"?'':'none';
   // unlike the other facets this one is not view-specific: sleeves are a
-  // property of the paper, so it applies anywhere papers are listed
-  $('sleeve').style.display=SLEEVE_VIEWS.indexOf(v)>=0?'':'none';
+  // property of the paper, so it applies anywhere papers are listed. On a
+  // pinned tab the sleeve is already decided, so the rail only shows which.
+  $('tagbar').hidden=!(SLEEVE_VIEWS.indexOf(v)>=0||v.slice(0,3)==='sl:');
+  if(!$('tagbar').hidden)renderTagbar();
   $('psrc').style.display=v==="practitioners"?'':'none';
-  if(v==="archive")archivePage=0;
+  if(v==="archive"||v.slice(0,3)==='sl:')archivePage=0;
   render();
 }
 Object.keys(GROUPS).forEach(g=>{$('g-'+g).onclick=()=>setGroup(g);});
@@ -1462,7 +1588,6 @@ $('month').addEventListener('change',render);
 $('nbermonth').addEventListener('change',render);
 $('cat').addEventListener('change',render);
 $('topic').addEventListener('change',()=>{archivePage=0;render();});
-$('sleeve').addEventListener('change',()=>{archivePage=0;render();});
 $('psrc').addEventListener('change',render);
 $('jsel').addEventListener('change',render);
 const root=document.documentElement;
@@ -1491,11 +1616,6 @@ Promise.all([
     .forEach(m=>$('month').add(new Option(new Date(m+"-01").toLocaleString('en',{month:'long',year:'numeric'}),m)));
   $('topic').add(new Option('All topics','all'));
   TOPICS.forEach(t=>$('topic').add(new Option(t,t)));
-  $('sleeve').add(new Option('All sleeves','all'));
-  $('sleeve').add(new Option('— desk fit 2+ —','fit'));
-  // no per-sleeve counts in the labels: the same select filters Recent, For
-  // You and the full archive, so any one count would be wrong on two of them
-  SLEEVES.filter(([k])=>k!=='other').forEach(([k,lab])=>$('sleeve').add(new Option(lab,k)));
   $('psrc').add(new Option('All sources','all'));
   [...new Set(d.filter(isPrac).map(_psource))].sort()
     .forEach(s=>$('psrc').add(new Option(s,s)));
