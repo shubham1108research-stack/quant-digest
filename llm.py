@@ -698,6 +698,17 @@ def rank(items: list[dict], log, max_batches: int | None = None,
         # Without this the whole pass lives in memory until rank() returns, and
         # a run killed at its timeout loses every score it paid for -- which is
         # exactly what happened to a five-hour backfill of 10,855 papers.
+        # A five-hour pass that prints nothing until it finishes is
+        # indistinguishable from a wedged one, and the last full-archive run
+        # was silent for five hours before being killed. Say where it is.
+        done = min(start + b, len(items))
+        if batches == 1 or done % (b * 5) < b or done >= len(items):
+            el = time.monotonic() - t0
+            rate = done / el if el > 0 else 0
+            eta = (len(items) - done) / rate if rate > 0 else 0
+            log(f"[llm] {done}/{len(items)} scored "
+                f"({ranked} ranked) - {el/60:.0f}min elapsed, "
+                f"~{eta/60:.0f}min left")
         if on_batch is not None:
             try:
                 on_batch([it for i, it in enumerate(batch) if i in scores])

@@ -25,7 +25,10 @@ concurrency:
 jobs:
   rescore:
     runs-on: ubuntu-latest
-    timeout-minutes: 330
+    # 355 of the 360 GitHub allows. The previous full-archive run was killed
+    # at 330 within minutes of finishing; work now checkpoints per batch, so
+    # this is headroom rather than the thing keeping the run alive.
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
