@@ -537,7 +537,10 @@ function _pdfUrl(x){
   if(m)return 'https://arxiv.org/pdf/'+m[1];
   m=id.match(/^arxiv:(.+?)(?:v\\d+)?$/i);
   if(m)return 'https://arxiv.org/pdf/'+m[1];
-  return null;
+  // Last: a url a resolver actually found and we actually fetched. Nothing
+  // is derivable here -- it is known only because a full-text run went
+  // looking, so it covers the papers the patterns above cannot reach.
+  return FT_PDF[id]||null;
 }
 // We parsed this paper's PDF into passages, so Ask can quote it by section
 // rather than paraphrase an abstract. That is worth knowing BEFORE you ask.
@@ -975,7 +978,7 @@ function readCount(){return Object.keys(READ).length;}
 // ---- full text ---------------------------------------------------------
 // Papers parsed by GROBID have their passages in docs/ft/<uid>.json. The
 // manifest says which, so the client never probes for files that don't exist.
-let FT_SET=null,ftLoading=false;
+let FT_SET=null,FT_PDF={},ftLoading=false;
 const FT_CACHE={};
 const FT_PAPERS=8;                    // papers to open at passage depth
 const FT_PASSAGES=10;                 // passages carried into the answer
@@ -983,7 +986,7 @@ function loadFtIndex(){
   if(FT_SET||ftLoading)return Promise.resolve();
   ftLoading=true;
   return fetch('ft/index.json').then(r=>r.json())
-    .then(j=>{FT_SET=new Set(j.uids||[]);ftLoading=false;})
+    .then(j=>{FT_SET=new Set(j.uids||[]);FT_PDF=j.pdfs||{};ftLoading=false;})
     .catch(()=>{FT_SET=new Set();ftLoading=false;});
 }
 async function loadPassages(picks){

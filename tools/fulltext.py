@@ -228,8 +228,16 @@ def main():
                             " VALUES (?,?,?,?)", (uid, "no_body", 0, 0))
                 continue
             words = sum(len(t.split()) for _, t in passages)
+            # The resolved PDF url is recorded HERE, in the passage file, not
+            # only in the pdfs table. That table lives in state.db, which this
+            # workflow deliberately no longer commits -- so the url a resolver
+            # worked to find (Unpaywall, Crossref, a publisher's own OA copy)
+            # was being thrown away at the end of every run. The passage file
+            # is committed, and it is the natural place for it: anything that
+            # has passages provably had a reachable PDF.
             (OUT / f"{_safe(uid)}.json").write_text(json.dumps(
                 {"uid": uid, "title": title, "n": len(passages),
+                 "pdf": pdf_url,
                  "p": [{"s": s, "t": t} for s, t in passages]}), encoding="utf-8")
             con.execute("INSERT OR REPLACE INTO fulltext (uid,status,passages,words)"
                         " VALUES (?,?,?,?)", (uid, "ok", len(passages), words))
@@ -247,10 +255,22 @@ def main():
 
     # manifest: the portal needs to know which papers have full text BEFORE
     # deciding what to fetch, and probing 8k urls to find out is not an option
-    have = [r[0] for r in con.execute(
-        "SELECT uid FROM fulltext WHERE status='ok' ORDER BY uid")]
+    # Rebuilt from the FILES rather than the fulltext table, for the same
+    # reason the skip list is: the files are what gets committed, so a run whose
+    # state.db is discarded still leaves a manifest that matches what shipped.
+    have, pdfs = [], {}
+    for f in sorted(OUT.glob("*.json")):
+        if f.stem == "index":
+            continue
+        try:
+            j = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:                       # noqa: BLE001
+            continue
+        have.append(j.get("uid") or f.stem)
+        if j.get("pdf"):
+            pdfs[j.get("uid") or f.stem] = j["pdf"]
     (OUT / "index.json").write_text(
-        json.dumps({"n": len(have), "uids": have}), encoding="utf-8")
+        json.dumps({"n": len(have), "uids": have, "pdfs": pdfs}), encoding="utf-8")
     log(f"[ft] manifest: {len(have)} papers with full text")
 
     total = con.execute("SELECT count(*), sum(passages), sum(words) "
