@@ -30,6 +30,11 @@ pdfs/
 docs/vec.bin
 docs/vec.json
 docs/abs/
+# same story: the paper graph and the map are derived from the vector cache
+# (tools/graph.py, tools/map.py) and are rebuilt on deploy -- 4.4 MB of new
+# blobs per run otherwise
+docs/edges.bin
+docs/map.json
 
 # Blind bake-off report -- embeds paper text and the repo is public; it is a
 # workflow artifact, not a commit.

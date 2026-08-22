@@ -94,7 +94,9 @@ def _nber_program(program: str, start: str, end: str, log) -> list[dict]:
     for page in range(1, config.NBER_MAX_PAGES + 1):
         params = {"page": page, "perPage": config.NBER_PER_PAGE,
                   "sortBy": "public_date", "startDate": start, "endDate": end,
-                  "facet": f"programs:{program}"}
+                  # verbatim: config.NBER_FACETS already carries the
+                  # "programs:"/"topics:" prefix, so both taxonomies work
+                  "facet": program if ":" in program else f"programs:{program}"}
         r = requests.get(config.NBER_API, params=params, headers=UA, timeout=45)
         r.raise_for_status()
         results = (r.json() or {}).get("results") or []
@@ -115,10 +117,18 @@ def nber(log=print, start: str | None = None, end: str | None = None) -> list[di
     start = start or _cutoff().date().isoformat()
     end = end or dt.date.today().isoformat()
     by_uid = {}
-    for program in config.NBER_PROGRAMS:
+    for program in config.NBER_FACETS:
         try:
             for it in _nber_program(program, start, end, log):
-                by_uid[it["nber_wp"] or it["url"]] = it   # dedup across programs
+                k = it["nber_wp"] or it["url"]
+                # keep WHICH facet matched -- it was dropped entirely, even
+                # though the query already knew it, and it is free metadata
+                # that the sleeve classifier can be measured against
+                if k in by_uid:
+                    by_uid[k].setdefault("nber_facets", []).append(program)
+                else:
+                    it["nber_facets"] = [program]
+                    by_uid[k] = it
         except Exception as e:                             # noqa: BLE001
             log(f"[nber] program '{program}' failed: {type(e).__name__}")
         time.sleep(0.3)

@@ -31,13 +31,18 @@ const GROQ_MODEL = "llama-3.3-70b-versatile";
 // Paid tier, used only if ANTHROPIC_API_KEY is set. Switch to "claude-sonnet-5"
 // for ~2.5x lower cost per question at close to the same synthesis quality.
 const CLAUDE_MODEL = "claude-opus-4-8";
-const MAX_CTX = 48;   // papers cited in the answer (a few read in full, the
+// Must stay at or above what the browser can send: passages (FT_PASSAGES=16)
+// + picks (ASK_DEEP or 6, plus up to ASK_SCAN-ASK_DEEP screened) + outside
+// (OUTSIDE_CTX=8). At 48 the browser routinely sent more than this and the
+// slice dropped the tail -- which is exactly where the outside hits sit, so
+// the model never saw them while the UI listed them as sources.
+const MAX_CTX = 120;  // papers cited in the answer (a few read in full, the
                       // rest contributing a scanned finding)
 const MAX_SCAN = 16;  // papers screened per scan call; the browser fans out
 const MAX_Q = 500;                          // question length guard
 const HISTORY_TURNS = 6;    // prior exchanges replayed into a follow-up
 const HISTORY_CHARS = 1400; // per replayed answer -- enough to hold the argument
-const OUTSIDE_N = 8;        // external candidates returned per search
+const OUTSIDE_N = 14;       // external candidates returned PER SOURCE
 
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), {

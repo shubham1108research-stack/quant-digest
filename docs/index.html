@@ -783,6 +783,48 @@ function renderAnchors(){
 // holding the API key) only embeds the question and writes the final synthesis.
 let VEC=null,VEC_UIDS=null,VEC_DIM=0,VEC_SHARD=64,ITEM_BY_UID={},indexLoading=false;
 let indexWarning='';
+// The paper graph (docs/edges.bin, built by tools/graph.py). Packed triples of
+// <srcRow uint32, dstRow uint32, kind uint8, weight float32> against
+// vec.json's uid order, so traversal needs no lookup table and stays in the
+// browser like the rest of retrieval.
+let EDGES=null, edgesLoading=false;
+const EDGE_SIM=0, EDGE_CITE=1;
+function loadEdges(){
+  if(EDGES||edgesLoading)return Promise.resolve();
+  edgesLoading=true;
+  return fetch('edges.bin').then(r=>r.arrayBuffer()).then(buf=>{
+    const dv=new DataView(buf), stride=13, n=Math.floor(buf.byteLength/stride);
+    const adj=new Map();
+    for(let i=0;i<n;i++){
+      const o=i*stride;
+      const a=dv.getUint32(o,true), b=dv.getUint32(o+4,true);
+      const k=dv.getUint8(o+8), w=dv.getFloat32(o+9,true);
+      if(!adj.has(a))adj.set(a,[]);
+      if(!adj.has(b))adj.set(b,[]);
+      adj.get(a).push([b,k,w]);
+      adj.get(b).push([a,k,w]);          // both edge kinds are traversed either way
+    }
+    EDGES=adj;edgesLoading=false;
+  }).catch(()=>{EDGES=new Map();edgesLoading=false;});
+}
+// One hop out from the papers similarity already chose. This is the whole
+// point of the graph: a paper that never uses the question's vocabulary but
+// sits next to three papers that do is exactly what a cosine ranking misses.
+// Citation neighbours count for more than similarity ones -- a reference is a
+// stated relationship, not an inferred one.
+function expandGraph(seedRows, limit){
+  if(!EDGES||!EDGES.size)return [];
+  const seed=new Set(seedRows), mass=new Map();
+  seedRows.forEach((r,i)=>{
+    const decay=1/(1+i*0.15);            // earlier picks pull harder
+    for(const [nb,kind,w] of (EDGES.get(r)||[])){
+      if(seed.has(nb))continue;
+      const add=(kind===EDGE_CITE?1.0:Math.max(0,w))*decay;
+      mass.set(nb,(mass.get(nb)||0)+add);
+    }
+  });
+  return [...mass.entries()].sort((a,b)=>b[1]-a[1]).slice(0,limit);
+}
 // Ask is a CONVERSATION, not a series of one-shot queries. Turns are kept in
 // order and replayed to the model, so "why?" or "what about costs?" resolve
 // against what was actually said instead of starting cold every time.
@@ -790,8 +832,9 @@ const CHATS_KEY='qd_chats_v1', QUEUE_KEY='qd_queued_v1';
 const CHAT_MAX=20;         // conversations kept in this browser
 const CHAT_TURNS=12;       // turns persisted per conversation
 const HIST_SEND=6;         // turns replayed to the model
-const OUTSIDE_SHOW=8;      // outside hits listed under an answer
-const OUTSIDE_CTX=4;       // outside hits the agent is allowed to see
+const CTX_MAX=120;         // must match MAX_CTX in functions/api/ask.js
+const OUTSIDE_SHOW=14;     // outside hits listed under an answer
+const OUTSIDE_CTX=8;       // outside hits the agent is allowed to see
 let CHATS=[],CHAT_ID=null,asking=false,ASK_OUTSIDE=true,QUEUED={};
 // guards every browser-state writer: persisting before the load has run
 // would overwrite the stored copy with an empty one
@@ -845,9 +888,16 @@ function knownUids(){
 // that similarity with the paper's OWN pipeline scores (strength, reputation)
 // and a keyword hit-rate against the question, then keep the finalists. No
 // extra LLM call to rank -- the model is spent only on the final synthesis.
-const ASK_RECALL=200;                 // candidates pulled by embedding similarity
-const ASK_SCAN=48;                    // papers actually examined for content
-const ASK_DEEP=12;                    // papers read in full (top of the ranking)
+// Widths. Only ASK_SCAN costs money -- it fans out to /api/ask in batches of
+// SCAN_BATCH, so 96/16 = 6 calls a question against the old 3. Recall and the
+// BM25 passage ranking are integer arithmetic in the browser and are free, so
+// they are widened much further than the paid stage.
+const GRAPH_SEED=25;                  // strongest candidates whose neighbours we follow
+const GRAPH_EXPAND=60;                // neighbours pulled in at most
+const GRAPH_W=0.12;                   // how much graph mass can lift a paper's rank
+const ASK_RECALL=500;                 // candidates pulled by embedding similarity
+const ASK_SCAN=96;                    // papers actually examined for content
+const ASK_DEEP=18;                    // papers read in full (top of the ranking)
 const SCAN_BATCH=16;                  // papers per screening call; fanned out in parallel
 // weights: relevance to the QUESTION dominates; the archive's own quality score
 // breaks ties so a strong paper outranks a mediocre one on equal topical fit
@@ -897,8 +947,9 @@ function loadIndex(cb){
   Promise.all([
     fetch('vec.json').then(r=>r.json()),
     fetch('vec.bin').then(r=>r.arrayBuffer()),
+    loadEdges(),
     ARCHIVE_DATA?Promise.resolve(ARCHIVE_DATA):fetch('archive.json').then(r=>r.json()),
-  ]).then(([meta,buf,arch])=>{
+  ]).then(([meta,buf,_e,arch])=>{
     VEC_UIDS=meta.uids;VEC=new Int8Array(buf);VEC_DIM=meta.dim||0;VEC_SHARD=meta.shard||64;
     // vec.json is the MANIFEST for vec.bin -- row i of the buffer is uids[i].
     // If the two disagree, retrieve() reads past the end of an Int8Array,
@@ -982,8 +1033,8 @@ function readCount(){return Object.keys(READ).length;}
 // manifest says which, so the client never probes for files that don't exist.
 let FT_SET=null,FT_PDF={},ftLoading=false;
 const FT_CACHE={};
-const FT_PAPERS=8;                    // papers to open at passage depth
-const FT_PASSAGES=10;                 // passages carried into the answer
+const FT_PAPERS=14;                   // papers to open at passage depth
+const FT_PASSAGES=16;                 // passages carried into the answer
 function loadFtIndex(){
   if(FT_SET||ftLoading)return Promise.resolve();
   ftLoading=true;
@@ -1128,6 +1179,25 @@ async function doAsk(q,force){
     const terms=qTerms(q);
     cands.forEach(c=>{c._rank=askRank(c,terms);});
     cands.sort((a,b)=>b._rank-a._rank);
+    // Graph hop: bring in neighbours of the strongest candidates that
+    // similarity alone did not surface, then let them compete in the same
+    // ranking rather than being appended blindly.
+    let viaGraph=0;
+    if(EDGES&&EDGES.size){
+      const seedRows=cands.slice(0,GRAPH_SEED).map(c=>c._row);
+      const extraRows=expandGraph(seedRows,GRAPH_EXPAND);
+      const known=new Set(cands.map(c=>c._row));
+      for(const [row,m] of extraRows){
+        if(known.has(row))continue;
+        const uid=VEC_UIDS[row], it=ITEM_BY_UID[uid];
+        if(!it)continue;
+        const c=Object.assign({},it,{_row:row,_sim:0,_viaGraph:true});
+        c._rank=askRank(c,terms)+Math.min(0.25,m*GRAPH_W);
+        cands.push(c);viaGraph++;
+      }
+      if(viaGraph)cands.sort((a,b)=>b._rank-a._rank);
+    }
+    turn.viaGraph=viaGraph;
     const scanSet=cands.slice(0,ASK_SCAN);
     turn.scanned=cands.length;turn.state='reading';
     renderAsk();
@@ -1217,12 +1287,18 @@ async function doAsk(q,force){
       }catch(e){ outside=[]; }
     }
     turn.outside=outside;
-    const ctxAll=ctx.concat(outside.slice(0,OUTSIDE_CTX).map(h=>({
+    // Truncate HERE, keeping the outside hits: they are appended last, so a
+    // server-side slice would drop them first and the whole point of looking
+    // outside is lost silently. The displayed source list is cut to the same
+    // length below, so [n] in the answer and [n] on screen stay in lockstep.
+    const _out=outside.slice(0,OUTSIDE_CTX);
+    const ctxAll=ctx.slice(0,Math.max(0,CTX_MAX-_out.length)).concat(_out.map(h=>({
       title:h.title,authors:h.authors,date:h.year?String(h.year):'',
       source:h.venue||h.via,summary:h.abstract||'',depth:'abstract',external:true})));
     // the source list must mirror ctx order exactly or [n] resolves to the
     // wrong paper -- the outside hits are appended in both, in the same order
-    turn.sources=(turn.sources||[]).concat(outside.slice(0,OUTSIDE_CTX).map(h=>({
+    turn.sources=(turn.sources||[]).slice(0,Math.max(0,CTX_MAX-_out.length))
+      .concat(_out.map(h=>({
       title:h.title,url:h.url,authors:h.authors,date:h.year?String(h.year):'',
       source:h.venue||'',uid:h.uid,_external:true})));
     turn.state='thinking';renderAsk();
@@ -1325,7 +1401,7 @@ function renderAsk(notice){
     else if(t.state==='scanning')body='<div class="thinking">Screening '+(t.scanning||0)+' further papers for relevant content…</div>';
     else if(t.state==='passages')body='<div class="thinking">Reading full text · ranking '+(t.npsg||0)+' passages…</div>';
     else if(t.state==='outside')body='<div class="thinking">Searching the outside literature (OpenAlex, arXiv)…</div>';
-    else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' sources'+((t.passages||[]).length?' ('+t.passages.length+' full-text passages)':'')+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' · '+t.reused+' from memory':'')+'…</div>';
+    else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' sources'+(t.viaGraph?' ('+t.viaGraph+' via the citation/similarity graph)':'')+((t.passages||[]).length?' ('+t.passages.length+' full-text passages)':'')+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' · '+t.reused+' from memory':'')+'…</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
     else body='<div class="answer">'+md(t.answer,ti)+'</div>';   // math typeset after insert
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>

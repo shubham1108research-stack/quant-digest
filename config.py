@@ -27,9 +27,26 @@ NBER_API = ("https://www.nber.org/api/v1/working_page_listing/contentType/"
             "working_paper/_/_/search")
 NBER_PER_PAGE = 100
 NBER_MAX_PAGES = 6                    # safety cap per program (~600 papers)
-NBER_PROGRAMS = [                     # NBER program facet names -> finance
-    "Asset Pricing",                  # (Asset Pricing only for now, per request)
+# NBER facets to collect. "programs:X" is NBER's organisational grouping;
+# "topics:Y" is its subject taxonomy (https://www.nber.org/research/topics),
+# which is finer and maps far better onto a systematic-macro desk. Both are
+# valid values of the API's `facet` parameter.
+#
+# This was ["Asset Pricing"] alone -- set when the work was equity factors.
+# For a macro desk that omitted Monetary Policy (168 papers in 2024),
+# International Finance (61) and Money and Interest Rates (60): more relevant
+# volume than Asset Pricing's 130, and none of it was ever collected.
+NBER_FACETS = [
+    "programs:Asset Pricing",
+    "topics:Monetary Policy",
+    "topics:Money and Interest Rates",
+    "topics:International Finance",
+    "topics:International Macroeconomics",
+    "topics:Business Cycles",
+    "topics:Financial Markets",
+    "topics:Portfolio Selection and Asset Pricing",
 ]
+NBER_PROGRAMS = NBER_FACETS           # back-compat for anything still reading it
 # fallback keyword gate, used ONLY if the program query fails for some reason
 NBER_FINANCE_TERMS = [
     "asset pric", "stock return", "equity", "portfolio", "factor",
@@ -597,7 +614,11 @@ RELEVANCE_CONFIDENCE = 0.75          # Recent's gate: relevance posterior >= thi
 # spent on the backfill per run (after the present digest) -- a month too big
 # for the budget resumes next run from state.db (month_progress). During
 # catch-up run the workflow daily (LLM free-tier limits reset daily).
-BACKFILL_FLOOR = "2010-01"          # earliest month to backfill (inclusive)
+# Dropped from 2010-01. NBER working papers are the freely available version
+# of what later appears paywalled in JF/JFE/AER, and that is most true of the
+# OLDER ones -- which are the classics the archive has full text for in only
+# 44 of 309 cases.
+BACKFILL_FLOOR = "1995-01"          # earliest month to backfill (inclusive)
 BACKFILL_LLM_BATCHES = 8            # LLM scoring batches/run for the backfill
 S2_BATCH_SIZE = 500                 # Semantic Scholar /paper/batch hard cap
 
