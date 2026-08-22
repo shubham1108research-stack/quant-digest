@@ -2,15 +2,16 @@ name: Research Digest
 
 on:
   schedule:
-    # Runs EVERY 3 DAYS to stay well within the free CI budget. Cadence is
-    # enforced in code, not by the cron: main.py skips any run that starts
-    # within config.DIGEST_MIN_INTERVAL_HOURS (~3 days) of the last one, so it
-    # doesn't matter that the external cron (cron-job.org) or these backups fire
-    # more often -- only the first firing after the 3-day window does real work.
-    # The rest exit in a few seconds. Trigger a run NOW anytime via
+    # Runs DAILY. Cadence is enforced in code, not by the cron: main.py skips
+    # any run starting within DIGEST_MIN_INTERVAL_HOURS (20h) of the last one,
+    # so it does not matter that the external cron (cron-job.org) or these two
+    # backups fire more often -- only the first firing past the window does
+    # real work and the rest exit in seconds. Two firings a day because a
+    # scheduled run GitHub drops (they are best-effort under load) would
+    # otherwise skip that day entirely. Trigger a run NOW anytime via
     # workflow_dispatch with force=true.
-    - cron: "30 4 */3 * *"   # 04:30 UTC every 3rd day-of-month -- backup 1
-    - cron: "30 9 */3 * *"   # 09:30 UTC every 3rd day-of-month -- backup 2
+    - cron: "30 4 * * *"     # 04:30 UTC daily -- primary
+    - cron: "30 9 * * *"     # 09:30 UTC daily -- backup if the first is dropped
   workflow_dispatch:
     inputs:
       force:

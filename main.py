@@ -24,7 +24,8 @@ NOTES: list[str] = []
 # that starts within this many hours of the last completed run is skipped in a
 # few seconds -- so it doesn't matter how often the cron(s) fire. A manual
 # force run (FORCE_RUN=true) or a local run always executes.
-DIGEST_MIN_INTERVAL_HOURS = 68        # ~2.8 days -- a touch under 3 for jitter
+DIGEST_MIN_INTERVAL_HOURS = 20        # daily -- a touch under 24 so cron jitter
+                                      # never pushes a run into the next day
 
 # Strip credentials/PII that an exception message (e.g. a request URL) might
 # carry before it reaches the run notes -> the archived, possibly-shared report.

@@ -1,6 +1,6 @@
 """Central configuration for the quant research digest."""
 
-LOOKBACK_DAYS = 30       # every-3-days cron with a 1-month window; cross-run
+LOOKBACK_DAYS = 30       # daily cron with a 1-month window; cross-run
                          # dedup drops the heavy overlap so emails stay net-new.
 
 # Abstract enrichment (sources.enrich_abstracts): after the reliable OpenAlex
