@@ -412,7 +412,12 @@ async function arxivSearch(q) {
   for (const m of xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)) {
     const e = m[1];
     const pick = (t) => {
-      const mm = e.match(new RegExp("<" + t + "[^>]*>([\s\S]*?)</" + t + ">"));
+      // Doubled deliberately: this regex is built from a STRING, where "\s"
+      // is not an escape and collapses to a bare "s". The class became [sS]
+      // -- a run of two letters -- so every field came back empty, every
+      // entry was skipped, and arXiv silently returned nothing. allSettled
+      // then reported success with zero hits.
+      const mm = e.match(new RegExp("<" + t + "[^>]*>([\\s\\S]*?)</" + t + ">"));
       return mm ? mm[1].replace(/\s+/g, " ").trim() : "";
     };
     const id = pick("id").match(/abs\/([^\s?#]+)$/);

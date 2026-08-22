@@ -120,7 +120,17 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   .navtools{gap:6px;}
   .navtools select,.searchwrap input{max-width:100%;}
   h1,.brand{font-size:22px;}
-  /* --- Ask: conversations, and the outside literature --- */
+.askbox{flex-direction:column;align-items:stretch;}
+  .askbox button{width:100%;padding:11px;}
+  .src{grid-template-columns:22px 1fr;}
+}
+
+/* ---- Ask tab ---- */
+/* These lived INSIDE @media (max-width:640px), so every one of them --
+   the conversation pills, + New conversation, the outside-result cards,
+   + Add, the not-in-archive tag -- was unstyled on desktop, which is
+   where this is actually read. Only the genuinely responsive rules stay
+   behind the breakpoint. */
 .chatbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0 4px;}
 .newchat{font-family:var(--sans);font-size:11.5px;font-weight:700;letter-spacing:.02em;
   color:var(--accent);background:transparent;border:1px dashed var(--accent);
@@ -159,12 +169,7 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
 .xtag{font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:.05em;
   text-transform:uppercase;margin-right:7px;padding:1px 5px;border-radius:4px;
   color:var(--cite);background:color-mix(in srgb,var(--cite) 14%,transparent);}
-.askbox{flex-direction:column;align-items:stretch;}
-  .askbox button{width:100%;padding:11px;}
-  .src{grid-template-columns:22px 1fr;}
-}
 
-/* ---- Ask tab ---- */
 .askbox{display:flex;gap:10px;align-items:flex-end;margin:14px 0 6px;padding:12px;
   background:var(--panel);border:1px solid var(--line);border-radius:14px;}
 .askbox textarea{flex:1;resize:vertical;min-height:46px;font-family:var(--serif);font-size:16px;
@@ -277,13 +282,16 @@ a.cite{font-family:var(--sans);font-size:11px;font-weight:600;vertical-align:sup
 .bar{height:2px;background:var(--line);margin:8px 0 0;border-radius:2px;overflow:hidden;}
 .bar i{display:block;height:100%;background:var(--cite);opacity:.55;}
 .rail .yr{font-family:var(--serif);font-size:16px;font-weight:600;line-height:1;color:var(--muted);font-variant-numeric:tabular-nums;}
-.tag{font-family:var(--sans);font-size:9px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;
+/* renamed from .tag: it collided with the sleeve rail's .tag at equal
+   specificity and, being later, restyled every sleeve chip to a 9px
+   uppercase canon badge with a currentColor border */
+.ctag{font-family:var(--sans);font-size:9px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;
   padding:2px 7px;border-radius:20px;white-space:nowrap;border:1px solid;flex:none;}
-.tag.theory{color:var(--accent);border-color:var(--accent);}
-.tag.method{color:var(--medium);border-color:var(--medium);}
-.tag.empirical{color:var(--strong);border-color:var(--strong);}
-.tag.frontier{color:var(--panel);background:var(--accent);border-color:var(--accent);}
-.tag.modern{color:var(--panel);background:var(--medium);border-color:var(--medium);}
+.ctag.theory{color:var(--accent);border-color:var(--accent);}
+.ctag.method{color:var(--medium);border-color:var(--medium);}
+.ctag.empirical{color:var(--strong);border-color:var(--strong);}
+.ctag.frontier{color:var(--panel);background:var(--accent);border-color:var(--accent);}
+.ctag.modern{color:var(--panel);background:var(--medium);border-color:var(--medium);}
 .subs{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;}
 .sub{font-family:var(--sans);display:flex;flex-direction:column;gap:3px;min-width:54px;}
 .sub i{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-style:normal;}
@@ -563,7 +571,7 @@ function loadPins(){
   try{return JSON.parse(localStorage.getItem(PINS_KEY)||'[]').filter(k=>SLEEVE_LABEL[k]);}
   catch(e){return[];}
 }
-function savePins(){try{localStorage.setItem(PINS_KEY,JSON.stringify(PINS));}catch(e){}}
+function savePins(){if(!STATE_LOADED)return;try{localStorage.setItem(PINS_KEY,JSON.stringify(PINS));}catch(e){}}
 function setSleeve(k){
   SLEEVE=(SLEEVE===k)?'all':k;
   // choosing a sleeve from a pinned tab's view would be two filters fighting;
@@ -785,6 +793,9 @@ const HIST_SEND=6;         // turns replayed to the model
 const OUTSIDE_SHOW=8;      // outside hits listed under an answer
 const OUTSIDE_CTX=4;       // outside hits the agent is allowed to see
 let CHATS=[],CHAT_ID=null,asking=false,ASK_OUTSIDE=true,QUEUED={};
+// guards every browser-state writer: persisting before the load has run
+// would overwrite the stored copy with an empty one
+let STATE_LOADED=false;
 const curChat=()=>CHATS.find(c=>c.id===CHAT_ID)||CHATS[0];
 const curTurns=()=>{const c=curChat();return c?(c.turns=c.turns||[]):[];};
 function newChat(quiet){
@@ -803,6 +814,7 @@ function loadChats(){
   try{QUEUED=JSON.parse(localStorage.getItem(QUEUE_KEY)||'{}')||{};}catch(e){QUEUED={};}
 }
 function saveChats(){
+  if(!STATE_LOADED)return;
   // Only what is needed to REDRAW and to REPLAY. A turn's passages and full
   // source records are re-derivable and are by far the biggest part of it,
   // and localStorage is a ~5MB budget already shared with Saved and the
@@ -819,7 +831,7 @@ function saveChats(){
     }))));
   }catch(e){}
 }
-function persistQueued(){try{localStorage.setItem(QUEUE_KEY,JSON.stringify(QUEUED));}catch(e){}}
+function persistQueued(){if(!STATE_LOADED)return;try{localStorage.setItem(QUEUE_KEY,JSON.stringify(QUEUED));}catch(e){}}
 // Everything the archive already holds, so an outside hit that is simply a
 // paper we own is never offered as a discovery.
 function knownUids(){
@@ -862,7 +874,13 @@ function askQuality(x){
   return Math.max(0,Math.min(1.2,q*(x.reputation||1)));
 }
 function askRank(x,terms){
-  const sim=Math.max(0,Math.min(1,(x._sim||0)/(127*127)));
+  // /127, not /127^2. tools/embed.py stores unit vectors scaled by 127, but
+  // the QUERY vector arrives as raw floats from the embed call -- so the dot
+  // product peaks near 127, not 16129. Dividing by the square capped sim at
+  // ~0.008 against keyword's 0.30, which meant this re-rank was keyword
+  // overlap plus the archive's own quality score, with the embedding
+  // deciding only which 200 candidates got here and then being ignored.
+  const sim=Math.max(0,Math.min(1,(x._sim||0)/127));
   const kw=0.6*kwHit(terms,x.title)+0.4*kwHit(terms,x.summary);
   return W_SIM*sim+W_KW*kw+W_QUALITY*askQuality(x);
 }
@@ -939,7 +957,7 @@ function retrieve(qv,k){
 // stay well inside the ~5 MB quota.
 let READ={},ANS={};
 try{READ=JSON.parse(localStorage.getItem('qd_read_v1')||'{}');}catch(e){READ={};}
-try{ANS=JSON.parse(localStorage.getItem('qd_ans_v1')||'{}');}catch(e){ANS={};}
+try{ANS=JSON.parse(localStorage.getItem('qd_ans_v2')||'{}');}catch(e){ANS={};}
 const READ_MAX=1200,ANS_MAX=60;
 function _evict(o,max){
   const ks=Object.keys(o);
@@ -950,7 +968,7 @@ function _evict(o,max){
   return o;
 }
 function persistRead(){try{localStorage.setItem('qd_read_v1',JSON.stringify(_evict(READ,READ_MAX)));}catch(e){}}
-function persistAns(){try{localStorage.setItem('qd_ans_v1',JSON.stringify(_evict(ANS,ANS_MAX)));}catch(e){}}
+function persistAns(){try{localStorage.setItem('qd_ans_v2',JSON.stringify(_evict(ANS,ANS_MAX)));}catch(e){}}
 // order-insensitive key: "trend decay evidence" == "evidence of trend decay"
 function qKey(q){
   return qTerms(q).slice().sort().join(' ');
@@ -1087,7 +1105,7 @@ async function doAsk(q,force){
   if(hit){
     hit.t=Date.now();persistAns();
     turns.push({q:q,state:'done',answer:hit.answer,cached:true,ts:Date.now(),
-      sources:(hit.uids||[]).map(u=>ITEM_BY_UID[u]).filter(Boolean)});
+      sources:hit.sources||[],outside:hit.outside||[]});
     titleChat();saveChats();renderAsk();return;
   }
   asking=true;
@@ -1218,7 +1236,17 @@ async function doAsk(q,force){
     turn.answer=aj.answer;turn.state='done';
     // cache the FIRST turn only, for the same reason it is only read there
     if(!turns.slice(0,-1).length){
-      ANS[key]={answer:aj.answer,uids:picks.map(p=>p.uid),t:Date.now()};
+      // Cache the SOURCE LIST, not uids. The answer's [n] are numbered over
+      // ctxAll = passages -> picks -> outside, but this used to store picks
+      // alone, so a replayed answer renumbered against a list missing the
+      // leading passages: every citation pointed at the wrong paper, shifted
+      // by up to FT_PASSAGES. The depth and external flags were lost too, so
+      // specification-level quotes appeared attributed to abstracts.
+      ANS[key]={answer:aj.answer,t:Date.now(),
+        sources:(turn.sources||[]).map(x=>({title:x.title,url:x.url,authors:x.authors,
+          date:x.date,seen:x.seen,source:x.source,score:x.score,uid:x.uid,
+          _depth:x._depth,_sec:x._sec,_external:x._external})),
+        outside:(turn.outside||[]).slice(0,OUTSIDE_SHOW)};
       persistAns();
     }
     saveChats();
@@ -1498,10 +1526,7 @@ function loadArchive(cb){
   $('view').innerHTML='<div class="empty">Loading the full archive…</div>';
   fetch('archive.json').then(r=>r.json()).then(d=>{
     ARCHIVE_DATA=d;
-    PINS=loadPins();rebuildViews();renderPinTabs();renderTagbar();
-  loadChats();
-  $('tagbar').hidden=!(SLEEVE_VIEWS.indexOf(VIEW)>=0||VIEW.slice(0,3)==='sl:');
-  d.forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
+    d.forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
     archiveLoading=false;
     if(VIEW==='archive')cb();
   }).catch(()=>{
@@ -1601,7 +1626,7 @@ function renderModern(g){
     (rows.length?rows.map(canonEntry).join(''):'<div class="empty">Nothing flagged yet — high-innovation papers land here as runs proceed.</div>');
 }
 function canonEntry(x){
-  const tag=x.type?`<span class="tag ${esc(String(x.type).toLowerCase())}">${esc(x.type)}</span>`:'';
+  const tag=x.type?`<span class="ctag ${esc(String(x.type).toLowerCase())}">${esc(x.type)}</span>`:'';
   const cites=x.cites!=null?` · ${fmtK(x.cites)} cites`:'';
   const why=x.why||x.summary||'';
   return `<div class="entry"><div class="rail"><div class="yr">${esc(x.year||'')}</div></div>
@@ -1765,7 +1790,16 @@ Promise.all([
   Object.values(g.journals||{}).forEach(arr=>(arr||[]).forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;}));
   Object.values(g.topics||{}).forEach(arr=>(arr||[]).forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;}));
   (g.modern||[]).forEach(x=>{if(x.url)ITEM_BY_URL[x.url]=x;});
-  render();
+  // Browser-held state must load BEFORE anything can save it. This ran inside
+  // loadArchive(), which Ask never calls -- so opening Ask first left CHATS
+  // empty, and the first saveChats() overwrote every stored conversation with
+  // the new one. Same for PINS and the ingest queue.
+  PINS=loadPins();rebuildViews();renderPinTabs();
+  loadChats();
+  STATE_LOADED=true;
+  // setView, not render: render() alone never clears the tag rail's `hidden`
+  // attribute, so the sleeve tags stayed invisible until you switched tabs.
+  setView(VIEW);
 });
 </script>
 </body>
