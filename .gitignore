@@ -21,7 +21,14 @@ pdfs/
 # Generated search index -- rebuilt from the state.db vector cache on every
 # deploy (tools/embed.py), so committing it would add ~18 MB of new git blobs
 # per run for zero benefit.
+#
+# vec.json belongs here too, and its absence was a real bug: it is the MANIFEST
+# for vec.bin (row i of the .bin is uids[i]). Tracking one and ignoring the
+# other let a stale manifest claiming 11,507 papers ship against a 8,390-row
+# payload, and retrieve() read past the end of the buffer -- scoring NaN and
+# scrambling the ranking, with no error anywhere.
 docs/vec.bin
+docs/vec.json
 docs/abs/
 
 # Blind bake-off report -- embeds paper text and the repo is public; it is a

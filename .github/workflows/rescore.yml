@@ -43,6 +43,17 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python tools/rescore.py --limit ${{ github.event.inputs.limit || 0 }}
 
+      # A8: rescore DELETEs embeddings to invalidate them (rescore.py:140).
+      # Nothing else in this workflow re-creates them, so a backfill left 3,001
+      # papers (26% of the archive) with no vector and Ask silently searching
+      # three-quarters of the corpus. Re-embed before committing.
+      - name: Update semantic index
+        if: always()
+        continue-on-error: true
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: python tools/embed.py
+
       # always: a long run that times out must keep what it scored
       - name: Commit
         if: always()

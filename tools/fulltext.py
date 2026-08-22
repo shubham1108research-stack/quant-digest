@@ -133,14 +133,19 @@ def pick_papers(con, limit):
     # state.db untouched -- state.db is binary, and a concurrent writer turns
     # every commit into an unmergeable rebase conflict that discards the run.
     # A 1,946-paper parse was lost to exactly that.
+    # Files are named _safe(uid), so the comparison has to be made in that
+    # space -- every uid contains a colon and every filename has had it
+    # replaced, so comparing raw uids against stems matched NOTHING and the
+    # skip list silently protected nothing. A 600-paper run re-parsed 413
+    # papers it already held and added none.
     done = {f.stem for f in OUT.glob("*.json") if f.stem != "index"}
-    done |= {r[0] for r in con.execute(
+    done |= {_safe(r[0]) for r in con.execute(
         "SELECT uid FROM fulltext WHERE status IN ('ok','no_pdf')")}
     rows = con.execute(
         "SELECT uid, title, url, meta, first_seen FROM items").fetchall()
     scored = []
     for uid, title, url, meta, seen in rows:
-        if uid in done:
+        if _safe(uid) in done:
             continue
         try:
             m = json.loads(meta)

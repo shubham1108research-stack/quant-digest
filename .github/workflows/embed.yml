@@ -49,7 +49,7 @@ jobs:
         run: |
           git config user.name "digest-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add docs/vec.bin docs/vec.json state.db || true
+          git add state.db || true    # vec.bin/vec.json are generated, not tracked
           git commit -m "semantic index $(date -u +%F)" || echo "no changes"
           git pull --rebase --autostash origin master || true
           git push || (git pull --rebase --autostash origin master && git push)

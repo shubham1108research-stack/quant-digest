@@ -898,6 +898,7 @@ function renderAnchors(){
 // page until we have the shortlist. /api/ask (a Cloudflare Pages Function
 // holding the API key) only embeds the question and writes the final synthesis.
 let VEC=null,VEC_UIDS=null,VEC_DIM=0,VEC_SHARD=64,ITEM_BY_UID={},indexLoading=false;
+let indexWarning='';
 // Ask is a CONVERSATION, not a series of one-shot queries. Turns are kept in
 // order and replayed to the model, so "why?" or "what about costs?" resolve
 // against what was actually said instead of starting cold every time.
@@ -1005,6 +1006,20 @@ function loadIndex(cb){
     ARCHIVE_DATA?Promise.resolve(ARCHIVE_DATA):fetch('archive.json').then(r=>r.json()),
   ]).then(([meta,buf,arch])=>{
     VEC_UIDS=meta.uids;VEC=new Int8Array(buf);VEC_DIM=meta.dim||0;VEC_SHARD=meta.shard||64;
+    // vec.json is the MANIFEST for vec.bin -- row i of the buffer is uids[i].
+    // If the two disagree, retrieve() reads past the end of an Int8Array,
+    // which yields undefined rather than throwing: every score becomes NaN and
+    // the comparator goes inconsistent, so the "top 200 by similarity" is not
+    // sorted by anything. A 404 on vec.bin does not even reject -- .arrayBuffer()
+    // happily returns the error body -- so this is the only place it can be caught.
+    const rows=VEC_DIM?Math.floor(VEC.length/VEC_DIM):0;
+    if(rows<VEC_UIDS.length){
+      VEC_UIDS=VEC_UIDS.slice(0,rows);
+      indexWarning=rows
+        ? 'The search index is truncated: '+rows.toLocaleString()+' of '+
+          (meta.n||0).toLocaleString()+' papers have vectors. Run the "Semantic Index" workflow.'
+        : 'The search index is empty — run the "Semantic Index" workflow.';
+    }
     ARCHIVE_DATA=arch;
     arch.forEach(x=>{if(x.uid)ITEM_BY_UID[x.uid]=x;if(x.url)ITEM_BY_URL[x.url]=x;});
     indexLoading=false;
@@ -1021,7 +1036,9 @@ function loadIndex(cb){
 // abstract shard), so the blend stage has everything it needs without a
 // second pass over the matrix.
 function retrieve(qv,k){
-  const dim=qv.length,n=VEC_UIDS.length,out=[];
+  const dim=qv.length;
+  // belt and braces: never iterate past the rows the buffer actually holds
+  const n=Math.min(VEC_UIDS.length,dim?Math.floor(VEC.length/dim):0),out=[];
   for(let i=0;i<n;i++){
     let s=0,off=i*dim;
     for(let j=0;j<dim;j++)s+=qv[j]*VEC[off+j];
@@ -1390,7 +1407,7 @@ function renderAsk(notice){
   }
   if(!CHATS.length)newChat(true);
   const turns=curTurns();
-  const note=notice?`<div class="askerr">${esc(notice)}</div>`:'';
+  const note=(notice||indexWarning)?`<div class="askerr">${esc(notice||indexWarning)}</div>`:'';
   const chips=turns.length?'':'<div class="askex">'+ASK_EXAMPLES.map(e=>
     `<button class="exq" data-q="${esc(e)}">${esc(e)}</button>`).join('')+'</div>';
   const bar=`<div class="chatbar">
