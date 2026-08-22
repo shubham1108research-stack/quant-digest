@@ -301,10 +301,16 @@ def _reconstruct_abstract(inv: dict | None) -> str:
 
 # publisher article pages that aren't Cloudflare-gated (pm-research, many
 # Atypon/Highwire sites) expose the abstract in a meta tag -- try each in order.
+# The closing class must BACKREFERENCE the opening quote. Accepting either
+# quote meant a double-quoted content="..." attribute ended at the first raw
+# apostrophe in the prose -- "the firm's" truncated the abstract to "the firm".
+# The guard downstream is len(txt) > 80, which is not "is it complete", so any
+# abstract with 80 characters before its first apostrophe was stored as if
+# whole and scored by the LLM as a fragment.
 _META_ABS = (
-    r'<meta[^>]+name=["\']citation_abstract["\'][^>]+content=["\'](.*?)["\']',
-    r'<meta[^>]+name=["\']dc\.?Description["\'][^>]+content=["\'](.*?)["\']',
-    r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\'](.*?)["\']',
+    r'<meta[^>]+name=(["\'])citation_abstract\1[^>]+content=(["\'])(.*?)\2',
+    r'<meta[^>]+name=(["\'])dc\.?Description\1[^>]+content=(["\'])(.*?)\2',
+    r'<meta[^>]+property=(["\'])og:description\1[^>]+content=(["\'])(.*?)\2',
 )
 
 
@@ -321,7 +327,7 @@ def _scrape_abstract(url: str) -> str:
         for pat in _META_ABS:
             m = re.search(pat, r.text, re.I | re.S)
             if m:
-                txt = _clean(_html.unescape(m.group(1)))
+                txt = _clean(_html.unescape(m.group(3)))
                 if len(txt) > 80:            # skip truncated og:description blurbs
                     return txt[:1500]
     except Exception:                                # noqa: BLE001

@@ -105,14 +105,24 @@ def _host(u):
 
 
 def _polite(u):
-    """Space out requests per host so a bulk run stays a good citizen."""
+    """Space out requests per host so a bulk run stays a good citizen.
+
+    The sleep happens OUTSIDE the lock. It used to be inside, and _lock is
+    process-global (it also guards _counts) -- so a worker waiting out
+    arxiv.org's 3s delay blocked all five others from touching unrelated
+    hosts. The per-host throttle collapsed into a global one and WORKERS=6
+    behaved as 1. Reserving the slot under the lock keeps the spacing
+    guarantee without serialising the whole pool."""
     h = _host(u)
     delay = HOST_DELAY.get(h, HOST_DELAY["default"])
     with _lock:
-        wait = delay - (time.time() - _last_hit.get(h, 0))
-        if wait > 0:
-            time.sleep(wait)
-        _last_hit[h] = time.time()
+        now = time.time()
+        wait = delay - (now - _last_hit.get(h, 0))
+        # claim this host's next slot before releasing, so two workers racing
+        # for the same host queue behind each other rather than colliding
+        _last_hit[h] = now + max(0.0, wait)
+    if wait > 0:
+        time.sleep(wait)
 
 
 def _allowed(url):
@@ -190,6 +200,9 @@ def _title_to_doi(title):
         return ("DOI", doi) if doi else None
     except Exception:                               # noqa: BLE001
         return None
+
+
+_WP_INDEX = None      # title -> (wp, authors, year); built in main()
 
 
 def resolve(uid, url, title=None, doi=None):
@@ -277,6 +290,23 @@ def resolve(uid, url, title=None, doi=None):
                     if w.get("downloadUrl"):
                         return w["downloadUrl"]
         except Exception:                           # noqa: BLE001
+            pass
+
+    # A free working-paper version, tried before the arXiv guess.
+    # tools/workingpaper.py was written for exactly the classics whose journal
+    # version is closed but whose NBER working paper is open -- and grep showed
+    # it was imported by nobody, so the fix it delivers was never wired into
+    # the resolver chain at all. resolve() runs inside a 6-thread pool, so it
+    # reads a prebuilt dict rather than a SQLite connection, which is not safe
+    # to share across threads.
+    if title and _WP_INDEX is not None:
+        try:
+            import workingpaper                      # noqa: PLC0415
+            workingpaper._NBER_INDEX = _WP_INDEX
+            wp = workingpaper.via_nber(title, "", None, con=True)
+            if wp:
+                return wp
+        except Exception:                            # noqa: BLE001
             pass
 
     # last resort: the paper may sit on arXiv under a different identifier.
@@ -382,15 +412,31 @@ def main():
     done = {}
     for uid, st in con.execute("SELECT uid, status FROM pdfs"):
         done[uid] = st
-    rows = con.execute("SELECT uid, url, title FROM items").fetchall()
+    # meta too: 217 classics carry a DOI added by a later repair pass while
+    # keeping their title-hash uid. resolve() grew a doi= argument for exactly
+    # them, and fulltext.py passes it -- this caller never did, so every one
+    # of them skipped Unpaywall/OpenAlex/S2/CORE and fell back to a single
+    # OpenAlex title search.
+    global _WP_INDEX
+    try:
+        import workingpaper                          # noqa: PLC0415
+        _WP_INDEX = workingpaper._nber_index(con)
+        log(f"[pdf] working-paper index: {len(_WP_INDEX)} NBER titles")
+    except Exception as e:                           # noqa: BLE001
+        log(f"[pdf] working-paper index unavailable: {type(e).__name__}")
+    rows = con.execute("SELECT uid, url, title, meta FROM items").fetchall()
     todo = []
-    for uid, url, title in rows:
+    for uid, url, title, meta in rows:
         st = done.get(uid)
         if st in TERMINAL:
             continue
         if st and not args.retry_failed:
             continue
-        todo.append((uid, url, title))
+        try:
+            doi = (json.loads(meta) or {}).get("doi") or ""
+        except Exception:                            # noqa: BLE001
+            doi = ""
+        todo.append((uid, url, title, doi))
     if args.shuffle:
         import random
         random.seed(3)
@@ -412,7 +458,7 @@ def main():
             except queue.Empty:
                 return
             try:
-                pdf = resolve(uid, url, title)
+                pdf = resolve(uid, url, title, doi)
                 if not pdf:
                     results.append((uid, "no_source", None, None, 0))
                 elif args.resolve_only:

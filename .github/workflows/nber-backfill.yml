@@ -56,6 +56,10 @@ jobs:
         run: python tools/backfill_nber.py ${{ github.event.inputs.start }}
 
       - name: Commit nber.json
+        # always: this job runs 30-90 min against a 90-min ceiling, and a
+        # success-gated commit throws the whole run away on a timeout. Every
+        # other long job here learned that already.
+        if: always()
         run: |
           git config user.name "digest-bot"
           git config user.email "actions@users.noreply.github.com"

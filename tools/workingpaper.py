@@ -122,7 +122,10 @@ def _nber_index(con):
             except Exception:                   # noqa: BLE001
                 continue
             if d.get("source") == "NBER" and d.get("wp"):
-                _NBER_INDEX[norm(title)] = d["wp"]
+                # keep the row's own authors and year: via_nber has to check
+                # identity, and a bare title is not an identity
+                _NBER_INDEX[norm(title)] = (d["wp"], d.get("authors", ""),
+                                            str(d.get("date", ""))[:4])
     return _NBER_INDEX
 
 
@@ -131,8 +134,17 @@ def via_nber(title, authors, year, con=None):
     against the local NBER corpus."""
     if con is None:
         return None
-    wp = _nber_index(con).get(norm(title))
-    if not wp:
+    hit = _nber_index(con).get(norm(title))
+    if not hit:
+        return None
+    wp, got_names, got_year = hit
+    # This route runs FIRST in find(), so whenever it fired it won outright --
+    # while via_openalex behind it ran the full _identity_ok. The module
+    # docstring says "identity is checked before accepting anything ... a
+    # near-miss attaches the wrong paper's full text, which is worse than no
+    # full text". The primary route checked the title and nothing else.
+    if not _identity_ok(title, year, surnames(authors),
+                        title, got_year, surnames(got_names)):
         return None
     n = str(wp).lstrip("w")
     return (f"https://www.nber.org/system/files/working_papers/"

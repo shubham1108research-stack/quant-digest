@@ -35,6 +35,27 @@ _UA = {"User-Agent": "quant-digest/1.0 (personal research tool)"}
 _MAILTO = os.environ.get("CONTACT_EMAIL") or os.environ.get("GMAIL_ADDRESS")
 
 
+def _wp_num(wp) -> int:
+    """'w9999' sorts above 'w31234' as a string. Sort on the number."""
+    try:
+        return int(str(wp or "").lstrip("w") or 0)
+    except ValueError:
+        return 0
+
+
+def _atomic_write(data) -> None:
+    """Write via a temp file and os.replace.
+
+    open(OUT, "w") truncates BEFORE json.dump runs, so a crash or OOM
+    mid-write left a truncated 1.2 MB tracked file -- which the workflow then
+    deployed. This run is 30-90 minutes against a 90-minute ceiling, so it is
+    not a hypothetical."""
+    tmp = OUT + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, default=str)
+    os.replace(tmp, OUT)
+
+
 def _norm_title(t: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", (t or "").lower()).strip()
 
@@ -175,9 +196,18 @@ def main() -> None:
         except Exception as e:                         # noqa: BLE001
             print(f"  [{ym}] failed: {type(e).__name__}: {e}", flush=True)
             continue
+        # Merge, never replace. `if rows:` meant a month whose fetch
+        # transiently returned [] silently kept stale content forever, and a
+        # partial fetch overwrote a complete month -- the docstring's
+        # "idempotent: re-running refreshes each month" was false in the one
+        # direction that matters.
         if rows:
-            data[ym] = rows
+            merged = {x.get("wp"): x for x in data.get(ym, [])}
+            merged.update({x.get("wp"): x for x in rows})
+            data[ym] = sorted(merged.values(),
+                              key=lambda x: _wp_num(x.get("wp")), reverse=True)
         print(f"  {ym}: {len(rows)} papers", flush=True)
+        _atomic_write(data)          # checkpoint: a timeout keeps the months done so far
 
     # ONE global citation pass over every collected paper (~44 bulk DOI batches
     # for the whole corpus, not per-month), then the bounded top-N refinement
@@ -186,7 +216,7 @@ def main() -> None:
     _enrich_cites(all_rows, print)
     _refine_top(data)
 
-    json.dump(data, open(OUT, "w", encoding="utf-8"), default=str)
+    _atomic_write(data)
     total = sum(len(v) for v in data.values())
     print(f"\nwrote {OUT}: {len(data)} months, {total} papers")
 

@@ -98,20 +98,47 @@ def main():
     print(f"probing {len(uniq)} boundary papers with {model}\n")
 
     import llm                                              # the live rubric prompt
-    hits = 0
+
+    # BOTH arms. The docstring defines a controlled A/B -- the same papers,
+    # asked twice, focused vs embedded -- and states the decision rule "if
+    # focused succeeds where embedded failed, it is B". Only the focused arm
+    # was ever run, so a score of 5/7 could not distinguish hypothesis A (the
+    # model cannot make the distinction) from B (the rule is buried in an
+    # 18,600-char prompt). The closing line asserting the rubric "got the carry
+    # ones wrong" was remembered, not measured.
+    EMBEDDED = llm._SYSTEM + (
+        "\n\nAnswer with ONLY the single most appropriate sleeve key for this "
+        "paper, lowercase, no JSON and no other text.")
+
+    f_hits = e_hits = 0
     for title, abstract, expect in uniq:
         user = f"Title: {title}\n\nAbstract: {abstract}"
         focused = ask(FOCUSED, user, key, model)
-        got = re.split(r"[^a-z_]", focused.lower().strip())[0]
-        ok = (expect == "?") or (got == expect)
-        hits += bool(ok) and expect != "?"
-        print(f"  expect={expect:<13} focused={got:<13} "
-              f"{'OK ' if ok else 'MISS'}  {title[:52]}")
-        if not ok:
-            print(f"        reason: {focused[:110]}")
+        embedded = ask(EMBEDDED, user, key, model)
+        f_got = re.split(r"[^a-z_]", focused.lower().strip())[0]
+        e_got = re.split(r"[^a-z_]", embedded.lower().strip())[0]
+        f_ok = (expect == "?") or (f_got == expect)
+        e_ok = (expect == "?") or (e_got == expect)
+        if expect != "?":
+            f_hits += bool(f_ok)
+            e_hits += bool(e_ok)
+        flag = "OK " if f_ok else "MISS"
+        print(f"  expect={expect:<13} focused={f_got:<13} embedded={e_got:<13} "
+              f"{flag}  {title[:44]}")
+        if not f_ok:
+            print(f"        focused said: {focused[:100]}")
     scoreable = [e for _, _, e in uniq if e != "?"]
-    print(f"\nFOCUSED prompt: {hits}/{len(scoreable)} correct")
-    print(f"(the full {len(llm._SYSTEM)}-char rubric got the carry ones wrong)")
+    n = len(scoreable)
+    print(f"\n  FOCUSED  ({len(FOCUSED):>6} chars): {f_hits}/{n}")
+    print(f"  EMBEDDED ({len(EMBEDDED):>6} chars): {e_hits}/{n}")
+    if f_hits > e_hits:
+        print("\n  -> focused beats embedded: the rule is BURIED, not wrong."
+              "\n     Fix the prompt (hoist the sleeve block, or split the call).")
+    elif e_hits >= f_hits and f_hits < n:
+        print("\n  -> focused does not beat embedded: prompt length is not the"
+              "\n     problem. The TAXONOMY is. Redraw the carry boundary.")
+    else:
+        print("\n  -> both arms correct: neither hypothesis holds on this sample.")
 
 
 if __name__ == "__main__":

@@ -140,7 +140,11 @@ def main() -> None:
     llm.start_run_budget(config.LLM_RUN_BUDGET_S)
 
     # optional LLM triage -- attaches rank_score/why; no-op without an API key
-    llm.rank(research, log)               # mutates the shared item dicts in place
+    # scoring.llm_score, not llm.rank: only the former applies is_junk, whose
+    # own docstring says junk is 'never worth spending LLM quota on'. 76 junk
+    # rows are archived and 18 carry full rubric scores -- quota spent on
+    # tables of contents, which then compete for slots in Recent/For You.
+    scoring.llm_score(research, log)   # mutates the shared item dicts in place
     # ensemble consensus on the promising shortlist (>=2 providers): multiple
     # models re-score together; disagreement is flagged provisional
     try:
