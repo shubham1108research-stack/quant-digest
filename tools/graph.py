@@ -42,6 +42,19 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import store   # noqa: E402
 
+# The graph lives in its OWN database, not state.db. It is derived from the
+# vector cache and rebuilds in ~12s, but 172k edges with TEXT endpoints and two
+# indexes cost 33 MB -- which took the committed state.db from 55 MB to 88 MB,
+# against GitHub's 100 MB hard limit. Derived data does not belong in the file
+# that carries the archive.
+GRAPH_DB = "state_graph.db"
+
+
+def graph_con(con):
+    """A connection with the graph attached, so joins against items still work."""
+    con.execute("ATTACH DATABASE ? AS g", (GRAPH_DB,))
+    return con
+
 K = 15                      # neighbours kept per paper
 SIM_FLOOR = 0.30            # on CENTRED cosine (see _vectors); the raw-space
                             # equivalent would be ~0.85 and drop nothing
@@ -50,15 +63,15 @@ MAILTO = "upadhyays1108@gmail.com"
 UA = {"User-Agent": f"quant-digest/1.0 (mailto:{MAILTO})"}
 
 _SCHEMA = """
-CREATE TABLE IF NOT EXISTS edges (
+CREATE TABLE IF NOT EXISTS g.edges (
     src  TEXT NOT NULL,
     dst  TEXT NOT NULL,
     kind TEXT NOT NULL,          -- sim | cites
     w    REAL,                   -- cosine for sim; 1.0 for cites
     PRIMARY KEY (src, dst, kind)
 );
-CREATE INDEX IF NOT EXISTS edges_src ON edges (kind, src);
-CREATE INDEX IF NOT EXISTS edges_dst ON edges (kind, dst);
+CREATE INDEX IF NOT EXISTS g.edges_src ON edges (kind, src);
+CREATE INDEX IF NOT EXISTS g.edges_dst ON edges (kind, dst);
 """
 
 
@@ -96,7 +109,7 @@ def build_sim(con, args):
     n = len(uids)
     log(f"[graph] {n:,} vectors, {X.shape[1]}-dim -- kNN k={K}, floor={SIM_FLOOR}")
     con.executescript(_SCHEMA)
-    con.execute("DELETE FROM edges WHERE kind='sim'")
+    con.execute("DELETE FROM g.edges WHERE kind='sim'")
     kept = 0
     t0 = time.monotonic()
     for i0 in range(0, n, BLOCK):
@@ -112,7 +125,7 @@ def build_sim(con, args):
                 w = float(S[r, c])
                 if w >= SIM_FLOOR:
                     rows.append((uids[i0 + r], uids[int(c)], "sim", round(w, 4)))
-        con.executemany("INSERT OR REPLACE INTO edges (src,dst,kind,w) VALUES (?,?,?,?)",
+        con.executemany("INSERT OR REPLACE INTO g.edges (src,dst,kind,w) VALUES (?,?,?,?)",
                         rows)
         kept += len(rows)
         if (i0 // BLOCK) % 5 == 0:
@@ -167,7 +180,7 @@ def build_cites(con, args):
             log(f"[graph] {min(i+50,len(todo)):,}/{len(todo):,} DOIs resolved")
         time.sleep(0.35)
 
-    con.execute("DELETE FROM edges WHERE kind='cites'")
+    con.execute("DELETE FROM g.edges WHERE kind='cites'")
     rows, outside = [], 0
     for uid, rs in refs.items():
         for oa in rs:
@@ -176,7 +189,7 @@ def build_cites(con, args):
                 rows.append((uid, dst, "cites", 1.0))
             else:
                 outside += 1
-    con.executemany("INSERT OR REPLACE INTO edges (src,dst,kind,w) VALUES (?,?,?,?)",
+    con.executemany("INSERT OR REPLACE INTO g.edges (src,dst,kind,w) VALUES (?,?,?,?)",
                     rows)
     con.commit()
     total = len(rows) + outside
@@ -191,18 +204,18 @@ def report(con, args):
     n_items = con.execute("SELECT count(*) FROM items").fetchone()[0]
     log(f"archive: {n_items:,} papers\n")
     for kind in ("sim", "cites"):
-        cnt = con.execute("SELECT count(*) FROM edges WHERE kind=?", (kind,)).fetchone()[0]
+        cnt = con.execute("SELECT count(*) FROM g.edges WHERE kind=?", (kind,)).fetchone()[0]
         if not cnt:
             log(f"{kind:<6} no edges built")
             continue
         deg = collections.Counter()
-        for (src,) in con.execute("SELECT src FROM edges WHERE kind=?", (kind,)):
+        for (src,) in con.execute("SELECT src FROM g.edges WHERE kind=?", (kind,)):
             deg[src] += 1
         d = sorted(deg.values())
         cov = 100.0 * len(deg) / max(1, n_items)
         med = d[len(d) // 2]
         p90 = d[int(len(d) * 0.9)]
-        w = con.execute("SELECT avg(w), min(w), max(w) FROM edges WHERE kind=?",
+        w = con.execute("SELECT avg(w), min(w), max(w) FROM g.edges WHERE kind=?",
                         (kind,)).fetchone()
         log(f"{kind:<6} {cnt:>8,} edges   {len(deg):>6,} papers with any "
             f"({cov:.1f}% coverage)")
@@ -221,7 +234,7 @@ def export(con, args):
     kept = collections.Counter()
     for kind, code in (("sim", 0), ("cites", 1)):
         for src, dst, w in con.execute(
-                "SELECT src,dst,w FROM edges WHERE kind=?", (kind,)):
+                "SELECT src,dst,w FROM g.edges WHERE kind=?", (kind,)):
             a, b = row.get(src), row.get(dst)
             if a is None or b is None:
                 continue
@@ -238,7 +251,7 @@ def main():
     ap.add_argument("action", choices=("sim", "cites", "report", "export"))
     ap.add_argument("--limit", type=int, default=0, help="cites: cap DOIs looked up")
     args = ap.parse_args()
-    con = store.connect()
+    con = graph_con(store.connect())
     {"sim": build_sim, "cites": build_cites,
      "report": report, "export": export}[args.action](con, args)
 

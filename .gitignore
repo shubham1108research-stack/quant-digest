@@ -35,6 +35,8 @@ docs/abs/
 # blobs per run otherwise
 docs/edges.bin
 docs/map.json
+# the graph database itself -- derived from embeddings, 33 MB, rebuilt in ~12s
+state_graph.db
 
 # Blind bake-off report -- embeds paper text and the repo is public; it is a
 # workflow artifact, not a commit.

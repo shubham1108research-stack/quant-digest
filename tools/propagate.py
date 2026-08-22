@@ -37,6 +37,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import config   # noqa: E402
 import store    # noqa: E402
+from graph import graph_con   # noqa: E402
 
 # NBER topic -> desk sleeve. Deliberately partial: a topic with no honest
 # sleeve is better left unmapped than forced.
@@ -112,9 +113,9 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    con = store.connect()
+    con = graph_con(store.connect())
     adj = collections.defaultdict(list)
-    for src, dst, w in con.execute("SELECT src,dst,w FROM edges WHERE kind='sim'"):
+    for src, dst, w in con.execute("SELECT src,dst,w FROM g.edges WHERE kind='sim'"):
         adj[src].append((dst, w))
         adj[dst].append((src, w))          # similarity is symmetric
     if not adj:
