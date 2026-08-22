@@ -48,6 +48,17 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
+      # state.db lives in R2, not git: it is 53 MB of binary that cannot be
+      # merged, so interleaved commits produced unresolvable rebases and one
+      # run's work was silently discarded (twice). No-ops if R2 is unset, so
+      # the committed copy still works until the bucket exists.
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
 
       # the container is up before the service is: GROBID loads its models for
       # the better part of a minute, so poll rather than assume
@@ -94,3 +105,15 @@ jobs:
         run: |
           python tools/embed.py
           npx --yes wrangler@3 pages deploy docs --project-name=quant-digest --branch=master --commit-dirty=true
+
+      # always: a run killed at its timeout must still store what it wrote.
+      # dbsync refuses to push anything that fails a health check, because an
+      # object store keeps no history to roll back to.
+      - name: Store state.db
+        if: always()
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push
