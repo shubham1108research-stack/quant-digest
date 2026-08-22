@@ -302,12 +302,21 @@ def _parse(text: str) -> dict[int, dict]:
     topic, summary}}. Tolerates the pre-rubric shape (flat 'relevance'/'score'
     as a 0-100 number) by treating it as a single relevance level, degrading
     every other axis to fallback rather than failing the whole item."""
-    m = re.search(r"\[.*\]", text, re.S)          # tolerate stray prose around it
-    if not m:
-        return {}
-    try:
-        arr = json.loads(m.group(0))
-    except Exception:                              # noqa: BLE001
+    # Greedy [.*] spans the FIRST "[" to the LAST "]", so any bracket in a
+    # preamble ("[note] Here is the JSON: [...]") makes json.loads fail and
+    # the whole sub-batch scores as nothing -- up to LLM_RANK_BATCH=40 items,
+    # permanently, since filter_new drops them from every later run.
+    # Decode from each "[" instead and take the first valid array.
+    arr = None
+    for _c in re.finditer(r"\[", text):
+        try:
+            _arr, _ = json.JSONDecoder().raw_decode(text[_c.start():])
+        except Exception:                          # noqa: BLE001
+            continue
+        if isinstance(_arr, list):
+            arr = _arr
+            break          # tolerate stray prose around it
+    else:
         return {}
     out: dict[int, dict] = {}
     for o in arr:

@@ -89,11 +89,21 @@ def filter_new(con, items: list[dict]) -> list[dict]:
     for it in items:
         uid = make_uid(it)
         if uid in batch_uids:
-            # same paper from a second source: record the extra source
+            # Same paper from a second source. Record the extra source AND fill
+            # any blank the incumbent has: collection order puts NEP first, and
+            # NEP items hardcode authors="" (sources.py), so an arXiv paper
+            # mirrored by NEP was archived authorless -- 68 such rows, which
+            # watchlist_crossmatch and author_score then could not credit
+            # because they iterate it["authors"]. Two comments in the codebase
+            # claim "dedup keeps richer records"; nothing implemented it.
             for f in fresh:
                 if f["uid"] == uid:
                     f["sources"] = sorted(set(f.get("sources", [f["source"]])
                                               ) | {it["source"]})
+                    for k in ("authors", "abstract", "doi", "arxiv_id", "date",
+                              "oa_author_ids", "watchlist", "watchlist_author"):
+                        if not f.get(k) and it.get(k):
+                            f[k] = it[k]
             continue
         row = con.execute("SELECT 1 FROM items WHERE uid=?", (uid,)).fetchone()
         if row:

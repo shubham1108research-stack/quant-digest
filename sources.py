@@ -80,6 +80,11 @@ def _nber_item(e: dict) -> dict:
         "source": "nber",
         "section": 1,
         "nber_wp": wp,
+        # Without this the uid falls through to t:<title-hash>, while
+        # backfill._nber_month builds the same paper as doi:10.3386/w... --
+        # two namespaces for one paper, and 46 NBER papers were archived
+        # twice. make_uid already unifies arXiv this way; NBER was missed.
+        "doi": f"10.3386/{wp}" if wp else None,
     }
 
 
@@ -225,6 +230,21 @@ def arxiv(log=print) -> list[dict]:
         return _arxiv_rss(log)
 
 
+def _cr_date_parts(node: dict) -> str:
+    """Crossref date-parts -> zero-padded ISO. Mirrors backfill._cr_date."""
+    dp = (node or {}).get("date-parts") or [[]]
+    parts = (dp[0] or [])[:3]
+    if not parts or not parts[0]:
+        return ""
+    y = parts[0]
+    m = parts[1] if len(parts) > 1 else 1
+    d = parts[2] if len(parts) > 2 else 1
+    try:
+        return f"{int(y):04d}-{int(m):02d}-{int(d):02d}"
+    except (TypeError, ValueError):
+        return ""
+
+
 # ----------------------------------------------------------- Crossref
 def _crossref_item(w: dict, source: str) -> dict | None:
     title = _clean(" ".join(w.get("title") or []))
@@ -238,8 +258,13 @@ def _crossref_item(w: dict, source: str) -> dict | None:
         "authors": authors,
         "abstract": _clean(w.get("abstract", "")),
         "url": w.get("URL", ""),
-        "date": "-".join(str(x) for x in
-                         (w.get("created", {}).get("date-parts") or [[""]])[0]),
+        # Zero-padded ISO, not "-".join. Crossref date-parts are integers, so
+        # joining them gave "2026-8-3" -- which str(date)[:7] turns into
+        # "2026-8-", a month key that can never equal the "%Y-%m" the monthly
+        # composite looks for. 34% of the archive was invisible to it, which is
+        # why docs/monthly.json holds no journal or SSRN papers at all. It also
+        # broke every lexicographic date sort ("2026-7-3" > "2026-10-01").
+        "date": _cr_date_parts(w.get("created") or w.get("issued") or {}),
         "source": source,
         "section": 3,
         "doi": w.get("DOI"),

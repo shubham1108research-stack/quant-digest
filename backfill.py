@@ -320,7 +320,15 @@ def main() -> None:
         for p in rows:
             p.pop("doi", None)
 
-    data = {"overall": overall, "journals": journals, "topics": topics}
+    # Load-then-merge. monthly.promote_seminal writes a fourth key,
+    # "modern", into this same file; rebuilding the dict from scratch deleted
+    # it, and nothing can reconstruct those entries. 134 were at risk.
+    try:
+        existing = json.loads((docs / "classics.json").read_text(encoding="utf-8"))
+    except Exception:                                   # noqa: BLE001
+        existing = {}
+    data = {**(existing if isinstance(existing, dict) else {}),
+            "overall": overall, "journals": journals, "topics": topics}
     docs = pathlib.Path("docs")
     docs.mkdir(exist_ok=True)
     (docs / "classics.json").write_text(json.dumps(data, default=str),

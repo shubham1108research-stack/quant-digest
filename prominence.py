@@ -59,6 +59,12 @@ def annotate(items: list[dict], log) -> list[dict]:
                 best = s
         if best:
             it["prom_hindex"], it["prom_cites"], it["prom_author"] = best
+        # scoring.author_score reads author_h and falls back to a neutral
+        # 50.0 when it is None -- so 643 papers with a KNOWN h-index were
+        # scored at the prior. These are exactly the DOI-less OpenAlex
+        # items the S2 path cannot reach, which is what this module is for.
+        if it.get("author_h") is None:
+            it["author_h"] = best[0]
             annotated += 1
     log(f"[prominence] annotated {annotated}/{len(items)} items (top-author h-index)")
     return items

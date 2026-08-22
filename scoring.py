@@ -268,7 +268,11 @@ def annotate_reputation(items: list[dict], log=print) -> list[dict]:
     for it in items:
         a = author_score(it, roster)
         if_pct = None
-        jif = config.JOURNAL_IMPACT.get(it.get("journal") or it.get("source"))
+        # _label() strips the "journal:" prefix that source carries; without it
+        # the lookup key was "journal:Journal of Finance" against a table keyed
+        # "Journal of Finance" -- 139 rows had a venue in the table and every
+        # one of them missed. composite_entries already keys it this way.
+        jif = config.JOURNAL_IMPACT.get(_label(it))
         if jif is not None:
             if_pct = 100.0 * jif / if_max
         it["author_score"] = round(a, 1)
