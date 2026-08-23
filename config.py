@@ -307,6 +307,10 @@ OPENROUTER_MODEL = "deepseek/deepseek-v3.2"
 # high-quality ensemble vote. Set OPENAI_API_KEY.
 OPENAI_MODEL = "gpt-5.4-mini"
 LLM_RANK_BATCH = 40          # items scored per API call
+# Abstract characters sent per item. Was a hardcoded 500, which cut 76.5%
+# of abstracts mid-motivation and threw away 6.9M characters across the
+# archive -- the method and the result are in the second half.
+ABSTRACT_CHARS = 1500
 LLM_MAX_RETRIES = 3          # retries (with backoff) on 429/5xx
 LLM_BATCH_PAUSE = 6          # seconds between calls -- stay under free-tier RPM
 # Wall-clock backstop so a run can NEVER wedge for hours when every free tier is

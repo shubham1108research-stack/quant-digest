@@ -251,9 +251,22 @@ _SYSTEM = (
 
 
 def _prompt(batch: list[dict]) -> str:
+    """One line per item: title, provenance, and as much abstract as is useful.
+
+    The 500-char cap this used to carry was the single biggest quality
+    constraint in the pipeline and it was invisible. 76.5% of abstracts are
+    longer than that -- median 1,136 chars -- so 6.9M characters were discarded
+    archive-wide and every judgement (relevance, sleeves, novelty, and anything
+    extracted later) was made on the MOTIVATION paragraph, before the paper
+    says what it did. An abstract's method and result live in its second half.
+
+    At config.ABSTRACT_CHARS the batch is roughly 72k characters, comfortably
+    inside every provider's context, and the marginal cost is input tokens on a
+    call that was being paid for anyway.
+    """
     lines = []
     for i, it in enumerate(batch):
-        abstract = (it.get("abstract") or "")[:500]
+        abstract = (it.get("abstract") or "")[:config.ABSTRACT_CHARS]
         lines.append(
             f"[{i}] {it.get('title', '')}\n"
             f"    source={it.get('source', '')} | authors={it.get('authors', '')}\n"
