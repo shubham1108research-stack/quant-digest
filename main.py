@@ -39,7 +39,7 @@ def log(msg: str) -> None:
     NOTES.append(msg)
 
 
-def collect(existing: set) -> list[dict]:
+def collect(existing: set, con=None) -> list[dict]:
     sources.MAILTO = os.environ.get("CONTACT_EMAIL") \
         or os.environ.get("GMAIL_ADDRESS")
     items: list[dict] = []
@@ -56,9 +56,25 @@ def collect(existing: set) -> list[dict]:
         ("Quantocracy", sources.quantocracy),
         ("Practitioner", lambda: sources.practitioner(log)),
         ("Firms (AQR/Man/RA)", lambda: firms.firms(log)),
+        # publishers who block crawlers but will post you the same content:
+        # SSRN eJournals, Macrosynergy. Subscribed from a dedicated mailbox.
+        ("Inbox", lambda: sources.inbox(log, con)),
         # last: dedup keeps richer records above canonical; this adds net-new
         ("OpenAlex-topics", lambda: sources.openalex_topics(log)),
     ]
+    # A collector returning zero looks exactly like a quiet week, which is how
+    # Macrosynergy sat at 0 posts indefinitely (its feed had started serving a
+    # Cloudflare challenge) and nothing said so. Remember last run's counts and
+    # complain when a source is empty twice running.
+    import json as _json
+    prev = {}
+    if con is not None:
+        try:
+            prev = _json.loads(store.kv_get(con, "collector_counts", "{}"))
+        except Exception:                            # noqa: BLE001
+            prev = {}
+    counts = {}
+
     for name, fn in steps:
         try:
             got = fn()
@@ -76,9 +92,15 @@ def collect(existing: set) -> list[dict]:
                 log(f"[{name}] dropped {len(bad)} non-paper records "
                     f"(e.g. {bad[0]['_reject']})")
             print(f"{name}: {len(got)} items")
+            counts[name] = len(got)
+            if not got and prev.get(name) == 0:
+                log(f"[{name}] EMPTY TWICE RUNNING -- feed may be dead "
+                    f"(blocked, moved, or the selector has rotted)")
             items += got
         except Exception as e:                       # noqa: BLE001
             log(f"[{name}] FAILED this week: {type(e).__name__}: {e}")
+    if con is not None:
+        store.kv_set(con, "collector_counts", _json.dumps(counts))
     return items
 
 
@@ -107,7 +129,7 @@ def main() -> None:
                 return
 
     existing = {r[0] for r in con.execute("SELECT uid FROM items")}
-    raw = collect(existing)
+    raw = collect(existing, con)
     fresh = store.filter_new(con, raw)
     print(f"collected {len(raw)}, new after dedup {len(fresh)}")
 

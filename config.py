@@ -173,7 +173,11 @@ PRACTITIONER_FEEDS = {
     "Alpha Architect": "https://alphaarchitect.com/feed/",
     "Quantpedia": "https://quantpedia.com/feed/",
     "Newfound / Flirting with Models": "https://blog.thinknewfound.com/feed/",
-    "Macrosynergy": "https://macrosynergy.com/research/feed/",
+    # Macrosynergy: their feed now serves a Cloudflare "Just a moment..."
+    # challenge (even robots.txt is 403), so this returned 0 posts silently
+    # for an unknown period. Their research arrives by newsletter instead --
+    # subscribe the feed mailbox and sources.inbox() picks it up.
+    # "Macrosynergy": "https://macrosynergy.com/research/feed/",
 }
 
 # ---- Asset-manager house research (headless Playwright) -------------

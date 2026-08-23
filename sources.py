@@ -1008,3 +1008,181 @@ def enrich_abstracts(items: list[dict], log) -> list[dict]:
     filled = sum(1 for it in items if it.get("abstract"))
     log(f"[enrich] S2 + {scraped} page-scraped; {filled}/{len(items)} have abstracts")
     return items
+
+
+# --------------------------------------- subscription inbox (IMAP)
+# Some publishers block crawlers but will happily post you the same content.
+# SSRN's eJournal mailings carry title, authors, abstract and link for every
+# new paper -- the whole SSRN block, delivered on purpose -- and Macrosynergy,
+# whose RSS feed now returns a Cloudflare challenge, runs a newsletter.
+#
+# So: a dedicated free mailbox subscribed to those lists, read over plain IMAP.
+# Nothing is circumvented, no vendor API is involved, and imaplib is in the
+# standard library so requirements.txt does not grow.
+#
+# The mailbox is opened READ-ONLY and dedup is kept in our own kv table rather
+# than in IMAP flags -- the pipeline should not be able to alter a mailbox even
+# by accident, and a re-run must be harmless.
+IMAP_HOST = os.environ.get("FEED_IMAP_HOST", "imap.gmail.com")
+IMAP_USER = os.environ.get("FEED_IMAP_USER")
+IMAP_PASS = os.environ.get("FEED_IMAP_PASS")
+IMAP_FOLDER = os.environ.get("FEED_IMAP_FOLDER", "INBOX")
+INBOX_MAX = 60                      # messages examined per run
+
+_SSRN_ABS = re.compile(r"abstract[_-]?id=(\d{5,9})", re.I)
+_SEEN_KEY = "inbox_seen_ids"
+
+
+def _msg_text(msg) -> str:
+    """Best-effort body: prefer text/plain, fall back to stripped HTML."""
+    parts, html_parts = [], []
+    for part in (msg.walk() if msg.is_multipart() else [msg]):
+        ctype = part.get_content_type()
+        if ctype not in ("text/plain", "text/html"):
+            continue
+        try:
+            raw = part.get_payload(decode=True) or b""
+            txt = raw.decode(part.get_content_charset() or "utf-8", "replace")
+        except Exception:                              # noqa: BLE001
+            continue
+        (parts if ctype == "text/plain" else html_parts).append(txt)
+    body = "\n".join(parts) or "\n".join(html_parts)
+    return body
+
+
+def _parse_ssrn_ejournal(body: str, sender: str) -> list[dict]:
+    """SSRN eJournal mailings: numbered entries, each ending in an abstract link.
+
+    The abstract id is the point. It yields 10.2139/ssrn.<id>, which is exactly
+    the DOI the Crossref path already assigns -- so store.make_uid produces the
+    SAME uid and cross-run dedup merges the two records instead of creating a
+    duplicate. The mail supplies the abstract that Crossref often lacks.
+    """
+    out = []
+    # split on the abstract links; each chunk before one describes that paper
+    chunks = re.split(r"(?=\d+\.\s)", body)
+    for chunk in chunks:
+        m = _SSRN_ABS.search(chunk)
+        if not m:
+            continue
+        if len(_clean(chunk)) < 60:
+            continue
+        # Split on the URL, not on whitespace. The entry is always
+        #   <n>. Title \n by Authors \n <abstract url> \n Abstract
+        # and _clean collapses the newlines, so a whitespace-based boundary
+        # runs the author list into the URL and truncates it at the first
+        # multi-space inside it.
+        url_start = chunk.rfind("http", 0, m.start())
+        head = _clean(chunk[:url_start if url_start > 0 else m.start()])
+        head = re.sub(r"^\d+\.\s*", "", head)
+        title, authors = head, ""
+        am = re.search(r"(?:^|\s)by\s+(.+)$", head)
+        if am:
+            title = head[:am.start()].strip(" .-,")
+            authors = am.group(1).strip()
+        abstract = _clean(re.sub(r"https?://\S+", " ", chunk[m.end():]))
+        sid = m.group(1)
+        out.append({
+            "title": title[:300],
+            "authors": authors[:300],
+            "abstract": abstract[:6000],
+            "url": f"https://papers.ssrn.com/sol3/papers.cfm?abstract_id={sid}",
+            "date": "",
+            "doi": f"10.2139/ssrn.{sid}",
+            "source": f"inbox:{sender}",
+            "section": 3,
+        })
+    return out
+
+
+def _parse_generic(body: str, subject: str, sender: str) -> list[dict]:
+    """Anything else: article links with their anchor text.
+
+    Deliberately conservative -- a newsletter is mostly navigation, so a link
+    without a title-shaped label is dropped rather than guessed at. Better to
+    miss a post than to archive "Read more" as a paper.
+    """
+    out, seen = [], set()
+    for href, label in re.findall(r'href=["\'](https?://[^"\']+)["\'][^>]*>(.*?)</a>',
+                                  body, re.I | re.S):
+        text = _clean(label)
+        if len(text) < 25 or len(text) > 220:
+            continue
+        if re.search(r"unsubscribe|privacy|preferences|view in browser|read more",
+                     text, re.I):
+            continue
+        if href in seen:
+            continue
+        seen.add(href)
+        out.append({
+            "title": text[:300],
+            "authors": "",
+            "abstract": "",
+            "url": href,
+            "date": "",
+            "source": f"inbox:{sender}",
+            "section": 4,          # practitioner writing, not a paper
+        })
+    return out
+
+
+def inbox(log, con=None) -> list[dict]:
+    """Papers and posts that publishers mailed to the subscription address."""
+    if not (IMAP_USER and IMAP_PASS):
+        log("[inbox] FEED_IMAP_USER/PASS not set; skipping")
+        return []
+    import email                                       # noqa: PLC0415
+    import imaplib                                     # noqa: PLC0415
+
+    seen = set()
+    if con is not None:
+        import store                                   # noqa: PLC0415
+        try:
+            seen = set(json.loads(store.kv_get(con, _SEEN_KEY, "[]")))
+        except Exception:                              # noqa: BLE001
+            seen = set()
+
+    out, fresh_ids = [], []
+    M = imaplib.IMAP4_SSL(IMAP_HOST)
+    try:
+        M.login(IMAP_USER, IMAP_PASS)
+        # read-only: this pipeline must not be able to alter the mailbox
+        M.select(IMAP_FOLDER, readonly=True)
+        since = _cutoff().strftime("%d-%b-%Y")
+        typ, data = M.search(None, f'(SINCE "{since}")')
+        ids = (data[0].split() if data and data[0] else [])[-INBOX_MAX:]
+        log(f"[inbox] {len(ids)} messages since {since}")
+        for num in ids:
+            typ, raw = M.fetch(num, "(RFC822)")
+            if typ != "OK" or not raw or not raw[0]:
+                continue
+            msg = email.message_from_bytes(raw[0][1])
+            mid = (msg.get("Message-Id") or "").strip()
+            if not mid or mid in seen:
+                continue
+            sender = (msg.get("From") or "")
+            dom = (re.search(r"@([\w.-]+)", sender) or [None, "unknown"])[1]
+            subject = _clean(msg.get("Subject") or "")
+            body = _msg_text(msg)
+            if "ssrn" in dom.lower():
+                got = _parse_ssrn_ejournal(body, dom)
+            else:
+                got = _parse_generic(body, subject, dom)
+            got = [g for g in got if not is_record_sane(g, "")]
+            out += got
+            fresh_ids.append(mid)
+            log(f"[inbox]   {dom:<26} {len(got):>3} items  {subject[:44]}")
+    finally:
+        try:
+            M.logout()
+        except Exception:                              # noqa: BLE001
+            pass
+
+    if con is not None and fresh_ids:
+        import store                                   # noqa: PLC0415
+        # bounded: the archive's own uid dedup is the real guard, this only
+        # stops re-parsing the same mail on the next run
+        keep = (list(seen) + fresh_ids)[-4000:]
+        store.kv_set(con, _SEEN_KEY, json.dumps(keep))
+    log(f"[inbox] {len(out)} items from {len(fresh_ids)} new messages")
+    return out

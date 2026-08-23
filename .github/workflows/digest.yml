@@ -82,6 +82,12 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # subscription mailbox (sources.inbox): publishers who block
+          # crawlers but will mail you the same content. Absent, the
+          # collector logs and skips.
+          FEED_IMAP_HOST: ${{ secrets.FEED_IMAP_HOST }}
+          FEED_IMAP_USER: ${{ secrets.FEED_IMAP_USER }}
+          FEED_IMAP_PASS: ${{ secrets.FEED_IMAP_PASS }}
         run: python main.py
 
       # keep the Ask tab's semantic index current: vectors are cached in
