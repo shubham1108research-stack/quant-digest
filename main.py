@@ -15,6 +15,7 @@ import llm
 import monthly
 import portal
 import prominence
+import scoring
 import sources
 import store
 
@@ -156,7 +157,6 @@ def main() -> None:
     # For You / the email / data.json all apply the SAME author nudge the
     # Monthly composite does (consistent, pool-independent)
     try:
-        import scoring
         scoring.annotate_reputation(fresh, log)
     except Exception as e:                           # noqa: BLE001
         log(f"[author] reputation annotate failed: {type(e).__name__}: {e}")
