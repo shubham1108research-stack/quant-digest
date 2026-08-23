@@ -16,34 +16,46 @@
   --ground:#F6F8F7; --panel:#FFFFFF; --ink:#171C1A; --muted:#5E6B66;
   --faint:#8A968F; --line:#E4E8E5; --line2:#EDF0EE; --accent:#0C5C4A;
   --strong:#1F7A3D; --medium:#9A6B00; --low:#8A8F87; --cite:#9A6B00;
+  --rail:#EFF2F0; --navfg:#33403A; --nil:#C9D0CB; --bar:#D8DEDA; --rowhover:#FBFCFB;
   --serif:Newsreader,ui-serif,Georgia,'Iowan Old Style',Palatino,serif;
   --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root{
   --ground:#0F1311; --panel:#141917; --ink:#E9ECE8; --muted:#94A099; --faint:#6E7A73;
   --line:#232A26; --line2:#1C221F; --accent:#43B08F; --strong:#3FAE63; --medium:#C79A3A;
-  --low:#7D857D; --cite:#C79A3A;}}
+  --low:#7D857D; --cite:#C79A3A;
+  --rail:#111614; --navfg:#C4CCC6; --nil:#3A443E; --bar:#2A322D; --rowhover:#181E1B;}}
 :root[data-theme="dark"]{
   --ground:#0F1311; --panel:#141917; --ink:#E9ECE8; --muted:#94A099; --faint:#6E7A73;
   --line:#232A26; --line2:#1C221F; --accent:#43B08F; --strong:#3FAE63; --medium:#C79A3A;
-  --low:#7D857D; --cite:#C79A3A;}
+  --low:#7D857D; --cite:#C79A3A;
+  --rail:#111614; --navfg:#C4CCC6; --nil:#3A443E; --bar:#2A322D; --rowhover:#181E1B;}
 :root[data-theme="light"]{
   --ground:#F6F8F7; --panel:#FFFFFF; --ink:#171C1A; --muted:#5E6B66; --faint:#8A968F;
   --line:#E4E8E5; --line2:#EDF0EE; --accent:#0C5C4A; --strong:#1F7A3D; --medium:#9A6B00;
-  --low:#8A8F87; --cite:#9A6B00;}
+  --low:#8A8F87; --cite:#9A6B00;
+  --rail:#EFF2F0; --navfg:#33403A; --nil:#C9D0CB; --bar:#D8DEDA; --rowhover:#FBFCFB;}
 
 *{box-sizing:border-box;}
 ::selection{background:var(--accent);color:var(--panel);}
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 a{color:inherit;text-decoration:none;}
-.wrap{max-width:768px;margin:0 auto;padding:0 22px 72px;}
+#app{display:grid;grid-template-columns:244px minmax(0,1fr) minmax(0,1.12fr);
+  grid-template-rows:minmax(0,1fr);height:100vh;overflow:hidden;}
+#app.wide{grid-template-columns:244px minmax(0,1fr);}
+#app.wide #detail{display:none;}
+#rail{background:var(--rail);border-right:1px solid var(--line);display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;min-width:0;min-height:0;}
+#listcol{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--ground);
+  overflow-y:auto;overflow-x:hidden;min-width:0;min-height:0;padding-bottom:40px;}
+#detail{background:var(--panel);overflow-y:auto;overflow-x:hidden;min-width:0;min-height:0;}
 header{position:sticky;top:0;z-index:9;background:var(--ground);border-bottom:1px solid transparent;
   transition:box-shadow .25s ease,border-color .25s ease;}
 header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,.25);}
-.mast{max-width:768px;margin:0 auto;padding:18px 22px 0;}
+.mast{max-width:none;margin:0;padding:20px 16px 0;}
 .brandrow{display:flex;align-items:baseline;justify-content:space-between;gap:14px;}
-.brand{font-weight:600;font-size:26px;letter-spacing:-.01em;line-height:1;}
+.brand{font-weight:600;font-size:19px;letter-spacing:-.012em;line-height:1.16;}
 .brand .the{font-style:italic;font-weight:400;color:var(--muted);}
 .tagline{font-family:var(--sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--faint);margin-top:6px;}
@@ -53,17 +65,20 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
 .toggle:hover{border-color:var(--accent);color:var(--accent);}
 .toggle:active{transform:scale(.94);}
 .doublerule{height:3px;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);margin:14px 0 0;}
-.navtabs{display:flex;gap:6px;padding:12px 0 4px;flex-wrap:nowrap;overflow-x:auto;
+.navtabs{display:flex;gap:5px;padding:14px 0 6px;flex-wrap:wrap;overflow-x:visible;
   scrollbar-width:none;-ms-overflow-style:none;-webkit-mask:linear-gradient(90deg,#000 94%,transparent);}
 .navtabs::-webkit-scrollbar{display:none;}
-.navtabs button{font-family:var(--sans);font-size:12.5px;font-weight:600;letter-spacing:.01em;
+.navtabs button{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.02em;
   color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:20px;
-  padding:7px 14px;cursor:pointer;white-space:nowrap;flex:none;
+  padding:5px 10px;cursor:pointer;white-space:nowrap;flex:none;
   transition:background .15s ease,border-color .15s ease,color .15s ease,transform .1s ease;}
 .navtabs button:hover:not(.on){border-color:var(--accent);color:var(--accent);}
 .navtabs button:active{transform:scale(.96);}
 .navtabs button.on{color:var(--panel);background:var(--ink);border-color:var(--ink);}
-.navtools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0 12px;}
+.navtools{display:flex;flex-direction:column;align-items:stretch;gap:7px;padding:6px 0 14px;}
+.navtools .sp{display:none;}
+#q{width:100%!important;max-width:none!important;}
+.searchwrap{display:flex;}
 .navtools .sp{flex:1;}
 .searchwrap{position:relative;display:inline-flex;align-items:center;}
 .searchwrap:before{content:"";position:absolute;left:10px;width:12px;height:12px;pointer-events:none;
@@ -79,8 +94,9 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   cursor:pointer;max-width:44vw;transition:border-color .15s,color .15s;}
 #cat:hover,#month:hover,#jsel:hover,#topic:hover{border-color:var(--accent);color:var(--accent);}
 #cat:focus,#month:focus,#jsel:focus,#topic:focus{outline:0;border-color:var(--accent);}
-.dateline{font-family:var(--sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--muted);margin:26px 0 2px;display:flex;align-items:center;gap:10px;}
+.dateline{font-family:var(--sans);font-size:11px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted);margin:0;padding:18px 18px 13px;border-bottom:1px solid var(--line);
+  display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;line-height:1.5;}
 .dateline .n{font-variant-numeric:tabular-nums;color:var(--faint);}
 /* a card with no score has no rail to show, so it spans the full width */
 .entry.flat{grid-template-columns:1fr;}
@@ -90,14 +106,14 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
 .ntag.wait{color:var(--faint);background:transparent;border:1px dashed var(--line);}
 
 /* ---- two-level navigation ---- */
-.subtabs{display:flex;gap:5px;padding:0 0 10px;flex-wrap:wrap;}
+.subtabs{display:flex;flex-direction:column;align-items:stretch;gap:1px;padding:4px 0 8px;}
 .subtabs button{font-family:var(--sans);font-size:12px;font-weight:500;
   letter-spacing:.01em;color:var(--muted);background:transparent;
-  border:1px solid transparent;border-radius:16px;padding:5px 12px;
+  border:0;border-left:2px solid transparent;border-radius:0 5px 5px 0;padding:7px 9px;text-align:left;font-size:13px;
   cursor:pointer;transition:color .15s,background .15s;}
 .subtabs button:hover:not(.on){color:var(--accent);background:var(--line2);}
 .subtabs button.on{color:var(--accent);background:var(--panel);
-  border-color:var(--line);font-weight:600;}
+  border-left-color:var(--accent);font-weight:600;}
 .subtabs button[hidden]{display:none;}
 
 /* ---- responsive: the portal previously had NO width breakpoints, so on a
@@ -259,26 +275,31 @@ a.cite{font-family:var(--sans);font-size:11px;font-weight:600;vertical-align:sup
 .src a{color:var(--ink);text-decoration:none;font-weight:600;}
 .src a:hover{color:var(--accent);}
 .src .meta{font-family:var(--sans);font-size:11.5px;color:var(--muted);margin-top:2px;}
-.sechead{font-size:19px;font-weight:600;margin:30px 0 4px;padding-bottom:7px;
+.sechead{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);margin:0;padding:20px 18px 6px;
   border-bottom:1px solid var(--ink);display:flex;justify-content:space-between;align-items:baseline;}
 .sechead .cnt{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--faint);font-weight:400;}
 .sechead.t2{color:var(--muted);border-bottom-color:var(--line);}
-.entry{display:grid;grid-template-columns:52px 1fr;gap:16px;padding:16px 18px;margin:10px 0;
-  background:var(--panel);border:1px solid var(--line);border-radius:14px;
-  box-shadow:0 1px 3px rgba(20,25,23,.04);
+.entry{display:grid;grid-template-columns:40px 1fr;gap:13px;padding:13px 18px;margin:0;cursor:pointer;
+  background:transparent;border:0;border-bottom:1px solid var(--line2);border-radius:0;box-shadow:none;
   transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;}
-.entry:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(20,25,23,.28);border-color:var(--accent);}
+.entry:hover{background:var(--panel);}
+.entry.on{background:var(--panel);box-shadow:inset 2px 0 0 var(--accent);}
+.entry.on .title{color:var(--accent);}
+.entry .summary,.entry .subs{display:none;}
+.entry .title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .rail{text-align:center;padding-top:2px;}
-.rail .rank{font-family:var(--serif);font-size:14px;font-weight:600;line-height:1;color:var(--accent);
-  font-variant-numeric:tabular-nums;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--line);}
-.gauge{width:38px;height:38px;border-radius:50%;margin:0 auto;display:flex;align-items:center;
-  justify-content:center;background:conic-gradient(var(--gc,var(--accent)) calc(var(--pct,0)*1%),var(--line) 0);}
-.gauge span{width:29px;height:29px;border-radius:50%;background:var(--panel);display:flex;
-  align-items:center;justify-content:center;font-size:11px;font-weight:700;
-  font-variant-numeric:tabular-nums;color:var(--ink);}
-.rail .cap{font-family:var(--sans);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:5px;}
-.title{font-size:17px;font-weight:600;line-height:1.28;text-wrap:balance;transition:color .12s;}
+.rail .rank{font-family:var(--sans);font-size:15px;font-weight:700;line-height:1;color:var(--accent);
+  font-variant-numeric:tabular-nums;padding:0;margin:0 0 4px;border:0;text-align:right;}
+.gauge{display:block;width:100%;height:auto;border-radius:0;margin:0;padding-bottom:7px;
+  background:linear-gradient(90deg,var(--gc,var(--accent)) 0 calc(var(--pct,0)*1%),
+    var(--line) calc(var(--pct,0)*1%) 100%) no-repeat bottom/100% 2px;}
+.gauge span{display:block;width:auto;height:auto;border-radius:0;background:none;
+  font-family:var(--sans);font-size:13.5px;font-weight:700;line-height:1.15;text-align:right;
+  font-variant-numeric:tabular-nums;color:var(--gc,var(--accent));}
+.rail .cap{display:none;}
+.title{font-size:15.5px;font-weight:600;line-height:1.3;text-wrap:pretty;transition:color .12s;}
 .title:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
 .meta{font-family:var(--sans);font-size:11.5px;letter-spacing:.02em;color:var(--muted);margin-top:4px;}
 .meta .j{color:var(--ink);font-weight:500;}
@@ -322,7 +343,7 @@ a.cite{font-family:var(--sans);font-size:11px;font-weight:600;vertical-align:sup
 .cites small{font-family:var(--sans);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:400;margin-left:3px;}
 .bar{height:2px;background:var(--line);margin:8px 0 0;border-radius:2px;overflow:hidden;}
 .bar i{display:block;height:100%;background:var(--cite);opacity:.55;}
-.rail .yr{font-family:var(--serif);font-size:16px;font-weight:600;line-height:1;color:var(--muted);font-variant-numeric:tabular-nums;}
+.rail .yr{font-family:var(--sans);font-size:15px;font-weight:700;line-height:1.15;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;}
 /* renamed from .tag: it collided with the sleeve rail's .tag at equal
    specificity and, being later, restyled every sleeve chip to a 9px
    uppercase canon badge with a currentColor border */
@@ -371,6 +392,73 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
   *{animation-duration:.001ms!important;animation-iteration-count:1!important;
     transition-duration:.001ms!important;scroll-behavior:auto!important;}
 }
+/* ---- detail pane: what used to be crammed onto every card ---- */
+.dwrap{padding:30px 32px 60px;max-width:640px;}
+.dempty{color:var(--faint);font-style:italic;padding:56px 24px;text-align:center;}
+.dkick{font-family:var(--sans);font-size:10.5px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);line-height:1.5;}
+.dtitle{font-size:27px;font-weight:600;line-height:1.22;letter-spacing:-.013em;margin:11px 0 0;text-wrap:pretty;}
+.dauth{font-style:italic;font-size:15.5px;color:var(--muted);margin-top:9px;line-height:1.4;}
+.dacts{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:20px 0 0;
+  padding-bottom:24px;border-bottom:1px solid var(--line);}
+.dbtn{font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.02em;
+  color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:5px;
+  padding:7px 13px;cursor:pointer;transition:border-color .15s,color .15s;}
+.dbtn:hover{border-color:var(--accent);color:var(--accent);}
+.dbtn.prim{color:var(--panel);background:var(--ink);border-color:var(--ink);}
+.dbtn.prim:hover{color:var(--panel);opacity:.85;}
+.dsum{font-size:17px;line-height:1.58;margin:22px 0 0;max-width:62ch;text-wrap:pretty;}
+.drubh{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-top:34px;
+  padding-bottom:9px;border-bottom:1px solid var(--ink);font-family:var(--sans);font-size:9.5px;
+  font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);}
+.drubh em{font-style:normal;font-size:11px;letter-spacing:.03em;text-transform:none;color:var(--faint);}
+.drub{display:flex;flex-direction:column;gap:0;margin:0;}
+.drub .sub{flex-direction:row;align-items:center;gap:12px;min-width:0;padding:9px 0;
+  border-bottom:1px solid var(--line2);}
+.drub .sub i{flex:1;font-size:11.5px;letter-spacing:0;text-transform:none;color:var(--muted);}
+.drub .sub b{width:54px;text-align:right;flex:none;}
+.drub .sub s{width:100px;flex:none;}
+.dnote{font-family:var(--sans);font-size:11px;color:var(--faint);margin-top:11px;}
+
+/* ---- keyboard help ---- */
+#helpwrap{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;
+  padding:40px;background:color-mix(in srgb,var(--ink) 45%,transparent);}
+#helpwrap[hidden]{display:none;}
+.helpcard{width:420px;max-width:100%;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:24px 26px 20px;box-shadow:0 30px 70px -30px rgba(0,0,0,.5);}
+.helphead{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  padding-bottom:10px;border-bottom:1px solid var(--ink);}
+.helphead b{font-family:var(--serif);font-size:17px;font-weight:600;letter-spacing:-.01em;}
+.helphead span{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint);}
+.helprow{display:grid;grid-template-columns:78px 1fr;gap:14px;align-items:baseline;
+  padding:9px 0;border-bottom:1px solid var(--line2);}
+.helprow kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;font-weight:600;
+  color:var(--ink);background:var(--line2);border-radius:4px;padding:2px 7px;justify-self:start;}
+.helprow span{font-family:var(--sans);font-size:12.5px;color:var(--muted);}
+.helplink{font-family:var(--sans);font-size:10.5px;font-weight:600;color:var(--muted);
+  background:none;border:0;padding:0;margin-top:9px;cursor:pointer;text-decoration:underline;
+  text-underline-offset:2px;display:block;}
+
+/* ---- the shell owns the breakpoints now; these win over the older rules ---- */
+/* Below this the detail pane is dropped, so the row has to carry the summary
+   again -- otherwise it is in the DOM and shown by nothing. */
+@media (max-width:940px){
+  #app{grid-template-columns:224px minmax(0,1fr);}
+  #detail{display:none;}
+  .entry .summary{display:block;}
+  .entry .title{-webkit-line-clamp:3;}
+}
+@media (max-width:820px){
+  #app{grid-template-columns:1fr;}
+  #rail{display:none;}
+}
+.entry{grid-template-columns:40px 1fr;}
+.entry.flat,.entry.classic{grid-template-columns:1fr;}
+.rail{display:block;text-align:right;padding:2px 0 0;}
+footer{padding:0 18px 8px;margin-top:32px;}
+.empty{padding:56px 22px;}
+.tagbar{padding:0 0 4px;}
 .katex{font-size:1.02em;}
 .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0;}
 </style>
@@ -379,7 +467,8 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
-<header>
+<div id="app">
+<aside id="rail">
   <div class="mast">
     <div class="brandrow">
       <div>
@@ -427,17 +516,26 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
       <span class="searchwrap"><input id="q" type="search" placeholder="Search…" autocomplete="off"></span>
     </div>
   </div>
-</header>
-<main class="wrap"><div id="view"></div>
+</aside>
+<main id="listcol"><div id="view"></div>
   <footer><div id="freshness" class="fresh"></div>
     Rubric scores are an ensemble consensus of multiple LLMs (Groq · Mistral ·
     OpenAI) — skim, don't trust blindly. Practitioner posts are listed as-is, not scored.
     Sources: NEP · NBER · arXiv · finance journals &amp; SSRN via Crossref · PM-Research ·
     OpenAlex · practitioner &amp; asset-manager research.
+  <button class="helplink" onclick="toggleHelp()">Keyboard shortcuts (?)</button>
   </footer>
 </main>
+<aside id="detail"><div class="dempty">Select a paper.</div></aside>
+</div>
+<div id="helpwrap" hidden></div>
 <script>
 let DATA=[], CLASSICS=[], MONTHLY={}, NBER={}, VIEW="recent", MAXSEEN="";
+let SEL=null, ROWMAP={};
+// The record a row was actually rendered from. ITEM_BY_URL is a merged registry
+// -- monthly/classics records overwrite the exported ones and carry different
+// fields -- so the detail pane reads the row's own object instead.
+const _rk=x=>{if(x&&x.url)ROWMAP[x.url]=x;return (x&&x.url)?' data-key="'+esc(x.url)+'"':'';};
 let ARCHIVE_DATA=null, archiveLoading=false;
 const TOPICS=["Asset Pricing & Factor Models", "Portfolio Construction & Optimization", "Market Efficiency & Behavioral", "Derivatives & Option Pricing", "Volatility Modeling", "Fixed Income & Credit", "Market Microstructure & Liquidity", "Fund Performance & Institutional", "Machine Learning in Finance", "Financial Econometrics", "Macro & Monetary", "Other"];
 const SLEEVES=[["trend_cta", "Trend / CTA"], ["carry", "Carry"], ["fx", "FX"], ["rates_credit", "Rates & credit"], ["commodities", "Commodities"], ["macro_regime", "Macro regime"], ["cross_asset", "Cross-asset"], ["vol_options", "Vol & options"], ["equity_xs", "Equity cross-section"], ["microstructure", "Microstructure"], ["other", "Other"]];
@@ -598,7 +696,7 @@ function entry(x,rank){
   const chips=sl.length?'<div class="sleeves">'+sl.map(k=>
     `<span class="sl${fit?' fit':''}" data-sleeve="${k}" title="Filter to ${esc(SLEEVE_LABEL[k]||k)}">${esc(SLEEVE_LABEL[k]||k)}</span>`).join('')+
     (fit?`<span class="sl fitn" title="usable on the desk">desk ${x.desk_fit}/3</span>`:'')+'</div>':'';
-  return `<div class="${cls}">${sc}<div class="body">${badge}
+  return `<div class="${cls}${x.url&&x.url===SEL?' on':''}"${_rk(x)}>${sc}<div class="body">${badge}
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
     <div class="meta">${watch}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
     ${chips}${sm}${subs}</div></div>`;
@@ -680,6 +778,14 @@ $('tagbar').addEventListener('click',e=>{
 // the chips on a card are the same filter, reached from the paper that
 // prompted the thought rather than from the rail
 $('view').addEventListener('click',e=>{
+  const row=e.target.closest('.entry[data-key]');
+  if(row&&!e.target.closest('a,button')){
+    SEL=row.dataset.key;
+    document.querySelectorAll('.entry.on').forEach(el=>el.classList.remove('on'));
+    row.classList.add('on');
+    showDetail(SEL);
+    return;
+  }
   const c=e.target.closest('.sl[data-sleeve]');
   if(c){setSleeve(c.dataset.sleeve);return;}
   // delegated: cards are re-rendered on every filter change, so per-node
@@ -816,7 +922,7 @@ function renderAnchors(){
     const pdf=x.pdf?` · <a href="${x.pdf}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">⭳ ${esc(x.pl||'PDF')}</a>`:'';
     // "flat": these cards carry no score rail, and plain .entry reserves a
     // 52px column for one -- which squeezed every anchor into a third of the card
-    return `<div class="entry flat"><div class="body">
+    return `<div class="entry flat${x.url===SEL?' on':''}"${_rk(x)}><div class="body">
       <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.t)}</a>
       <div class="meta"><span class="j">${esc(x.by)}</span> · ${x.yr} · <a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.ul)}</a>${pdf}</div>
       <div class="summary">${esc(x.why)}</div></div></div>`;
@@ -1903,7 +2009,7 @@ function nberEntry(x){
   const sm=x.abstract?`<div class="summary">${esc(x.abstract)}</div>`:'';
   const cls=isClassic(x)?`<span class="wtag" title="high citation velocity for its vintage">★ potential classic</span>`:'';
   const cites=(x.cites!=null)?`<div class="cites">${fmtK(x.cites)}<small>cites</small></div>${x.cites_per_year!=null?`<div class="cap">${x.cites_per_year}/yr</div>`:''}`:`<div class="yr">${esc(x.wp||'')}</div>`;
-  return `<div class="entry"><div class="rail">${cites}</div>
+  return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail">${cites}</div>
     <div class="body">
     <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${cls}</div>
     <div class="meta">${x.authors?esc(x.authors):''} · ${esc(x.wp||'')}${_pdfBtn({url:x.url})}${_saveBtn({url:x.url,title:x.title,authors:x.authors})}</div>
@@ -2022,7 +2128,7 @@ function renderForYou(){
 const _psource=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'').trim()||'Other';
 function pracEntry(x){
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
-  return `<div class="entry"><div class="rail"></div><div class="body">
+  return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail"></div><div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
     <div class="meta">${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
     ${sm}</div></div>`;
@@ -2119,7 +2225,7 @@ function monthlyEntry(x,rank){
   ].join('');
   const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}`;
   const cval=Math.round(x.composite);
-  return `<div class="entry"><div class="rail">
+  return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail">
       <div class="rank">${rank}</div><div class="gauge" style="--pct:${cval};--gc:${band}"><span>${cval}</span></div><div class="cap">composite</div></div>
     <div class="body">
       <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
@@ -2154,7 +2260,7 @@ function canonEntry(x){
   const tag=x.type?`<span class="ctag ${esc(String(x.type).toLowerCase())}">${esc(x.type)}</span>`:'';
   const cites=x.cites!=null?` · ${fmtK(x.cites)} cites`:'';
   const why=x.why||x.summary||'';
-  return `<div class="entry"><div class="rail"><div class="yr">${esc(x.year||'')}</div></div>
+  return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail"><div class="yr">${esc(x.year||'')}</div></div>
     <div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${tag}</div>
       ${why?`<div class="summary">${esc(why)}</div>`:''}
@@ -2180,7 +2286,7 @@ function renderClassics(){
   const max=Math.max(1,...rows.map(x=>x.cites||0));
   const head=sel==='__overall'?'Most-cited · finance · all-time':esc(sel);
   $('view').innerHTML=`<div class="dateline">${head} <span class="n">· ${rows.length} papers · by citations</span></div>`+
-    (rows.length?rows.map(x=>`<div class="entry classic"><div class="body">
+    (rows.length?rows.map(x=>`<div class="entry classic${x.url===SEL?' on':''}"${_rk(x)}><div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="cites">${fmtK(x.cites||0)}<small>cites</small></span></div>
       <div class="bar"><i style="width:${((x.cites||0)/max*100).toFixed(1)}%"></i></div>
       <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
@@ -2239,6 +2345,7 @@ function setView(v){
   // unlike the other facets this one is not view-specific: sleeves are a
   // property of the paper, so it applies anywhere papers are listed. On a
   // pinned tab the sleeve is already decided, so the rail only shows which.
+  $('app').classList.toggle('wide',v==='map'||v==='ask'||v==='pmap');
   $('tagbar').hidden=!(SLEEVE_VIEWS.indexOf(v)>=0||v.slice(0,3)==='sl:');
   if(!$('tagbar').hidden)renderTagbar();
   $('psrc').style.display=v==="practitioners"?'':'none';
@@ -2328,6 +2435,131 @@ Promise.all([
   // setView, not render: render() alone never clears the tag rail's `hidden`
   // attribute, so the sleeve tags stayed invisible until you switched tabs.
   setView(VIEW);
+});
+
+// ---------------------------------------------------------- Detail pane
+// The card used to carry the summary and all six rubric bars, on every row.
+// One selected paper shows them instead, in a column with room to read.
+function showDetail(url){
+  const d=$('detail');
+  const x=ROWMAP[url]||ITEM_BY_URL[url];
+  if(!x){d.innerHTML='<div class="dempty">Select a paper.</div>';return;}
+  // exported papers, monthly picks, classics and anchors name their fields
+  // differently; one shape from here on
+  const n={title:x.title||x.t||'(untitled)',
+    authors:x.authors||x.by||'',
+    src:jlabel(x)||x.journal||x.ul||'',
+    date:x.date||x.seen||(x.year!=null?String(x.year):(x.yr!=null?String(x.yr):'')),
+    topic:x.topic||'',
+    summary:x.summary||x.why||''};
+  const dv=x._displayScore!=null?x._displayScore:x.score;
+  const lvl=v=>v==null?'–':v+'/3';
+  const prov=x.contribution_provisional?' (prov.)':'';
+  const ctype=(x.novelty_type&&x.novelty_type!=='none')?' ('+esc(x.novelty_type)+')':'';
+  const hasScores=(x.generality!=null||x.contribution!=null||x.testability!=null||x.novelty_posterior!=null);
+  const label=x._displayLabel||'rating';
+  const rub=hasScores?'<div class="drubh"><span>Rubric</span><em>'+
+      (dv!=null?dv+' / 100 '+esc(label):'not scored')+'</em></div><div class="drub">'+[
+    _subBar('Relevance (vs history)',x.relevance_posterior!=null?Math.round(x.relevance_posterior*100)+'%':'–',(x.relevance_posterior||0)*100),
+    _subBar('Generality',lvl(x.generality),(x.generality||0)/3*100),
+    _subBar('Contribution'+ctype,lvl(x.contribution)+prov,(x.contribution||0)/3*100),
+    _subBar('Testability',lvl(x.testability),(x.testability||0)/3*100),
+    _subBar('Novelty vs history',x.novelty_posterior!=null?Math.round(x.novelty_posterior*100)+'%':'–',(x.novelty_posterior||0)*100),
+    (x.author_score!=null?_subBar('Author',Math.round(x.author_score),x.author_score):''),
+  ].join('')+'</div><div class="dnote">'+
+    (x.consensus_n?x.consensus_n+' models · '+(x.consensus_agree?'agree':'split'):'single pass · no consensus check')+
+    '</div>':(isPrac(x)?'<div class="dnote" style="margin-top:24px">Practitioner post — listed as-is, not scored.</div>':'');
+  const sl=(x.sleeves||[]).filter(k=>k!=='other');
+  const chips=sl.length?'<div class="sleeves" style="margin-top:18px">'+sl.map(k=>
+    '<span class="sl" data-sleeve="'+k+'">'+esc(SLEEVE_LABEL[k]||k)+'</span>').join('')+'</div>':'';
+  const kick=[n.src,n.date,n.topic].filter(Boolean).map(esc).join(' · ');
+  d.innerHTML='<div class="dwrap">'+
+    (kick?'<div class="dkick">'+kick+'</div>':'')+
+    '<h1 class="dtitle">'+esc(n.title)+'</h1>'+
+    '<div class="dauth">'+esc(n.authors||'Unattributed')+'</div>'+
+    '<div class="dacts"><a class="dbtn prim" href="'+esc(x.url)+'" target="_blank" rel="noopener">Open paper</a>'+
+      _pdfBtn(x)+_mapBtn(x)+_saveBtn(x)+'</div>'+
+    chips+
+    (x.cites!=null?'<div class="dkick" style="margin-top:22px;font-size:24px;letter-spacing:-.01em;'+
+      'text-transform:none;color:var(--cite);font-family:var(--serif);font-weight:600">'+fmtK(x.cites)+
+      ' <span style="font-family:var(--sans);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;'+
+      'color:var(--faint)">citations</span></div>':'')+
+    (n.summary?'<p class="dsum">'+esc(n.summary)+'</p>':'')+
+    (x.pdf?'<div class="dnote" style="margin-top:18px">Free copy: <a href="'+esc(x.pdf)+
+      '" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;text-decoration:underline">⭳ '+
+      esc(x.pl||'PDF')+'</a></div>':'')+
+    rub+'</div>';
+  d.scrollTop=0;
+}
+$('detail').addEventListener('click',e=>{
+  const c=e.target.closest('.sl[data-sleeve]');
+  if(c){setSleeve(c.dataset.sleeve);return;}
+  const m=e.target.closest('[data-pmap]');
+  if(m){e.preventDefault();openPaperMap(m.dataset.pmap);}
+});
+
+// ---------------------------------------------------------- Keyboard
+// Read daily, so the list should move under the hands: j/k down the feed,
+// / to search, s to save, p for the PDF, n for the neighbourhood.
+const KEYS=[['j / k','Next / previous paper'],['/','Search titles and authors'],
+  ['⌘K','Search'],['s','Save or unsave the selected paper'],
+  ['p','Open its PDF'],['n','Show its neighbourhood'],
+  ['[ / ]','Previous / next view'],['Esc','Close this panel'],['?','This panel']];
+function toggleHelp(force){
+  const w=$('helpwrap');
+  const show=force!==undefined?force:w.hidden;
+  if(show&&!w.innerHTML){
+    w.innerHTML='<div class="helpcard"><div class="helphead"><b>Keyboard</b><span>Esc to close</span></div>'+
+      KEYS.map(([k,t])=>'<div class="helprow"><kbd>'+esc(k)+'</kbd><span>'+esc(t)+'</span></div>').join('')+'</div>';
+    w.onclick=ev=>{if(!ev.target.closest('.helpcard'))toggleHelp(false);};
+  }
+  w.hidden=!show;
+}
+function _rows(){return Array.from(document.querySelectorAll('.entry[data-key]'));}
+function _selectRow(el){
+  if(!el)return;
+  SEL=el.dataset.key;
+  document.querySelectorAll('.entry.on').forEach(n=>n.classList.remove('on'));
+  el.classList.add('on');
+  showDetail(SEL);
+  const r=el.getBoundingClientRect(), c=$('listcol').getBoundingClientRect();
+  if(r.top<c.top+60)$('listcol').scrollTop-=(c.top+60-r.top);
+  else if(r.bottom>c.bottom-20)$('listcol').scrollTop+=(r.bottom-c.bottom+20);
+}
+function _moveSel(d){
+  const rows=_rows();
+  if(!rows.length)return;
+  const i=rows.findIndex(el=>el.dataset.key===SEL);
+  _selectRow(rows[Math.min(rows.length-1,Math.max(0,(i<0?(d>0?-1:0):i)+d))]);
+}
+function _cycleView(d){
+  const g=GROUPS[GROUP_OF[VIEW]]||[];
+  const vs=g.filter(v=>{const b=$('t-'+v);return b&&!b.hidden;});
+  const i=vs.indexOf(VIEW);
+  if(i<0||!vs.length)return;
+  setView(vs[(i+d+vs.length)%vs.length]);
+}
+addEventListener('keydown',e=>{
+  const t=e.target;
+  const typing=t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable);
+  if(e.key==='Escape'){if(typing&&t.blur)t.blur();toggleHelp(false);return;}
+  if(typing)return;
+  if(e.metaKey||e.ctrlKey){
+    if(e.key.toLowerCase()==='k'){e.preventDefault();$('q').focus();$('q').select();}
+    return;
+  }
+  switch(e.key){
+    case 'j': case 'ArrowDown': e.preventDefault();_moveSel(1);break;
+    case 'k': case 'ArrowUp': e.preventDefault();_moveSel(-1);break;
+    case '/': e.preventDefault();$('q').focus();$('q').select();break;
+    case '?': e.preventDefault();toggleHelp();break;
+    case 's': {const b=document.querySelector('.entry.on .savebtn');if(b)b.click();break;}
+    case 'p': {const a=document.querySelector('.entry.on .pdfbtn');if(a)open(a.href,'_blank','noopener');break;}
+    case 'n': {const b=document.querySelector('.entry.on [data-pmap]');if(b)openPaperMap(b.dataset.pmap);break;}
+    case '[': _cycleView(-1);break;
+    case ']': _cycleView(1);break;
+    default: break;
+  }
 });
 </script>
 </body>
