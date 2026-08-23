@@ -827,7 +827,7 @@ const _ptitle=u=>((ITEM_BY_UID[u]||{}).title||u||'')
   .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().slice(0,80);
 function buildNeighbourhood(uid){
   const seed=_rowOf(uid);
-  if(seed<0||!EDGES||!EDGES.size)return null;
+  if(seed<0||!E_OFF||!edgeCount(seed))return null;
   // Deduplicate by title before taking the top N. The archive holds the same
   // paper under more than one uid in ~620 cases (an arXiv id and a title hash,
   // or an NBER working paper and its DOI), and those twins sit at cosine 1.00
@@ -836,8 +836,10 @@ function buildNeighbourhood(uid){
   const seedTitle=_ptitle(VEC_UIDS[seed]);
   const seen=new Set([seedTitle]);
   const near=[];
-  for(const e of (EDGES.get(seed)||[]).slice()
-      .sort((a,b)=>(b[1]===EDGE_CITE?1:b[2])-(a[1]===EDGE_CITE?1:a[2]))){
+  const cand=[];
+  eachEdge(seed,(nb,kind,w)=>cand.push([nb,kind,w]));
+  cand.sort((a,b)=>(b[1]===EDGE_CITE?1:b[2])-(a[1]===EDGE_CITE?1:a[2]));
+  for(const e of cand){
     const t=_ptitle(VEC_UIDS[e[0]]);
     if(seen.has(t))continue;
     seen.add(t);near.push(e);
@@ -849,10 +851,10 @@ function buildNeighbourhood(uid){
   // into a shape you can read
   const links=[];
   for(const r of rows){
-    for(const [nb,kind,w] of (EDGES.get(r)||[])){
-      if(!set.has(nb)||nb<=r)continue;
+    eachEdge(r,(nb,kind,w)=>{
+      if(!set.has(nb)||nb<=r)return;
       links.push([rows.indexOf(r),rows.indexOf(nb),kind,w]);
-    }
+    });
   }
   const nodes=rows.map((r,i)=>{
     const u=VEC_UIDS[r], it=ITEM_BY_UID[u]||{};
@@ -928,7 +930,11 @@ function drawPmap(){
 }
 function renderPaperMap(){
   if(!VEC||!ARCHIVE_DATA){loadIndex(renderPaperMap);
-    $('view').innerHTML='<div class="empty">Loading the graph…</div>';return;}
+    $('view').innerHTML='<div class="empty">Loading the archive…</div>';return;}
+  if(EDGES===null){                       // still in flight -- this view needs it
+    $('view').innerHTML='<div class="empty">Loading the graph…</div>';
+    loadEdges().then(renderPaperMap);return;
+  }
   const it=ITEM_BY_UID[PMAP_UID]||{};
   const g=buildNeighbourhood(PMAP_UID);
   if(!g){
@@ -1090,25 +1096,50 @@ let indexWarning='';
 // <srcRow uint32, dstRow uint32, kind uint8, weight float32> against
 // vec.json's uid order, so traversal needs no lookup table and stays in the
 // browser like the rest of retrieval.
-let EDGES=null, edgesLoading=false;
+// Adjacency as CSR (compressed sparse row), not a Map of Arrays. 166k edges
+// became 332k directed entries, and a Map with 11.5k keys each holding a
+// growable Array of tuples allocates ~500k objects -- which is what made the
+// graph feel slow to arrive, not the 1 MB download. Three flat typed arrays
+// allocate four times total and the parse is two linear passes.
+let EDGES=null, edgesLoading=false, edgesPromise=null;
+let E_OFF=null, E_DST=null, E_KIND=null, E_W=null;   // CSR
 const EDGE_SIM=0, EDGE_CITE=1;
 function loadEdges(){
-  if(EDGES||edgesLoading)return Promise.resolve();
-  edgesLoading=true;
-  return fetch('edges.bin').then(r=>r.arrayBuffer()).then(buf=>{
-    const dv=new DataView(buf), stride=13, n=Math.floor(buf.byteLength/stride);
-    const adj=new Map();
-    for(let i=0;i<n;i++){
-      const o=i*stride;
-      const a=dv.getUint32(o,true), b=dv.getUint32(o+4,true);
-      const k=dv.getUint8(o+8), w=dv.getFloat32(o+9,true);
-      if(!adj.has(a))adj.set(a,[]);
-      if(!adj.has(b))adj.set(b,[]);
-      adj.get(a).push([b,k,w]);
-      adj.get(b).push([a,k,w]);          // both edge kinds are traversed either way
+  if(edgesPromise)return edgesPromise;
+  edgesPromise=fetch('edges.bin').then(r=>r.arrayBuffer()).then(buf=>{
+    const dv=new DataView(buf);
+    if(buf.byteLength<12||dv.getUint32(0,false)!==0x51444731){  // "QDG1"
+      EDGES=false;return;                                       // absent or stale
     }
-    EDGES=adj;edgesLoading=false;
-  }).catch(()=>{EDGES=new Map();edgesLoading=false;});
+    const nodes=dv.getUint32(4,true), m=dv.getUint32(8,true), width=dv.getUint8(12);
+    const stride=width*2+2, base=16;
+    const rd=width===2?(o)=>dv.getUint16(o,true):(o)=>dv.getUint32(o,true);
+    // pass 1: how many entries each node needs (each edge counts both ways)
+    const deg=new Int32Array(nodes+1);
+    for(let i=0;i<m;i++){
+      const o=base+i*stride;
+      deg[rd(o)]++;deg[rd(o+width)]++;
+    }
+    E_OFF=new Int32Array(nodes+1);
+    for(let i=0,run=0;i<=nodes;i++){E_OFF[i]=run;run+=deg[i]||0;}
+    const fill=E_OFF.slice();
+    E_DST=new Int32Array(m*2);E_KIND=new Uint8Array(m*2);E_W=new Uint8Array(m*2);
+    // pass 2: place them
+    for(let i=0;i<m;i++){
+      const o=base+i*stride, a=rd(o), b=rd(o+width);
+      const k=dv.getUint8(o+width*2), w=dv.getUint8(o+width*2+1);
+      let q=fill[a]++;E_DST[q]=b;E_KIND[q]=k;E_W[q]=w;
+      q=fill[b]++;E_DST[q]=a;E_KIND[q]=k;E_W[q]=w;
+    }
+    EDGES=true;
+  }).catch(()=>{EDGES=false;});
+  return edgesPromise;
+}
+const edgeCount=r=>(E_OFF&&r>=0&&r+1<E_OFF.length)?E_OFF[r+1]-E_OFF[r]:0;
+// iterate a node's neighbours without allocating anything
+function eachEdge(r,fn){
+  if(!E_OFF||r<0||r+1>=E_OFF.length)return;
+  for(let q=E_OFF[r];q<E_OFF[r+1];q++)fn(E_DST[q],E_KIND[q],E_W[q]/255);
 }
 // One hop out from the papers similarity already chose. This is the whole
 // point of the graph: a paper that never uses the question's vocabulary but
@@ -1116,15 +1147,14 @@ function loadEdges(){
 // Citation neighbours count for more than similarity ones -- a reference is a
 // stated relationship, not an inferred one.
 function expandGraph(seedRows, limit){
-  if(!EDGES||!EDGES.size)return [];
+  if(!E_OFF)return [];
   const seed=new Set(seedRows), mass=new Map();
   seedRows.forEach((r,i)=>{
     const decay=1/(1+i*0.15);            // earlier picks pull harder
-    for(const [nb,kind,w] of (EDGES.get(r)||[])){
-      if(seed.has(nb))continue;
-      const add=(kind===EDGE_CITE?1.0:Math.max(0,w))*decay;
-      mass.set(nb,(mass.get(nb)||0)+add);
-    }
+    eachEdge(r,(nb,kind,w)=>{
+      if(seed.has(nb))return;
+      mass.set(nb,(mass.get(nb)||0)+(kind===EDGE_CITE?1.0:Math.max(0,w))*decay);
+    });
   });
   return [...mass.entries()].sort((a,b)=>b[1]-a[1]).slice(0,limit);
 }
@@ -1250,9 +1280,8 @@ function loadIndex(cb){
   Promise.all([
     fetch('vec.json').then(r=>r.json()),
     fetch('vec.bin').then(r=>r.arrayBuffer()),
-    loadEdges(),
     ARCHIVE_DATA?Promise.resolve(ARCHIVE_DATA):fetch('archive.json').then(r=>r.json()),
-  ]).then(([meta,buf,_e,arch])=>{
+  ]).then(([meta,buf,arch])=>{
     VEC_UIDS=meta.uids;VEC=new Int8Array(buf);VEC_DIM=meta.dim||0;VEC_SHARD=meta.shard||64;
     // vec.json is the MANIFEST for vec.bin -- row i of the buffer is uids[i].
     // If the two disagree, retrieve() reads past the end of an Int8Array,
@@ -1271,6 +1300,10 @@ function loadIndex(cb){
     ARCHIVE_DATA=arch;
     arch.forEach(x=>{if(x.uid)ITEM_BY_UID[x.uid]=x;if(x.url)ITEM_BY_URL[x.url]=x;});
     indexLoading=false;
+    // The graph is a bonus for Ask (it widens a result set) and required only
+    // by the neighbourhood view, which awaits it itself. Holding the index
+    // load on it put another megabyte in front of the first answer.
+    loadEdges();
     if(VIEW==='ask')cb();
   }).catch(()=>{
     indexLoading=false;
@@ -1486,7 +1519,7 @@ async function doAsk(q,force){
     // similarity alone did not surface, then let them compete in the same
     // ranking rather than being appended blindly.
     let viaGraph=0;
-    if(EDGES&&EDGES.size){
+    if(E_OFF){          // CSR present; EDGES is now a boolean flag, not a Map
       const seedRows=cands.slice(0,GRAPH_SEED).map(c=>c._row);
       const extraRows=expandGraph(seedRows,GRAPH_EXPAND);
       const known=new Set(cands.map(c=>c._row));

@@ -244,13 +244,33 @@ def report(con, args):
 
 
 def export(con, args):
-    """docs/edges.bin -- packed row-index pairs against docs/vec.json's uids, so
-    the browser can traverse without another lookup table."""
+    """docs/edges.bin -- packed against docs/vec.json's uid order so the browser
+    can traverse without a lookup table.
+
+    Layout: an 8-byte header then fixed-width records.
+
+        magic  "QDG1"   4 bytes
+        nodes  uint32           how many rows vec.json declares
+        edges  uint32
+        w      uint8            index width in bytes: 2 while nodes < 65536
+        pad    3 bytes
+
+        record: src[w] dst[w] kind:uint8 weight:uint8   (weight = cos * 255)
+
+    That is 6 bytes a record at today's size against the 13 it started at
+    (two uint32 and a float32). The archive is 11.5k papers, so a uint16 row
+    index is ample and the header carries the width so it widens automatically
+    rather than silently truncating if the archive passes 65,535.
+    """
     meta = json.loads(pathlib.Path("docs/vec.json").read_text(encoding="utf-8"))
     row = {u: i for i, u in enumerate(meta["uids"])}
-    out = bytearray()
-    kept = collections.Counter()
+    n_nodes = len(meta["uids"])
+    width = 2 if n_nodes < 65536 else 4
+    fmt = "<HHBB" if width == 2 else "<IIBB"
+
     con.executescript(_CITES_SCHEMA)
+    recs = bytearray()
+    kept = collections.Counter()
     for kind, code in (("sim", 0), ("cites", 1)):
         q = ("SELECT src,dst,w FROM g.edges WHERE kind='sim'" if kind == "sim"
              else "SELECT src,dst,1.0 FROM cites")
@@ -258,12 +278,15 @@ def export(con, args):
             a, b = row.get(src), row.get(dst)
             if a is None or b is None:
                 continue
-            out += struct.pack("<IIBf", a, b, code, w or 1.0)
+            recs += struct.pack(fmt, a, b, code,
+                                max(0, min(255, int(round((w or 1.0) * 255)))))
             kept[kind] += 1
+
+    head = b"QDG1" + struct.pack("<IIB3x", n_nodes, sum(kept.values()), width)
     p = pathlib.Path("docs/edges.bin")
-    p.write_bytes(bytes(out))
-    log(f"[graph] wrote {p} - {sum(kept.values()):,} edges "
-        f"({dict(kept)}), {len(out)/1e6:.1f} MB")
+    p.write_bytes(head + bytes(recs))
+    log(f"[graph] wrote {p} - {sum(kept.values()):,} edges ({dict(kept)}), "
+        f"{len(head)+len(recs):,} bytes at {width*2+2} b/edge")
 
 
 def main():
