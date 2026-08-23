@@ -84,13 +84,19 @@ def main():
             drops.append((uid, (title or "")[:66]))
             continue
 
+        # TITLES too. They are embedded alongside the abstract (embed.py's
+        # _text is title + topic + abstract) and they are what the portal and
+        # the neighbourhood view display, so a title carrying "&amp;nbsp;" is
+        # both a bad vector and a visibly broken card. The title lives in a
+        # COLUMN as well as in meta, so both are rewritten.
+        ftitle = sources._clean(title or "")
         fixed = sources._clean(abstract)
-        if abstract and fixed != abstract:
-            recleaned.append((uid, d, fixed))
+        if (abstract and fixed != abstract) or (title and ftitle != title):
+            recleaned.append((uid, d, fixed, ftitle))
 
-    log(f"[clean] {len(recleaned):,} abstracts contain markup or entities")
-    for uid, _, f in recleaned[:3]:
-        log(f"    -> {f[:88]}")
+    log(f"[clean] {len(recleaned):,} titles/abstracts contain markup or entities")
+    for uid, _, f, ft in recleaned[:3]:
+        log(f"    -> {(ft or f)[:88]}")
     log(f"[clean] {len(drops):,} papers are unambiguously another discipline")
     for uid, t in drops[:5]:
         log(f"    x  {t}")
@@ -99,8 +105,15 @@ def main():
         log("[clean] dry run -- nothing written")
         return
 
-    for uid, d, fixed in recleaned:
-        store.update_meta(con, uid, {"abstract": fixed})
+    for uid, d, fixed, ftitle in recleaned:
+        patch = {}
+        if fixed:
+            patch["abstract"] = fixed
+        if ftitle:
+            patch["title"] = ftitle
+            con.execute("UPDATE items SET title=? WHERE uid=?", (ftitle, uid))
+        if patch:
+            store.update_meta(con, uid, patch)
         # the vector was built from the old text, markup included
         con.execute("DELETE FROM embeddings WHERE uid=?", (uid,))
     for uid, _ in drops:

@@ -294,6 +294,14 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   text-transform:uppercase;margin-right:7px;padding:1px 5px;border-radius:4px;
   color:var(--cite);background:color-mix(in srgb,var(--cite) 14%,transparent);}
 
+.mapbtn{font-family:var(--sans);font-size:10.5px;font-weight:700;letter-spacing:.03em;
+  margin-left:8px;padding:1px 7px;border-radius:5px;cursor:pointer;
+  color:var(--accent);background:transparent;border:1px solid var(--line);}
+.mapbtn:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);}
+#pmapwrap{position:relative;margin:12px 0 6px;border:1px solid var(--line);
+  border-radius:14px;background:var(--panel);overflow:hidden;}
+#pmapcv{display:block;width:100%;height:min(66vh,600px);cursor:pointer;}
+.pmapnote{font-family:var(--sans);font-size:11.5px;color:var(--muted);margin:8px 2px 0;}
 #mapwrap{position:relative;margin:14px 0 6px;border:1px solid var(--line);
   border-radius:14px;background:var(--panel);overflow:hidden;}
 #mapcv{display:block;width:100%;height:min(68vh,640px);cursor:crosshair;}
@@ -501,6 +509,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
       <button id="t-practitioners">Practitioners</button>
       <button id="t-archive">Archive</button>
       <button id="t-map">Map</button>
+      <button id="t-pmap" hidden></button>
       <button id="t-classics">Classics</button>
       <button id="t-anchors">Anchors</button>
       <button id="t-ask" hidden></button>
@@ -540,7 +549,7 @@ const SLEEVES=__SLEEVES_JSON__;
 const SLEEVE_LABEL=Object.fromEntries(SLEEVES);
 const PINS_KEY='qd_pins_v1', PIN_MAX=4;
 let SLEEVE='all', PINS=[];
-const BASE_PAPERS=['recent','foryou','watched','nber','monthly','practitioners','archive','map'];
+const BASE_PAPERS=['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap'];
 let _toastT=null;
 function toast(msg){
   let el=$('toast');
@@ -613,6 +622,12 @@ function _ftBtn(x){
 function _pdfBtn(x){
   const p=_pdfUrl(x);
   return p?`<a class="pdfbtn" href="${esc(p)}" target="_blank" rel="noopener" title="Open the publisher's own PDF — save from there">PDF</a>`:'';
+}
+// Every card gets a way into its own neighbourhood. This is the map that was
+// actually wanted: not 11.5k points, but what sits around ONE paper.
+function _mapBtn(x){
+  if(!x||!x.uid)return'';
+  return `<button class="mapbtn" data-pmap="${esc(x.uid)}" title="Papers around this one">\u25c8 near</button>`;
 }
 function _saveBtn(x){
   if(!x||!x.url)return'';
@@ -690,7 +705,7 @@ function entry(x,rank){
     (fit?`<span class="sl fitn" title="usable on the desk">desk ${x.desk_fit}/3</span>`:'')+'</div>':'';
   return `<div class="${cls}">${sc}<div class="body">${badge}
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${watch}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
+    <div class="meta">${watch}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
     ${chips}${sm}${subs}</div></div>`;
 }
 // Desk sleeves are MULTI-LABEL -- a paper can be carry AND fx at once -- so this
@@ -771,7 +786,11 @@ $('tagbar').addEventListener('click',e=>{
 // prompted the thought rather than from the rail
 $('view').addEventListener('click',e=>{
   const c=e.target.closest('.sl[data-sleeve]');
-  if(c)setSleeve(c.dataset.sleeve);
+  if(c){setSleeve(c.dataset.sleeve);return;}
+  // delegated: cards are re-rendered on every filter change, so per-node
+  // handlers would be rebound (and leak) constantly
+  const m=e.target.closest('[data-pmap]');
+  if(m){e.preventDefault();openPaperMap(m.dataset.pmap);}
 });
 function grouped(rows){
   const q=$('q').value.toLowerCase().trim();
@@ -913,6 +932,176 @@ function renderAnchors(){
   }).join('');
   $('view').innerHTML=`<div class="dateline">Anchors <span class="n">· foundational books for a systematic-macro / CTA desk — read once and keep, while the feed keeps you current · free PDF linked where legitimately available</span></div>`+(secs||'<div class="empty">No matches.</div>');
 }
+// -------------------------------------------------------- Paper neighbourhood
+// One paper at the centre, the papers the graph says sit around it, and the
+// edges among THOSE too -- so a tight cluster looks tight rather than a star.
+// Similarity edges are faint, citations solid: a citation is a stated
+// relationship, similarity is an inferred one, and the picture should not
+// pretend they are the same claim.
+let PMAP_UID=null, PMAP_NODES=[], pmapHover=-1;
+const PMAP_N=28;                      // neighbours drawn around the seed
+function openPaperMap(uid){PMAP_UID=uid;setView('pmap');}
+function _rowOf(uid){
+  if(!VEC_UIDS)return -1;
+  if(!_rowIndex){_rowIndex={};VEC_UIDS.forEach((u,i)=>{_rowIndex[u]=i;});}
+  const r=_rowIndex[uid];return r===undefined?-1:r;
+}
+let _rowIndex=null;
+const _ptitle=u=>((ITEM_BY_UID[u]||{}).title||u||'')
+  .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().slice(0,80);
+function buildNeighbourhood(uid){
+  const seed=_rowOf(uid);
+  if(seed<0||!EDGES||!EDGES.size)return null;
+  // Deduplicate by title before taking the top N. The archive holds the same
+  // paper under more than one uid in ~620 cases (an arXiv id and a title hash,
+  // or an NBER working paper and its DOI), and those twins sit at cosine 1.00
+  // -- so an undeduped neighbourhood opens with the seed paper listed twice as
+  // its own nearest neighbours, which is worse than useless.
+  const seedTitle=_ptitle(VEC_UIDS[seed]);
+  const seen=new Set([seedTitle]);
+  const near=[];
+  for(const e of (EDGES.get(seed)||[]).slice()
+      .sort((a,b)=>(b[1]===EDGE_CITE?1:b[2])-(a[1]===EDGE_CITE?1:a[2]))){
+    const t=_ptitle(VEC_UIDS[e[0]]);
+    if(seen.has(t))continue;
+    seen.add(t);near.push(e);
+    if(near.length>=PMAP_N)break;
+  }
+  const rows=[seed,...near.map(e=>e[0])];
+  const set=new Set(rows);
+  // second-order edges: the links BETWEEN neighbours are what turn a star
+  // into a shape you can read
+  const links=[];
+  for(const r of rows){
+    for(const [nb,kind,w] of (EDGES.get(r)||[])){
+      if(!set.has(nb)||nb<=r)continue;
+      links.push([rows.indexOf(r),rows.indexOf(nb),kind,w]);
+    }
+  }
+  const nodes=rows.map((r,i)=>{
+    const u=VEC_UIDS[r], it=ITEM_BY_UID[u]||{};
+    return {row:r,uid:u,it:it,seed:i===0,
+            x:i===0?0:Math.cos(i/PMAP_N*6.2832)*0.6,
+            y:i===0?0:Math.sin(i/PMAP_N*6.2832)*0.6,vx:0,vy:0};
+  });
+  return {nodes:nodes,links:links};
+}
+// A small spring layout. ~29 nodes and 150 ticks is a few milliseconds, so it
+// runs once on open rather than animating -- no rAF loop to leak.
+function layoutPmap(g){
+  const N=g.nodes.length;
+  for(let t=0;t<220;t++){
+    for(let i=0;i<N;i++){
+      for(let j=i+1;j<N;j++){
+        const a=g.nodes[i],b=g.nodes[j];
+        let dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy+0.0001;
+        const rep=0.0016/d2;
+        const d=Math.sqrt(d2);
+        a.vx-=rep*dx/d;a.vy-=rep*dy/d;b.vx+=rep*dx/d;b.vy+=rep*dy/d;
+      }
+    }
+    for(const [i,j,kind,w] of g.links){
+      const a=g.nodes[i],b=g.nodes[j];
+      const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)+0.0001;
+      // a stronger relationship pulls to a shorter rest length
+      const rest=kind===EDGE_CITE?0.30:(0.75-Math.min(0.45,w*0.6));
+      const f=(d-rest)*0.05;
+      a.vx+=f*dx/d;a.vy+=f*dy/d;b.vx-=f*dx/d;b.vy-=f*dy/d;
+    }
+    for(const nd of g.nodes){
+      if(nd.seed){nd.x=nd.y=0;nd.vx=nd.vy=0;continue;}
+      nd.x+=nd.vx;nd.y+=nd.vy;nd.vx*=0.82;nd.vy*=0.82;
+      const r=Math.hypot(nd.x,nd.y);
+      if(r>1.0){nd.x/=r;nd.y/=r;}
+    }
+  }
+}
+function drawPmap(){
+  const cv=$('pmapcv');if(!cv||!PMAP_NODES)return;
+  const g=PMAP_NODES;
+  const dpr=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  cv.width=w*dpr;cv.height=h*dpr;
+  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
+  c.clearRect(0,0,w,h);
+  const R=Math.min(w,h)/2-46, cx=w/2, cy=h/2;
+  const px=v=>cx+v*R, py=v=>cy+v*R;
+  const ink=getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()||'#111';
+  const line=getComputedStyle(document.documentElement).getPropertyValue('--line').trim()||'#ddd';
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#0C5C4A';
+  for(const [i,j,kind] of g.links){
+    const a=g.nodes[i],b=g.nodes[j];
+    c.beginPath();c.moveTo(px(a.x),py(a.y));c.lineTo(px(b.x),py(b.y));
+    c.strokeStyle=kind===EDGE_CITE?acc:line;
+    c.lineWidth=kind===EDGE_CITE?1.5:0.8;
+    c.globalAlpha=kind===EDGE_CITE?0.75:0.5;
+    c.stroke();
+  }
+  c.globalAlpha=1;
+  g.nodes.forEach((nd,i)=>{
+    const sc=nd.it.score, r=nd.seed?9:(sc!=null?4+sc/22:4.5);
+    c.beginPath();c.arc(px(nd.x),py(nd.y),r,0,6.2832);
+    c.fillStyle=nd.seed?acc:mapColorOf({c:0,s:nd.it.sleeves||[],p:nd.it.sleeves_prop||[],f:nd.it.desk_fit||0});
+    c.fill();
+    if(nd.seed||i===pmapHover){c.strokeStyle=ink;c.lineWidth=1.7;c.stroke();}
+  });
+  // the seed always keeps its title on screen; the rest on hover
+  c.fillStyle=ink;c.font='600 12px ui-sans-serif,system-ui,sans-serif';
+  c.textAlign='center';
+  const t=(g.nodes[0].it.title||'').slice(0,74);
+  c.fillText(t,cx,cy-18);
+}
+function renderPaperMap(){
+  if(!VEC||!ARCHIVE_DATA){loadIndex(renderPaperMap);
+    $('view').innerHTML='<div class="empty">Loading the graph\u2026</div>';return;}
+  const it=ITEM_BY_UID[PMAP_UID]||{};
+  const g=buildNeighbourhood(PMAP_UID);
+  if(!g){
+    $('view').innerHTML=`<div class="dateline">Neighbourhood</div>
+      <div class="empty">This paper is not in the graph \u2014 it has no embedding yet.</div>`;
+    return;
+  }
+  layoutPmap(g);PMAP_NODES=g;
+  const nc=g.links.filter(l=>l[2]===EDGE_CITE).length;
+  $('view').innerHTML=`<div class="dateline">Around this paper <span class="n">\u00b7 ${g.nodes.length-1} neighbours \u00b7 ${g.links.length} links${nc?', '+nc+' of them citations':''}</span></div>
+    <div class="entry flat"><div class="body">
+      <a class="title" href="${esc(it.url||'#')}" target="_blank" rel="noopener">${esc(it.title||PMAP_UID)}</a>
+      <div class="meta">${esc(it.authors||'')}${it.date?' \u00b7 '+esc(it.date):''}</div></div></div>
+    <div id="pmapwrap"><canvas id="pmapcv"></canvas><div id="maptip"></div></div>
+    <div class="pmapnote">Solid lines are citations between these papers; faint lines are similarity. Click a node to move the centre there.</div>`;
+  const cv=$('pmapcv'),tip=$('maptip');
+  drawPmap();
+  addEventListener('resize',drawPmap,{passive:true});
+  const hit=e=>{
+    const r=cv.getBoundingClientRect();
+    const R=Math.min(r.width,r.height)/2-46,cx=r.width/2,cy=r.height/2;
+    const mx=e.clientX-r.left,my=e.clientY-r.top;
+    let best=-1,bd=14;
+    PMAP_NODES.nodes.forEach((nd,i)=>{
+      const d=Math.hypot(cx+nd.x*R-mx,cy+nd.y*R-my);
+      if(d<bd){bd=d;best=i;}
+    });
+    return[best,mx,my,r];
+  };
+  cv.onmousemove=e=>{
+    const [best,mx,my,r]=hit(e);
+    if(best!==pmapHover){pmapHover=best;drawPmap();}
+    if(best<0){tip.classList.remove('on');return;}
+    const nd=PMAP_NODES.nodes[best];
+    tip.innerHTML=esc(nd.it.title||nd.uid)+
+      (nd.it.authors?'<br><span style="opacity:.7">'+esc(nd.it.authors)+'</span>':'');
+    tip.style.left=Math.min(mx+14,r.width-350)+'px';tip.style.top=(my+14)+'px';
+    tip.classList.add('on');
+  };
+  cv.onmouseleave=()=>{tip.classList.remove('on');pmapHover=-1;drawPmap();};
+  cv.onclick=e=>{
+    const [best]=hit(e);
+    if(best<0)return;
+    const nd=PMAP_NODES.nodes[best];
+    if(nd.seed){if(nd.it.url)open(nd.it.url,'_blank','noopener');return;}
+    PMAP_UID=nd.uid;pmapHover=-1;renderPaperMap();     // walk the graph
+  };
+}
+
 // ------------------------------------------------------------ Knowledge map
 // docs/map.json, built offline by tools/map.py (PCA + k-means over the same
 // centred vectors the graph uses). Rendered on canvas rather than as DOM
@@ -1978,13 +2167,14 @@ function renderClassics(){
 }
 function render(){if(VIEW.slice(0,3)==='sl:'){renderSleeve(VIEW.slice(3));return;}
   if(VIEW==="map"){renderMap();return;}
+  if(VIEW==="pmap"){renderPaperMap();return;}
   VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 // Eleven flat tabs gave every destination the same weight and scrolled half of
 // them off screen. They group by INTENT: read what's new, question the corpus,
 // consult the standing reference, revisit your own picks. Ask and Saved are
 // groups of one -- they are modes, not lists, so they get no sub-row.
 const GROUPS={
-  papers:['recent','foryou','watched','nber','monthly','practitioners','archive','map'],
+  papers:['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap'],
   ask:['ask'],
   shelf:['classics','anchors'],
   saved:['saved'],
