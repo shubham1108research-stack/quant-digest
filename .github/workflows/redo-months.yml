@@ -70,10 +70,14 @@ jobs:
       # rebuilding first publishes a manifest with no payload behind it, and
       # the browser's fetch of a 404 RESOLVES, so retrieval reads past the
       # buffer and scores NaN instead of failing loudly.
-      - name: Rebuild search index
+      # Everything under docs/ that is gitignored -- the embedding index, the
+      # paper graph, the map -- is rebuilt here. A Pages deploy is a full
+      # snapshot, so deploying without this publishes a portal missing them,
+      # and the browser does not fail loudly: fetch() on a 404 resolves.
+      - name: Build docs/ artefacts
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-        run: python tools/embed.py
+        run: python tools/prepare_deploy.py
 
       - name: Deploy portal to Cloudflare Pages
         env:

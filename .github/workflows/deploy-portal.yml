@@ -44,23 +44,14 @@ jobs:
       # from cache alone, so any paper whose vector was invalidated (e.g. by an
       # abstract backfill) silently vanishes from search while the deploy still
       # reports success.
-      - name: Rebuild search index
+      # Everything under docs/ that is gitignored -- the embedding index, the
+      # paper graph, the map -- is rebuilt here. A Pages deploy is a full
+      # snapshot, so deploying without this publishes a portal missing them,
+      # and the browser does not fail loudly: fetch() on a 404 resolves.
+      - name: Build docs/ artefacts
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-        run: python tools/embed.py
-
-      # The graph and the map are derived artefacts like vec.bin: gitignored,
-      # so a checkout does not have them and a deploy would ship a portal whose
-      # Map tab 404s and whose Ask cannot traverse.
-      - name: Rebuild graph and map
-        run: |
-          python tools/graph.py sim
-          python tools/graph.py export
-          python tools/map.py --clusters 24
-      # cites are NOT rebuilt here: each edge costs an OpenAlex round trip
-      # (~200 requests, minutes) for data that does not change, so they live in
-      # state.db and travel with the checkout. Only the cheap sim layer and the
-      # map are regenerated.
+        run: python tools/prepare_deploy.py
 
       - name: Deploy docs/ to Cloudflare Pages
         env:
