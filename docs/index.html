@@ -174,6 +174,25 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   margin-left:8px;padding:1px 7px;border-radius:5px;cursor:pointer;
   color:var(--accent);background:transparent;border:1px solid var(--line);}
 .mapbtn:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);}
+.pmapbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  justify-content:space-between;margin:8px 2px 2px;}
+/* the list and the canvas are one control surface: a row highlights its node
+   and a node highlights its row, so neither has to be read alone */
+.pmaprow{display:flex;gap:9px;align-items:flex-start;border-radius:12px;
+  transition:background .12s;}
+.pmaprow.on{background:color-mix(in srgb,var(--accent) 7%,transparent);}
+.pmaprowbody{flex:1;min-width:0;position:relative;}
+.expandbtn{flex:0 0 auto;margin-top:22px;width:24px;height:24px;border-radius:7px;
+  font-family:var(--sans);font-size:13px;font-weight:700;line-height:1;
+  color:var(--panel);background:var(--accent);border:0;cursor:pointer;}
+.expandbtn:hover{opacity:.85;}
+.expandbtn.done,.expandbtn:disabled{background:var(--line);color:var(--muted);cursor:default;}
+.citetag,.simtag{position:absolute;top:15px;right:16px;z-index:1;
+  font-family:var(--sans);font-size:9.5px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;padding:1px 6px;border-radius:4px;}
+.citetag{color:var(--panel);background:var(--accent);}
+.simtag{color:var(--muted);background:color-mix(in srgb,var(--muted) 12%,transparent);
+  font-variant-numeric:tabular-nums;}
 #pmapwrap{position:relative;margin:12px 0 6px;border:1px solid var(--line);
   border-radius:14px;background:var(--panel);overflow:hidden;}
 #pmapcv{display:block;width:100%;height:min(66vh,600px);cursor:pointer;}
@@ -809,14 +828,27 @@ function renderAnchors(){
   $('view').innerHTML=`<div class="dateline">Anchors <span class="n">· foundational books for a systematic-macro / CTA desk — read once and keep, while the feed keeps you current · free PDF linked where legitimately available</span></div>`+(secs||'<div class="empty">No matches.</div>');
 }
 // -------------------------------------------------------- Paper neighbourhood
-// One paper at the centre, the papers the graph says sit around it, and the
-// edges among THOSE too -- so a tight cluster looks tight rather than a star.
-// Similarity edges are faint, citations solid: a citation is a stated
-// relationship, similarity is an inferred one, and the picture should not
-// pretend they are the same claim.
-let PMAP_UID=null, PMAP_NODES=[], pmapHover=-1;
-const PMAP_N=28;                      // neighbours drawn around the seed
-function openPaperMap(uid){PMAP_UID=uid;setView('pmap');}
+// One paper at the centre and the papers the graph puts around it, which GROWS
+// as you open nodes rather than jumping to a new centre. The first version
+// re-seeded on click, so the paper you were studying vanished the moment you
+// looked at anything near it -- the opposite of what a neighbourhood view is
+// for. The seed is pinned; clicking pulls another node's neighbours in beside
+// what is already there.
+//
+// Similarity edges draw faint and citations solid: a citation is a stated
+// relationship and similarity an inferred one, and the picture should not
+// present them as the same claim.
+let PMAP_SEED=null;          // row of the paper under consideration -- never moves
+let PMAP_OPEN=new Set();     // rows whose neighbours have been pulled in
+let PMAP_NODES=null, pmapHover=-1, _pmapPos={};
+const PMAP_N=24;             // neighbours per expansion
+const PMAP_MAX=120;          // total nodes before we stop growing
+function openPaperMap(uid){
+  const r=_rowOf(uid);
+  PMAP_SEED=(r>=0?r:null);PMAP_OPEN=new Set(r>=0?[r]:[]);
+  _pmapPos={};pmapHover=-1;PMAP_NODES=null;
+  setView('pmap');
+}
 function _rowOf(uid){
   if(!VEC_UIDS)return -1;
   if(!_rowIndex){_rowIndex={};VEC_UIDS.forEach((u,i)=>{_rowIndex[u]=i;});}
@@ -825,63 +857,84 @@ function _rowOf(uid){
 let _rowIndex=null;
 const _ptitle=u=>((ITEM_BY_UID[u]||{}).title||u||'')
   .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().slice(0,80);
-function buildNeighbourhood(uid){
-  const seed=_rowOf(uid);
-  if(seed<0||!E_OFF||!edgeCount(seed))return null;
-  // Deduplicate by title before taking the top N. The archive holds the same
-  // paper under more than one uid in ~620 cases (an arXiv id and a title hash,
-  // or an NBER working paper and its DOI), and those twins sit at cosine 1.00
-  // -- so an undeduped neighbourhood opens with the seed paper listed twice as
-  // its own nearest neighbours, which is worse than useless.
-  const seedTitle=_ptitle(VEC_UIDS[seed]);
-  const seen=new Set([seedTitle]);
-  const near=[];
+
+// Top-N distinct neighbours of one row. Deduplicated by normalised title:
+// the archive holds ~620 papers under two uids (an arXiv id and a title hash,
+// an NBER paper and its DOI) and those twins sit at cosine 1.00, so without
+// this a neighbourhood opens with the seed listed twice as its own neighbour.
+function _neighboursOf(row, taken){
   const cand=[];
-  eachEdge(seed,(nb,kind,w)=>cand.push([nb,kind,w]));
+  eachEdge(row,(nb,kind,w)=>cand.push([nb,kind,w]));
   cand.sort((a,b)=>(b[1]===EDGE_CITE?1:b[2])-(a[1]===EDGE_CITE?1:a[2]));
+  const out=[];
   for(const e of cand){
     const t=_ptitle(VEC_UIDS[e[0]]);
-    if(seen.has(t))continue;
-    seen.add(t);near.push(e);
-    if(near.length>=PMAP_N)break;
+    if(taken.has(t))continue;
+    taken.add(t);out.push(e);
+    if(out.length>=PMAP_N)break;
   }
-  const rows=[seed,...near.map(e=>e[0])];
-  const set=new Set(rows);
-  // second-order edges: the links BETWEEN neighbours are what turn a star
-  // into a shape you can read
+  return out;
+}
+function buildNeighbourhood(){
+  if(PMAP_SEED===null||!E_OFF)return null;
+  const taken=new Set([_ptitle(VEC_UIDS[PMAP_SEED])]);
+  const rows=[PMAP_SEED], from={};
+  let capped=false;
+  for(const open of PMAP_OPEN){
+    if(open!==PMAP_SEED&&rows.indexOf(open)<0){taken.add(_ptitle(VEC_UIDS[open]));rows.push(open);}
+  }
+  for(const open of PMAP_OPEN){
+    for(const [nb] of _neighboursOf(open,taken)){
+      if(rows.length>=PMAP_MAX){capped=true;break;}
+      rows.push(nb);from[nb]=open;
+    }
+    if(capped)break;
+  }
+  const set=new Set(rows), index={};
+  rows.forEach((r,i)=>{index[r]=i;});
   const links=[];
   for(const r of rows){
     eachEdge(r,(nb,kind,w)=>{
       if(!set.has(nb)||nb<=r)return;
-      links.push([rows.indexOf(r),rows.indexOf(nb),kind,w]);
+      links.push([index[r],index[nb],kind,w]);
     });
   }
   const nodes=rows.map((r,i)=>{
     const u=VEC_UIDS[r], it=ITEM_BY_UID[u]||{};
-    return {row:r,uid:u,it:it,seed:i===0,
-            x:i===0?0:Math.cos(i/PMAP_N*6.2832)*0.6,
-            y:i===0?0:Math.sin(i/PMAP_N*6.2832)*0.6,vx:0,vy:0};
+    // Warm start: a node already on screen keeps its position, and a new one
+    // appears NEXT TO whatever introduced it. Without this every expansion
+    // relaxes from scratch and the whole picture jumps, which reads as "it
+    // changed" -- the complaint this rewrite exists to fix.
+    const prev=_pmapPos[r];
+    const anchor=_pmapPos[from[r]];
+    const jitter=()=>(Math.random()-0.5)*0.16;
+    return {row:r,uid:u,it:it,seed:r===PMAP_SEED,open:PMAP_OPEN.has(r),
+            x:prev?prev.x:(anchor?anchor.x+jitter():Math.cos(i)*0.7),
+            y:prev?prev.y:(anchor?anchor.y+jitter():Math.sin(i)*0.7),
+            vx:0,vy:0,warm:!!prev};
   });
-  return {nodes:nodes,links:links};
+  return {nodes:nodes,links:links,capped:capped};
 }
-// A small spring layout. ~29 nodes and 150 ticks is a few milliseconds, so it
-// runs once on open rather than animating -- no rAF loop to leak.
+// A small spring layout: inverse-square repulsion between every pair, springs
+// along the edges with a rest length set by how strong the relationship is.
+// Runs once per rebuild rather than animating -- no rAF loop to leak. Fewer
+// ticks when most nodes are warm, since they only need to make room.
 function layoutPmap(g){
   const N=g.nodes.length;
-  for(let t=0;t<220;t++){
+  const warm=g.nodes.filter(n=>n.warm).length;
+  const ticks=warm>N*0.5?90:220;
+  for(let t=0;t<ticks;t++){
     for(let i=0;i<N;i++){
       for(let j=i+1;j<N;j++){
         const a=g.nodes[i],b=g.nodes[j];
-        let dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy+0.0001;
-        const rep=0.0016/d2;
-        const d=Math.sqrt(d2);
+        const dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy+0.0001;
+        const rep=0.0016/d2, d=Math.sqrt(d2);
         a.vx-=rep*dx/d;a.vy-=rep*dy/d;b.vx+=rep*dx/d;b.vy+=rep*dy/d;
       }
     }
     for(const [i,j,kind,w] of g.links){
       const a=g.nodes[i],b=g.nodes[j];
       const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)+0.0001;
-      // a stronger relationship pulls to a shorter rest length
       const rest=kind===EDGE_CITE?0.30:(0.75-Math.min(0.45,w*0.6));
       const f=(d-rest)*0.05;
       a.vx+=f*dx/d;a.vy+=f*dy/d;b.vx-=f*dx/d;b.vy-=f*dy/d;
@@ -893,66 +946,103 @@ function layoutPmap(g){
       if(r>1.0){nd.x/=r;nd.y/=r;}
     }
   }
+  g.nodes.forEach(n=>{_pmapPos[n.row]={x:n.x,y:n.y};});
 }
+let _pmapTheme=null;
 function drawPmap(){
   const cv=$('pmapcv');if(!cv||!PMAP_NODES)return;
-  const g=PMAP_NODES;
+  const g=PMAP_NODES, th=_pmapTheme||{ink:'#111',line:'#ddd',acc:'#0C5C4A'};
   const dpr=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
   cv.width=w*dpr;cv.height=h*dpr;
   const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
   c.clearRect(0,0,w,h);
   const R=Math.min(w,h)/2-46, cx=w/2, cy=h/2;
   const px=v=>cx+v*R, py=v=>cy+v*R;
-  const ink=getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()||'#111';
-  const line=getComputedStyle(document.documentElement).getPropertyValue('--line').trim()||'#ddd';
-  const acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#0C5C4A';
   for(const [i,j,kind] of g.links){
     const a=g.nodes[i],b=g.nodes[j];
     c.beginPath();c.moveTo(px(a.x),py(a.y));c.lineTo(px(b.x),py(b.y));
-    c.strokeStyle=kind===EDGE_CITE?acc:line;
+    c.strokeStyle=kind===EDGE_CITE?th.acc:th.line;
     c.lineWidth=kind===EDGE_CITE?1.5:0.8;
-    c.globalAlpha=kind===EDGE_CITE?0.75:0.5;
+    c.globalAlpha=kind===EDGE_CITE?0.75:0.45;
     c.stroke();
   }
   c.globalAlpha=1;
   g.nodes.forEach((nd,i)=>{
     const sc=nd.it.score, r=nd.seed?9:(sc!=null?4+sc/22:4.5);
     c.beginPath();c.arc(px(nd.x),py(nd.y),r,0,6.2832);
-    c.fillStyle=nd.seed?acc:mapColorOf({c:0,s:nd.it.sleeves||[],p:nd.it.sleeves_prop||[],f:nd.it.desk_fit||0});
+    c.fillStyle=nd.seed?th.acc:mapColorOf({c:0,s:nd.it.sleeves||[],
+      p:nd.it.sleeves_prop||[],f:nd.it.desk_fit||0});
     c.fill();
-    if(nd.seed||i===pmapHover){c.strokeStyle=ink;c.lineWidth=1.7;c.stroke();}
+    // an opened node keeps a ring, so it is obvious what has been expanded
+    if(nd.seed||nd.open||i===pmapHover){
+      c.strokeStyle=th.ink;c.lineWidth=nd.seed?1.9:1.3;
+      c.globalAlpha=(nd.open&&!nd.seed&&i!==pmapHover)?0.45:1;
+      c.stroke();c.globalAlpha=1;
+    }
   });
-  // the seed always keeps its title on screen; the rest on hover
-  c.fillStyle=ink;c.font='600 12px ui-sans-serif,system-ui,sans-serif';
+  c.fillStyle=th.ink;c.font='600 12px ui-sans-serif,system-ui,sans-serif';
   c.textAlign='center';
-  const t=(g.nodes[0].it.title||'').slice(0,74);
-  c.fillText(t,cx,cy-18);
+  c.fillText((g.nodes[0].it.title||'').slice(0,74),cx,cy-18);
 }
+// Distance from the seed, for the list. Citation-linked papers lead: a stated
+// relationship outranks an inferred one however high the cosine.
+function _pmapRanked(g){
+  const cite=new Set(), sim={};
+  eachEdge(PMAP_SEED,(nb,kind,w)=>{
+    if(kind===EDGE_CITE)cite.add(nb);
+    sim[nb]=Math.max(sim[nb]||0,w);
+  });
+  return g.nodes.slice(1).map((nd,i)=>({nd:nd,i:i+1,
+      cite:cite.has(nd.row),w:sim[nd.row]||0}))
+    .sort((a,b)=>(b.cite-a.cite)||(b.w-a.w));
+}
+let _pmapResize=null;
 function renderPaperMap(){
   if(!VEC||!ARCHIVE_DATA){loadIndex(renderPaperMap);
     $('view').innerHTML='<div class="empty">Loading the archive…</div>';return;}
-  if(EDGES===null){                       // still in flight -- this view needs it
+  if(EDGES===null){
     $('view').innerHTML='<div class="empty">Loading the graph…</div>';
     loadEdges().then(renderPaperMap);return;
   }
-  const it=ITEM_BY_UID[PMAP_UID]||{};
-  const g=buildNeighbourhood(PMAP_UID);
+  const seedIt=PMAP_SEED!==null?(ITEM_BY_UID[VEC_UIDS[PMAP_SEED]]||{}):{};
+  const g=buildNeighbourhood();
   if(!g){
     $('view').innerHTML=`<div class="dateline">Neighbourhood</div>
       <div class="empty">This paper is not in the graph — it has no embedding yet.</div>`;
     return;
   }
   layoutPmap(g);PMAP_NODES=g;
+  const ranked=_pmapRanked(g);
   const nc=g.links.filter(l=>l[2]===EDGE_CITE).length;
-  $('view').innerHTML=`<div class="dateline">Around this paper <span class="n">· ${g.nodes.length-1} neighbours · ${g.links.length} links${nc?', '+nc+' of them citations':''}</span></div>
+  const grown=PMAP_OPEN.size>1;
+  $('view').innerHTML=`<div class="dateline">Around this paper <span class="n">· ${g.nodes.length-1} papers · ${g.links.length} links${nc?', '+nc+' citations':''}${grown?' · '+PMAP_OPEN.size+' expanded':''}${g.capped?' · at the '+PMAP_MAX+'-paper limit':''}</span></div>
     <div class="entry flat"><div class="body">
-      <a class="title" href="${esc(it.url||'#')}" target="_blank" rel="noopener">${esc(it.title||PMAP_UID)}</a>
-      <div class="meta">${esc(it.authors||'')}${it.date?' · '+esc(it.date):''}</div></div></div>
+      <a class="title" href="${esc(seedIt.url||'#')}" target="_blank" rel="noopener">${esc(seedIt.title||'(unknown)')}</a>
+      <div class="meta">${esc(seedIt.authors||'')}${seedIt.date?' · '+esc(seedIt.date):''}</div></div></div>
     <div id="pmapwrap"><canvas id="pmapcv"></canvas><div id="maptip"></div></div>
-    <div class="pmapnote">Solid lines are citations between these papers; faint lines are similarity. Click a node to move the centre there.</div>`;
+    <div class="pmapbar">
+      <span class="pmapnote">Solid lines are citations, faint lines similarity. Click a paper to pull its neighbours in — the centre stays put.</span>
+      ${grown?'<button class="mapkey" id="pmapreset">Reset to this paper</button>':''}
+    </div>
+    <div class="srch">Closest papers <span class="n">· ${ranked.length} · citations first, then similarity</span></div>
+    ${ranked.map(r=>`<div class="pmaprow" data-node="${r.i}">
+      <button class="expandbtn${r.nd.open?' done':''}" data-open="${r.nd.row}" ${r.nd.open?'disabled':''}
+        title="${r.nd.open?'Already expanded':'Pull this paper’s neighbours in'}">${r.nd.open?'✓':'+'}</button>
+      <div class="pmaprowbody">${r.cite?'<span class="citetag">cites</span>':
+        '<span class="simtag">'+Math.round(r.w*100)+'%</span>'}${entry(r.nd.it)}</div>
+    </div>`).join('')}`;
+  // hoisted: this was read three times per frame from getComputedStyle
+  const cs=getComputedStyle(document.documentElement);
+  _pmapTheme={ink:cs.getPropertyValue('--ink').trim()||'#111',
+              line:cs.getPropertyValue('--line').trim()||'#ddd',
+              acc:cs.getPropertyValue('--accent').trim()||'#0C5C4A'};
   const cv=$('pmapcv'),tip=$('maptip');
   drawPmap();
-  addEventListener('resize',drawPmap,{passive:true});
+  // one listener, not one per visit -- this used to accumulate a handler every
+  // time the view was opened
+  if(_pmapResize)removeEventListener('resize',_pmapResize);
+  _pmapResize=()=>{if(VIEW==='pmap')drawPmap();};
+  addEventListener('resize',_pmapResize,{passive:true});
   const hit=e=>{
     const r=cv.getBoundingClientRect();
     const R=Math.min(r.width,r.height)/2-46,cx=r.width/2,cy=r.height/2;
@@ -966,22 +1056,45 @@ function renderPaperMap(){
   };
   cv.onmousemove=e=>{
     const [best,mx,my,r]=hit(e);
-    if(best!==pmapHover){pmapHover=best;drawPmap();}
+    if(best!==pmapHover){pmapHover=best;drawPmap();_pmapSyncRow(best);}
     if(best<0){tip.classList.remove('on');return;}
     const nd=PMAP_NODES.nodes[best];
     tip.innerHTML=esc(nd.it.title||nd.uid)+
-      (nd.it.authors?'<br><span style="opacity:.7">'+esc(nd.it.authors)+'</span>':'');
+      (nd.it.authors?'<br><span style="opacity:.7">'+esc(nd.it.authors)+'</span>':'')+
+      (nd.seed?'':'<br><span style="opacity:.55">click to pull in its neighbours</span>');
     tip.style.left=Math.min(mx+14,r.width-350)+'px';tip.style.top=(my+14)+'px';
     tip.classList.add('on');
   };
-  cv.onmouseleave=()=>{tip.classList.remove('on');pmapHover=-1;drawPmap();};
+  cv.onmouseleave=()=>{tip.classList.remove('on');pmapHover=-1;drawPmap();_pmapSyncRow(-1);};
   cv.onclick=e=>{
     const [best]=hit(e);
     if(best<0)return;
     const nd=PMAP_NODES.nodes[best];
-    if(nd.seed){if(nd.it.url)open(nd.it.url,'_blank','noopener');return;}
-    PMAP_UID=nd.uid;pmapHover=-1;renderPaperMap();     // walk the graph
+    // the seed, and anything already expanded, opens the paper instead
+    if(nd.seed||nd.open){if(nd.it.url)open(nd.it.url,'_blank','noopener');return;}
+    expandNode(nd.row);
   };
+  const rst=$('pmapreset');
+  if(rst)rst.onclick=()=>{PMAP_OPEN=new Set([PMAP_SEED]);_pmapPos={};renderPaperMap();};
+  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=e=>{
+    e.preventDefault();e.stopPropagation();expandNode(Number(b.dataset.open));});
+  document.querySelectorAll('.pmaprow').forEach(el=>{
+    el.onmouseenter=()=>{pmapHover=Number(el.dataset.node);drawPmap();};
+    el.onmouseleave=()=>{pmapHover=-1;drawPmap();};
+  });
+}
+function expandNode(row){
+  if(PMAP_NODES&&PMAP_NODES.nodes.length>=PMAP_MAX){
+    toast('At the '+PMAP_MAX+'-paper limit — reset to explore elsewhere.');return;
+  }
+  PMAP_OPEN.add(row);pmapHover=-1;renderPaperMap();
+}
+// keep the list and the canvas pointing at the same paper
+function _pmapSyncRow(i){
+  document.querySelectorAll('.pmaprow.on').forEach(el=>el.classList.remove('on'));
+  if(i<0)return;
+  const el=document.querySelector('.pmaprow[data-node="'+i+'"]');
+  if(el)el.classList.add('on');
 }
 
 // ------------------------------------------------------------ Knowledge map
