@@ -25,7 +25,23 @@ def _cutoff() -> dt.datetime:
 
 
 def _clean(s: str) -> str:
-    return " ".join(re.sub(r"<[^>]+>", " ", s or "").split())
+    """Strip markup, then unescape entities -- in that order.
+
+    Unescape FIRST, then strip. Publishers double-encode: an abstract arrives
+    with "&lt;b&gt;index&lt;/b&gt;", and stripping before unescaping leaves the
+    tag behind as literal text. This is text extraction, not sanitisation --
+    the portal escapes everything at render (esc()) -- so the goal is simply
+    that no markup reaches the embedding or the prompt.
+
+    Unescaping was missing entirely: 1,130 abstracts carried raw entities
+    ("S&amp;P 500", literal nbsp), and one of the map's 24 clusters came back
+    as "risk, nbsp, span" -- the model was clustering on HTML."""
+    txt = _html.unescape(s or "")
+    # anchored on a real tag name: a bare "<" in maths ("returns < 0", "t > 2")
+    # is not markup, and <[^>]+> ate everything between them -- turning
+    # "a &lt; b and c &gt; d" into "a d".
+    txt = re.sub(r"</?[a-zA-Z][a-zA-Z0-9]*[^>]*>", " ", txt)
+    return " ".join(_html.unescape(txt).split())
 
 
 def _entry_date(e) -> dt.datetime | None:
@@ -396,7 +412,13 @@ def ssrn_crossref(log) -> list[dict]:
             "filter": f"prefix:{config.SSRN_CROSSREF_PREFIX},"
                       f"from-created-date:{since}",
             "query.bibliographic": q, "rows": config.SSRN_ROWS,
-            "sort": "created", "order": "desc",
+            # sort=created makes Crossref return the NEWEST SSRN papers and
+            # ignore query relevance completely -- and SSRN hosts every
+            # discipline, so the finance queries were decoration. That is how
+            # "Formation of densified activated sludge" and "Value-added
+            # utilization of waste polyvinyl chloride" reached a quant archive.
+            # from-created-date already bounds recency, so relevance is free.
+            "sort": "relevance",
         }
         if MAILTO:
             params["mailto"] = MAILTO

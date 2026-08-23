@@ -294,6 +294,20 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   text-transform:uppercase;margin-right:7px;padding:1px 5px;border-radius:4px;
   color:var(--cite);background:color-mix(in srgb,var(--cite) 14%,transparent);}
 
+#mapwrap{position:relative;margin:14px 0 6px;border:1px solid var(--line);
+  border-radius:14px;background:var(--panel);overflow:hidden;}
+#mapcv{display:block;width:100%;height:min(68vh,640px);cursor:crosshair;}
+#maptip{position:absolute;pointer-events:none;max-width:340px;padding:8px 11px;
+  border-radius:9px;background:var(--ink);color:var(--panel);font-family:var(--sans);
+  font-size:12px;line-height:1.4;opacity:0;transition:opacity .12s;z-index:5;}
+#maptip.on{opacity:1;}
+.maplegend{display:flex;flex-wrap:wrap;gap:5px;margin:9px 0 0;}
+.mapkey{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);
+  font-size:11px;font-weight:600;color:var(--muted);background:var(--panel);
+  border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;}
+.mapkey:hover{border-color:var(--accent);color:var(--accent);}
+.mapkey.on{background:var(--accent);border-color:var(--accent);color:var(--panel);}
+.mapkey i{width:9px;height:9px;border-radius:50%;display:inline-block;}
 .askbox{display:flex;gap:10px;align-items:flex-end;margin:14px 0 6px;padding:12px;
   background:var(--panel);border:1px solid var(--line);border-radius:14px;}
 .askbox textarea{flex:1;resize:vertical;min-height:46px;font-family:var(--serif);font-size:16px;
@@ -486,6 +500,7 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
       <button id="t-monthly">Monthly</button>
       <button id="t-practitioners">Practitioners</button>
       <button id="t-archive">Archive</button>
+      <button id="t-map">Map</button>
       <button id="t-classics">Classics</button>
       <button id="t-anchors">Anchors</button>
       <button id="t-ask" hidden></button>
@@ -525,7 +540,7 @@ const SLEEVES=__SLEEVES_JSON__;
 const SLEEVE_LABEL=Object.fromEntries(SLEEVES);
 const PINS_KEY='qd_pins_v1', PIN_MAX=4;
 let SLEEVE='all', PINS=[];
-const BASE_PAPERS=['recent','foryou','watched','nber','monthly','practitioners','archive'];
+const BASE_PAPERS=['recent','foryou','watched','nber','monthly','practitioners','archive','map'];
 let _toastT=null;
 function toast(msg){
   let el=$('toast');
@@ -898,6 +913,105 @@ function renderAnchors(){
   }).join('');
   $('view').innerHTML=`<div class="dateline">Anchors <span class="n">· foundational books for a systematic-macro / CTA desk — read once and keep, while the feed keeps you current · free PDF linked where legitimately available</span></div>`+(secs||'<div class="empty">No matches.</div>');
 }
+// ------------------------------------------------------------ Knowledge map
+// docs/map.json, built offline by tools/map.py (PCA + k-means over the same
+// centred vectors the graph uses). Rendered on canvas rather than as DOM
+// nodes because 11.5k absolutely-positioned divs is a scroll-janking layout,
+// and none of them need to be individually interactive -- one hit test on
+// mousemove does the whole job.
+let MAP=null, mapLoading=false, MAP_COLOR='cluster', mapHover=-1;
+const MAP_PALETTE=['#4E79A7','#F28E2B','#E15759','#76B7B2','#59A14F','#EDC948',
+  '#B07AA1','#FF9DA7','#9C755F','#BAB0AC','#86BCB6','#D37295','#A0CBE8',
+  '#FFBE7D','#8CD17D','#F1CE63','#D4A6C8','#79706E','#499894','#E39802',
+  '#B6992D','#FABFD2','#D7B5A6','#6B9AC4'];
+function loadMap(cb){
+  if(MAP){cb();return;}
+  if(mapLoading)return;
+  mapLoading=true;
+  $('view').innerHTML='<div class="empty">Loading the map\u2026</div>';
+  fetch('map.json').then(r=>r.json()).then(j=>{MAP=j;mapLoading=false;cb();})
+    .catch(()=>{mapLoading=false;
+      $('view').innerHTML='<div class="empty">No map yet \u2014 it is built on deploy by tools/map.py.</div>';});
+}
+// Colour tells you what you came to find out. By cluster it is a picture of
+// what the archive contains; by sleeve it is the diagnostic -- if the sleeves
+// describe something real they occupy regions, and if carry scatters that is
+// evidence about the taxonomy, not the classifier.
+function mapColorOf(pt){
+  if(MAP_COLOR==='cluster')return MAP_PALETTE[pt.c%MAP_PALETTE.length];
+  if(MAP_COLOR==='fit'){
+    const f=pt.f||0;
+    return f>=3?'#1F7A3D':f===2?'#59A14F':f===1?'#BAB0AC':'#E4E8E5';
+  }
+  const sl=(pt.p&&pt.p.length?pt.p:pt.s)||[];
+  if(!sl.length)return '#E4E8E5';
+  const i=SLEEVES.findIndex(([k])=>k===sl[0]);
+  return i<0?'#E4E8E5':MAP_PALETTE[i%MAP_PALETTE.length];
+}
+function drawMap(){
+  const cv=$('mapcv');if(!cv||!MAP)return;
+  const dpr=devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight;
+  cv.width=w*dpr;cv.height=h*dpr;
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,w,h);
+  const pad=18, sx=v=>pad+(v+1)/2*(w-2*pad), sy=v=>pad+(1-(v+1)/2)*(h-2*pad);
+  for(const pt of MAP.p){
+    g.beginPath();
+    g.arc(sx(pt.x),sy(pt.y),1.7,0,6.2832);
+    g.fillStyle=mapColorOf(pt);
+    g.globalAlpha=0.72;
+    g.fill();
+  }
+  g.globalAlpha=1;
+  if(mapHover>=0){
+    const pt=MAP.p[mapHover];
+    g.beginPath();g.arc(sx(pt.x),sy(pt.y),5,0,6.2832);
+    g.strokeStyle=getComputedStyle(document.documentElement)
+      .getPropertyValue('--ink').trim()||'#000';
+    g.lineWidth=1.6;g.stroke();
+  }
+}
+function renderMap(){
+  if(!MAP){loadMap(renderMap);return;}
+  const modes=[['cluster','Clusters'],['sleeve','Desk sleeve'],['fit','Desk fit']];
+  $('view').innerHTML=`<div class="dateline">Map <span class="n">\u00b7 ${MAP.n.toLocaleString()} papers \u00b7 ${MAP.clusters.length} clusters \u00b7 laid out by what they are about, not when they arrived</span></div>
+    <div class="maplegend">${modes.map(([k,lab])=>
+      `<button class="mapkey${MAP_COLOR===k?' on':''}" data-mode="${k}">${lab}</button>`).join('')}</div>
+    <div id="mapwrap"><canvas id="mapcv"></canvas><div id="maptip"></div></div>
+    <div class="maplegend">${MAP.clusters.slice().sort((a,b)=>b.n-a.n).slice(0,12).map(c=>
+      `<span class="mapkey"><i style="background:${MAP_PALETTE[c.c%MAP_PALETTE.length]}"></i>${esc(c.label)} <span class="n">${c.n}</span></span>`).join('')}</div>`;
+  document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{
+    MAP_COLOR=b.dataset.mode;renderMap();});
+  const cv=$('mapcv'), tip=$('maptip');
+  drawMap();
+  addEventListener('resize',drawMap,{passive:true});
+  cv.onmousemove=e=>{
+    const r=cv.getBoundingClientRect(), pad=18;
+    const mx=e.clientX-r.left, my=e.clientY-r.top;
+    const sx=v=>pad+(v+1)/2*(r.width-2*pad), sy=v=>pad+(1-(v+1)/2)*(r.height-2*pad);
+    let best=-1,bd=100;
+    for(let i=0;i<MAP.p.length;i++){
+      const d=Math.hypot(sx(MAP.p[i].x)-mx,sy(MAP.p[i].y)-my);
+      if(d<bd){bd=d;best=i;}
+    }
+    if(bd>9)best=-1;
+    if(best!==mapHover){mapHover=best;drawMap();}
+    if(best<0){tip.classList.remove('on');return;}
+    const pt=MAP.p[best], sl=(pt.p&&pt.p.length?pt.p:pt.s)||[];
+    tip.innerHTML=esc(pt.t)+(sl.length?'<br><span style="opacity:.7">'+
+      esc(sl.map(k=>SLEEVE_LABEL[k]||k).join(' \u00b7 '))+'</span>':'');
+    tip.style.left=Math.min(mx+14,r.width-350)+'px';
+    tip.style.top=(my+14)+'px';
+    tip.classList.add('on');
+  };
+  cv.onmouseleave=()=>{tip.classList.remove('on');mapHover=-1;drawMap();};
+  cv.onclick=()=>{
+    if(mapHover<0)return;
+    const it=ITEM_BY_UID[MAP.p[mapHover].u];
+    if(it&&it.url)open(it.url,'_blank','noopener');
+  };
+}
+
 // ---------------------------------------------------------------- Ask
 // A research agent over the whole archive. Retrieval happens HERE, in the
 // browser: docs/vec.bin is an int8 matrix (one 256-dim unit vector per paper,
@@ -1863,13 +1977,14 @@ function renderClassics(){
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
 function render(){if(VIEW.slice(0,3)==='sl:'){renderSleeve(VIEW.slice(3));return;}
+  if(VIEW==="map"){renderMap();return;}
   VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 // Eleven flat tabs gave every destination the same weight and scrolled half of
 // them off screen. They group by INTENT: read what's new, question the corpus,
 // consult the standing reference, revisit your own picks. Ask and Saved are
 // groups of one -- they are modes, not lists, so they get no sub-row.
 const GROUPS={
-  papers:['recent','foryou','watched','nber','monthly','practitioners','archive'],
+  papers:['recent','foryou','watched','nber','monthly','practitioners','archive','map'],
   ask:['ask'],
   shelf:['classics','anchors'],
   saved:['saved'],
@@ -1929,6 +2044,7 @@ $('t-classics').onclick=()=>setView('classics');
 $('t-anchors').onclick=()=>setView('anchors');
 $('t-practitioners').onclick=()=>setView('practitioners');
 $('t-archive').onclick=()=>setView('archive');
+$('t-map').onclick=()=>setView('map');
 $('t-saved').onclick=()=>setView('saved');
 $('q').addEventListener('input',()=>{archivePage=0;render();});
 $('month').addEventListener('change',render);

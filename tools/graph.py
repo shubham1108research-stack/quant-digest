@@ -47,6 +47,12 @@ import store   # noqa: E402
 # indexes cost 33 MB -- which took the committed state.db from 55 MB to 88 MB,
 # against GitHub's 100 MB hard limit. Derived data does not belong in the file
 # that carries the archive.
+# sim edges: 166k rows, 33 MB, rebuilt from the vector cache in ~12s -> keep
+# them OUT of the committed database.
+# cites edges: 6.5k rows, ~1 MB, and each one costs an OpenAlex round trip
+# (~200 requests, several minutes) -> those stay IN state.db, because
+# recomputing them on every deploy would be minutes of API calls for data that
+# does not change.
 GRAPH_DB = "state_graph.db"
 
 
@@ -61,6 +67,12 @@ SIM_FLOOR = 0.30            # on CENTRED cosine (see _vectors); the raw-space
 BLOCK = 512                 # rows per similarity block; 512x11507 float32 = 23 MB
 MAILTO = "upadhyays1108@gmail.com"
 UA = {"User-Agent": f"quant-digest/1.0 (mailto:{MAILTO})"}
+
+_CITES_SCHEMA = """
+CREATE TABLE IF NOT EXISTS cites (
+    src TEXT NOT NULL, dst TEXT NOT NULL, PRIMARY KEY (src, dst)
+);
+"""
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS g.edges (
@@ -180,7 +192,8 @@ def build_cites(con, args):
             log(f"[graph] {min(i+50,len(todo)):,}/{len(todo):,} DOIs resolved")
         time.sleep(0.35)
 
-    con.execute("DELETE FROM g.edges WHERE kind='cites'")
+    con.executescript(_CITES_SCHEMA)
+    con.execute("DELETE FROM cites WHERE 1=1")
     rows, outside = [], 0
     for uid, rs in refs.items():
         for oa in rs:
@@ -189,8 +202,8 @@ def build_cites(con, args):
                 rows.append((uid, dst, "cites", 1.0))
             else:
                 outside += 1
-    con.executemany("INSERT OR REPLACE INTO g.edges (src,dst,kind,w) VALUES (?,?,?,?)",
-                    rows)
+    con.executemany("INSERT OR REPLACE INTO cites (src,dst) VALUES (?,?)",
+                    [(a, b) for a, b, _, _ in rows])
     con.commit()
     total = len(rows) + outside
     log(f"[graph] cites: {len(rows):,} internal edges "
@@ -203,20 +216,25 @@ def report(con, args):
     con.executescript(_SCHEMA)
     n_items = con.execute("SELECT count(*) FROM items").fetchone()[0]
     log(f"archive: {n_items:,} papers\n")
+    con.executescript(_CITES_SCHEMA)
     for kind in ("sim", "cites"):
-        cnt = con.execute("SELECT count(*) FROM g.edges WHERE kind=?", (kind,)).fetchone()[0]
+        cnt = (con.execute("SELECT count(*) FROM g.edges WHERE kind='sim'").fetchone()[0]
+               if kind == "sim" else
+               con.execute("SELECT count(*) FROM cites").fetchone()[0])
         if not cnt:
             log(f"{kind:<6} no edges built")
             continue
         deg = collections.Counter()
-        for (src,) in con.execute("SELECT src FROM g.edges WHERE kind=?", (kind,)):
+        q = ("SELECT src FROM g.edges WHERE kind='sim'" if kind == "sim"
+             else "SELECT src FROM cites")
+        for (src,) in con.execute(q):
             deg[src] += 1
         d = sorted(deg.values())
         cov = 100.0 * len(deg) / max(1, n_items)
         med = d[len(d) // 2]
         p90 = d[int(len(d) * 0.9)]
-        w = con.execute("SELECT avg(w), min(w), max(w) FROM g.edges WHERE kind=?",
-                        (kind,)).fetchone()
+        w = (con.execute("SELECT avg(w),min(w),max(w) FROM g.edges WHERE kind='sim'")
+             .fetchone() if kind == "sim" else (1.0, 1.0, 1.0))
         log(f"{kind:<6} {cnt:>8,} edges   {len(deg):>6,} papers with any "
             f"({cov:.1f}% coverage)")
         log(f"       degree  median {med}  p90 {p90}  max {max(d)}")
@@ -232,9 +250,11 @@ def export(con, args):
     row = {u: i for i, u in enumerate(meta["uids"])}
     out = bytearray()
     kept = collections.Counter()
+    con.executescript(_CITES_SCHEMA)
     for kind, code in (("sim", 0), ("cites", 1)):
-        for src, dst, w in con.execute(
-                "SELECT src,dst,w FROM g.edges WHERE kind=?", (kind,)):
+        q = ("SELECT src,dst,w FROM g.edges WHERE kind='sim'" if kind == "sim"
+             else "SELECT src,dst,1.0 FROM cites")
+        for src, dst, w in con.execute(q):
             a, b = row.get(src), row.get(dst)
             if a is None or b is None:
                 continue

@@ -57,6 +57,10 @@ jobs:
           python tools/graph.py sim
           python tools/graph.py export
           python tools/map.py --clusters 24
+      # cites are NOT rebuilt here: each edge costs an OpenAlex round trip
+      # (~200 requests, minutes) for data that does not change, so they live in
+      # state.db and travel with the checkout. Only the cheap sim layer and the
+      # map are regenerated.
 
       - name: Deploy docs/ to Cloudflare Pages
         env:
