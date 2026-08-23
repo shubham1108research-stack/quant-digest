@@ -51,6 +51,9 @@ def log(m):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--force", action="store_true",
+                    help="re-score papers that already have scores (used after "
+                         "an input change, e.g. the abstract cap)")
     ap.add_argument("--only-unscored", action="store_true",
                     help="skip papers that only need sleeve labels")
     args = ap.parse_args()
@@ -68,7 +71,13 @@ def main():
             continue
         unscored = d.get("rank_score") is None
         no_sleeve = not d.get("sleeves")
-        if not (unscored or no_sleeve):
+        # --force re-scores everything. Normally this tool only fills gaps,
+        # which is right when the inputs are unchanged -- but the whole archive
+        # was scored while llm._prompt truncated abstracts to 500 characters,
+        # so every judgement was made on the motivation paragraph, before the
+        # paper said what it did. Nothing is "outstanding" by the usual test,
+        # and without this the fix could never reach the papers it fixes.
+        if not (unscored or no_sleeve) and not args.force:
             continue
         if args.only_unscored and not unscored:
             continue
@@ -87,7 +96,9 @@ def main():
         todo.append(item)
 
     log(f"[rescore] {len(todo)} papers outstanding "
-        f"({need_score} unscored, {need_sleeve} scored but no sleeve)")
+        f"({need_score} unscored, {need_sleeve} scored but no sleeve)"
+        + (f"; --force: re-scoring papers that already have scores, "
+           f"abstract cap now {config.ABSTRACT_CHARS} chars" if args.force else ""))
     # unscored first: they are missing everything, not just a label
     todo.sort(key=lambda it: it.get("rank_score") is not None)
     if args.limit:

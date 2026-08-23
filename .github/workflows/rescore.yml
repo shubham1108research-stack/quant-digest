@@ -12,6 +12,10 @@ on:
         description: "Papers per run (0 = all outstanding)"
         required: false
         default: "0"
+      force:
+        description: "Re-score papers that ALREADY have scores (use after an input change)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -52,7 +56,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: python tools/rescore.py --limit ${{ github.event.inputs.limit || 0 }}
+        run: python tools/rescore.py --limit ${{ github.event.inputs.limit || 0 }} ${{ github.event.inputs.force == 'true' && '--force' || '' }}
 
       # A8: rescore DELETEs embeddings to invalidate them (rescore.py:140).
       # Nothing else in this workflow re-creates them, so a backfill left 3,001
