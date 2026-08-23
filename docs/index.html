@@ -1021,7 +1021,7 @@ function renderPaperMap(){
       <div class="meta">${esc(seedIt.authors||'')}${seedIt.date?' · '+esc(seedIt.date):''}</div></div></div>
     <div id="pmapwrap"><canvas id="pmapcv"></canvas><div id="maptip"></div></div>
     <div class="pmapbar">
-      <span class="pmapnote">Solid lines are citations, faint lines similarity. Click a paper to pull its neighbours in — the centre stays put.</span>
+      <span class="pmapnote">Solid lines are citations, faint lines similarity. Click a paper to pull its neighbours in — the centre stays put. ◈ near on a row re-centres the map on that paper instead.</span>
       ${grown?'<button class="mapkey" id="pmapreset">Reset to this paper</button>':''}
     </div>
     <div class="srch">Closest papers <span class="n">· ${ranked.length} · citations first, then similarity</span></div>
