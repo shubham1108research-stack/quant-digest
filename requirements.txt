@@ -3,3 +3,4 @@ feedparser>=6.0
 playwright>=1.40   # headless-browser scrape of AQR/Man/RA house research
 # LLM triage uses Gemini's REST API via requests -- no extra dependency.
 boto3>=1.34       # Cloudflare R2 (S3 API) -- tools/dbsync.py
+numpy>=1.26        # kNN graph, PCA/k-means map (tools/graph.py, map.py, embed_ab.py)
