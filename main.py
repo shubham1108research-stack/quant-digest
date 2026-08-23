@@ -62,6 +62,19 @@ def collect(existing: set) -> list[dict]:
     for name, fn in steps:
         try:
             got = fn()
+            # Drop records that are not papers before they cost anything.
+            # sources.is_record_sane catches journal containers, datasets and
+            # metadata dated years into the future -- a Zenodo deposit of an
+            # entire journal ("Journal of GIS based Historical Studies",
+            # authored by "JANGIS", dated 2029) reached the archive through the
+            # finance topic sweep because OpenAlex had filed it under Finance.
+            # The LLM did mark it off_topic, but only after paying for the call,
+            # and it stayed in the archive, the embeddings, the graph and the map.
+            bad = [g for g in got if g.get("_reject")]
+            got = [g for g in got if not g.get("_reject")]
+            if bad:
+                log(f"[{name}] dropped {len(bad)} non-paper records "
+                    f"(e.g. {bad[0]['_reject']})")
             print(f"{name}: {len(got)} items")
             items += got
         except Exception as e:                       # noqa: BLE001

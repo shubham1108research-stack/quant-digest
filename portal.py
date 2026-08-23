@@ -28,6 +28,11 @@ def _export(con) -> list[dict]:
             m = json.loads(meta)
         except Exception:                          # noqa: BLE001
             m = {}
+        # retired by tools/prune.py: the row stays in state.db so cross-run
+        # dedup still remembers the paper, but it leaves everything the reader
+        # sees -- and the embedding index the browser downloads
+        if m.get("retired"):
+            continue
         out.append({
             # uid joins a paper to its row in docs/vec.bin (the semantic index)
             "uid": uid,

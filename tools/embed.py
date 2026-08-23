@@ -179,6 +179,11 @@ def main() -> None:
             m = json.loads(meta)
         except Exception:                    # noqa: BLE001
             m = {}
+        # retired by tools/prune.py. This is where it pays: every retired paper
+        # is a vector the browser downloads, a node on the map and a candidate
+        # in Ask's recall set, for a paper nothing will ever show.
+        if m.get("retired"):
+            continue
         papers.append((uid, _text(m, title)))
     log(f"[embed] {len(papers)} papers in archive")
 

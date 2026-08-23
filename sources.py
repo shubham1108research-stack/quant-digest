@@ -24,6 +24,47 @@ def _cutoff() -> dt.datetime:
     return dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=config.LOOKBACK_DAYS)
 
 
+# Record types that are not papers. OpenAlex indexes containers and
+# artefacts alongside articles, and a free-text search happily returns them:
+# "Journal of GIS based Historical Studies" (a Zenodo deposit of an entire
+# journal, authored by "JANGIS", dated 2029) arrived through the finance topic
+# sweep because OpenAlex had filed it under the Finance subfield.
+_NOT_A_PAPER = {"journal", "dataset", "peer-review", "grant", "retraction",
+                "editorial", "erratum", "letter", "reference-entry",
+                "component", "standard", "report-series", "book-series"}
+
+
+def is_record_sane(item: dict, oa_type: str = "") -> str:
+    """'' if the record looks like a paper, else why it does not.
+
+    Collection-side, deliberately: a bad record costs an LLM call, an
+    embedding, a graph node and a spot on the map before anything downstream
+    can reject it -- and the LLM correctly marking it off_topic still leaves it
+    in the archive.
+    """
+    import datetime as _dt
+    if oa_type and oa_type.lower() in _NOT_A_PAPER:
+        return f"type={oa_type}"
+    title = (item.get("title") or "").strip()
+    if not title:
+        return "no title"
+    # a record whose title IS a journal name, described in one line, is a
+    # container rather than an article
+    low = title.lower()
+    if low.startswith(("journal of", "proceedings of", "annals of")) \
+            and len((item.get("abstract") or "")) < 220:
+        return "looks like a journal container, not an article"
+    date = str(item.get("date") or "")
+    if len(date) >= 4 and date[:4].isdigit():
+        # a small forward window covers legitimate "in press" dating; three
+        # years in the future is a metadata error, and it sorts to the top of
+        # every date-ordered view for as long as it is stored
+        horizon = (_dt.date.today() + _dt.timedelta(days=120)).isoformat()
+        if date > horizon:
+            return f"dated {date}, beyond the {horizon} horizon"
+    return ""
+
+
 def _clean(s: str) -> str:
     """Strip markup, then unescape entities -- in that order.
 
@@ -279,7 +320,7 @@ def _crossref_item(w: dict, source: str) -> dict | None:
     authors = ", ".join(
         " ".join(filter(None, [a.get("given"), a.get("family")]))
         for a in (w.get("author") or [])[:4])
-    return {
+    item = {
         "title": title,
         "authors": authors,
         "abstract": _clean(w.get("abstract", "")),
@@ -295,6 +336,10 @@ def _crossref_item(w: dict, source: str) -> dict | None:
         "section": 3,
         "doi": w.get("DOI"),
     }
+    bad = is_record_sane(item, w.get("type") or "")
+    if bad:
+        item["_reject"] = bad
+    return item
 
 
 def _crossref_issn(issn: str, label: str) -> list[dict]:
@@ -557,7 +602,7 @@ def _resolve_openalex_source(name: str, log) -> str | None:
 
 def _oa_item(w: dict, source: str, section: int) -> dict:
     auths = w.get("authorships") or []
-    return {
+    item = {
         "title": _clean(w.get("display_name", "")),
         "authors": ", ".join(a["author"]["display_name"] for a in auths[:4]),
         "abstract": _reconstruct_abstract(w.get("abstract_inverted_index")),
@@ -572,6 +617,10 @@ def _oa_item(w: dict, source: str, section: int) -> dict:
         "oa_author_ids": [a["author"]["id"].rsplit("/", 1)[-1]
                           for a in auths[:4] if a.get("author", {}).get("id")],
     }
+    bad = is_record_sane(item, w.get("type", ""))
+    if bad:
+        item["_reject"] = bad
+    return item
 
 
 def _openalex_works(sid: str, label: str, log) -> list[dict]:

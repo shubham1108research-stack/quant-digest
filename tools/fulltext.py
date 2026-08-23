@@ -151,6 +151,8 @@ def pick_papers(con, limit):
             m = json.loads(meta)
         except Exception:                       # noqa: BLE001
             m = {}
+        if m.get("retired"):
+            continue
         if str(m.get("section")) == "4":        # practitioner posts: no PDF worth parsing
             continue
         rank = (m.get("rank_score") or 0) / 100.0

@@ -64,6 +64,8 @@ def main():
             continue
         if scoring.is_junk(title):
             continue
+        if d.get("retired"):            # never worth another LLM call
+            continue
         unscored = d.get("rank_score") is None
         no_sleeve = not d.get("sleeves")
         if not (unscored or no_sleeve):
