@@ -83,11 +83,19 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # subscription mailbox (sources.inbox): publishers who block
-          # crawlers but will mail you the same content. Absent, the
-          # collector logs and skips.
+          # crawlers but will mail you the same content -- SSRN eJournals
+          # above all, which have no usable RSS at all. Absent, the collector
+          # logs and skips.
+          #
+          # FOLDER is a Gmail LABEL, not the inbox. Gmail exposes labels as
+          # IMAP folders, so the pipeline can only ever read the publisher
+          # alerts a filter has already sorted into FEN -- never anything else
+          # in that account. That is a privilege reduction, not tidiness, and
+          # it is worth keeping that way.
           FEED_IMAP_HOST: ${{ secrets.FEED_IMAP_HOST }}
           FEED_IMAP_USER: ${{ secrets.FEED_IMAP_USER }}
           FEED_IMAP_PASS: ${{ secrets.FEED_IMAP_PASS }}
+          FEED_IMAP_FOLDER: FEN
         run: python main.py
 
       # keep the Ask tab's semantic index current: vectors are cached in

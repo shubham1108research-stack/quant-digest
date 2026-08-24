@@ -1050,10 +1050,15 @@ def enrich_abstracts(items: list[dict], log) -> list[dict]:
 # The mailbox is opened READ-ONLY and dedup is kept in our own kv table rather
 # than in IMAP flags -- the pipeline should not be able to alter a mailbox even
 # by accident, and a re-run must be harmless.
-IMAP_HOST = os.environ.get("FEED_IMAP_HOST", "imap.gmail.com")
-IMAP_USER = os.environ.get("FEED_IMAP_USER")
-IMAP_PASS = os.environ.get("FEED_IMAP_PASS")
-IMAP_FOLDER = os.environ.get("FEED_IMAP_FOLDER", "INBOX")
+# `or` rather than a get() default: an unset GitHub Secret still SETS the
+# environment variable, to the empty string. os.environ.get(k, "INBOX") then
+# returns "" instead of the default, and IMAP select("") fails -- so a repo
+# that simply had not configured FEED_IMAP_HOST would break the collector
+# rather than fall back to Gmail.
+IMAP_HOST = os.environ.get("FEED_IMAP_HOST") or "imap.gmail.com"
+IMAP_USER = os.environ.get("FEED_IMAP_USER") or ""
+IMAP_PASS = os.environ.get("FEED_IMAP_PASS") or ""
+IMAP_FOLDER = os.environ.get("FEED_IMAP_FOLDER") or "INBOX"
 INBOX_MAX = 60                      # messages examined per run
 
 _SSRN_ABS = re.compile(r"abstract[_-]?id=(\d{5,9})", re.I)
