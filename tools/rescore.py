@@ -36,6 +36,11 @@ import llm     # noqa: E402
 import scoring  # noqa: E402
 import store   # noqa: E402
 
+# Stamped alongside the scores so a re-score is RESUMABLE. Without it --force
+# re-does every paper on every run, and since a full pass needs three runs the
+# work would never converge -- run 2 would redo run 1, run 3 would redo run 2.
+SCORED_CHARS_KEY = "scored_chars"
+
 SCORE_FIELDS = ("relevance", "relevance_category", "relevance_posterior",
                 "generality", "contribution", "testability", "novelty_type",
                 "novelty_posterior", "antecedent_match", "rank_score",
@@ -78,6 +83,11 @@ def main():
         # paper said what it did. Nothing is "outstanding" by the usual test,
         # and without this the fix could never reach the papers it fixes.
         if not (unscored or no_sleeve) and not args.force:
+            continue
+        # already re-scored at the current abstract cap: nothing would change,
+        # so skip it even under --force
+        if (args.force and not unscored and not no_sleeve
+                and d.get(SCORED_CHARS_KEY) == config.ABSTRACT_CHARS):
             continue
         if args.only_unscored and not unscored:
             continue
@@ -140,6 +150,7 @@ def main():
             patch = {k: it[k] for k in SCORE_FIELDS if k in it}
             if not patch:
                 continue
+            patch[SCORED_CHARS_KEY] = config.ABSTRACT_CHARS
             if store.update_meta(con, it["uid"], patch):
                 written += 1
                 for sl in (it.get("sleeves") or []):
@@ -168,6 +179,8 @@ def main():
         if not it.get("sleeves") and it.get("rank_score") is None:
             continue                                   # provider skipped it
         patch = {k: it[k] for k in SCORE_FIELDS if k in it}
+        if patch:
+            patch[SCORED_CHARS_KEY] = config.ABSTRACT_CHARS
         if not patch:
             continue
         if store.update_meta(con, it["uid"], patch):
