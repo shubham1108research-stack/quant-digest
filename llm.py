@@ -485,7 +485,14 @@ def _rank_groq(batch: list[dict], log) -> dict | None:
             log(f"[groq] chunk {start // chunk} skipped ({_err(e)})")
         if start + chunk < len(batch):
             time.sleep(2)                          # ease the per-minute budget
-    return out or None
+    if not out:
+        # A key WAS present and every chunk still failed: the free tier is
+        # drained. Returning None here made that indistinguishable from "not
+        # configured", so rank() never marked groq dead and re-asked a spent
+        # quota on every remaining batch -- 509 wasted 429s and 2.5h of a
+        # real run producing nothing. Raise, so failover marks it dead once.
+        raise RuntimeError("every chunk failed (rate limit or payload cap)")
+    return out
 
 
 def _rank_mistral(batch: list[dict], log) -> dict | None:
@@ -666,6 +673,8 @@ def rank(items: list[dict], log, max_batches: int | None = None,
 
     b = config.LLM_RANK_BATCH
     ranked, used, dead, batches = 0, set(), set(), 0
+    absent: set[str] = set()      # configured-out providers, e.g. no API key
+    empty_streak = 0              # consecutive batches nothing would score
     budget = getattr(config, "LLM_RANK_BUDGET_S", 0)
     t0 = time.monotonic()
     lock = threading.Lock()
@@ -680,7 +689,7 @@ def rank(items: list[dict], log, max_batches: int | None = None,
         scores: dict[int, dict] = {}
         for name, fn in _PROVIDERS:
             with lock:
-                if name in dead:
+                if name in dead or name in absent:
                     continue
             missing = [i for i in range(len(batch)) if i not in scores]
             if not missing:
@@ -694,6 +703,8 @@ def rank(items: list[dict], log, max_batches: int | None = None,
                     dead.add(name)                     # stop retrying it this run
                 continue
             if res is None:                            # provider not configured
+                with lock:
+                    absent.add(name)                   # never ask it again
                 continue
             with lock:
                 used.add(name)
@@ -743,6 +754,7 @@ def rank(items: list[dict], log, max_batches: int | None = None,
                     log(f"[llm] batch failed entirely ({_err(e)})")
                     scores = {}
                 if scores:
+                    empty_streak = 0
                     batches += 1
                     for i, it_ in enumerate(batch):
                         if i in scores:
@@ -755,15 +767,22 @@ def rank(items: list[dict], log, max_batches: int | None = None,
                             on_batch([x for i, x in enumerate(batch) if i in scores])
                         except Exception as e:         # noqa: BLE001
                             log(f"[llm] checkpoint failed ({_err(e)}); continuing")
+                else:
+                    empty_streak += 1
                 done_batches += 1
                 if done_batches % 5 == 0 or done_batches == len(todo):
                     el = time.monotonic() - t0
-                    scored_n = done_batches * b
-                    rate = scored_n / el if el > 0 else 0
-                    eta = (len(items) - scored_n) / rate if rate > 0 else 0
-                    log(f"[llm] {min(scored_n, len(items))}/{len(items)} scored "
-                        f"({ranked} ranked) - {el/60:.0f}min elapsed, "
-                        f"~{eta/60:.0f}min left")
+                    # ETA off RANKED, not off batches attempted. The old line
+                    # read "8600/8810 scored" while the chain had been returning
+                    # nothing for two hours -- a progress bar that keeps moving
+                    # after the work has stopped is worse than none.
+                    rate = ranked / el if el > 0 and ranked else 0
+                    eta = (len(items) - ranked) / rate if rate > 0 else 0
+                    log(f"[llm] {ranked}/{len(items)} ranked in "
+                        f"{done_batches}/{len(todo)} batches - "
+                        f"{el/60:.0f}min elapsed"
+                        + (f", ~{eta/60:.0f}min left" if rate else
+                           " - NOTHING SCORING"))
                 # budgets are checked as work completes, not before it starts
                 if budget and time.monotonic() - t0 > budget:
                     log(f"[llm] time budget {budget // 60}min reached; stopping")
@@ -771,10 +790,24 @@ def rank(items: list[dict], log, max_batches: int | None = None,
                 if not _run_budget_left():
                     log("[llm] run-wide LLM budget spent; stopping")
                     stopped = True
+                # A provider is unusable whether it DIED (raised) or was
+                # never configured. Counting only `dead` meant a run with two
+                # live keys exhausted and two absent could never satisfy this,
+                # so it span on to the last batch scoring nothing.
                 with lock:
-                    all_dead = len(dead) == len([n for n, _ in _PROVIDERS])
-                if all_dead:
-                    log("[llm] all providers exhausted; stopping")
+                    usable = [n for n, _ in _PROVIDERS
+                              if n not in dead and n not in absent]
+                if not usable:
+                    log("[llm] no provider left (dead: "
+                        f"{', '.join(sorted(dead)) or 'none'}; absent: "
+                        f"{', '.join(sorted(absent)) or 'none'}); stopping")
+                    stopped = True
+                # Belt and braces: even if the bookkeeping above is wrong for
+                # some future provider, a chain that returns nothing several
+                # times running is spent. Don't burn the rest of the run on it.
+                if empty_streak >= 3:
+                    log(f"[llm] {empty_streak} consecutive batches scored "
+                        "nothing; stopping")
                     stopped = True
                 if not stopped:
                     nxt = next(it, None)
@@ -794,6 +827,11 @@ def _apply_score(it: dict, s: dict) -> None:
     posterior that overwrites the LLM's guessed `provisional` (topic prior x
     antecedent likelihood; non-provisional only when the posterior clears
     NOVELTY_CONFIDENCE). Shared by the triage pass and the consensus merge."""
+    # Mark the item as scored BY THIS RUN. Callers that resume work (rescore)
+    # cannot tell "scored just now" from "already had a score from a previous
+    # pass" by looking at rank_score, and stamping the latter as done is how a
+    # run that ranked 6,078 of 8,810 recorded all 8,810 as complete.
+    it["_scored_now"] = True
     it["relevance"] = s["relevance"]
     it["relevance_category"] = s["relevance_category"]
     it["generality"] = s["generality"]

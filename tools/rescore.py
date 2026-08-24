@@ -61,9 +61,38 @@ def main():
                          "an input change, e.g. the abstract cap)")
     ap.add_argument("--only-unscored", action="store_true",
                     help="skip papers that only need sleeve labels")
+    ap.add_argument("--clear-stamps", action="store_true",
+                    help="drop every scored_chars stamp first, so --force sees "
+                         "the whole archive as outstanding again")
     args = ap.parse_args()
 
     con = store.connect()
+
+    if args.clear_stamps:
+        # The stamp records "already re-scored at the current abstract cap".
+        # It is only trustworthy if it was written by a run that actually
+        # scored the paper -- and until the _scored_now fix it was written for
+        # every paper a run merely LOOKED at, so a run whose providers died
+        # two-thirds through marked the whole archive done. There is no way to
+        # tell the honest stamps from the false ones after the fact, so this
+        # clears them all and lets one more --force pass rebuild the truth.
+        # That pass is now resumable: each run stamps only what it scored, so
+        # three short runs finish what one long one cannot.
+        cleared = 0
+        for uid, meta in con.execute(
+                "SELECT uid, meta FROM items").fetchall():
+            try:
+                d = json.loads(meta or "{}")
+            except Exception:                              # noqa: BLE001
+                continue
+            if SCORED_CHARS_KEY not in d:
+                continue
+            d.pop(SCORED_CHARS_KEY)
+            con.execute("UPDATE items SET meta=? WHERE uid=?",
+                        (json.dumps(d, default=str), uid))
+            cleared += 1
+        con.commit()
+        log(f"[rescore] cleared {cleared} scored_chars stamps")
     todo, need_score, need_sleeve = [], 0, 0
     for uid, title, meta in con.execute("SELECT uid, title, meta FROM items"):
         try:
@@ -144,7 +173,7 @@ def main():
         for it in batch:
             if it["uid"] in _seen:
                 continue
-            if not it.get("sleeves") and it.get("rank_score") is None:
+            if not it.get("_scored_now"):
                 continue                               # provider skipped it
             _seen.add(it["uid"])
             patch = {k: it[k] for k in SCORE_FIELDS if k in it}
@@ -176,7 +205,13 @@ def main():
     for it in todo:
         if it["uid"] in _persisted:
             continue
-        if not it.get("sleeves") and it.get("rank_score") is None:
+        # `_scored_now` is set by llm._apply_score, so it means "this run
+        # produced this score". The old test -- rank_score is not None -- was
+        # true for every paper that had EVER been scored, so when the provider
+        # chain died two-thirds through, the 2,732 papers it never reached were
+        # re-stamped scored_chars=1500 while still carrying their 500-char
+        # scores. The resume filter then skipped them forever.
+        if not it.get("_scored_now"):
             continue                                   # provider skipped it
         patch = {k: it[k] for k in SCORE_FIELDS if k in it}
         if patch:
