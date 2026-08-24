@@ -96,6 +96,12 @@ jobs:
           FEED_IMAP_USER: ${{ secrets.FEED_IMAP_USER }}
           FEED_IMAP_PASS: ${{ secrets.FEED_IMAP_PASS }}
           FEED_IMAP_FOLDER: FEN
+          # Shared secret in the Claude digest's JSON payload. The mailbox
+          # address is public, so without this anyone who learns it could write
+          # into the archive. Unset, sources._parse_claude_digest refuses every
+          # payload rather than trusting one -- which is the right default, but
+          # it does mean the channel is dormant until this secret exists.
+          DIGEST_TOKEN: ${{ secrets.DIGEST_TOKEN }}
         run: python main.py
 
       # keep the Ask tab's semantic index current: vectors are cached in
