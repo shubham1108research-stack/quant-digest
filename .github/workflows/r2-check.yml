@@ -1,0 +1,67 @@
+name: R2 Check
+
+# Verify the R2 credentials and bucket from a runner, deliberately, BEFORE a
+# real workflow tries to store the database in it.
+#
+# It has to run here rather than locally: this developer's network blocks
+# *.r2.cloudflarestorage.com at the TLS handshake (other Cloudflare hosts are
+# fine), so `dbsync.py status` cannot be tested from the laptop at all.
+#
+# Read-only -- status lists what is in the bucket and touches nothing.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install boto3
+
+      - name: dbsync status
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py status
+
+      # Prove a round trip on a throwaway key, so the first real push is not
+      # also the first time anything was ever written to this bucket.
+      - name: round-trip a small object
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          python - <<'PY'
+          import os, boto3
+          from botocore.config import Config
+          need = ("R2_ACCOUNT_ID","R2_ACCESS_KEY_ID","R2_SECRET_ACCESS_KEY","R2_BUCKET")
+          if not all(os.environ.get(k) for k in need):
+              print("R2 secrets not set; nothing to check")
+              raise SystemExit(0)
+          b = os.environ["R2_BUCKET"]
+          cli = boto3.client("s3",
+              endpoint_url=f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com",
+              aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+              aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+              region_name="auto", config=Config(retries={"max_attempts": 3}))
+          print("buckets visible to this token:")
+          for x in cli.list_buckets().get("Buckets", []):
+              print("   ", x["Name"])
+          cli.put_object(Bucket=b, Key="_r2check", Body=b"ok")
+          got = cli.get_object(Bucket=b, Key="_r2check")["Body"].read()
+          assert got == b"ok", got
+          cli.delete_object(Bucket=b, Key="_r2check")
+          print(f"\nround trip on {b}: put, get, delete all OK")
+          PY
