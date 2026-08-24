@@ -55,7 +55,7 @@ def collect(existing: set, con=None) -> list[dict]:
         ("SemanticScholar", lambda: sources.semantic_scholar(log)),
         ("Quantocracy", sources.quantocracy),
         ("Practitioner", lambda: sources.practitioner(log)),
-        ("Firms (AQR/Man/RA)", lambda: firms.firms(log)),
+        ("Firms (AQR/Man/RA)", lambda: firms.firms(log, existing)),
         # publishers who block crawlers but will post you the same content:
         # SSRN eJournals, Macrosynergy. Subscribed from a dedicated mailbox.
         ("Inbox", lambda: sources.inbox(log, con)),

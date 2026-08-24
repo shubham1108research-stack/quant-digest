@@ -190,10 +190,20 @@ FIRM_SITES = {
             r"^/Insights/Research/[^/]+/[^/]+$"),
     "Man Group": ("https://www.man.com/insights",
                   r"/insights/[a-z0-9][a-z0-9-]{10,}$"),
-    "Research Affiliates": ("https://www.researchaffiliates.com/insights/publications",
-                            r"/insights/publications/articles/\d+-[a-z0-9-]+$"),
+    # researchaffiliates.com was retired: every path on it now redirects to a
+    # homepage carrying three links (Syzygy, RAFI, a support mailto), which is
+    # why this collector quietly returned 0 articles. The research moved to
+    # rafi.com, and the article path changed from /insights/... to /research/...
+    "Research Affiliates": ("https://www.rafi.com/research/publications",
+                            r"/research/publications/articles/\d+-[a-z0-9-]+"),
 }
 FIRM_MAX_ITEMS = 15   # newest per firm; cross-week dedup surfaces only net-new
+# Article pages opened per firm per run to read date + summary off the page's
+# own metadata. Only UNSEEN articles are opened (the uid is a title hash, so a
+# known one is recognised from the listing alone), so in steady state this is
+# a handful; the cap is a guard for the first run and for a site that reshuffles
+# its listing.
+FIRM_ENRICH_MAX = 15
 
 # ---- Preprint probes via OpenAlex -----------------------------------
 # label -> OpenAlex source id (Sxxxxxxxxx), or None to resolve by name at
