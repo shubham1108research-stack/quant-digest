@@ -169,15 +169,33 @@ QUANTOCRACY_RSS = "https://quantocracy.com/feed/"
 # Direct practitioner RSS (verified 2026-07-18). Asset-manager house pages
 # (AQR, Man, Research Affiliates) and SSRN eJournals have no usable RSS -- they
 # are JS-rendered / scrape-blocked and would need a headless browser.
+# label -> (feed url, section). The section is per-feed because these are not
+# all the same kind of thing: BIS working papers are papers, with abstracts and
+# PDFs, and filing them as section 4 would put them under "Desk notes" in the
+# portal alongside blog posts. Sections are 1 = working papers (with NEP/NBER),
+# 4 = practitioner & house research.
 PRACTITIONER_FEEDS = {
-    "Alpha Architect": "https://alphaarchitect.com/feed/",
-    "Quantpedia": "https://quantpedia.com/feed/",
-    "Newfound / Flirting with Models": "https://blog.thinknewfound.com/feed/",
-    # Macrosynergy: their feed now serves a Cloudflare "Just a moment..."
-    # challenge (even robots.txt is 403), so this returned 0 posts silently
-    # for an unknown period. Their research arrives by newsletter instead --
-    # subscribe the feed mailbox and sources.inbox() picks it up.
-    # "Macrosynergy": "https://macrosynergy.com/research/feed/",
+    "Alpha Architect": ("https://alphaarchitect.com/feed/", 4),
+    "Quantpedia": ("https://quantpedia.com/feed/", 4),
+    "Newfound / Flirting with Models": ("https://blog.thinknewfound.com/feed/", 4),
+    # Central-bank research blog: ~100 items in the feed, weekly cadence, with
+    # real dates and standfirsts. The single highest-volume macro source here.
+    "NY Fed Liberty Street Economics":
+        ("https://libertystreeteconomics.newyorkfed.org/feed/", 4),
+    # BIS working papers. NOT bis.org/wppubl.htm -- that URL is a 404, and a
+    # scraper pointed at it would have reported "nothing new" forever. The feed
+    # is RSS 1.0/RDF rather than RSS 2.0; feedparser handles it natively.
+    "BIS Working Papers": ("https://www.bis.org/doclist/wppubls.rss", 1),
+    # Verdad's feed works but their newest post is 2026-05-04 -- they have
+    # stopped publishing to this collection, confirmed against the archive page
+    # itself. Wired anyway: it costs one request and picks up if they resume.
+    # The zero-yield warning in main.collect will keep saying it is quiet.
+    "Verdad": ("https://verdadcap.com/archive?format=rss", 4),
+    # Macrosynergy: every URL on the domain returns a Cloudflare challenge --
+    # the feed, the research index, the site root, with an ordinary UA or a
+    # browser one. Not fetchable from a runner. Their research arrives by
+    # newsletter instead; subscribe the feed mailbox and sources.inbox() has it.
+    # "Macrosynergy": ("https://macrosynergy.com/research/feed/", 4),
 }
 
 # ---- Asset-manager house research (headless Playwright) -------------

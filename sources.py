@@ -522,12 +522,30 @@ def quantocracy() -> list[dict]:
 
 
 # ------------------------------------------- Practitioner RSS feeds
+_BYLINE = re.compile(r"^\s*by\s+(.{3,160}?)\s*<br\s*/?>", re.I | re.S)
+
+
+def _split_byline(raw: str, fallback_author: str) -> tuple[str, str]:
+    """Separate a leading "by A, B<br />" byline from the abstract that follows.
+
+    BIS puts the authors in the description rather than in an author element,
+    so without this the abstract opens with "by Mathias Drehmann, Xuewen Fu"
+    and the authors field stays empty -- which costs the watchlist cross-match
+    and author reputation any chance of crediting the paper. Feeds that do not
+    use this shape are unaffected.
+    """
+    m = _BYLINE.match(raw or "")
+    if not m:
+        return fallback_author, _clean(raw)
+    return _clean(m.group(1)), _clean(raw[m.end():])
+
+
 def practitioner(log) -> list[dict]:
     """Direct practitioner blogs (Alpha Architect, Quantpedia, ...). One bad
     feed is logged and skipped, never killing the others."""
     cut = _cutoff()
     out = []
-    for label, url in config.PRACTITIONER_FEEDS.items():
+    for label, (url, section) in config.PRACTITIONER_FEEDS.items():
         try:
             feed = feedparser.parse(url, agent=UA["User-Agent"])
         except Exception as e:                       # noqa: BLE001
@@ -538,16 +556,25 @@ def practitioner(log) -> list[dict]:
             d = _entry_date(e)
             if d and d < cut:
                 continue
-            out.append({
+            raw = e.get("description", "") or e.get("summary", "")
+            authors, abstract = _split_byline(raw, _clean(e.get("author", "")))
+            item = {
                 "title": _clean(e.get("title", "")),
-                "authors": _clean(e.get("author", "")),
-                "abstract": _clean(e.get("description", "")
-                                   or e.get("summary", ""))[:600],
+                "authors": authors,
+                # was hardcoded to 600, left from before ABSTRACT_CHARS rose to
+                # 1500 -- the LLM now reads 1500, so 600 threw away the half of
+                # a working-paper abstract that says what the paper actually did
+                "abstract": abstract[:config.ABSTRACT_CHARS],
                 "url": e.get("link", ""),
                 "date": d.date().isoformat() if d else "",
                 "source": label,
-                "section": 4,
-            })
+                "section": section,
+            }
+            # BIS ships the PDF beside the landing page at the same stem, and
+            # tools/fulltext.py can parse it -- same trick already used for NBER
+            if re.match(r"https?://(www\.)?bis\.org/publ/\w+\.htm$", item["url"]):
+                item["pdf_url"] = item["url"][:-4] + ".pdf"
+            out.append(item)
             got += 1
         print(f"  practitioner/{label}: {got} posts")
         time.sleep(0.3)
