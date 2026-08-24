@@ -212,6 +212,16 @@ def main() -> None:
     except Exception as e:                           # noqa: BLE001
         log(f"[monthly] failed: {type(e).__name__}: {e}")
 
+    # CFTC positioning for the For You briefing. Publishes Friday 15:30 ET for
+    # the prior Tuesday, so six of seven daily runs rewrite an identical file;
+    # that is cheaper than a second schedule to maintain. Never fatal -- the
+    # digest is about papers, and a CFTC outage should not cost us the email.
+    try:
+        from tools import cot as _cot
+        _cot.build()
+    except Exception as e:                           # noqa: BLE001
+        log(f"[cot] failed: {type(e).__name__}: {e}")
+
     # rebuild the static portal from the full archive (incl. this run)
     try:
         n = portal.build(con)

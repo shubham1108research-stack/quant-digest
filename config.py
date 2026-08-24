@@ -823,3 +823,105 @@ DESK_FIT_ANCHORS = (
     "equity-anomaly or microstructure paper).\n"
     "0 = not relevant to this desk at all."
 )
+
+# --- CFTC Commitments of Traders -------------------------------------------
+# Positioning for the For You desk briefing. Free, no key, no bot check: CFTC
+# publishes the same numbers as the fixed-width .txt files through a Socrata
+# JSON API, and the JSON is what removes the column-alignment errors that make
+# the flat files mislabel one trader group as another.
+#
+# Datasets, and the trader group each one is read for:
+#   gpe5-46if  Traders in Financial Futures  -> Leveraged Funds
+#   72hh-3qpy  Disaggregated (commodities)   -> Managed Money
+#
+# The long/short field names differ between the two, and NOT in the way you
+# would guess: TFF has no "_all" suffix (lev_money_positions_long), the
+# disaggregated report does (m_money_positions_long_all). Getting this wrong
+# reads every row as net zero, silently.
+COT_API = "https://publicreporting.cftc.gov/resource/{dataset}.json"
+COT_DATASETS = [
+    # (dataset id, trader group label, long field, short field)
+    ("gpe5-46if", "Leveraged Funds",
+     "lev_money_positions_long", "lev_money_positions_short"),
+    ("72hh-3qpy", "Managed Money",
+     "m_money_positions_long_all", "m_money_positions_short_all"),
+]
+
+# Contract names are NOT hardcoded. CFTC renamed most of them in Feb 2022
+# ("10-YEAR U.S. TREASURY NOTES - CHICAGO BOARD OF TRADE" -> "UST 10Y NOTE",
+# "U.S. DOLLAR INDEX" -> "USD INDEX"), and a hardcoded list simply goes quiet
+# when that happens -- the old series still resolves, it just stops updating.
+# The universe is discovered from the latest published week instead, so the
+# next rename fixes itself.
+#
+# Liquidity filter, in contracts of open interest. This is what "everything
+# liquid" means in practice: it keeps the ~95 real financial-futures markets
+# and drops the Coinbase nano/perp listings on their own open interest,
+# without a blocklist that would need maintaining as they add more.
+COT_MIN_OI = 10_000
+COT_HISTORY_WEEKS = 156        # 3y, for the positioning percentile
+COT_MIN_OBS = 26               # below this, report no percentile rather than a bad one
+COT_STALE_DAYS = 21            # older than this and the panel says so
+
+# Asset-class buckets. ORDER MATTERS: the first pattern that matches wins, so
+# "EURO SHORT TERM RATE" has to meet the rates patterns before the FX ones.
+#
+# Patterns are matched on WORD BOUNDARIES, not as raw substrings, and that is
+# not a nicety: "SOL" as a substring puts GASOLINE RBOB, S&P 500 Consolidated
+# and MARYLAND SOLAR REC in the crypto bucket, and "IG" puts CIG ROCKIES in
+# credit. Every pattern here is read as <pattern>.
+COT_GROUPS = [
+    ("rates", "Rates", (
+        "UST", "TREASURY", "ULTRA", "SOFR", "FED FUNDS", "ERIS", "SHORT TERM RATE",
+        "10 YEAR YIELD", "2 YEAR YIELD", "5 YEAR YIELD", "30 YEAR YIELD", "NOTE", "BOND")),
+    ("credit", "Credit", ("CREDIT", "HY", "IG", "CORPORATE")),
+    ("crypto", "Crypto", (
+        "BITCOIN", "ETHER", "SOL", "XRP", "DOGE", "DOGECOIN", "CARDONA", "PERP", "LITECOIN",
+        "CHAINLINK", "STELLAR", "POLKADOT", "AVALANCHE", "HEDERA", "NEAR",
+        "ONDO", "SUI", "ZCASH", "SHIB", "AAVE", "CRYPTO", "NANO")),
+    ("vol", "Volatility", ("VIX", "VOLATILITY", "VARIANCE")),
+    ("fx", "FX", (
+        "EURO FX", "JAPANESE YEN", "BRITISH POUND", "SWISS FRANC", "CANADIAN DOLLAR",
+        "AUSTRALIAN DOLLAR", "NZ DOLLAR", "MEXICAN PESO", "BRAZILIAN REAL",
+        "SO AFRICAN RAND", "USD INDEX", "DOLLAR INDEX", "XRATE", "RUBLE",
+        "KRONA", "KRONE", "SHEKEL", "RENMINBI", "YUAN", "RUPEE", "WON", "ZLOTY")),
+    ("equity", "Equity index", (
+        "S&P", "NASDAQ", "DJIA", "RUSSELL", "MSCI", "NIKKEI", "DOW JONES",
+        "STOCK INDEX", "E-MINI", "EMINI", "DIVIDEND", "REAL ESTATE IDX")),
+    ("energy", "Energy", (
+        "CRUDE", "NATURAL GAS", "NAT GAS", "CBOB", "ETHANE", "GASOLINE", "ULSD", "HEATING OIL", "PROPANE",
+        "ETHANOL", "NAPHTHA", "FUEL OIL", "BUTANE", "GASOIL", "BRENT", "WTI",
+        "HENRY HUB", "ELECTRICITY", "POWER", "COAL", "EMISSION", "RGGI", "CARBON")),
+    ("metals", "Metals", (
+        "GOLD", "SILVER", "COPPER", "PLATINUM", "PALLADIUM", "ALUMINUM",
+        "ALUMINIUM", "ZINC", "NICKEL", "LEAD", "TIN", "STEEL", "IRON", "COBALT", "LITHIUM")),
+    ("ags", "Agriculture", (
+        "CORN", "WHEAT", "SOYBEAN", "SUGAR", "COFFEE", "COTTON", "COCOA",
+        "RICE", "OATS", "CANOLA", "PALM", "RUBBER", "LUMBER", "ORANGE JUICE",
+        "MILK", "CHEESE", "BUTTER", "WHEY", "DRY WHEY", "FERTILIZER", "UREA")),
+    ("livestock", "Livestock", ("CATTLE", "HOGS", "PORK", "FEEDER")),
+]
+COT_GROUP_FALLBACK = ("other", "Other")
+
+# Read this before reading the rates rows. Leveraged Funds are structurally
+# short UST futures because the cash/futures basis trade is long the bond and
+# short the future -- that net short is a financing position, not a bearish
+# macro view. Shown on the panel so the number is not read the wrong way.
+COT_NOTES = {
+    "rates": ("Leveraged Funds are structurally net short UST futures: the "
+              "cash/futures basis trade is long the cash bond against a short "
+              "future. Read the change, not the level."),
+    "crypto": ("Coinbase Derivatives listings clear the liquidity floor but "
+               "are retail-facing; treat them as sentiment, not positioning."),
+}
+
+# Fallback when no name pattern matches: the EXCHANGE often settles it. The
+# long tail of the disaggregated report is US power and gas locational
+# contracts -- PJM, ERCOT, SP15, Palo Verde, Transco, TETCO, SoCal, Houston
+# Ship Channel -- roughly 160 of them, all listed on one venue. Enumerating
+# every hub would be a maintenance treadmill; the venue name is the invariant.
+COT_EXCHANGE_GROUPS = [
+    ("ICE FUTURES ENERGY DIV", "energy", "Energy"),
+    ("NODAL EXCHANGE", "energy", "Energy"),
+    ("COINBASE DERIVATIVES", "crypto", "Crypto"),
+]

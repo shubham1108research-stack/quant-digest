@@ -72,6 +72,12 @@ def main():
     # clamps and warns, but the papers are simply gone from retrieval).
     run(["tools/embed.py"], required=True)
 
+    # Positioning for the For You briefing. NOT required: a CFTC outage, or
+    # Socrata rate-limiting a runner, must not stop a portal deploy. The panel
+    # degrades to the papers underneath it, and cot.json is committed so the
+    # last good copy is still there.
+    run(["tools/cot.py"], required=False)
+
     # The graph is cheap (~12s from the vector cache) and Ask traverses it.
     # cites are NOT rebuilt: they live in state.db and cost ~200 OpenAlex
     # round trips, so they travel with the checkout.

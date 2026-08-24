@@ -99,6 +99,8 @@ def build(con) -> int:
         (docs / "monthly.json").write_text("{}", encoding="utf-8")
     if not (docs / "nber.json").exists():           # placeholder until NBER backfill
         (docs / "nber.json").write_text("{}", encoding="utf-8")
+    if not (docs / "cot.json").exists():            # placeholder until tools/cot.py runs
+        (docs / "cot.json").write_text('{"groups":[]}', encoding="utf-8")
     html = _INDEX.replace(
         "__RELEVANCE_CONFIDENCE_PCT__", str(round(config.RELEVANCE_CONFIDENCE * 100))
     ).replace(
@@ -145,7 +147,7 @@ _INDEX = """<!doctype html>
   --ground:#F6F8F7; --panel:#FFFFFF; --ink:#171C1A; --muted:#5E6B66;
   --faint:#8A968F; --line:#E4E8E5; --line2:#EDF0EE; --accent:#0C5C4A;
   --strong:#1F7A3D; --medium:#9A6B00; --low:#8A8F87; --cite:#9A6B00;
-  --rail:#EFF2F0; --navfg:#33403A; --nil:#C9D0CB; --bar:#D8DEDA; --rowhover:#FBFCFB;
+  --rail:#EFF2F0; --navfg:#33403A; --nil:#C9D0CB; --bar:#D8DEDA; --long:#1F7A3D; --short:#A63A2B; --rowhover:#FBFCFB;
   --serif:Newsreader,ui-serif,Georgia,'Iowan Old Style',Palatino,serif;
   --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
 }
@@ -153,17 +155,17 @@ _INDEX = """<!doctype html>
   --ground:#0F1311; --panel:#141917; --ink:#E9ECE8; --muted:#94A099; --faint:#6E7A73;
   --line:#232A26; --line2:#1C221F; --accent:#43B08F; --strong:#3FAE63; --medium:#C79A3A;
   --low:#7D857D; --cite:#C79A3A;
-  --rail:#111614; --navfg:#C4CCC6; --nil:#3A443E; --bar:#2A322D; --rowhover:#181E1B;}}
+  --rail:#111614; --navfg:#C4CCC6; --nil:#3A443E; --bar:#2A322D; --long:#3FAE63; --short:#D4705F; --rowhover:#181E1B;}}
 :root[data-theme="dark"]{
   --ground:#0F1311; --panel:#141917; --ink:#E9ECE8; --muted:#94A099; --faint:#6E7A73;
   --line:#232A26; --line2:#1C221F; --accent:#43B08F; --strong:#3FAE63; --medium:#C79A3A;
   --low:#7D857D; --cite:#C79A3A;
-  --rail:#111614; --navfg:#C4CCC6; --nil:#3A443E; --bar:#2A322D; --rowhover:#181E1B;}
+  --rail:#111614; --navfg:#C4CCC6; --nil:#3A443E; --bar:#2A322D; --long:#3FAE63; --short:#D4705F; --rowhover:#181E1B;}
 :root[data-theme="light"]{
   --ground:#F6F8F7; --panel:#FFFFFF; --ink:#171C1A; --muted:#5E6B66; --faint:#8A968F;
   --line:#E4E8E5; --line2:#EDF0EE; --accent:#0C5C4A; --strong:#1F7A3D; --medium:#9A6B00;
   --low:#8A8F87; --cite:#9A6B00;
-  --rail:#EFF2F0; --navfg:#33403A; --nil:#C9D0CB; --bar:#D8DEDA; --rowhover:#FBFCFB;}
+  --rail:#EFF2F0; --navfg:#33403A; --nil:#C9D0CB; --bar:#D8DEDA; --long:#1F7A3D; --short:#A63A2B; --rowhover:#FBFCFB;}
 
 *{box-sizing:border-box;}
 ::selection{background:var(--accent);color:var(--panel);}
@@ -404,6 +406,31 @@ a.cite{font-family:var(--sans);font-size:11px;font-weight:600;vertical-align:sup
 .src a{color:var(--ink);text-decoration:none;font-weight:600;}
 .src a:hover{color:var(--accent);}
 .src .meta{font-family:var(--sans);font-size:11.5px;color:var(--muted);margin-top:2px;}
+
+.band{margin:22px 0 6px;padding:7px 0 5px;border-bottom:1px solid var(--line);
+  display:flex;align-items:baseline;gap:10px;font-weight:600;font-size:14px}
+.band .sub{font-weight:400;font-size:12px;color:var(--faint)}
+.cotnote{font-size:12px;color:var(--muted);margin:8px 0 2px;padding:7px 10px;
+  border-left:2px solid var(--line);background:var(--line2);border-radius:0 3px 3px 0}
+.cotgrp{margin:14px 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--faint);display:flex;align-items:baseline;gap:8px}
+table.cot{width:100%;border-collapse:collapse;font-size:13px;
+  font-variant-numeric:tabular-nums}
+table.cot td{padding:4px 6px;border-bottom:1px solid var(--line2);vertical-align:middle}
+table.cot td.c{width:44%;color:var(--ink)}
+table.cot td.n{text-align:right;width:15%;white-space:nowrap}
+table.cot td.w{text-align:right;width:15%;white-space:nowrap;color:var(--muted)}
+table.cot td.p{width:26%}
+.pbar{display:flex;align-items:center;gap:7px}
+.pbar .t{width:78px;height:5px;background:var(--bar);border-radius:3px;position:relative;
+  flex:none;overflow:hidden}
+.pbar .t i{position:absolute;top:0;bottom:0;width:3px;background:var(--ink);border-radius:2px}
+.pbar .v{font-size:11px;color:var(--faint);width:30px;flex:none}
+.lg{color:var(--long)}.sh{color:var(--short)}
+.cotmore{font-size:12px;color:var(--accent);cursor:pointer;padding:6px 6px 2px;
+  display:inline-block;background:none;border:0;font-family:inherit}
+.cotmore:hover{text-decoration:underline}
+.cotstale{font-size:12px;color:var(--medium);margin:6px 0}
 .sechead{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.13em;
   text-transform:uppercase;color:var(--faint);margin:0;padding:20px 18px 6px;
   border-bottom:1px solid var(--ink);display:flex;justify-content:space-between;align-items:baseline;}
@@ -2230,7 +2257,92 @@ function forYouScore(x){
   FORYOU_KEYWORDS.forEach(([term,w])=>{if(text.includes(term))s+=w;});
   return s;
 }
+// --- CFTC positioning (docs/cot.json, written by tools/cot.py) -------------
+// Lazy, like nber.json: it is only needed on this one tab, and a briefing that
+// blocks first paint on a market-data file is a worse briefing.
+let COT=null, cotLoading=false, cotFailed=false;
+const COT_OPEN={};              // group key -> showing all rows
+const COT_TOP=6;                // rows per group before the disclosure
+function loadCOT(cb){
+  if(COT||cotFailed){cb();return;}
+  if(cotLoading)return;
+  cotLoading=true;
+  fetch('cot.json').then(r=>r.json()).then(d=>{
+    COT=d&&d.groups?d:null;cotLoading=false;
+    if(!COT)cotFailed=true;
+    if(VIEW==='foryou')cb();
+  }).catch(()=>{
+    // A missing or broken cot.json must degrade to papers-only, never to a
+    // blank tab -- the papers are the part that is always there.
+    cotLoading=false;cotFailed=true;if(VIEW==='foryou')cb();
+  });
+}
+const cotNum=n=>(n<0?'\u2212':'+')+Math.abs(n).toLocaleString();
+// Compact for the WoW column: a +116,517 next to a -1,243,004 is unreadable at
+// a glance, and the change only needs an order of magnitude.
+function cotK(n){
+  const a=Math.abs(n);
+  const t=a>=1e6?(a/1e6).toFixed(1)+'M':a>=1e4?Math.round(a/1e3)+'k':
+          a>=1e3?(a/1e3).toFixed(1)+'k':String(a);
+  return (n<0?'\u2212':'+')+t;
+}
+// Sign is carried by the minus sign and the arrow as well as by colour --
+// colour alone fails for ~8% of men and in every printout.
+function cotCell(n){
+  return `<span class="${n<0?'sh':'lg'}">${cotNum(n)}</span>`;
+}
+function cotWow(n){
+  if(n===null||n===undefined)return '<span style="color:var(--faint)">n/a</span>';
+  if(n===0)return '<span style="color:var(--faint)">\u2013</span>';
+  return `<span class="${n<0?'sh':'lg'}">${n<0?'\u25be':'\u25b4'} ${cotK(n)}</span>`;
+}
+function cotPct(p){
+  if(p===null||p===undefined)
+    return '<span class="pbar"><span class="v" style="width:auto">too short</span></span>';
+  return `<span class="pbar"><span class="t"><i style="left:calc(${p}% - 1.5px)"></i></span>`+
+         `<span class="v">p${p}</span></span>`;
+}
+function cotGroupHTML(g){
+  const all=g.rows||[], open=!!COT_OPEN[g.key];
+  const rows=open?all:all.slice(0,COT_TOP);
+  // Drop only the TRAILING " - <exchange>" segment. Taking split(' - ')[0]
+  // instead turns "DOMINION - SOUTH POINT - ICE FUTURES ENERGY DIV" into
+  // "DOMINION", which is a different delivery point.
+  const short=n=>{const p=String(n).split(' - ');
+    return (p.length>1?p.slice(0,-1).join(' - '):n).trim();};
+  const body=rows.map(r=>`<tr><td class="c">${esc(short(r.name))}</td>`+
+    `<td class="n">${cotCell(r.net)}</td>`+
+    `<td class="w">${cotWow(r.wow)}</td>`+
+    `<td class="p">${cotPct(r.pct)}</td></tr>`).join('');
+  const more=all.length>COT_TOP
+    ? `<button class="cotmore" data-cotgrp="${esc(g.key)}">`+
+      (open?'Show fewer':`${all.length-COT_TOP} more`)+'</button>'
+    : '';
+  return `<div class="cotgrp">${esc(g.label)}<span style="color:var(--faint)">`+
+    `${all.length}</span></div>`+
+    (g.note?`<div class="cotnote">${esc(g.note)}</div>`:'')+
+    `<table class="cot">${body}</table>${more}`;
+}
+function cotPanelHTML(){
+  if(cotFailed||!COT)
+    return '<div class="empty">Positioning unavailable — cot.json did not load.</div>';
+  if(!COT.groups.length)
+    return '<div class="empty">No positioning data yet — run tools/cot.py.</div>';
+  return (COT.stale?`<div class="cotstale">\u26a0 Latest CFTC report is ${esc(COT.as_of)} `+
+           '— older than three weeks. Treat as historical, not current.</div>':'')+
+    COT.groups.map(cotGroupHTML).join('');
+}
+// One delegated listener rather than one per button: the panel is re-rendered
+// on every disclosure toggle, so per-node handlers would leak on each redraw.
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('.cotmore');
+  if(!b)return;
+  const k=b.getAttribute('data-cotgrp');
+  COT_OPEN[k]=!COT_OPEN[k];
+  renderForYou();
+});
 function renderForYou(){
+  if(!COT&&!cotFailed){loadCOT(renderForYou);}
   const q=$('q').value.toLowerCase().trim();
   const cs=sinceDays(21);
   const pool=(cs?DATA.filter(x=>(x.seen||'')>=cs):DATA)
@@ -2239,20 +2351,32 @@ function renderForYou(){
   // everywhere else), so a strong-author match ranks a touch higher
   const matched=pool.map(x=>({...x,_fy:forYouScore(x)})).filter(x=>x._fy>=2.5)
     .sort((a,b)=>b._fy*(b.reputation||1)-a._fy*(a.reputation||1)||byDate(a,b));
-  // a raw keyword-sum ranking structurally favours long academic abstracts
-  // over short practitioner posts (more text = more hits), so a flat top-10
-  // would rarely surface a blog even when it's a genuinely strong match --
-  // reserve slots across both buckets instead of letting them compete directly
-  const prac=matched.filter(isPrac),acad=matched.filter(x=>!isPrac(x));
-  let nPrac=Math.min(3,prac.length),nAcad=Math.min(10-nPrac,acad.length);
-  nPrac=Math.min(10-nAcad,prac.length);
-  const rows=[...acad.slice(0,nAcad),...prac.slice(0,nPrac)]
-    // show personal-fit match strength here, not the generic (and often
-    // unrelated) triage relevance score -- the two can legitimately
-    // disagree, and showing the wrong one reads as a contradiction
-    .map(x=>({...x,_displayScore:Math.min(100,Math.round(x._fy*10)),_displayLabel:'match'}));
-  $('view').innerHTML=`<div class="dateline">For you <span class="n">· systematic macro / CTA — trend, carry, FX, rates &amp; term premium, commodities, macro regime &amp; nowcasting, Bayesian state-space · top ${rows.length}, across journals/preprints/practitioner</span></div>`+
-    (rows.length?byCategory(rows,(a,b)=>(b._fy||0)-(a._fy||0)):'<div class="empty">Nothing matched strongly in the last 3 weeks.</div>');
+  // Desk notes and papers are now SEPARATE BANDS, which is what retired the
+  // reserved-slot arithmetic that used to live here: a raw keyword sum
+  // structurally favours long academic abstracts over short practitioner
+  // posts (more text, more hits), so the two had to be kept from competing
+  // for one top-10. Splitting them structurally does the same job honestly.
+  const mark=x=>({...x,_displayScore:Math.min(100,Math.round(x._fy*10)),
+                  _displayLabel:'match'});
+  const prac=matched.filter(isPrac).slice(0,8).map(mark);
+  const acad=matched.filter(x=>!isPrac(x)).slice(0,14).map(mark);
+  const byFy=(a,b)=>(b._fy||0)-(a._fy||0);
+  const asof=COT&&COT.as_of?`week ending ${esc(COT.as_of)}`:'loading…';
+
+  $('view').innerHTML=
+    `<div class="dateline">For you <span class="n">· systematic macro / CTA \u2014 `+
+      `positioning, desk notes and papers</span></div>`+
+    `<div class="band">Positioning<span class="sub">CFTC Commitments of Traders `+
+      `\u00b7 Leveraged Funds &amp; Managed Money net \u00b7 ${asof}</span></div>`+
+    (cotLoading&&!COT?'<div class="empty">Loading positioning\u2026</div>':cotPanelHTML())+
+    `<div class="band">Desk notes<span class="sub">practitioner &amp; house `+
+      `research \u00b7 last 21 days \u00b7 ${prac.length}</span></div>`+
+    (prac.length?byCategory(prac,byFy)
+      :'<div class="empty">No desk notes matched in the last 3 weeks.</div>')+
+    `<div class="band">Papers<span class="sub">journals &amp; preprints `+
+      `\u00b7 last 21 days \u00b7 ${acad.length}</span></div>`+
+    (acad.length?byCategory(acad,byFy)
+      :'<div class="empty">No papers matched strongly in the last 3 weeks.</div>');
 }
 const _psource=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'').trim()||'Other';
 function pracEntry(x){
