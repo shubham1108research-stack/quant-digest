@@ -319,6 +319,13 @@ LLM_RANK_BATCH = 40          # items scored per API call
 # archive -- the method and the result are in the second half.
 ABSTRACT_CHARS = 1500
 LLM_MAX_RETRIES = 3          # retries (with backoff) on 429/5xx
+# Batches scored concurrently. rank() was serial, and a batch of 40 asks for
+# ~7,000 output tokens (four rubric axes with justifications, a summary,
+# sleeves and flags per paper) which takes ~3 minutes to GENERATE however
+# fast the network is -- so 221 batches was 16 hours of mostly waiting. The
+# calls are independent. Kept modest: this shares a free/cheap tier with
+# the digest, and the point is to stop waiting, not to hammer a provider.
+LLM_CONCURRENCY = 6
 LLM_BATCH_PAUSE = 6          # seconds between calls -- stay under free-tier RPM
 # Wall-clock backstop so a run can NEVER wedge for hours when every free tier is
 # rate-limited (what caused a 6h hang). When triage exceeds this, it stops and

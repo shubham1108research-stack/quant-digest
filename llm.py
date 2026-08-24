@@ -40,6 +40,8 @@ import json
 import os
 import pathlib
 import re
+import concurrent.futures
+import threading
 import time
 from collections import Counter
 
@@ -666,77 +668,123 @@ def rank(items: list[dict], log, max_batches: int | None = None,
     ranked, used, dead, batches = 0, set(), set(), 0
     budget = getattr(config, "LLM_RANK_BUDGET_S", 0)
     t0 = time.monotonic()
-    for start in range(0, len(items), b):
-        if max_batches is not None and batches >= max_batches:
-            log(f"[llm] batch budget {max_batches} reached; "
-                f"{len(items) - start} items left unscored")
-            break
-        if budget and time.monotonic() - t0 > budget:
-            log(f"[llm] time budget {budget // 60}min reached; "
-                f"{len(items) - start} items left unscored (next run picks them up)")
-            break
-        if not _run_budget_left():
-            log(f"[llm] run-wide LLM budget spent; {len(items) - start} items "
-                f"left unscored (watchlist/promising items sorted first)")
-            break
-        batch = items[start:start + b]
-        # Fill the batch across providers: the first provider scores what it
-        # can, then the NEXT provider is asked only for the items still missing,
-        # and so on. This rescues items a provider drops (e.g. Groq skipping its
-        # tokens-per-minute-limited chunk) instead of leaving them unscored --
-        # important because the watchlist items sort first.
+    lock = threading.Lock()
+
+    def score_batch(batch):
+        """One batch through the provider chain. Runs on a worker thread.
+
+        Fills across providers: the first scores what it can, the next is asked
+        only for what is still missing. That rescues items a provider drops
+        (Groq skipping a rate-limited chunk) rather than leaving them unscored.
+        """
         scores: dict[int, dict] = {}
         for name, fn in _PROVIDERS:
-            if name in dead:
-                continue
+            with lock:
+                if name in dead:
+                    continue
             missing = [i for i in range(len(batch)) if i not in scores]
             if not missing:
                 break
             sub = [batch[i] for i in missing]
             try:
                 res = fn(sub, log)
-            except Exception as e:                 # noqa: BLE001
-                log(f"[llm] {name} failed on batch {start // b} "
-                    f"({_err(e)}); failing over")
-                dead.add(name)                     # stop retrying it this run
+            except Exception as e:                     # noqa: BLE001
+                log(f"[llm] {name} failed ({_err(e)}); failing over")
+                with lock:
+                    dead.add(name)                     # stop retrying it this run
                 continue
-            if res is None:                        # provider not configured
+            if res is None:                            # provider not configured
                 continue
-            used.add(name)
-            for local_i, s in res.items():         # map sub-index -> batch index
+            with lock:
+                used.add(name)
+            for local_i, sc in res.items():            # sub-index -> batch index
                 if 0 <= local_i < len(missing):
-                    scores[missing[local_i]] = s
-        if not scores:
-            if len(dead) == len([n for n, _ in _PROVIDERS]):
-                log("[llm] all providers exhausted; stopping")
+                    scores[missing[local_i]] = sc
+        return batch, scores
+
+    # Parallel, because this is OUTPUT-BOUND and was serial. A batch of 40 asks
+    # the model for ~7,000 tokens of JSON -- four rubric axes with justifications,
+    # a summary, sleeves and flags per paper -- which takes ~3 minutes to
+    # generate however fast the network is. 221 batches of that is 16 hours of
+    # mostly waiting. The calls are independent, so they overlap.
+    #
+    # Persistence stays on the MAIN thread: workers only call the API, and
+    # results are applied as futures complete. sqlite3 connections are not
+    # shareable across threads, and on_batch writes to one.
+    todo = []
+    for start_i in range(0, len(items), b):
+        if max_batches is not None and len(todo) >= max_batches:
+            log(f"[llm] batch budget {max_batches} reached; "
+                f"{len(items) - start_i} items left unscored")
+            break
+        todo.append(items[start_i:start_i + b])
+
+    workers = max(1, int(getattr(config, "LLM_CONCURRENCY", 1)))
+    log(f"[llm] {len(items)} items in {len(todo)} batches of {b}, "
+        f"{workers} in flight")
+    done_batches = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+        pending = {}
+        it = iter(todo)
+        # keep the pool topped up rather than submitting everything at once, so
+        # a budget stop does not leave hundreds of paid-for calls in flight
+        for _ in range(workers):
+            nxt = next(it, None)
+            if nxt is None:
                 break
-            continue
-        batches += 1
-        for i, it in enumerate(batch):
-            if i in scores:
-                _apply_score(it, scores[i])
-                ranked += 1
-        # Hand the caller each batch AS IT COMPLETES so it can be persisted.
-        # Without this the whole pass lives in memory until rank() returns, and
-        # a run killed at its timeout loses every score it paid for -- which is
-        # exactly what happened to a five-hour backfill of 10,855 papers.
-        # A five-hour pass that prints nothing until it finishes is
-        # indistinguishable from a wedged one, and the last full-archive run
-        # was silent for five hours before being killed. Say where it is.
-        done = min(start + b, len(items))
-        if batches == 1 or done % (b * 5) < b or done >= len(items):
-            el = time.monotonic() - t0
-            rate = done / el if el > 0 else 0
-            eta = (len(items) - done) / rate if rate > 0 else 0
-            log(f"[llm] {done}/{len(items)} scored "
-                f"({ranked} ranked) - {el/60:.0f}min elapsed, "
-                f"~{eta/60:.0f}min left")
-        if on_batch is not None:
-            try:
-                on_batch([it for i, it in enumerate(batch) if i in scores])
-            except Exception as e:                 # noqa: BLE001
-                log(f"[llm] checkpoint failed ({_err(e)}); continuing")
-        time.sleep(config.LLM_BATCH_PAUSE)         # stay under free-tier RPM
+            pending[pool.submit(score_batch, nxt)] = nxt
+        stopped = False
+        while pending:
+            for fut in concurrent.futures.as_completed(list(pending)):
+                batch = pending.pop(fut)
+                try:
+                    batch, scores = fut.result()
+                except Exception as e:                 # noqa: BLE001
+                    log(f"[llm] batch failed entirely ({_err(e)})")
+                    scores = {}
+                if scores:
+                    batches += 1
+                    for i, it_ in enumerate(batch):
+                        if i in scores:
+                            _apply_score(it_, scores[i])
+                            ranked += 1
+                    # Hand the caller each batch AS IT COMPLETES so it can be
+                    # persisted. Main thread only -- see above.
+                    if on_batch is not None:
+                        try:
+                            on_batch([x for i, x in enumerate(batch) if i in scores])
+                        except Exception as e:         # noqa: BLE001
+                            log(f"[llm] checkpoint failed ({_err(e)}); continuing")
+                done_batches += 1
+                if done_batches % 5 == 0 or done_batches == len(todo):
+                    el = time.monotonic() - t0
+                    scored_n = done_batches * b
+                    rate = scored_n / el if el > 0 else 0
+                    eta = (len(items) - scored_n) / rate if rate > 0 else 0
+                    log(f"[llm] {min(scored_n, len(items))}/{len(items)} scored "
+                        f"({ranked} ranked) - {el/60:.0f}min elapsed, "
+                        f"~{eta/60:.0f}min left")
+                # budgets are checked as work completes, not before it starts
+                if budget and time.monotonic() - t0 > budget:
+                    log(f"[llm] time budget {budget // 60}min reached; stopping")
+                    stopped = True
+                if not _run_budget_left():
+                    log("[llm] run-wide LLM budget spent; stopping")
+                    stopped = True
+                with lock:
+                    all_dead = len(dead) == len([n for n, _ in _PROVIDERS])
+                if all_dead:
+                    log("[llm] all providers exhausted; stopping")
+                    stopped = True
+                if not stopped:
+                    nxt = next(it, None)
+                    if nxt is not None:
+                        pending[pool.submit(score_batch, nxt)] = nxt
+                break                                   # re-enter as_completed
+            if stopped:
+                for f in pending:
+                    f.cancel()
+                break
     log(f"[llm] ranked {ranked}/{len(items)} via {', '.join(sorted(used)) or 'none'}")
     return items
 
