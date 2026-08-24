@@ -290,7 +290,10 @@ SEMANTIC_SCHOLAR_QUERIES = [
 # degrades cleanly to the plain no-LLM feed. Ranks deduped items 0-100 for a
 # "Top picks" section. Get a free key at https://aistudio.google.com/apikey.
 LLM_MODEL = "gemini-flash-latest"   # Gemini (primary); alias -> current Flash
-GROQ_MODEL = "llama-3.1-8b-instant"      # Groq: fast + high free-tier throughput
+# Groq retired llama-3.1-8b-instant on 2026-08-16 and now 404s it, so every
+# Groq chunk in the 2026-08-24 digest was skipped -- silently, because the
+# provider chain just fails over. Groq names gpt-oss-20b as the replacement.
+GROQ_MODEL = "openai/gpt-oss-20b"       # Groq: fast + high free-tier throughput
 GROQ_BATCH = 5                           # smaller requests -> less likely to trip
 #   Groq's low free-tier tokens-per-minute cap (was 8; 413s on the watchlist
 #   chunk). A 413 now waits out the ~60s TPM window and retries (see _groq_call)
