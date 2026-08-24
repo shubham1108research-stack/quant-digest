@@ -10,10 +10,14 @@ permissions:
   contents: read
 
 concurrency:
-  # embed.py WRITES state.db, so this has to serialise with
-  # every other writer like the rest of them do
-  group: state-db
-  cancel-in-progress: false
+  # NOT the state-db group. GitHub keeps only ONE pending run per group, so
+  # queueing this behind a six-hour rescore meant the next queued run cancelled
+  # it -- which is exactly what happened to the three-pane portal deploy. And it
+  # does not need the lock: the group exists to stop concurrent COMMITS of a
+  # binary file, and this workflow has no commit step at all. embed.py writes
+  # state.db on the runner, but that checkout is discarded, so nothing races.
+  group: deploy-portal
+  cancel-in-progress: true
 
 jobs:
   deploy:
