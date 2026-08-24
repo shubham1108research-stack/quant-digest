@@ -100,6 +100,13 @@ def filter_new(con, items: list[dict]) -> list[dict]:
                 if f["uid"] == uid:
                     f["sources"] = sorted(set(f.get("sources", [f["source"]])
                                               ) | {it["source"]})
+                    # A second, independently-collected source IS the
+                    # corroboration the unverified flag was waiting for: the
+                    # paper reached us from somewhere that is not the mailed-in
+                    # digest, so the link no longer rests on a model's word.
+                    if f.get("unverified") and not str(
+                            it.get("source", "")).startswith("claude-digest:"):
+                        f.pop("unverified", None)
                     for k in ("authors", "abstract", "doi", "arxiv_id", "date",
                               "oa_author_ids", "watchlist", "watchlist_author"):
                         if not f.get(k) and it.get(k):

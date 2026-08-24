@@ -1158,6 +1158,115 @@ def _parse_generic(body: str, subject: str, sender: str) -> list[dict]:
     return out
 
 
+def _url_state(url: str) -> str:
+    """'ok' | 'gone' | 'unverified' -- does this link actually resolve?
+
+    Three states, not two, and the distinction is the whole point. Every other
+    record in this archive comes from an API or a feed; these come from a model,
+    which can invent a plausible title over a plausible slug. A link check
+    catches that -- but only a POSITIVE refusal (404/410) is evidence against an
+    item. Macrosynergy answers 403 to everything we send it, so treating
+    "the host would not talk to us" as "probably fake" would discard every real
+    article from the one source this channel exists to reach.
+    """
+    try:
+        r = requests.head(url, timeout=config.DIGEST_URL_TIMEOUT,
+                          allow_redirects=True, headers=UA)
+        if r.status_code in (403, 405, 409, 501):
+            # plenty of hosts refuse HEAD specifically; ask for two kilobytes
+            # before concluding anything about the URL itself
+            r = requests.get(url, timeout=config.DIGEST_URL_TIMEOUT,
+                             allow_redirects=True, stream=True,
+                             headers={**UA, "Range": "bytes=0-2047"})
+            r.close()
+    except requests.RequestException:
+        return "unverified"
+    if r.status_code < 400:
+        return "ok"
+    if r.status_code in (404, 410):
+        return "gone"
+    return "unverified"
+
+
+def _parse_claude_digest(msg, sender: str, log) -> list[dict]:
+    """A digest mailed in as a JSON attachment, for sources we cannot fetch.
+
+    Guarded harder than the other parsers, for two reasons. The mailbox address
+    is public, so without an authentication check anyone who learns it could
+    write into the archive. And the items are model-generated rather than read
+    off a feed, so each link is checked before anything is stored.
+    """
+    payload = None
+    for part in (msg.walk() if msg.is_multipart() else [msg]):
+        fname = (part.get_filename() or "").lower()
+        if part.get_content_type() != "application/json" \
+                and not fname.endswith(".json"):
+            continue
+        try:
+            body = (part.get_payload(decode=True) or b"").decode("utf-8", "replace")
+            cand = json.loads(body)
+        except Exception:                              # noqa: BLE001
+            continue
+        if isinstance(cand, dict) and cand.get("items") is not None:
+            payload = cand
+            break
+    if payload is None:
+        return []
+
+    token = os.environ.get("DIGEST_TOKEN") or ""
+    if not token:
+        log("[inbox] claude-digest: DIGEST_TOKEN not set; refusing the payload")
+        return []
+    if str(payload.get("token") or "") != token:
+        log("[inbox] claude-digest: token mismatch; refusing the payload")
+        return []
+
+    # tools/cot.py owns positioning and cross-checks it against the CFTC API.
+    # The 2026-08-24 test digest reported 10Y net -116,005 against an actual
+    # -2,229,013, and E-mini +2,298 against -281,402 with the sign flipped.
+    # Discovery is what this channel is good at; derived numbers are not.
+    for key in ("cot", "positioning", "markets", "flows"):
+        if key in payload:
+            log(f"[inbox] claude-digest: ignoring '{key}' -- "
+                "tools/cot.py owns positioning")
+
+    out = []
+    for raw in (payload.get("items") or [])[:config.DIGEST_MAX_ITEMS]:
+        if not isinstance(raw, dict):
+            continue
+        title = _clean(str(raw.get("title") or ""))
+        url = str(raw.get("url") or "").strip()
+        site = _clean(str(raw.get("source") or "")) or "unknown"
+        if len(title) < 12 or not url.startswith("http"):
+            continue
+        # A feed record beats a regenerated one, and two origins for the same
+        # paper makes the archive harder to audit than one.
+        if any(s in site.casefold() for s in config.DIGEST_SKIP_SOURCES):
+            log(f"[inbox] claude-digest: skip '{site}' -- collected directly")
+            continue
+        state = _url_state(url)
+        if state == "gone":
+            log(f"[inbox] claude-digest: DROPPED (link dead) {title[:60]}")
+            continue
+        item = {
+            "title": title[:300],
+            "authors": _clean(str(raw.get("authors") or ""))[:300],
+            "abstract": _clean(str(raw.get("abstract") or ""))[:config.ABSTRACT_CHARS],
+            "url": url,
+            "date": str(raw.get("date") or "")[:10],
+            "source": f"claude-digest:{site}"[:80],
+            "section": 4,
+        }
+        if state == "unverified":
+            # Kept, but marked: the host would not confirm or deny it. The
+            # portal shows the marker and Ask leaves these out of retrieval
+            # until another collector corroborates the same title.
+            item["unverified"] = True
+            log(f"[inbox] claude-digest: unverified (host refused) {title[:52]}")
+        out.append(item)
+    return out
+
+
 def inbox(log, con=None) -> list[dict]:
     """Papers and posts that publishers mailed to the subscription address."""
     if not (IMAP_USER and IMAP_PASS):
@@ -1196,7 +1305,13 @@ def inbox(log, con=None) -> list[dict]:
             dom = (re.search(r"@([\w.-]+)", sender) or [None, "unknown"])[1]
             subject = _clean(msg.get("Subject") or "")
             body = _msg_text(msg)
-            if "ssrn" in dom.lower():
+            # The digest is self-addressed, so it must be recognised before the
+            # generic parser sees it -- otherwise its HTML body would be
+            # scraped for anchors and the JSON payload ignored entirely.
+            got = _parse_claude_digest(msg, dom, log)
+            if got:
+                pass
+            elif "ssrn" in dom.lower():
                 got = _parse_ssrn_ejournal(body, dom)
             else:
                 got = _parse_generic(body, subject, dom)

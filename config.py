@@ -953,3 +953,22 @@ COT_EXCHANGE_GROUPS = [
     ("NODAL EXCHANGE", "energy", "Energy"),
     ("COINBASE DERIVATIVES", "crypto", "Crypto"),
 ]
+
+# ---- Claude-generated digest, ingested by sources.inbox --------------
+# A digest mailed in as a JSON attachment, for sources this pipeline cannot
+# fetch itself. Macrosynergy is the case that motivates it: every URL on that
+# domain answers a Cloudflare challenge to a runner, with any User-Agent.
+#
+# Authenticated by a shared token (DIGEST_TOKEN, a GitHub Secret) because the
+# mailbox address is public -- without it, anyone who learns the address could
+# write into the archive.
+DIGEST_MAX_ITEMS = 40
+DIGEST_URL_TIMEOUT = 12
+# Sources already collected directly. A feed record beats a regenerated one,
+# and one origin per paper is easier to audit than two.
+DIGEST_SKIP_SOURCES = (
+    "ssrn", "arxiv", "nber", "bis", "liberty street", "ny fed",
+    "new york fed", "federal reserve bank of new york",
+    "alpha architect", "quantpedia", "newfound", "flirting with models",
+    "verdad", "crossref", "openalex",
+)

@@ -60,6 +60,11 @@ def _export(con) -> list[dict]:
             "reputation": m.get("reputation"),
             "watchlist": bool(m.get("watchlist")),
             "watchlist_author": m.get("watchlist_author"),
+            # mailed in by the Claude digest, and the host would neither confirm
+            # nor deny the link (Macrosynergy answers 403 to everything). Shown
+            # with a marker rather than presented as established -- every other
+            # record here came from an API or a feed
+            "unverified": bool(m.get("unverified")),
             "topic": m.get("topic", ""),
             # the second classification: which parts of the desk's book this
             # touches, and how usable it is there
@@ -431,6 +436,10 @@ table.cot td.p{width:26%}
   display:inline-block;background:none;border:0;font-family:inherit}
 .cotmore:hover{text-decoration:underline}
 .cotstale{font-size:12px;color:var(--medium);margin:6px 0}
+.unver{display:inline-block;font-family:var(--sans);font-size:10px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--medium);
+  border:1px solid var(--medium);border-radius:3px;padding:1px 5px;margin-right:6px;
+  vertical-align:1px;cursor:help}
 .sechead{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.13em;
   text-transform:uppercase;color:var(--faint);margin:0;padding:20px 18px 6px;
   border-bottom:1px solid var(--ink);display:flex;justify-content:space-between;align-items:baseline;}
@@ -868,7 +877,7 @@ function entry(x,rank){
     (fit?`<span class="sl fitn" title="usable on the desk">desk ${x.desk_fit}/3</span>`:'')+'</div>':'';
   return `<div class="${cls}${x.url&&x.url===SEL?' on':''}"${_rk(x)}>${sc}<div class="body">${badge}
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${watch}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
+    <div class="meta">${watch}${_unver(x)}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
     ${chips}${sm}${subs}</div></div>`;
 }
 // Desk sleeves are MULTI-LABEL -- a paper can be carry AND fx at once -- so this
@@ -1719,6 +1728,10 @@ function retrieve(qv,k){
   for(const [sim,i] of out){
     const it=ITEM_BY_UID[VEC_UIDS[i]];
     if(!it||seen.has(it.title))continue;
+    // An unverified item is one the Claude digest mailed in whose link the
+    // source site would not confirm. Fine to browse with a marker; not fine to
+    // quote back as evidence in an answer, where the marker does not travel.
+    if(it.unverified)continue;
     seen.add(it.title);
     picks.push(Object.assign({},it,{_row:i,_sim:sim}));
     if(picks.length>=k)break;
@@ -2392,12 +2405,17 @@ function renderForYou(){
     (acad.length?byCategory(acad,byFy)
       :'<div class="empty">No papers matched strongly in the last 3 weeks.</div>');
 }
+// Mailed in by the Claude digest and the host would not confirm the link
+// (Macrosynergy answers 403 to every request). Every other record here came
+// from an API or a feed, so the difference is worth showing rather than
+// quietly presenting a generated item as established fact.
+const _unver=x=>x.unverified?'<span class="unver" title="Mailed in by the Claude digest; the source site would not confirm this link, so it has not been verified">unverified</span>':'';
 const _psource=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'').trim()||'Other';
 function pracEntry(x){
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
   return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail"></div><div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
+    <div class="meta">${_unver(x)}${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
     ${sm}</div></div>`;
 }
 function renderPractitioners(){
