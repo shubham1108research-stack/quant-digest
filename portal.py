@@ -606,8 +606,22 @@ footer{font-family:var(--sans);font-size:11px;line-height:1.6;color:var(--faint)
   .entry .title{-webkit-line-clamp:3;}
 }
 @media (max-width:820px){
-  #app{grid-template-columns:1fr;}
-  #rail{display:none;}
+  /* The rail becomes a top bar here; it used to be display:none, which left a
+     narrow window with NO navigation at all -- no menu, no fallback, every tab
+     unreachable, and nothing on screen to say they existed. A three-pane
+     layout has to collapse to fewer panes, not to fewer features. */
+  #app{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);}
+  #rail{display:flex;border-right:0;border-bottom:1px solid var(--line);
+    max-height:46vh;overflow-y:auto;}
+  .mast{padding:12px 14px 0;}
+  /* vertical list -> wrapping pills, so a dozen tabs fit above the content
+     instead of pushing it off the screen */
+  .subtabs{flex-direction:row;flex-wrap:wrap;gap:5px;padding:6px 0 10px;}
+  .subtabs button{border-left:0;border:1px solid var(--line);border-radius:20px;
+    padding:5px 11px;font-size:12px;text-align:center;}
+  .subtabs button.on{border-color:var(--accent);background:var(--panel);}
+  .navtools{flex-direction:row;flex-wrap:wrap;align-items:center;padding:0 0 10px;}
+  .navtools select,.searchwrap{flex:1 1 140px;}
 }
 .entry{grid-template-columns:40px 1fr;}
 .entry.flat,.entry.classic{grid-template-columns:1fr;}
