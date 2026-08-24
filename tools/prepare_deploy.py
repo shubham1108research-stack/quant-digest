@@ -51,6 +51,22 @@ def main():
     ap.add_argument("--skip-map", action="store_true")
     args = ap.parse_args()
 
+    # data.json / archive.json are what the browser actually reads, and they
+    # are derived from state.db -- which lives in R2 now, not in the checkout.
+    # portal.build() was called from exactly one place (main.py, inside the
+    # daily digest), so every OTHER deploy republished whatever data.json
+    # happened to be committed. A re-score that ranked 6,078 papers went live
+    # nowhere. Rebuilding here is required, not best-effort: shipping last
+    # week's scores while reporting success is the failure being fixed.
+    sys.path.insert(0, str(ROOT))
+    import portal, store                                  # noqa: E402
+    con = store.connect()
+    try:
+        print(f"[prepare] portal.build -> docs/data.json ({portal.build(con)} items)",
+              flush=True)
+    finally:
+        con.close()
+
     # The index is required: without it Ask has nothing to search, and a
     # partial vec.bin against a full vec.json is worse than none (loadIndex
     # clamps and warns, but the papers are simply gone from retrieval).
