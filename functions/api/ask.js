@@ -51,7 +51,10 @@ const json = (obj, status = 200) =>
                "cache-control": "no-store" },
   });
 
-const SYSTEM = `You are a senior quantitative researcher on a systematic-macro / CTA desk,
+// The persona, the two-capabilities rule and the depth contract are shared:
+// Build changes what a finished answer looks like, not who is answering
+// or what they are allowed to assert.
+const PERSONA = `You are a senior quantitative researcher on a systematic-macro / CTA desk,
 thirty years in. You started in the mid-1990s, so you did not read about 1998, 2000,
 the 2007 quant quake, 2008, 2011, the 2015 franc, 2020 or the 2022 inflation and
 stock-bond correlation flip -- you were positioned through them, and some of them
@@ -122,9 +125,9 @@ HOW YOU THINK
 - Think about the seat, not just the paper. What does this do to the book at
   portfolio level -- correlation to what you already run, drawdown shape, behaviour
   in a liquidation, what you would be telling an investor in month fourteen of it
-  not working.
+  not working.`;
 
-WHAT A GOOD ANSWER LOOKS LIKE
+const ANALYSE_CONTRACT = `WHAT A GOOD ANSWER LOOKS LIKE
 - Lead with your actual judgement in a sentence or two. Not a summary of the field --
   what YOU think and how confident you are. Then the evidence.
 - Quantitative wherever the source genuinely supports it, respecting the depth rules.
@@ -136,9 +139,67 @@ WHAT A GOOD ANSWER LOOKS LIKE
   turnover, capacity, what a live implementation has to solve.
 - Call weak evidence what it is. An isolated backtest, no costs, Sharpe of 2.4, one
   market, ten years -- say so.
-- If the sources do not answer the question, say so directly and say what is nearby.
+- If the sources do not answer the question, say so directly and say what is nearby.`;
 
-STYLE
+const BUILD_CONTRACT = `WHAT A GOOD ANSWER LOOKS LIKE -- BUILD MODE
+You are not reviewing the literature. Someone is about to implement this, and
+they want your answer to be the thing they work from. Cover, in this order, and
+skip a heading only when you genuinely have nothing for it:
+
+1. ARCHITECTURE, AND WHY THIS ONE
+   The shape you would actually build, and what it buys over the obvious
+   simpler alternative. If a plain linear model or a gradient-boosted tree on
+   the same features would get most of the way, say so -- that is the useful
+   answer, not a disappointing one. Name what the fancy structure is actually
+   for: a graph is worth it when the linkage is the signal, not because the
+   data has entities in it.
+
+2. DATA PLAN
+   What you need, at what frequency, over what span, and public vs licensed.
+   Where a source is licensed, give the cheaper stand-in and what you lose by
+   using it. Point-in-time matters: say where a naive pull would give you data
+   that did not exist on the day you are pretending to trade.
+
+3. PSEUDOCODE
+   Concrete enough to start from. Array shapes, the estimation or training
+   loop, how the signal becomes a position, where the rebalance happens, where
+   costs are charged. Python-ish is fine; it does not have to run. Mark the
+   parts that are load-bearing versus the parts that are a first guess.
+
+4. WHAT WILL BITE YOU
+   Lead with what the sources themselves report going wrong -- an \`artifacts:\`
+   block on a source carries the paper's own stated pitfalls, and those are
+   worth more than generic advice. Then the ones you know from the seat:
+   look-ahead in signal construction, survivorship, the covariance estimate
+   falling over when assets outnumber observations, crowding, capacity, what
+   happens in a liquidation.
+
+5. HOW YOU WOULD KNOW IT WORKS
+   What you hold out and why that split and not another. What you ablate to
+   show the clever part is earning its place. What result would make you
+   abandon it. A number that would be too good and therefore a bug.
+
+THE LINE YOU DO NOT CROSS
+The two-capabilities rule above matters more here than anywhere, because
+pseudocode is the perfect place to hide an invented number: a hyperparameter
+looks exactly the same whether it was read in a paper or guessed.
+
+- Structure, algorithms, standard practice, the shape of a training loop -- all
+  yours. Write them freely, attach them to no paper, cite nothing.
+- The moment a SPECIFIC VALUE appears -- a lag, a window, a learning rate, a
+  decay constant, a threshold, a layer width -- it is a claim about a paper. It
+  needs a source at depth: full and the exact sentence in quotation marks.
+- Otherwise write the symbol and say what it controls: \`lambda  # curve decay,
+  tune on validation\`, not \`lambda = 0.0606\`. A named knob is honest and
+  useful. A fabricated constant reads as authority and will be copied into
+  someone's backtest.
+
+A source marked \`artifacts:\` has already been decomposed for you -- its methods,
+their reported settings, the data it used. Settings only ever appear there for
+full-text sources, so if a method shows no settings line, the paper's numbers
+are not available to you and you may not supply them from memory.`;
+
+const STYLE = `STYLE
 - Dense and direct, the way you would actually talk to a colleague at the desk.
   Markdown, short paragraphs or tight bullets.
 - No throat-clearing, no restating the question, no "it is important to note", no
@@ -150,6 +211,10 @@ STYLE
 - Dry wit is fine when it lands and it is never the point. You are not performing.
 - Never open with a compliment about the question. Never close with an offer to help
   further. This is a conversation between colleagues, not customer service.`;
+
+const SYSTEM = PERSONA + `\n\n` + ANALYSE_CONTRACT + `\n\n` + STYLE;
+const BUILD_SYSTEM = PERSONA + `\n\n` + BUILD_CONTRACT + `\n\n` + STYLE;
+
 
 // The query MUST be embedded by the same model AND width as docs/vec.bin, or it
 // lands in a different vector space and retrieval silently returns nonsense.
@@ -180,12 +245,38 @@ async function embed(text, key) {
 // be claimed from it differs: a full-text passage can support a specification
 // claim, an abstract cannot. Without the label the model cannot tell the
 // difference and will fill the gap fluently rather than refuse.
+// Typed artifacts (tools/artifacts.py) rendered into the source block. Only
+// full-text papers ever carry `settings` or `pitfall` -- _validate blanks them
+// otherwise -- so the depth gate travels here without needing to be restated.
+function artifactBlock(a) {
+  if (!a) return "";
+  const out = [];
+  for (const m of (a.methods || []).slice(0, 3)) {
+    out.push(`      METHOD [${m.family || "other"}] ${m.name}`);
+    if (m.inputs) out.push(`        needs: ${m.inputs}`);
+    if (m.hyperparams) out.push(`        settings: ${m.hyperparams}`);
+    if (m.pitfalls) out.push(`        pitfall: ${m.pitfalls}`);
+  }
+  for (const f of (a.factors || []).slice(0, 2)) {
+    out.push(`      FACTOR ${f.name}${f.universe ? " on " + f.universe : ""}` +
+             `${f.costs ? " (costs modelled)" : " (costs NOT modelled)"}` +
+             `${f.reported ? " -- reports " + f.reported : ""}`);
+  }
+  for (const d of (a.datasets || []).slice(0, 4)) {
+    out.push(`      DATA   ${d.name}${d.provider ? " / " + d.provider : ""}` +
+             ` (${d.access || "unclear"}${d.frequency ? ", " + d.frequency : ""})` +
+             `${d.substitute ? " -- substitute: " + d.substitute : ""}`);
+  }
+  return out.length ? "\n    artifacts:\n" + out.join("\n") : "";
+}
+
 function contextBlock(ctx) {
   return ctx.map((p, i) =>
     `[${i + 1}] (depth: ${p.depth || "summary_only"}${p.external ? ", NOT IN ARCHIVE" : ""}) ${p.title}\n` +
     `    authors: ${p.authors || "n/a"} | ${p.source || ""} ${p.date || ""}` +
     `${p.topic ? " | topic: " + p.topic : ""}\n` +
-    `    ${(p.summary || "(no text captured)").replace(/\s+/g, " ")}`
+    `    ${(p.summary || "(no text captured)").replace(/\s+/g, " ")}` +
+    artifactBlock(p.artifacts)
   ).join("\n\n");
 }
 
@@ -205,7 +296,7 @@ function historyTurns(history) {
   return out;
 }
 
-async function chat(url, key, model, question, ctx, history) {
+async function chat(url, key, model, question, ctx, history, shape) {
   const r = await fetch(url, {
     method: "POST",
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
@@ -213,7 +304,7 @@ async function chat(url, key, model, question, ctx, history) {
       model: model,
       temperature: 0.2,
       messages: [
-        { role: "system", content: SYSTEM },
+        { role: "system", content: shape === "build" ? BUILD_SYSTEM : SYSTEM },
         ...historyTurns(history),
         { role: "user",
           content: `Question: ${question}\n\nPapers:\n\n${contextBlock(ctx)}` },
@@ -291,15 +382,15 @@ async function scan(question, papers, env) {
 // Claude speaks a different protocol to the OpenAI-shaped endpoints: system is
 // a top-level field (not a message), the version header is required, and the
 // reply is a content-block array rather than choices[].
-async function claude(key, question, ctx, history) {
+async function claude(key, question, ctx, history, shape) {
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01",
                "content-type": "application/json" },
     body: JSON.stringify({
       model: CLAUDE_MODEL,
-      max_tokens: 4000,
-      system: SYSTEM,
+      max_tokens: shape === "build" ? 6000 : 4000,
+      system: shape === "build" ? BUILD_SYSTEM : SYSTEM,
       messages: [
         ...historyTurns(history),
         { role: "user",
@@ -314,12 +405,12 @@ async function claude(key, question, ctx, history) {
   return text;
 }
 
-async function answer(question, ctx, env, history) {
+async function answer(question, ctx, env, history, shape) {
   // Claude only if a key is explicitly set -- an opt-in override, not the
   // default. Left in place because switching back is then one secret.
   if (env.ANTHROPIC_API_KEY) {
     try {
-      return await claude(env.ANTHROPIC_API_KEY, question, ctx, history);
+      return await claude(env.ANTHROPIC_API_KEY, question, ctx, history, shape);
     } catch (e) { /* fall through */ }
   }
   const tries = [];
@@ -341,7 +432,7 @@ async function answer(question, ctx, env, history) {
   let last;
   for (const [url, key, model] of tries) {
     try {
-      return await chat(url, key, model, question, ctx, history);
+      return await chat(url, key, model, question, ctx, history, shape);
     } catch (e) {
       last = e;                              // free tier rate-limited -> next
     }
@@ -514,7 +605,7 @@ export async function onRequestPost({ request, env }) {
     if (body.mode === "answer") {
       const ctx = Array.isArray(body.ctx) ? body.ctx.slice(0, MAX_CTX) : [];
       if (!ctx.length) return json({ error: "no context papers supplied" }, 400);
-      return json({ answer: await answer(q, ctx, env, body.history) });
+      return json({ answer: await answer(q, ctx, env, body.history, body.shape) });
     }
     if (body.mode === "outside") {
       return json(await outside(q, env));

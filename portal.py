@@ -452,6 +452,14 @@ table.cot td.p{width:26%}
   display:inline-block;background:none;border:0;font-family:inherit}
 .cotmore:hover{text-decoration:underline}
 .cotstale{font-size:12px;color:var(--medium);margin:6px 0}
+.askmode{display:flex;gap:0;margin:0 0 7px;align-self:flex-start;
+  border:1px solid var(--line);border-radius:7px;overflow:hidden;width:max-content}
+.askmode button{font-family:var(--sans);font-size:11.5px;font-weight:600;
+  letter-spacing:.02em;padding:5px 13px;border:0;background:var(--panel);
+  color:var(--muted);cursor:pointer;transition:background .12s,color .12s}
+.askmode button+button{border-left:1px solid var(--line)}
+.askmode button:hover:not(.on){color:var(--accent)}
+.askmode button.on{background:var(--ink);color:var(--panel)}
 .bwrap{max-width:none;padding:22px 20px 60px}
 .bhead{font-family:var(--sans);font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.55}
 .bform{display:flex;gap:8px;margin:0 0 6px}
@@ -714,7 +722,6 @@ footer{padding:0 18px 8px;margin-top:32px;}
     <div class="navtabs" role="tablist" aria-label="Sections">
       <button id="g-papers" class="on">Papers</button>
       <button id="g-ask">Ask</button>
-      <button id="g-build">Build</button>
       <button id="g-shelf">Shelf</button>
       <button id="g-saved">Saved</button>
     </div>
@@ -731,7 +738,6 @@ footer{padding:0 18px 8px;margin-top:32px;}
       <button id="t-classics">Classics</button>
       <button id="t-anchors">Anchors</button>
       <button id="t-ask" hidden></button>
-      <button id="t-build" hidden></button>
       <button id="t-saved" hidden></button>
     </div>
     <div class="tagbar" id="tagbar" hidden></div>
@@ -1623,6 +1629,11 @@ const CTX_MAX=120;         // must match MAX_CTX in functions/api/ask.js
 const OUTSIDE_SHOW=14;     // outside hits listed under an answer
 const OUTSIDE_CTX=8;       // outside hits the agent is allowed to see
 let CHATS=[],CHAT_ID=null,asking=false,ASK_OUTSIDE=true,QUEUED={};
+// Analyse vs Build is a property of the CONVERSATION, not of the app: a
+// follow-up ("now do it for FX instead") has to inherit the shape of the answer
+// it is following up on, or the thread changes character halfway through.
+function askMode(){const c=curChat();return (c&&c.mode)||'analyse';}
+function setAskMode(m){const c=curChat();if(!c)return;c.mode=m;saveChats();renderAsk();}
 // guards every browser-state writer: persisting before the load has run
 // would overwrite the stored copy with an empty one
 let STATE_LOADED=false;
@@ -2071,15 +2082,25 @@ async function doAsk(q,force){
     // Passages lead the context so their citation numbers come first, and the
     // section label travels with them -- a specification claim has to be
     // attributable to "Section 4.2", not to the paper in general.
+    // Build answers are written FROM the typed artifacts, so fetch them before
+    // assembling context. Analyse never pays for this.
+    if(askMode()==='build'){ try{ await loadArts(); }catch(e){} }
+    // Typed artifacts, attached only in Build mode and only where they exist.
+    // ARTS is keyed by uid, so a passage and its parent paper resolve to the
+    // same block -- deliberately: the extractor read the whole paper, not the
+    // one section BM25 happened to surface.
+    const _arts=p=>(askMode()==='build'&&ARTS&&p&&p.uid)?ARTS[p.uid]:undefined;
     const ctx=psg.map(x=>({title:x.paper.title+(x.sec?' — '+x.sec:''),
         authors:x.paper.authors,date:x.paper.date,source:x.paper.source,
-        topic:x.paper.topic,summary:x.text,depth:'full'}))
+        topic:x.paper.topic,summary:x.text,depth:'full',
+        artifacts:_arts(x.paper)}))
       .concat(picks.map(p=>({title:p.title,authors:p.authors,
         date:p.date,source:p.source,topic:p.topic,
         summary:foundBy[p._row]||p._full||p.summary,
         // tell the agent HOW MUCH text is behind each source, so it can refuse a
         // specification question on an abstract instead of inventing one
-        depth:p._full?'abstract':'summary_only'})));
+        depth:p._full?'abstract':'summary_only',
+        artifacts:_arts(p)})));
     // The archive is a curated slice, not the literature. Look outside for what
     // it does not hold, and let the agent SEE the best few -- marked as not
     // held, so it can say "there is a 2024 paper you do not have that does
@@ -2115,7 +2136,7 @@ async function doAsk(q,force){
       source:h.venue||'',uid:h.uid,_external:true})));
     turn.state='thinking';renderAsk();
     const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({mode:'answer',q:q,ctx:ctxAll,
+      body:JSON.stringify({mode:'answer',q:q,ctx:ctxAll,shape:askMode(),
         // prior turns, oldest first, so a follow-up resolves against the thread
         history:turns.slice(0,-1).filter(t=>t.state==='done')
                      .slice(-HIST_SEND).map(t=>({q:t.q,a:t.answer||''}))})});
@@ -2232,10 +2253,23 @@ function renderAsk(notice){
   const follow=turns.length?' \u00b7 follow-ups keep the thread':'';
   $('view').innerHTML=`<div class="dateline">Ask the archive <span class="n">\u00b7 ${VEC_UIDS?VEC_UIDS.length.toLocaleString():'\u2014'} papers indexed \u00b7 searched in your browser, ranked by similarity + your own paper scores + keyword fit; top ${ASK_DEEP} read in full and the next ${ASK_SCAN-ASK_DEEP} screened${follow}</span></div>
     ${bar}${note}${chips}${thread}
-    <div class="askbox"><textarea id="askq" rows="2" placeholder="${turns.length?'Follow up \u2014 it remembers this conversation':'Ask anything about the archive \u2014 e.g. what does the evidence say about trend decay?'}"></textarea>
-      <button id="asksend" ${asking?'disabled':''}>${asking?'\u2026':'Ask'}</button></div>
+    <div class="askmode">
+      <button data-mode2="analyse" class="${askMode()==='analyse'?'on':''}"
+        title="Read the evidence and give a view">Analyse</button>
+      <button data-mode2="build" class="${askMode()==='build'?'on':''}"
+        title="Architecture, data plan, pseudocode, traps and how to validate it">Build</button>
+    </div>
+    <div class="askbox"><textarea id="askq" rows="2" placeholder="${
+      askMode()==='build'
+        ? (turns.length?'Follow up \u2014 same build, or change one thing'
+                       :'What are you building? \u2014 e.g. a multi-asset strategy using graph neural networks')
+        : (turns.length?'Follow up \u2014 it remembers this conversation'
+                       :'Ask anything about the archive \u2014 e.g. what does the evidence say about trend decay?')
+    }"></textarea>
+      <button id="asksend" ${asking?'disabled':''}>${asking?'\u2026':(askMode()==='build'?'Build':'Ask')}</button></div>
     <label class="outtog"><input type="checkbox" id="outtog" ${ASK_OUTSIDE?'checked':''}> Also search outside the archive (OpenAlex, arXiv)</label>`;
   const send=$('asksend');if(send)send.onclick=askSubmit;
+  document.querySelectorAll('[data-mode2]').forEach(b=>b.onclick=()=>setAskMode(b.dataset.mode2));
   const ta=$('askq');
   if(ta){ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askSubmit();}};ta.focus();}
   const tog=$('outtog');if(tog)tog.onchange=()=>{ASK_OUTSIDE=tog.checked;};
@@ -2502,165 +2536,20 @@ function pracEntry(x){
 // Ask does (embed the question, nearest neighbours, then a graph hop for the
 // adjacent work similarity alone misses) and REGROUPS their artifacts by kind.
 // So it answers instantly, costs nothing, and cites a paper for every claim.
-let ARTS=null, artsLoading=false, BUILD={q:'',state:'idle',err:''};
-function loadArts(cb){
-  if(ARTS){cb();return;}
-  if(artsLoading)return;
-  artsLoading=true;
-  fetch('artifacts.json').then(r=>r.json()).then(a=>{
-    ARTS=a||{};artsLoading=false;if(VIEW==='build')cb();
-  }).catch(()=>{ARTS={};artsLoading=false;if(VIEW==='build')cb();});
-}
-const BUILD_EXAMPLES=[
-  'a macro model using graph neural networks',
-  'trend following with a volatility-scaled overlay',
-  'FX carry with a macro regime filter',
-  'estimating a term premium from a dynamic factor model',
-];
-// Two papers can name the same dataset differently ("CRSP", "CRSP daily
-// stock file"); collapse on a normalised key so the reader sees one entry
-// with two sources rather than two entries with one each.
-const _dkey=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-
-async function doBuild(q){
-  q=(q||'').trim();
-  if(!q||BUILD.state==='working')return;
-  if(!VEC||!VEC_UIDS){
-    BUILD={q:q,state:'error',err:'The semantic index is still loading — try again in a moment.'};
-    renderBuild();return;
-  }
-  BUILD={q:q,state:'working',err:''};renderBuild();
-  try{
-    const er=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({mode:'embed',q:q})});
-    const ej=await er.json();
-    if(!er.ok)throw new Error(ej.error||'embed failed');
-    if(VEC_DIM&&ej.vec.length!==VEC_DIM)
-      throw new Error('question embedded to '+ej.vec.length+' dims but the index is '+VEC_DIM+' — rebuild the semantic index');
-    let cands=retrieve(ej.vec,60);
-    const terms=qTerms(q);
-    cands.forEach(c=>{c._rank=askRank(c,terms);});
-    cands.sort((a,b)=>b._rank-a._rank);
-    // "adjacent papers to refer to" is a graph question, not a similarity one:
-    // the neighbours of a strong hit are often the prior work it builds on,
-    // which nearest-neighbour retrieval on the question text never surfaces.
-    let adjacent=[];
-    // "adjacent papers to refer to" is the whole point of this section, so
-    // fetch the graph if it is not in memory yet rather than quietly
-    // returning nothing and looking like the archive has no neighbours.
-    if(!E_OFF){ try{ await loadEdges(); }catch(e){} }
-    if(E_OFF){
-      const known=new Set(cands.map(c=>c._row));
-      for(const [row,m] of expandGraph(cands.slice(0,8).map(c=>c._row),16)){
-        if(known.has(row))continue;
-        const it=ITEM_BY_UID[VEC_UIDS[row]];
-        if(it&&ARTS&&ARTS[it.uid])adjacent.push(it);
-      }
-    }
-    BUILD.papers=cands.filter(c=>ARTS&&ARTS[c.uid]).slice(0,18);
-    BUILD.adjacent=adjacent.slice(0,6);
-    BUILD.state='done';
-  }catch(e){
-    BUILD.state='error';BUILD.err=String(e.message||e);
-  }
-  renderBuild();
-}
-
-function _methodCard(m,p){
-  const bits=[];
-  if(m.what)bits.push(`<div class="row">${esc(m.what)}</div>`);
-  if(m.inputs)bits.push(`<div class="row"><b>Needs:</b> ${esc(m.inputs)}</div>`);
-  // hyperparams and pitfalls exist ONLY where the extractor had full text --
-  // tools/artifacts.py blanks them for abstract-only papers rather than let a
-  // model infer a setting it never saw. Their absence here is that gate.
-  if(m.hyperparams)bits.push(`<div class="row"><b>Settings:</b> ${esc(m.hyperparams)}</div>`);
-  if(m.pitfalls)bits.push(`<div class="row"><b>Watch:</b> ${esc(m.pitfalls)}</div>`);
-  return `<div class="bcard"><h4><span class="fam">${esc(m.family||'other')}</span>${esc(m.name)}</h4>
-    ${bits.join('')}
-    <div class="src">from <a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a></div></div>`;
-}
-
-function renderBuild(){
-  // Build retrieves through the SAME index Ask does, so it needs the same
-  // guard. Without it, retrieve() dereferences a null VEC_UIDS the moment the
-  // tab is opened before the index has loaded -- which is exactly what
-  // "null is not an object (evaluating 'VEC_UIDS.length')" was.
-  if(!VEC||!ARCHIVE_DATA){
-    loadIndex(renderBuild);
-    $('view').innerHTML='<div class="empty">Loading the semantic index…</div>';
-    return;
-  }
-  if(!ARTS&&!artsLoading){loadArts(renderBuild);}
-  const q=esc(BUILD.q||'');
-  const ex=BUILD_EXAMPLES.map(e=>`<b data-bex="${esc(e)}">${esc(e)}</b>`).join(' · ');
-  let body='';
-  if(BUILD.state==='working'){
-    body='<div class="empty">Retrieving…</div>';
-  }else if(BUILD.state==='error'){
-    body=`<div class="empty">${esc(BUILD.err)}</div>`;
-  }else if(BUILD.state==='done'){
-    const papers=BUILD.papers||[];
-    if(!papers.length){
-      body='<div class="empty">Nothing in the archive has extracted artifacts for this yet. '
-          +'Run tools/artifacts.py, or try a broader description.</div>';
-    }else{
-      const methods=[],pitfalls=[],datasets={},factors=[];
-      papers.forEach(p=>{
-        const a=ARTS[p.uid]||{};
-        (a.methods||[]).forEach(m=>{methods.push([m,p]);
-          if(m.pitfalls)pitfalls.push([m.pitfalls,p]);});
-        (a.factors||[]).forEach(f=>factors.push([f,p]));
-        (a.datasets||[]).forEach(d=>{
-          const k=_dkey(d.name);if(!k)return;
-          if(!datasets[k])datasets[k]={d:d,n:0};
-          datasets[k].n++;
-        });
-      });
-      const ds=Object.values(datasets).sort((a,b)=>b.n-a.n);
-      body=''
-       +(methods.length?`<div class="bsec">Methods<span class="n">${methods.length} across ${papers.length} papers</span></div>`
-          +methods.slice(0,12).map(([m,p])=>_methodCard(m,p)).join(''):'')
-       +(pitfalls.length?`<div class="bsec">Watch out for<span class="n">stated by the papers themselves, from full text only</span></div>`
-          +pitfalls.slice(0,8).map(([t,p])=>`<div class="bpit">${esc(t)}
-             <div class="src">— <a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a></div></div>`).join(''):'')
-       +(ds.length?`<div class="bsec">Data you will need<span class="n">${ds.length} distinct</span></div><div class="bdgrid">`
-          +ds.slice(0,12).map(({d,n})=>`<div class="bd"><div class="nm">${esc(d.name)}
-             <span class="acc ${esc(d.access||'unclear')}">${esc(d.access||'unclear')}</span></div>
-             <div class="mt">${esc([d.provider,d.frequency,d.coverage].filter(Boolean).join(' · '))||'&nbsp;'}</div>
-             ${d.substitute?`<div class="mt">substitute: ${esc(d.substitute)}</div>`:''}
-             ${n>1?`<div class="mt">used by ${n} papers</div>`:''}</div>`).join('')+'</div>':'')
-       +(factors.length?`<div class="bsec">Signals<span class="n">${factors.length}</span></div>`
-          +factors.slice(0,6).map(([f,p])=>`<div class="bcard"><h4>${esc(f.name)}</h4>
-             ${f.construction?`<div class="row">${esc(f.construction)}</div>`:''}
-             <div class="row"><b>Universe:</b> ${esc(f.universe||'—')} · <b>Rebalance:</b> ${esc(f.rebalance||'—')}
-               · <b>Costs modelled:</b> ${f.costs?'yes':'no'}</div>
-             ${f.reported?`<div class="row"><b>Reported:</b> ${esc(f.reported)}</div>`:''}
-             <div class="src">from <a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a></div></div>`).join(''):'')
-       +`<div class="bsec">Papers<span class="n">${papers.length}</span></div>`
-       +papers.map(p=>entry(p)).join('')
-       +((BUILD.adjacent||[]).length?`<div class="bsec">Adjacent work<span class="n">neighbours in the citation/similarity graph, not direct hits</span></div>`
-          +BUILD.adjacent.map(p=>entry(p)).join(''):'');
-    }
-  }else{
-    body='<div class="empty">Describe what you are building.</div>';
-  }
-  $('view').innerHTML=`<div class="bwrap">
-    <div class="dateline">Build</div>
-    <p class="bhead">Say what you are putting together. This regroups the archive by what each
-      paper <em>gives</em> you — the methods and their settings, the data you will need to buy or
-      proxy, and the failure modes the papers themselves report — instead of ranking papers.
-      Settings and pitfalls are shown only where the extractor had the full text.</p>
-    <div class="bform">
-      <textarea id="bq" placeholder="e.g. a macro model using graph neural networks">${q}</textarea>
-      <button id="bgo"${BUILD.state==='working'?' disabled':''}>Build</button>
-    </div>
-    <p class="bex">Try: ${ex}</p>
-    ${body}</div>`;
-  const go=$('bgo');if(go)go.onclick=()=>doBuild($('bq').value);
-  const ta=$('bq');
-  if(ta)ta.onkeydown=e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))doBuild(ta.value);};
-  document.querySelectorAll('[data-bex]').forEach(b=>b.onclick=()=>{
-    $('bq').value=b.dataset.bex;doBuild(b.dataset.bex);});
+// Typed artifacts (tools/artifacts.py), fetched once and only when a Build
+// answer actually needs them -- 1.9 MB has no business loading for a reader who
+// only ever asks analytical questions.
+let ARTS=null, artsLoading=null;
+function loadArts(){
+  if(ARTS)return Promise.resolve(ARTS);
+  if(artsLoading)return artsLoading;          // concurrent callers share one fetch
+  artsLoading=fetch('artifacts.json').then(r=>r.json())
+    .then(a=>{ARTS=a||{};artsLoading=null;return ARTS;})
+    // An absent or broken artifacts.json must not stop the answer: Build then
+    // runs on the model's own knowledge and the papers' text, which is worse
+    // but still useful, and the prompt already forbids inventing settings.
+    .catch(()=>{ARTS={};artsLoading=null;return ARTS;});
+  return artsLoading;
 }
 function renderPractitioners(){
   const q=$('q').value.toLowerCase().trim();
@@ -2825,7 +2714,7 @@ function renderClassics(){
 function render(){if(VIEW.slice(0,3)==='sl:'){renderSleeve(VIEW.slice(3));return;}
   if(VIEW==="map"){renderMap();return;}
   if(VIEW==="pmap"){renderPaperMap();return;}
-  VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="build"?renderBuild():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
+  VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 // Eleven flat tabs gave every destination the same weight and scrolled half of
 // them off screen. They group by INTENT: read what's new, question the corpus,
 // consult the standing reference, revisit your own picks. Ask and Saved are
@@ -2833,7 +2722,6 @@ function render(){if(VIEW.slice(0,3)==='sl:'){renderSleeve(VIEW.slice(3));return
 const GROUPS={
   papers:['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap'],
   ask:['ask'],
-  build:['build'],
   shelf:['classics','anchors'],
   saved:['saved'],
 };

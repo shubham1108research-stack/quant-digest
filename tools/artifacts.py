@@ -27,6 +27,7 @@ record so the portal can show which is which.
 """
 
 import argparse
+import datetime as dt
 import json
 import pathlib
 import re
@@ -200,7 +201,12 @@ def _validate(raw: dict, depth: str) -> dict:
     vocabularies is dropped rather than guessed at -- the same contract the
     scoring path uses, for the same reason: a categorical the portal cannot
     group on is worse than an absent one."""
-    out = {"depth": depth}
+    # When this was extracted, so the archive can be read point-in-time -- "what
+    # did we know in March?" rather than only "what do we know now". Stamped at
+    # extraction because it cannot be recovered afterwards: an artifact written
+    # today cannot honestly be dated to when the paper was collected, and a
+    # re-extraction under --force is genuinely new knowledge and re-dates.
+    out = {"depth": depth, "as_of": dt.date.today().isoformat()}
 
     methods = []
     for m in (raw.get("methods") or [])[:config.ARTIFACT_MAX_METHODS]:
