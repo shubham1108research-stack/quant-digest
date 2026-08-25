@@ -118,7 +118,26 @@ def main():
             typ, raw = M.fetch(newest_ssrn, "(BODY.PEEK[])")
             if typ == "OK" and raw and raw[0]:
                 import re as _re
-                body = raw[0][1].decode("utf-8", "replace")
+                # DECODE FIRST. The body is quoted-printable, so a raw read
+                # sees "=3D" where the collector sees "=" -- and the regex
+                # being diagnosed is one that hunts for "=". Measuring the
+                # undecoded bytes answers a question nobody asked, which is
+                # what the first version of this probe did.
+                msg = email.message_from_bytes(raw[0][1])
+                parts, html_parts = [], []
+                for part in (msg.walk() if msg.is_multipart() else [msg]):
+                    ct = part.get_content_type()
+                    if ct not in ("text/plain", "text/html"):
+                        continue
+                    try:
+                        b = part.get_payload(decode=True) or b""
+                        t = b.decode(part.get_content_charset() or "utf-8", "replace")
+                    except Exception:                  # noqa: BLE001
+                        continue
+                    (parts if ct == "text/plain" else html_parts).append(t)
+                print("mime parts: text/plain=%d text/html=%d"
+                      % (len(parts), len(html_parts)))
+                body = "\n".join(parts) or "\n".join(html_parts)
                 urls = _re.findall(r"https?://[^\s\"'<>]+", body)
                 shapes = collections.Counter()
                 for u in urls:
@@ -133,11 +152,23 @@ def main():
                 for shape, n in shapes.most_common(10):
                     print(f"   {shape:<62} {n:>4}")
                 # the specific thing the collector greps for
-                hits = len(_re.findall(r"abstract[_-]?id=(\d{5,9})", body, _re.I))
-                alt = len(_re.findall(r"abstract=(\d{5,9})", body, _re.I))
-                print("")
-                print(f"   sources._SSRN_ABS would match : {hits}")
-                print(f"   bare 'abstract=<id>' matches  : {alt}")
+                # Every plausible shape of an SSRN paper id, so the answer is
+                # "which one is it" rather than "the old one is missing".
+                for label, pat in (
+                        ("sources._SSRN_ABS  abstract_id=<n>", r"abstract[_-]?id=(\d{5,9})"),
+                        ("percent-encoded    abstract_id%3D", r"abstract[_-]?id%3D(\d{5,9})"),
+                        ("bare               abstract=<n>", r"abstract=(\d{5,9})"),
+                        ("percent-encoded    abstract%3D", r"abstract%3D(\d{5,9})"),
+                        ("path form          /abstract/<n>", r"/abstract/(\d{5,9})"),
+                        ("doi form           ssrn.<n>", r"ssrn\.(\d{5,9})")):
+                    n = len(set(_re.findall(pat, body, _re.I)))
+                    print(f"   {label:<36} {n:>4} distinct")
+                # what a wrapped link actually looks like once decoded
+                red = [u for u in urls if "RedirectClick" in u][:1]
+                if red:
+                    print("")
+                    print("   a wrapped link, decoded:")
+                    print("     " + red[0][:200])
 
         print("")
         if senders:
