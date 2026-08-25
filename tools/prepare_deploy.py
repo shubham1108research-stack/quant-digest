@@ -90,7 +90,7 @@ def main():
 
     docs = ROOT / "docs"
     print("\n[prepare] docs/ artefacts:", flush=True)
-    for name in ("vec.bin", "vec.json", "edges.bin", "map.json"):
+    for name in ("vec.bin", "vec.json", "edges.bin", "map.json", "artifacts.json"):
         f = docs / name
         print(f"    {name:<12} {'%.1f MB' % (f.stat().st_size/1e6) if f.exists() else 'MISSING'}",
               flush=True)
