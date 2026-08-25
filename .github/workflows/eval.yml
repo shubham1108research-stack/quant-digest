@@ -29,6 +29,10 @@ on:
         description: "Record this run as the new baseline (do this deliberately)"
         type: boolean
         default: false
+      compare:
+        description: "Score every ranking variant on the same questions instead"
+        type: boolean
+        default: false
   push:
     branches: [master]
     # Only the files that can actually change what retrieval returns. The
@@ -85,7 +89,13 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          python eval/run.py ${{ github.event.inputs.write_baseline == 'true' && '--write-baseline' || '--check' }}
+          if [ "${{ github.event.inputs.compare }}" = "true" ]; then
+            python eval/run.py --compare
+          elif [ "${{ github.event.inputs.write_baseline }}" = "true" ]; then
+            python eval/run.py --write-baseline
+          else
+            python eval/run.py --check
+          fi
 
       # eval/qvec.json caches the 30 question vectors. CI cannot commit it
       # (contents: read, deliberately), so it is uploaded instead: download it

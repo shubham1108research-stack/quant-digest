@@ -234,6 +234,55 @@ def test_index():
         run.DOCS = old
 
 
+def test_variants():
+    print("ranking variants")
+    def mk(sim, mass=0.0, title="", summary="", **kw):
+        it = {"uid": "u", "title": title, "summary": summary}
+        it.update(kw)
+        return {"uid": "u", "row": 0, "it": it, "sim": sim, "mass": mass,
+                "via_graph": mass > 0}
+
+    # sim_only must order by similarity and nothing else -- the paper with the
+    # better cosine wins even when the other one matches every query word.
+    cands = [mk(10.0, title="carry carry"), mk(120.0, title="unrelated")]
+    run._rescore(cands, ["carry"], "sim_only")
+    check("sim_only ignores keywords", cands[0]["sim"], 120.0)
+
+    # THE BUG THE VARIANTS EXIST FOR. Realistic cosines: 80/127 = 0.63 is a
+    # strong match on this corpus, 40/127 = 0.31 a weak one. Under `current`
+    # the weak match wins on keyword overlap alone; under minmax it does not.
+    good = mk(80.0, title="regime switching in equity returns")
+    noisy = mk(40.0, title="carry trade momentum value")
+    terms = ["carry", "trade", "momentum", "value"]
+    pair = [dict(good), dict(noisy)]
+    run._rescore(pair, terms, "current")
+    check("current: keyword overlap beats a much better cosine",
+          pair[0]["sim"], 40.0)
+    pair = [dict(good), dict(noisy)]
+    run._rescore(pair, terms, "minmax")
+    check("minmax: the better cosine wins instead", pair[0]["sim"], 80.0)
+
+    # every candidate having the same similarity must not divide by zero
+    flat = [mk(50.0, title="a"), mk(50.0, title="b")]
+    run._rescore(flat, ["a"], "minmax")
+    check("minmax survives a zero-range candidate set", len(flat), 2)
+
+    # rrf: ranks only, so a huge numeric gap in one list cannot swamp the rest
+    cands = [mk(127.0, title="zzz"), mk(126.0, title="carry"), mk(1.0, title="carry")]
+    run._rescore(cands, ["carry"], "rrf")
+    check("rrf produces a total order", len(set(id(c) for c in cands)), 3)
+    check("rrf sorts descending",
+          all(cands[i]["rank"] >= cands[i + 1]["rank"] for i in range(len(cands) - 1)),
+          True)
+
+    try:
+        run._rescore([mk(1.0)], [], "nonsense")
+        check("an unknown variant is fatal", False, True)
+    except SystemExit:
+        check("an unknown variant is fatal", True, True)
+    check("empty candidate set is a no-op", run._rescore([], [], "rrf"), None)
+
+
 def test_constants_are_live():
     print("constants come from portal.py, not from a copy")
     src = (run.ROOT / "portal.py").read_text(encoding="utf-8")
@@ -248,7 +297,7 @@ def test_constants_are_live():
 
 if __name__ == "__main__":
     for fn in (test_terms, test_quality, test_ask_rank, test_metrics,
-               test_index, test_constants_are_live):
+               test_index, test_variants, test_constants_are_live):
         fn()
     print()
     if FAILED:

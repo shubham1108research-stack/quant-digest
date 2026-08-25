@@ -143,6 +143,88 @@ def ask_rank(x, terms, sim127):
     return C["W_SIM"] * sim + C["W_KW"] * kw + C["W_QUALITY"] * ask_quality(x)
 
 
+# ------------------------------------------------------------------ variants
+# Alternative ways to order the SAME candidate set. They exist because the
+# first eval run showed the re-rank is not a tie-breaker, it is the dominant
+# effect: papers the embedding ranked 1st, 2nd and 5th came out 512th, 356th
+# and 116th. Which replacement is better is not something to settle by
+# argument, so each is implemented here and measured on the same 30 questions.
+#
+# The suspected cause, and what each variant does about it:
+#
+#   askRank blends three terms on incompatible RANGES. `kw` spans the full
+#   [0,1] -- a question whose words all appear scores exactly 1 -- and quality
+#   reaches 1.2. But `sim` is a cosine, and on this corpus cosines live in a
+#   narrow band around 0.2-0.7 and essentially never reach 1. So a 0.55 weight
+#   on a term that only ever moves through half its range is worth far less
+#   than 0.30 on a term that uses all of its own. The weights say similarity
+#   dominates; the arithmetic says keyword overlap does.
+#
+#   minmax   rescales sim across the candidate set so it uses [0,1] like the
+#            others. Smallest possible change: same three terms, same weights.
+#   rrf      Reciprocal Rank Fusion. Uses only RANKS, so no term's numeric
+#            range can dominate another's and the weights disappear entirely.
+#            Fuses THREE lists -- dense, keyword and the archive's own quality
+#            posterior -- because dropping quality would turn a curated digest
+#            into a search box.
+#   sim_only the embedding alone, as the floor. If nothing beats this, the
+#            entire re-ranking stage is costing more than it earns.
+RRF_K = 60.0            # conventional; the constant matters little above ~20
+
+
+def _kw_of(it, terms):
+    return 0.6 * kw_hit(terms, it.get("title")) + 0.4 * kw_hit(terms, it.get("summary"))
+
+
+def _ranks_by(cands, keyfn):
+    out = [0] * len(cands)
+    for pos, i in enumerate(sorted(range(len(cands)), key=keyfn)):
+        out[i] = pos
+    return out
+
+
+def _rescore(cands, terms, variant):
+    """Set c['rank'] for every candidate, then sort. Mutates in place."""
+    if not cands:
+        return
+    if variant == "current":
+        for c in cands:
+            c["rank"] = (ask_rank(c["it"], terms, c["sim"])
+                         + min(0.25, c["mass"] * C["GRAPH_W"]))
+    elif variant == "sim_only":
+        for c in cands:
+            c["rank"] = (max(0.0, c["sim"] / 127.0)
+                         + min(0.25, c["mass"] * C["GRAPH_W"]))
+    elif variant == "minmax":
+        vals = [c["sim"] for c in cands if not c["via_graph"]] or [0.0]
+        lo, hi = min(vals), max(vals)
+        rng = (hi - lo) or 1.0
+        for c in cands:
+            s = 0.0 if c["via_graph"] else max(0.0, min(1.0, (c["sim"] - lo) / rng))
+            c["rank"] = (C["W_SIM"] * s + C["W_KW"] * _kw_of(c["it"], terms)
+                         + C["W_QUALITY"] * ask_quality(c["it"])
+                         + min(0.25, c["mass"] * C["GRAPH_W"]))
+    elif variant == "rrf":
+        rs = _ranks_by(cands, lambda i: -cands[i]["sim"])
+        rk = _ranks_by(cands, lambda i: -_kw_of(cands[i]["it"], terms))
+        rq = _ranks_by(cands, lambda i: -ask_quality(cands[i]["it"]))
+        rm = _ranks_by(cands, lambda i: -cands[i]["mass"])
+        for i, c in enumerate(cands):
+            # the graph is a fourth list rather than an additive bonus: in rank
+            # space an additive constant is not comparable to 1/(k+rank), and
+            # bolting one on would silently make the graph either inert or
+            # overwhelming depending on K.
+            c["rank"] = (1.0 / (RRF_K + rs[i]) + 1.0 / (RRF_K + rk[i])
+                         + 1.0 / (RRF_K + rq[i])
+                         + (1.0 / (RRF_K + rm[i]) if c["mass"] > 0 else 0.0))
+    else:
+        raise SystemExit("[eval] unknown variant %r" % variant)
+    cands.sort(key=lambda c: -c["rank"])
+
+
+VARIANTS = ("current", "minmax", "rrf", "sim_only")
+
+
 # ---------------------------------------------------------------- the index
 class Index:
     def __init__(self):
@@ -208,8 +290,16 @@ class Index:
                     break
         return where
 
-    def search(self, qv, terms):
-        """Candidates as the browser builds them: recall, re-rank, graph hop."""
+    def search(self, qv, terms, variant="current"):
+        """Candidates as the browser builds them: recall, re-rank, graph hop.
+
+        The CANDIDATE SET is identical for every variant -- top ASK_RECALL by
+        cosine, plus the graph hop -- and only the final ordering changes. That
+        is what makes the comparison fair, and it also bounds it: a paper that
+        cosine puts 3,967th is not in the set under any variant, so no amount
+        of re-ranking reaches it. Those are embedding failures and they need a
+        different fix.
+        """
         sims = self.vec @ np.asarray(qv, dtype=np.float64)
         order = np.argsort(-sims, kind="stable")
         seen_title, cands = set(), []
@@ -219,14 +309,13 @@ class Index:
                 continue
             seen_title.add(it.get("title"))
             cands.append({"uid": it["uid"], "row": int(i), "it": it,
-                          "rank": ask_rank(it, terms, float(sims[i])),
-                          "via_graph": False})
+                          "sim": float(sims[i]), "mass": 0.0, "via_graph": False})
             if len(cands) >= int(C["ASK_RECALL"]):
                 break
-        cands.sort(key=lambda c: -c["rank"])
 
         if self.edges:
-            seeds = [c["row"] for c in cands[:int(C["GRAPH_SEED"])]]
+            ordered = sorted(cands, key=lambda c: -ask_rank(c["it"], terms, c["sim"]))
+            seeds = [c["row"] for c in ordered[:int(C["GRAPH_SEED"])]]
             seed_set, mass = set(seeds), {}
             for i, r in enumerate(seeds):
                 decay = 1.0 / (1.0 + i * 0.15)
@@ -244,10 +333,8 @@ class Index:
                 if not it:
                     continue
                 cands.append({"uid": it["uid"], "row": row, "it": it,
-                              "rank": ask_rank(it, terms, 0.0)
-                                      + min(0.25, m * C["GRAPH_W"]),
-                              "via_graph": True})
-            cands.sort(key=lambda c: -c["rank"])
+                              "sim": 0.0, "mass": m, "via_graph": True})
+        _rescore(cands, terms, variant)
         return cands
 
 
@@ -307,13 +394,13 @@ def query_vectors(questions, model, dim):
 MISSING = 10 ** 9
 
 
-def measure(idx, golden, explain=None):
+def measure(idx, golden, explain=None, variant="current"):
     qs = [g["q"] for g in golden]
     qvecs = query_vectors(qs, idx.model, idx.dim)
     per_q = []
     for n, g in enumerate(golden):
         terms = q_terms(g["q"])
-        cands = idx.search(qvecs[g["q"]], terms)
+        cands = idx.search(qvecs[g["q"]], terms, variant)
         pos = dict((c["uid"], i) for i, c in enumerate(cands))
         expect = [u for u in g["expect"] if u in idx.by_uid]
         dropped = [u for u in g["expect"] if u not in idx.by_uid]
@@ -414,12 +501,40 @@ def main():
     ap.add_argument("--explain", type=int, default=None,
                     help="print the full ranking for question N (0-based)")
     ap.add_argument("--golden", default=str(EVAL / "golden.json"))
+    ap.add_argument("--variant", default="current", choices=VARIANTS)
+    ap.add_argument("--compare", action="store_true",
+                    help="score every ranking variant on the same questions")
     args = ap.parse_args()
 
     golden = json.loads(
         pathlib.Path(args.golden).read_text(encoding="utf-8"))["questions"]
     idx = Index()
-    per_q = measure(idx, golden, explain=args.explain)
+
+    if args.compare:
+        # Same index, same questions, same candidate set -- only the ordering
+        # differs, so any gap is attributable to the re-rank and nothing else.
+        scored = dict((v, summarise(measure(idx, golden, variant=v)))
+                      for v in VARIANTS)
+        log("")
+        log("  %-10s %8s %8s %8s %8s %8s"
+            % ("variant", "hit@5", "hit@10", "hit@20", "rec@20", "MRR"))
+        log("  " + "-" * 56)
+        for v in VARIANTS:
+            o = scored[v]["overall"]
+            log("  %-10s %8.2f %8.2f %8.2f %8.2f %8.3f"
+                % (v, o["hit@5"], o["hit@10"], o["hit@20"],
+                   o["recall@20"], o["mrr"]))
+        log("")
+        log("  hit@20 by tier:")
+        for v in VARIANTS:
+            log("  %-10s " % v + "   ".join(
+                "%-8s %.2f" % (t, b["hit@20"])
+                for t, b in scored[v]["tiers"].items() if b))
+        log("\n  The candidate set is identical across variants, so these gaps "
+            "are the re-rank alone.")
+        return
+
+    per_q = measure(idx, golden, explain=args.explain, variant=args.variant)
     summary = summarise(per_q)
     summary["index"] = {"model": idx.model, "dim": idx.dim, "rows": len(idx.uids)}
     render(summary, per_q)
