@@ -1,0 +1,64 @@
+name: Prune Archive
+
+# Retires papers that should never have been collected: junk titles, records
+# with no text, future-dated metadata, and -- from sources that were selecting
+# on nothing -- the off-topic and the finance-shaped-but-useless.
+#
+# FLAGGED, NOT DELETED. state.db is the cross-run dedup memory, so deleting a
+# row invites the same paper back on the next collection. A retired row keeps
+# its uid and gains `retired: "<why>"`; every consumer skips it -- the portal
+# export, the embedding index, the graph, the map, the full-text queue -- so it
+# stops costing a vector, a graph node and a slot in Ask's recall, without
+# losing the memory that we already looked at it.
+#
+# Reversible per reason: `python tools/prune.py --restore adjacent_no_desk_fit`.
+#
+# Defaults to dry_run, because a run that retires more than expected should be
+# read before it is committed to.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report what would be retired and write nothing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Prune
+        run: |
+          python tools/prune.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+
+      - name: Store state.db
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push

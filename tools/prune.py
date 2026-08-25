@@ -69,6 +69,24 @@ def reason_for(title, d, horizon):
     indiscriminate = src.startswith(("SSRN", "topic:", "topic-sweep"))
     if indiscriminate and d.get("relevance_category") == "off_topic":
         return "off_topic_indiscriminate_source"
+    # ADJACENT WITH NO DESK FIT, from the same indiscriminate sources.
+    #
+    # "adjacent" means finance-shaped but not this desk's subject, and desk_fit
+    # 0 is the archive's own verdict that it is of no use here. Either alone is
+    # too weak to act on -- plenty of adjacent work is worth keeping, and
+    # desk_fit is noisy -- but together, and only from a source that was
+    # selecting on nothing, they are reliable. A sample of the set: Indian
+    # scheduled bank profitability, offline payment double-spending, retail
+    # electricity pass-through, a flexi-cap mutual fund review, socioeconomic
+    # pathway methodology. None of that belongs in a systematic macro archive.
+    #
+    # Its own reason string, so `--restore adjacent_no_desk_fit` undoes exactly
+    # this rule and nothing else. That matters more here than for the rule
+    # above: this one is a judgement about relevance rather than about a broken
+    # collector, and judgements should be cheap to reverse.
+    if (indiscriminate and d.get("relevance_category") == "adjacent"
+            and not (d.get("desk_fit") or 0)):
+        return "adjacent_no_desk_fit"
     if not ((d.get("abstract") or "").strip() or (d.get("summary") or "").strip()):
         return "no_text"
     return ""

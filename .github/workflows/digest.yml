@@ -83,6 +83,20 @@ jobs:
         continue-on-error: true
         run: python tools/fill_abstracts.py --limit 300
 
+      # Retire what should not have been collected, before the digest scores
+      # it. tools/prune.py existed and worked and was wired into nothing, so it
+      # ran only when someone remembered -- and 591 obviously off-topic rows
+      # were sitting live in the archive as a result. Third tool today with
+      # that same shape, after the graph rebuilt from a retired embedder and
+      # fill_abstracts.
+      #
+      # Flags, never deletes, and is reversible per reason, so an over-eager
+      # rule costs a `--restore` rather than a re-collection. Non-fatal: a
+      # cluttered archive is worth far less than a missed digest.
+      - name: Retire off-topic rows
+        continue-on-error: true
+        run: python tools/prune.py
+
       - name: Install Playwright Chromium (for AQR/Man/RA house research)
         run: python -m playwright install --with-deps chromium
 
