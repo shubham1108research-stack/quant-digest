@@ -95,7 +95,12 @@ jobs:
           FEED_IMAP_HOST: ${{ secrets.FEED_IMAP_HOST }}
           FEED_IMAP_USER: ${{ secrets.FEED_IMAP_USER }}
           FEED_IMAP_PASS: ${{ secrets.FEED_IMAP_PASS }}
-          FEED_IMAP_FOLDER: FEN
+          # Comma-separated. FEN is where the SSRN filter files the eJournal
+          # alerts; QuantDigest is where the mailed-in Claude digest should be
+          # labelled. One folder was not enough -- the digest arrives in INBOX,
+          # so a collector pointed only at FEN could never see it, and the
+          # parser would have sat there correct and never once invoked.
+          FEED_IMAP_FOLDER: FEN,QuantDigest
           # Shared secret in the Claude digest's JSON payload. The mailbox
           # address is public, so without this anyone who learns it could write
           # into the archive. Unset, sources._parse_claude_digest refuses every

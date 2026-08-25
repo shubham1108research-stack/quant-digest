@@ -964,6 +964,11 @@ COT_EXCHANGE_GROUPS = [
 # write into the archive.
 DIGEST_MAX_ITEMS = 40
 DIGEST_URL_TIMEOUT = 12
+# Sender domains allowed to supply a digest. Defence in depth ONLY -- `From` is
+# an unauthenticated header and nothing here checks DKIM, so this stops an
+# accidental payload from the wrong account, not a determined forger. The
+# shared token is what actually authenticates. Empty tuple disables the check.
+DIGEST_SENDERS = ("gmail.com",)
 # Sources already collected directly. A feed record beats a regenerated one,
 # and one origin per paper is easier to audit than two.
 DIGEST_SKIP_SOURCES = (

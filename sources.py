@@ -1059,6 +1059,11 @@ IMAP_HOST = os.environ.get("FEED_IMAP_HOST") or "imap.gmail.com"
 IMAP_USER = os.environ.get("FEED_IMAP_USER") or ""
 IMAP_PASS = os.environ.get("FEED_IMAP_PASS") or ""
 IMAP_FOLDER = os.environ.get("FEED_IMAP_FOLDER") or "INBOX"
+# Comma-separated, because publisher alerts and the mailed-in digest do not
+# arrive under the same label: SSRN is filtered to FEN, the digest lands in
+# INBOX. Selecting one folder meant whichever channel was not named simply
+# never existed as far as the collector was concerned.
+IMAP_FOLDERS = [f.strip() for f in IMAP_FOLDER.split(",") if f.strip()]
 INBOX_MAX = 60                      # messages examined per run
 
 _SSRN_ABS = re.compile(r"abstract[_-]?id=(\d{5,9})", re.I)
@@ -1192,9 +1197,16 @@ def _parse_claude_digest(msg, sender: str, log) -> list[dict]:
     """A digest mailed in as a JSON attachment, for sources we cannot fetch.
 
     Guarded harder than the other parsers, for two reasons. The mailbox address
-    is public, so without an authentication check anyone who learns it could
-    write into the archive. And the items are model-generated rather than read
-    off a feed, so each link is checked before anything is stored.
+    is public, so the payload must prove it came from you. And the items are
+    model-generated rather than read off a feed, so each link is checked before
+    anything is stored.
+
+    What actually authenticates this is the SHARED TOKEN, not the sender. The
+    domain check below is defence in depth and no more: `From` is an
+    unauthenticated header, trivially forged, and nothing here verifies DKIM,
+    so a sender test alone would be close to decorative. Said plainly because
+    an earlier version of this docstring claimed a sender check the code did
+    not perform, which is worse than having no check at all.
     """
     payload = None
     for part in (msg.walk() if msg.is_multipart() else [msg]):
@@ -1219,6 +1231,12 @@ def _parse_claude_digest(msg, sender: str, log) -> list[dict]:
         return []
     if str(payload.get("token") or "") != token:
         log("[inbox] claude-digest: token mismatch; refusing the payload")
+        return []
+    if config.DIGEST_SENDERS and not any(
+            sender.casefold().endswith(d.casefold())
+            for d in config.DIGEST_SENDERS):
+        log(f"[inbox] claude-digest: sender '{sender}' not in DIGEST_SENDERS; "
+            "refusing the payload")
         return []
 
     # tools/cot.py owns positioning and cross-checks it against the CFTC API.
@@ -1287,38 +1305,54 @@ def inbox(log, con=None) -> list[dict]:
     M = imaplib.IMAP4_SSL(IMAP_HOST)
     try:
         M.login(IMAP_USER, IMAP_PASS)
-        # read-only: this pipeline must not be able to alter the mailbox
-        M.select(IMAP_FOLDER, readonly=True)
         since = _cutoff().strftime("%d-%b-%Y")
-        typ, data = M.search(None, f'(SINCE "{since}")')
-        ids = (data[0].split() if data and data[0] else [])[-INBOX_MAX:]
-        log(f"[inbox] {len(ids)} messages since {since}")
-        for num in ids:
-            typ, raw = M.fetch(num, "(RFC822)")
-            if typ != "OK" or not raw or not raw[0]:
+        # A LIST of folders, because one is not enough. Pointing this at the
+        # SSRN filter's label alone was right for SSRN and silently wrong for
+        # everything else: the mailed-in Claude digest lands in INBOX, so a
+        # collector selecting only FEN could never see it -- the parser would
+        # have been correct, tested, and never once invoked.
+        #
+        # Still an explicit list of labels rather than a fallback to INBOX: the
+        # pipeline should only ever read folders you deliberately route mail
+        # into, and that property is worth more than the convenience.
+        for folder in IMAP_FOLDERS:
+            # read-only: this pipeline must not be able to alter the mailbox
+            typ, _ = M.select(folder, readonly=True)
+            if typ != "OK":
+                log(f"[inbox] folder {folder!r} not found; skipping")
                 continue
-            msg = email.message_from_bytes(raw[0][1])
-            mid = (msg.get("Message-Id") or "").strip()
-            if not mid or mid in seen:
-                continue
-            sender = (msg.get("From") or "")
-            dom = (re.search(r"@([\w.-]+)", sender) or [None, "unknown"])[1]
-            subject = _clean(msg.get("Subject") or "")
-            body = _msg_text(msg)
-            # The digest is self-addressed, so it must be recognised before the
-            # generic parser sees it -- otherwise its HTML body would be
-            # scraped for anchors and the JSON payload ignored entirely.
-            got = _parse_claude_digest(msg, dom, log)
-            if got:
-                pass
-            elif "ssrn" in dom.lower():
-                got = _parse_ssrn_ejournal(body, dom)
-            else:
-                got = _parse_generic(body, subject, dom)
-            got = [g for g in got if not is_record_sane(g, "")]
-            out += got
-            fresh_ids.append(mid)
-            log(f"[inbox]   {dom:<26} {len(got):>3} items  {subject[:44]}")
+            typ, data = M.search(None, f'(SINCE "{since}")')
+            ids = (data[0].split() if data and data[0] else [])[-INBOX_MAX:]
+            log(f"[inbox] {folder}: {len(ids)} messages since {since}")
+            for num in ids:
+                typ, raw = M.fetch(num, "(RFC822)")
+                if typ != "OK" or not raw or not raw[0]:
+                    continue
+                msg = email.message_from_bytes(raw[0][1])
+                mid = (msg.get("Message-Id") or "").strip()
+                # Message-Id dedup spans folders, so a mail carrying two labels
+                # is parsed once rather than ingested twice.
+                if not mid or mid in seen:
+                    continue
+                seen.add(mid)
+                sender = (msg.get("From") or "")
+                dom = (re.search(r"@([\w.-]+)", sender) or [None, "unknown"])[1]
+                subject = _clean(msg.get("Subject") or "")
+                body = _msg_text(msg)
+                # The digest is self-addressed, so it must be recognised before
+                # the generic parser sees it -- otherwise its HTML body would be
+                # scraped for anchors and the JSON payload ignored entirely.
+                got = _parse_claude_digest(msg, dom, log)
+                if got:
+                    pass
+                elif "ssrn" in dom.lower():
+                    got = _parse_ssrn_ejournal(body, dom)
+                else:
+                    got = _parse_generic(body, subject, dom)
+                got = [g for g in got if not is_record_sane(g, "")]
+                out += got
+                fresh_ids.append(mid)
+                log(f"[inbox]   {dom:<26} {len(got):>3} items  {subject[:44]}")
     finally:
         try:
             M.logout()
