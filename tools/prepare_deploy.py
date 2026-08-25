@@ -81,9 +81,13 @@ def main():
     # The graph is cheap (~12s from the vector cache) and Ask traverses it.
     # cites are NOT rebuilt: they live in state.db and cost ~200 OpenAlex
     # round trips, so they travel with the checkout.
-    ok = run(["tools/graph.py", "sim"], required=False)
-    if ok:
-        run(["tools/graph.py", "export"], required=False)
+    # REQUIRED. This was best-effort, and that is how the graph being built from
+    # a retired embedding model went unnoticed: three features depend on
+    # edges.bin -- the graph hop in Ask retrieval, Build's "Adjacent work", and
+    # the map tabs -- and every one of them degrades to empty rather than to an
+    # error. A silent optional step guarding three silent failures is no guard.
+    run(["tools/graph.py", "sim"], required=True)
+    run(["tools/graph.py", "export"], required=True)
 
     if not args.skip_map:
         run(["tools/map.py", "--clusters", "24"], required=False)

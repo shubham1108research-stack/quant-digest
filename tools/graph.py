@@ -54,6 +54,7 @@ import store   # noqa: E402
 # recomputing them on every deploy would be minutes of API calls for data that
 # does not change.
 GRAPH_DB = "state_graph.db"
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def graph_con(con):
@@ -62,8 +63,19 @@ def graph_con(con):
     return con
 
 K = 15                      # neighbours kept per paper
-SIM_FLOOR = 0.30            # on CENTRED cosine (see _vectors); the raw-space
-                            # equivalent would be ~0.85 and drop nothing
+# On CENTRED cosine (see _vectors); the raw-space equivalent drops nothing.
+#
+# MEASURED across both embedding providers on this corpus, median 15th-NN
+# cosine, 800-row sample:
+#     mistral-embed @1024   raw 0.865 -> centred 0.375   floor 0.30 keeps 94%
+#     text-embed-3-small@256 raw 0.638 -> centred 0.394  floor 0.30 keeps 99%
+#
+# So the constant TRANSFERS: OpenAI's space is much less anisotropic to start
+# with, but after centring the two distributions land within 0.02 of each
+# other. The new graph is slightly denser (99% vs 94% of candidate edges), not
+# broken. Re-measure with `graph.py probe` after any embedding change rather
+# than assuming that again -- it held here, it need not hold next time.
+SIM_FLOOR = 0.30
 BLOCK = 512                 # rows per similarity block; 512x11507 float32 = 23 MB
 MAILTO = "upadhyays1108@gmail.com"
 UA = {"User-Agent": f"quant-digest/1.0 (mailto:{MAILTO})"}
@@ -91,29 +103,106 @@ def log(m):
     print(m, flush=True)
 
 
+def _current_model(con) -> tuple[str, int]:
+    """(model, dim) the LIVE index was built with.
+
+    Read from docs/vec.json -- the manifest tools/embed.py writes beside the
+    index -- and only from the cache as a fallback. The model was hardcoded
+    here as 'mistral-embed', so when the embedder changed the graph carried on
+    being built from the old provider's vectors: neighbours computed in one
+    vector space, retrieval running in another, and nothing to say so. A second
+    place naming the model is a second place for it to drift, which is exactly
+    why the manifest exists.
+    """
+    man = ROOT / "docs" / "vec.json"
+    if man.exists():
+        try:
+            m = json.loads(man.read_text(encoding="utf-8"))
+            if m.get("model") and m.get("dim"):
+                return m["model"], int(m["dim"])
+        except Exception:                              # noqa: BLE001
+            pass
+    row = con.execute(
+        "SELECT model, dim, COUNT(*) c FROM embeddings "
+        "GROUP BY model, dim ORDER BY c DESC LIMIT 1").fetchone()
+    if not row:
+        raise SystemExit("no embeddings cached -- run tools/embed.py first")
+    log(f"[graph] no docs/vec.json; falling back to the most-populated cache "
+        f"entry: {row[0]} @ {row[1]}d")
+    return row[0], int(row[1])
+
+
 def _vectors(con):
     """Every cached vector, as a unit-normalised float32 matrix."""
+    model, dim_want = _current_model(con)
     rows = con.execute(
-        "SELECT uid, vec FROM embeddings WHERE model='mistral-embed' ORDER BY uid"
+        "SELECT uid, vec FROM embeddings WHERE model=? AND dim=? ORDER BY uid",
+        (model, dim_want),
     ).fetchall()
     if not rows:
-        raise SystemExit("no embeddings cached -- run tools/embed.py first")
+        raise SystemExit(
+            f"no embeddings cached for {model} @ {dim_want}d -- run "
+            "tools/embed.py first. (This graph is derived from the vectors; it "
+            "cannot be built from a model that is no longer in use.)")
     dim = len(rows[0][1])
     uids = [r[0] for r in rows]
     X = np.empty((len(rows), dim), dtype=np.float32)
     for i, (_, blob) in enumerate(rows):
         X[i] = np.frombuffer(blob, dtype=np.int8).astype(np.float32)
-    # CENTRE before normalising. mistral-embed is strongly anisotropic: every
-    # vector shares a large common direction, so raw cosine between two
-    # unrelated papers is already ~0.87 and the 15th-nearest neighbour of
-    # anything sits at 0.70. Measured on this corpus, subtracting the mean
-    # takes the 15-NN cosine from mean 0.864 / spread 0.26 to mean 0.439 /
-    # spread 0.78, and changes a quarter of the neighbours. Without it a
-    # similarity floor is meaningless and label propagation smears a tag
-    # across the whole archive instead of a neighbourhood.
+    # CENTRE before normalising. Embedding spaces are anisotropic -- every
+    # vector shares a large common direction -- so raw cosine between two
+    # unrelated papers is already high and a similarity floor is meaningless
+    # without this. Measured on mistral-embed over this corpus, subtracting the
+    # mean took the 15-NN cosine from mean 0.864 / spread 0.26 to mean 0.439 /
+    # spread 0.78, and changed a quarter of the neighbours. Without it, label
+    # propagation smears a tag across the whole archive instead of a
+    # neighbourhood.
+    #
+    # NOTE those numbers were measured on mistral-embed, which is no longer the
+    # provider. Centring is the right operation for any embedding space, but
+    # SIM_FLOOR was tuned against that specific distribution -- `graph.py probe`
+    # re-derives it for whatever model is live. Measured for both providers at
+    # the SIM_FLOOR definition above; it transferred, but that was checked
+    # rather than assumed.
     X -= X.mean(axis=0, keepdims=True)
     X /= (np.linalg.norm(X, axis=1, keepdims=True) + 1e-9)
     return uids, X
+
+
+def probe_floor(con, args) -> None:
+    """Measure the k-NN similarity distribution of the CURRENT vectors.
+
+    SIM_FLOOR is a constant tuned against mistral-embed's anisotropy. Carrying
+    it unchanged to a different embedding model is guesswork: too high and the
+    graph empties out, too low and every paper is everyone's neighbour and the
+    graph hop stops discriminating. Neither failure announces itself -- the
+    graph just quietly gets less useful.
+
+    Sample rather than compute the full matrix: 800 rows is plenty to see the
+    distribution and costs a second instead of minutes.
+    """
+    uids, X = _vectors(con)
+    n = len(uids)
+    rng = np.random.default_rng(0)
+    idx = rng.choice(n, size=min(800, n), replace=False)
+    S = X[idx] @ X.T
+    for r, i in enumerate(idx):
+        S[r, i] = -1.0
+    kth = np.partition(-S, K, axis=1)[:, :K]
+    kth = -kth                                   # top-K similarities per row
+    knn = kth[:, -1]                             # the Kth (weakest kept) one
+    qs = np.percentile(knn, [10, 25, 50, 75, 90])
+    log(f"[graph] {n:,} vectors, {X.shape[1]}-dim, sampled {len(idx)} rows")
+    log(f"[graph] {K}th-neighbour cosine: "
+        f"p10={qs[0]:.3f} p25={qs[1]:.3f} median={qs[2]:.3f} "
+        f"p75={qs[3]:.3f} p90={qs[4]:.3f}")
+    for f in (0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50):
+        frac = float((kth >= f).mean())
+        log(f"[graph]   floor {f:.2f} -> keeps {frac * 100:5.1f}% of candidate "
+            f"edges (~{int(frac * K * n):,} total)")
+    log("[graph] pick a floor that keeps most of a paper's real neighbours "
+        "without admitting the whole corpus; the current constant is "
+        f"SIM_FLOOR={SIM_FLOOR}")
 
 
 def build_sim(con, args):
@@ -291,12 +380,13 @@ def export(con, args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("action", choices=("sim", "cites", "report", "export"))
+    ap.add_argument("action",
+                    choices=("sim", "cites", "report", "export", "probe"))
     ap.add_argument("--limit", type=int, default=0, help="cites: cap DOIs looked up")
     args = ap.parse_args()
     con = graph_con(store.connect())
-    {"sim": build_sim, "cites": build_cites,
-     "report": report, "export": export}[args.action](con, args)
+    {"sim": build_sim, "cites": build_cites, "report": report,
+     "export": export, "probe": probe_floor}[args.action](con, args)
 
 
 if __name__ == "__main__":
