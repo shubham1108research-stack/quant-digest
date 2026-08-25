@@ -99,6 +99,11 @@ def log(m: str) -> None:
     print(m, flush=True)
 
 
+# Below this, a rebuild is treated as a failure rather than a shipment --
+# see the guard in main(). Percent of the archive that must have vectors.
+MIN_COVERAGE = 60.0
+
+
 def _migrate_cache(con) -> None:
     """Add the content hash to an EXISTING cache table.
 
@@ -317,6 +322,33 @@ def main() -> None:
 
     docs = pathlib.Path("docs")
     docs.mkdir(exist_ok=True)
+
+    # REFUSE TO SHIP AN INDEX WORSE THAN THE ONE ALREADY THERE.
+    #
+    # Run with no API key and an empty cache, this wrote a 0-byte vec.bin at 0%
+    # coverage, deleted every abstract shard, and exited 0 -- so
+    # prepare_deploy's required=True saw success and would have deployed a
+    # portal whose Ask searches nothing. The browser does not fail loudly
+    # either: loadIndex clamps to the rows the buffer holds, which is none.
+    #
+    # A partial index is legitimate exactly once: a COLD build stopped early
+    # by a quota, where writing what we have lets the next run continue. "Cold"
+    # means the CACHE was empty when this run started -- NOT that docs/vec.json
+    # is missing. docs/ is gitignored and rebuilt from scratch on every CI run,
+    # so a previous-file test reads as "cold" every time on the one machine
+    # that actually ships, degrading this to "fail only when totally empty".
+    # The cache keeps the vectors either way; this governs only what SHIPS.
+    cold = not cached
+    pct = (100.0 * len(uids) / len(papers)) if papers else 0.0
+    if not uids or (not cold and pct < MIN_COVERAGE):
+        log(f"[embed] REFUSING to write the index: {len(uids)}/{len(papers)} "
+            f"papers ({pct:.0f}% coverage), below the {MIN_COVERAGE:.0f}% "
+            f"floor, and {len(cached)} vectors were already cached so this is "
+            f"not a cold build. Nothing was overwritten.")
+        if not os.environ.get("OPENAI_API_KEY") and not os.environ.get("MISTRAL_API_KEY"):
+            log("[embed] no embedding API key is set, which is usually the cause.")
+        sys.exit(1)
+
     (docs / "vec.bin").write_bytes(bytes(blob))
     (docs / "vec.json").write_text(json.dumps(
         {"model": MODEL, "dim": DIM, "n": len(uids), "shard": SHARD,
@@ -351,7 +383,6 @@ def main() -> None:
             json.dumps(block), encoding="utf-8")
     log(f"[embed] wrote {len(uids) // SHARD + 1} abstract shards "
         f"({n_abs} papers have full text)")
-    pct = (100.0 * len(uids) / len(papers)) if papers else 0.0
     log(f"[embed] wrote docs/vec.bin ({len(blob) / 1e6:.2f} MB, "
         f"{len(uids)}/{len(papers)} papers = {pct:.0f}% coverage)")
 
