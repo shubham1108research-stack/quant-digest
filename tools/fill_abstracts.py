@@ -22,6 +22,7 @@ the text has to be reassembled from it.
 import argparse
 import json
 import pathlib
+import re
 import sys
 import time
 
@@ -108,6 +109,45 @@ def from_s2(dois):
     return out
 
 
+def from_crossref(dois):
+    """{doi: abstract} from Crossref, one request per DOI.
+
+    THIRD, not first, and worth the per-DOI cost only because of what it
+    covers. OpenAlex and S2 are batch endpoints and cheap; Crossref has no
+    batch lookup for a specific DOI list, so this is one round trip each and
+    only ever sees what the other two could not find.
+
+    What it adds is preprints. Crossref indexes an SSRN posting the same day it
+    appears; OpenAlex lags by weeks and S2 often never has it. Since SSRN is one
+    of this archive's main sources, that lag is exactly where the gap lives.
+    Crossref abstracts are JATS-wrapped, so they go through the collector's own
+    cleaner rather than a second copy of it.
+    """
+    out = {}
+    for i, doi in enumerate(dois, 1):
+        try:
+            r = requests.get("https://api.crossref.org/works/" + doi,
+                             params={"mailto": MAILTO}, headers=UA, timeout=25)
+            if r.status_code != 200:
+                continue
+            raw = ((r.json() or {}).get("message") or {}).get("abstract") or ""
+            if not raw:
+                continue
+            try:
+                import sources
+                text = sources._clean(raw)
+            except Exception:                           # noqa: BLE001
+                text = re.sub(r"<[^>]+>", " ", raw).strip()
+            if len(text.split()) >= MIN_WORDS:
+                out[doi.lower()] = text[:6000]
+        except Exception:                               # noqa: BLE001
+            pass
+        if i % 50 == 0:
+            log(f"[abs] crossref {i}/{len(dois)}")
+        time.sleep(0.25)                                # polite pool
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
@@ -141,6 +181,15 @@ def main():
         s2 = from_s2(still)
         log(f"[abs] Semantic Scholar recovered {len(s2)} more")
         found.update(s2)
+    # Crossref last: one request per DOI rather than a batch, so it only ever
+    # runs on what the two batch sources could not supply. It is here because
+    # it is the only one of the three that has fresh preprints -- an SSRN
+    # posting is in Crossref the day it appears and in OpenAlex weeks later.
+    still = [d for d in gap if d.lower() not in found]
+    if still:
+        cr = from_crossref(still)
+        log(f"[abs] Crossref recovered {len(cr)} more")
+        found.update(cr)
 
     patched, uids = 0, []
     for doi, text in found.items():

@@ -72,6 +72,17 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python tools/artifacts.py --collect
 
+      # A row with no abstract is embedded from its TITLE alone, which is a far
+      # weaker vector than it looks and indistinguishable from a good one once
+      # stored. tools/fill_abstracts.py existed but ran only when someone
+      # remembered, so the gap accumulated silently. Bounded so the Crossref
+      # leg -- one request per DOI, unlike the batched OpenAlex and S2 legs --
+      # cannot stretch the daily run; the backlog drains a little each morning.
+      # Non-fatal: a missing abstract is worth far less than a missed digest.
+      - name: Backfill missing abstracts
+        continue-on-error: true
+        run: python tools/fill_abstracts.py --limit 300
+
       - name: Install Playwright Chromium (for AQR/Man/RA house research)
         run: python -m playwright install --with-deps chromium
 
