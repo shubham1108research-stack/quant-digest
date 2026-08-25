@@ -44,6 +44,29 @@ def main():
               "shape changed and this check is no longer looking at anything")
         return 1
 
+    # CONTROL CHARACTERS. portal.py's _INDEX is a NON-RAW Python string, so a
+    # regex written as /\bfoo\b/ has its \b turned into an actual backspace
+    # byte before it ever reaches the browser. The result is valid JavaScript
+    # -- it parses, it runs, it just silently never matches -- so the parser
+    # below cannot catch it. This has happened three times in this repo:
+    # tools/cot.py classified GASOLINE as crypto for it, and it corrupted a
+    # regex in the implement mode. Every backslash in _INDEX must be doubled.
+    ctrl = 0
+    for i, block in enumerate(blocks):
+        for n, line in enumerate(block.split("\n"), 1):
+            found = [c for c in line if ord(c) < 9 or 11 <= ord(c) <= 12
+                     or 14 <= ord(c) <= 31]
+            if found:
+                ctrl += 1
+                names = ", ".join("0x%02x" % ord(c) for c in sorted(set(found)))
+                print(f"[js] control character(s) {names} in block {i} line {n}:")
+                print("       %s" % repr(line.strip())[:150])
+    if ctrl:
+        print(f"[js] {ctrl} line(s) carry control characters. Almost always a "
+              f"single backslash in portal.py that Python ate -- write \\\\b, "
+              f"not \\b. The regex would parse fine and match nothing.")
+        return 1
+
     bad = 0
     for i, block in enumerate(blocks):
         try:

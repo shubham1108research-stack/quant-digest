@@ -328,15 +328,140 @@ confidence. Do not summarise the exchange or narrate who said what; the reader
 can see the objections separately. Just tell them where it lands.`,
 };
 
+// IMPLEMENT is not a longer BUILD. Build describes a method; this produces an
+// executable specification, where every line is a commitment about what one
+// specific paper actually said. The failure modes differ enough to justify a
+// separate contract: build going vague is disappointing, implement going vague
+// is a fabricated moment condition propagating into someone's backtest.
+const IMPLEMENT_CONTRACT = `WHAT A GOOD ANSWER LOOKS LIKE -- IMPLEMENT MODE
+You are turning ONE paper's method into something a competent quant could build
+from, without having to re-derive it. Emit these sections, in this order, with
+these headings. A missing section is a failure, not a stylistic choice.
+
+1. CLASSIFICATION
+One line: established / suggested / folklore. Then one sentence on what the
+method is actually for.
+
+2. NOTATION
+A markdown table of every symbol used anywhere below.
+
+| Symbol | Meaning | Source |
+|---|---|---|
+| r_{i,t} | excess return of asset i in month t | "we use monthly excess returns" |
+
+The Source column holds the VERBATIM sentence from the paper that defines the
+symbol, in quotation marks, or the literal token [gap] if the paper never
+defines it. No symbol may appear later without a row here.
+
+3. SPECIFICATION
+The estimator or signal in PLAIN TEXT MATH -- this renders as HTML and LaTeX
+will arrive as backslashes on screen. Write it the way the paper writes it:
+
+    s_{i,t} = (P_{i,t} - P_{i,t-12}) / P_{i,t-12}
+    beta_hat = (X'X)^{-1} X'y
+
+Each equation is followed by the verbatim sentence it came from.
+
+4. PSEUDOCODE
+Language-agnostic. Requirements:
+- TIMING IS EXPLICIT ON EVERY LINE. Every quantity carries a time index and you
+  state at which timestamp it is observable. This is where look-ahead lives,
+  and it is the single most common reason a reimplementation quietly beats the
+  paper.
+- Loop bounds and indices written out, not implied.
+- Every parameter -- lookback, lag count, winsorisation threshold, rebalance
+  frequency -- is either quoted from the paper or marked [gap: assumed X].
+- No library call that hides a decision. newey_west(resid, lags=L) is fine only
+  if L is specified above.
+
+5. DATA REQUIREMENTS
+Series, frequency, and minimum history WITH THE REASON (e.g. "J+skip months of
+burn-in before the first tradable signal"). Where the paper's source is
+proprietary, name a substitute and label it a deviation. Never substitute
+silently.
+
+6. IMPLEMENTATION TRAPS
+Specific to THIS method, not a generic checklist. Where they apply: look-ahead
+in signal construction, point-in-time versus restated fundamentals,
+survivorship, delisting returns, rebalance timing against signal observation,
+winsorisation and its effect on the reported t-stat, overlapping windows and
+the autocorrelation they induce -- which is usually why the paper reaches for
+Newey-West in the first place.
+
+7. VALIDATION PLAN
+The acceptance test, naming a specific artefact to reproduce: "Table 3, column
+4: long-short spread of 1.31% per month, t = 4.2". An implementation that does
+not reproduce a stated number is not finished.
+
+8. DEVIATIONS AND GAPS
+Two explicit lists. DEVIATIONS: where an implementation must differ from the
+paper and why. GAPS: what the paper does not specify at all -- every [gap]
+marker from sections 2-4, collected, each with the assumption you made and its
+likely direction of effect.
+
+THIS SECTION MAY NOT BE EMPTY. No paper specifies everything. If you have
+produced no gaps you have invented something, and [gap: assumed X] is a correct
+and expected output rather than an admission of failure. Code with no gap
+markers will be read as fabricated.`;
+
 const SYSTEM = PERSONA + `\n\n` + ANALYSE_CONTRACT + `\n\n` + STYLE;
 const BUILD_SYSTEM = PERSONA + `\n\n` + BUILD_CONTRACT + `\n\n` + STYLE;
+const IMPLEMENT_SYSTEM = PERSONA + `\n\n` + IMPLEMENT_CONTRACT + `\n\n` + STYLE;
 
+
+// Returns null when implement may proceed, or {banner, question} describing
+// what to answer instead. Called BEFORE the prompt is built.
+//
+// The target is named explicitly by the caller. Guessing it from the context
+// would be the whole bug in miniature: with several papers in scope, a guess
+// that lands on a full-text one licenses specification claims about a
+// different paper entirely, and cross-paper contamination is exactly how the
+// wrong lag structure gets attributed to the wrong author.
+function implementGate(ctx, target) {
+  const uid = String(target || "");
+  let paper = null;
+  if (uid) {
+    paper = ctx.find((p) => String(p.uid || "") === uid) || null;
+  } else {
+    // No target named: allowed only when the choice is unambiguous.
+    const full = ctx.filter((p) => (p.depth || "") === "full");
+    if (full.length === 1) paper = full[0];
+  }
+  if (!paper) {
+    return {
+      banner: "**Cannot write an implementation without a single target "
+        + "paper.** This mode reads one paper closely; it was given "
+        + (uid ? "a paper that is not among the sources" : "no target, and "
+           + "the sources do not contain exactly one full-text paper")
+        + ". Open the paper you want built and start from there.\n\n---\n\n",
+      question: "Summarise what these sources say, and which of them would be "
+        + "the right one to implement.",
+    };
+  }
+  const depth = String(paper.depth || "summary_only");
+  if (depth === "full") return null;
+  return {
+    banner: "**Only the abstract of _" + String(paper.title || "this paper")
+      + "_ is held, so no pseudocode.**\n\nA specification, a lag structure, "
+      + "an exact sample and a set of coefficients are precisely what an "
+      + "abstract cannot support, and a plausible-but-wrong moment condition "
+      + "propagates into real work before anyone catches it. What follows is a "
+      + "topic-level read instead.\n\nTo make the real answer possible, parse "
+      + "the full text:\n\n```\npython tools/fetch_pdfs.py --uid "
+      + String(paper.uid || "") + "\npython tools/fulltext.py --uid "
+      + String(paper.uid || "") + "\n```\n\n---\n\n",
+    question: "What is the method in \"" + String(paper.title || "")
+      + "\" at topic level, and specifically what would someone need in order "
+      + "to implement it that this abstract does not contain?",
+  };
+}
 
 // One selector, so every caller resolves a shape the same way. A council role
 // is PERSONA + that role's mandate + STYLE: the voice and the evidence rules
 // are constant across the exchange, only the job changes.
 function systemFor(shape) {
   if (shape === "build") return BUILD_SYSTEM;
+  if (shape === "implement") return IMPLEMENT_SYSTEM;
   if (shape && COUNCIL_ROLES[shape]) {
     return PERSONA + `\n\n` + COUNCIL_ROLES[shape] + `\n\n` + STYLE;
   }
@@ -567,7 +692,13 @@ async function claude(key, question, ctx, history, shape) {
                "content-type": "application/json" },
     body: JSON.stringify({
       model: CLAUDE_MODEL,
-      max_tokens: shape === "build" ? 6000 : 4000,
+      // implement runs longer than build by design: the notation table and the
+      // per-line timing annotations are verbose, and a truncated answer loses
+      // section 8 -- the deviations and gaps -- which is the section that makes
+      // the other seven trustworthy. (The OpenAI path in chat() sets no limit
+      // at all and takes the provider default; adding one there would risk a
+      // 400 on a request shape that currently works.)
+      max_tokens: shape === "implement" ? 8000 : (shape === "build" ? 6000 : 4000),
       system: systemFor(shape),
       messages: [
         ...historyTurns(history),
@@ -809,6 +940,25 @@ export async function onRequestPost({ request, env }) {
     if (body.mode === "answer") {
       const ctx = Array.isArray(body.ctx) ? body.ctx.slice(0, MAX_CTX) : [];
       if (!ctx.length) return json({ error: "no context papers supplied" }, 400);
+      if (body.shape === "implement") {
+        // THE DEPTH GATE, ENFORCED HERE AND NOT ASKED OF THE MODEL.
+        // Pseudocode is a specification, a lag structure, an exact sample and
+        // a set of coefficients all at once -- every one of the things the
+        // depth contract forbids claiming from an abstract. An instruction
+        // saying "refuse" competes with a strong instinct to produce something
+        // that looks runnable, and that contest is not one to leave to chance:
+        // the same reasoning is why tools/artifacts.py blanks hyperparameters
+        // in _validate() rather than asking the model not to invent them.
+        const gate = implementGate(ctx, body.target);
+        if (gate) {
+          // Not an error. The reader still gets a topic-level read of the
+          // method and an exact instruction for making the real answer
+          // possible -- refusing the pseudocode is not the same as refusing.
+          const a = await answer(gate.question, ctx, env, body.history);
+          return json({ answer: gate.banner + a.text, model: a.model,
+                        tried: a.tried, refused: true });
+        }
+      }
       const a = await answer(q, ctx, env, body.history, body.shape);
       return json({ answer: a.text, model: a.model, tried: a.tried });
     }

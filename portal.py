@@ -342,6 +342,8 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   margin-left:8px;padding:1px 7px;border-radius:5px;cursor:pointer;
   color:var(--accent);background:transparent;border:1px solid var(--line);}
 .mapbtn:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);}
+.mapbtn.off{opacity:.42;cursor:help;}
+.mapbtn.off:hover{border-color:var(--line);background:none;}
 .pmapbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
   justify-content:space-between;margin:8px 2px 2px;}
 /* the list and the canvas are one control surface: a row highlights its node
@@ -879,6 +881,23 @@ function _ftBtn(x){
   return (FT_SET&&x.uid&&FT_SET.has(x.uid))
     ?'<span class="ftmark" title="Full text parsed - Ask can quote this paper by section">full text</span>':'';
 }
+// Turn ONE paper's method into a specification: notation, equations,
+// pseudocode with the timing written on every line, the traps, and an explicit
+// list of what the paper never says.
+//
+// Only offered when the full text is parsed, and the gate is enforced again
+// server-side in functions/api/ask.js -- a disabled button is a courtesy, not
+// a control, and the reason it exists here is so the limit is legible BEFORE
+// someone spends a call rather than after. An abstract cannot support a lag
+// structure or a coefficient, and pseudocode is exactly those things.
+function _implBtn(x){
+  if(!x||!x.uid)return'';
+  const full=FT_SET&&FT_SET.has(x.uid);
+  if(!full){
+    return `<span class="mapbtn off" title="Only the abstract is held for this paper. Pseudocode is a specification, a lag structure and an exact sample at once, and an abstract cannot support any of them — parse the full text first.">▸ implement</span>`;
+  }
+  return `<button class="mapbtn" data-impl="${esc(x.uid)}" title="Method, notation, pseudocode with timing, traps, and what the paper leaves unspecified">▸ implement</button>`;
+}
 function _pdfBtn(x){
   const p=_pdfUrl(x);
   return p?`<a class="pdfbtn" href="${esc(p)}" target="_blank" rel="noopener" title="Open the publisher's own PDF — save from there">PDF</a>`:'';
@@ -965,7 +984,7 @@ function entry(x,rank){
     (fit?`<span class="sl fitn" title="usable on the desk">desk ${x.desk_fit}/3</span>`:'')+'</div>':'';
   return `<div class="${cls}${x.url&&x.url===SEL?' on':''}"${_rk(x)}>${sc}<div class="body">${badge}
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${watch}${_unver(x)}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
+    <div class="meta">${watch}${_unver(x)}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
     ${chips}${sm}${subs}</div></div>`;
 }
 // Desk sleeves are MULTI-LABEL -- a paper can be carry AND fx at once -- so this
@@ -1058,7 +1077,9 @@ $('view').addEventListener('click',e=>{
   // delegated: cards are re-rendered on every filter change, so per-node
   // handlers would be rebound (and leak) constantly
   const m=e.target.closest('[data-pmap]');
-  if(m){e.preventDefault();openPaperMap(m.dataset.pmap);}
+  if(m){e.preventDefault();openPaperMap(m.dataset.pmap);return;}
+  const im=e.target.closest('[data-impl]');
+  if(im){e.preventDefault();openImplement(im.dataset.impl);}
 });
 function grouped(rows){
   const q=$('q').value.toLowerCase().trim();
@@ -2388,6 +2409,81 @@ async function doAsk(q,force){
 function askSubmit(){
   const el=$('askq');const q=el.value;el.value='';doAsk(q);
 }
+// IMPLEMENT: one paper, read closely, turned into a specification.
+//
+// Retrieval here is the opposite of the Ask flow's. Ask casts wide and narrows;
+// this reads deep into a SINGLE paper and deliberately fuses in nothing else.
+// Cross-paper contamination is how the wrong lag structure ends up attributed
+// to the wrong author, and that mistake is invisible in the output -- it reads
+// exactly like the right answer.
+const IMPL_PASSAGES=20;      // within one paper, not across the corpus
+// Sections in the order this mode needs them. The method, the data and the
+// results table are all required and are almost never adjacent, so taking the
+// first N passages would reliably return the introduction three times.
+const IMPL_SECTION_RANK=[
+  [/method|model|estimat|specif|framework|approach|algorithm/i,0],
+  [/data|sample|universe|variable/i,1],
+  [/result|table|empirical|finding|evidence/i,2],
+  [/robust|appendix|supplement/i,3],
+];
+function _implRank(sec){
+  const s=String(sec||'');
+  for(const [re,r] of IMPL_SECTION_RANK)if(re.test(s))return r;
+  return 4;
+}
+// A passage carrying an equation is worth more here than one that does not:
+// this mode's whole output is symbols and their timing.
+function _hasMath(t){
+  // Every backslash is DOUBLED because _INDEX is a non-raw Python string:
+  // written once, Python turns a word-boundary escape into a backspace byte
+  // (0x08) and ships a regex that parses fine and silently matches nothing.
+  // tools/check_js.py fails the build on those bytes now -- this has happened
+  // three times, and it caught the comment that used to be on this line too.
+  return /[=<>]\\s*[-+(]?\\s*\\w|\\\\[a-zA-Z]+|\\bsum_|\\balpha\\b|\\bbeta\\b|_\\{|\\^\\{/.test(String(t||''));
+}
+async function openImplement(uid){
+  if(asking)return;
+  setView('ask');
+  loadIndex(async ()=>{
+    await loadFtIndex();
+    const it=ITEM_BY_UID[uid];
+    if(!it){alert('That paper is not in the loaded archive.');return;}
+    newChat(true);
+    const chat=curChat();if(chat)chat.mode='analyse';   // implement is per-turn
+    const turns=chat?chat.turns:[];
+    const q='Implement: '+(it.title||uid);
+    const turn={q:q,state:'passages',ts:Date.now()};
+    turns.push(turn);titleChat();renderAsk();
+    asking=true;
+    try{
+      const psg=await loadPassages([it]);
+      if(!psg.length)throw new Error('no parsed passages for this paper — run tools/fulltext.py on it first');
+      // rank by section priority, then by whether the passage carries maths,
+      // then by position, so the ordering is deterministic and explicable
+      psg.sort((a,b)=>_implRank(a.sec)-_implRank(b.sec)
+        ||(_hasMath(b.text)?1:0)-(_hasMath(a.text)?1:0)||a.k-b.k);
+      const ctx=psg.slice(0,IMPL_PASSAGES).map(p=>({
+        uid:it.uid,title:it.title,authors:it.authors,url:it.url,date:it.date||it.seen,
+        source:it.source,depth:'full',sec:p.sec,text:p.text}));
+      turn.state='thinking';turn.npsg=ctx.length;renderAsk();
+      const r=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({mode:'answer',q:q,ctx:ctx,shape:'implement',target:uid})});
+      const j=await r.json();
+      if(!r.ok)throw new Error(j.error||'implement failed');
+      turn.answer=j.answer;turn.model=j.model||'';turn.state='done';
+      turn.refused=!!j.refused;
+      // The Source column of the notation table and every line under
+      // SPECIFICATION are supposed to be verbatim. This is where a fabricated
+      // quote does the most damage, because it arrives wearing quotation marks
+      // and a symbol definition, so it gets checked like any other answer.
+      turn.quotes=verifyQuotes(j.answer,ctx);
+      turn.sources=ctx.map(c=>Object.assign({},it,{_depth:'full',_sec:c.sec}));
+    }catch(e){
+      turn.error=String(e.message||e);turn.state='error';
+    }
+    asking=false;saveChats();renderAsk();
+  });
+}
 // The first question a conversation asks is what it is about, so it names it.
 function titleChat(){
   const c=curChat();if(!c)return;
@@ -3145,7 +3241,7 @@ function showDetail(url){
     '<h1 class="dtitle">'+esc(n.title)+'</h1>'+
     '<div class="dauth">'+esc(n.authors||'Unattributed')+'</div>'+
     '<div class="dacts"><a class="dbtn prim" href="'+esc(x.url)+'" target="_blank" rel="noopener">Open paper</a>'+
-      _pdfBtn(x)+_mapBtn(x)+_saveBtn(x)+'</div>'+
+      _pdfBtn(x)+_implBtn(x)+_mapBtn(x)+_saveBtn(x)+'</div>'+
     chips+
     (x.cites!=null?'<div class="dkick" style="margin-top:22px;font-size:24px;letter-spacing:-.01em;'+
       'text-transform:none;color:var(--cite);font-family:var(--serif);font-weight:600">'+fmtK(x.cites)+
@@ -3162,7 +3258,9 @@ $('detail').addEventListener('click',e=>{
   const c=e.target.closest('.sl[data-sleeve]');
   if(c){setSleeve(c.dataset.sleeve);return;}
   const m=e.target.closest('[data-pmap]');
-  if(m){e.preventDefault();openPaperMap(m.dataset.pmap);}
+  if(m){e.preventDefault();openPaperMap(m.dataset.pmap);return;}
+  const im=e.target.closest('[data-impl]');
+  if(im){e.preventDefault();openImplement(im.dataset.impl);}
 });
 
 // ---------------------------------------------------------- Keyboard
