@@ -85,6 +85,7 @@ def main():
 
         total = 0
         senders = collections.Counter()
+        newest_ssrn = None
         for folder in FOLDERS:
             if names and folder not in names:
                 print(f"{folder:<16} NOT PRESENT -- no label by that name")
@@ -105,6 +106,39 @@ def main():
                 frm = (msg.get("From") or "")
                 dom = frm.split("@")[-1].strip("> ").lower() if "@" in frm else "?"
                 senders[dom] += 1
+                if "ssrn" in dom:
+                    newest_ssrn = num
+        # WHAT DO THE LINKS ACTUALLY LOOK LIKE.
+        # "IMAP works" and "the mail parses" are different claims, and when the
+        # second fails the question is always the same: has the publisher
+        # changed its URL shape under the regex? Printing the distinct link
+        # SHAPES (host + query key, never a whole body) answers it in one run
+        # instead of by guessing.
+        if newest_ssrn is not None:
+            typ, raw = M.fetch(newest_ssrn, "(BODY.PEEK[])")
+            if typ == "OK" and raw and raw[0]:
+                import re as _re
+                body = raw[0][1].decode("utf-8", "replace")
+                urls = _re.findall(r"https?://[^\s\"'<>]+", body)
+                shapes = collections.Counter()
+                for u in urls:
+                    m = _re.match(r"https?://([^/]+)(/[^?]*)?(\?.*)?$", u)
+                    if not m:
+                        continue
+                    host, path, qs = m.group(1), m.group(2) or "", m.group(3) or ""
+                    key = _re.sub(r"=\d+", "=<n>", qs.split("&")[0]) if qs else ""
+                    shapes[f"{host}{_re.sub(r'/\d+', '/<n>', path)[:40]}{key[:28]}"] += 1
+                print("")
+                print("link shapes in the newest SSRN mail (%d links):" % len(urls))
+                for shape, n in shapes.most_common(10):
+                    print(f"   {shape:<62} {n:>4}")
+                # the specific thing the collector greps for
+                hits = len(_re.findall(r"abstract[_-]?id=(\d{5,9})", body, _re.I))
+                alt = len(_re.findall(r"abstract=(\d{5,9})", body, _re.I))
+                print("")
+                print(f"   sources._SSRN_ABS would match : {hits}")
+                print(f"   bare 'abstract=<id>' matches  : {alt}")
+
         print("")
         if senders:
             print("who is writing to these labels (last 40 each):")
