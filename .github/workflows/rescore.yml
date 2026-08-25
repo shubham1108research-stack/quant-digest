@@ -22,7 +22,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read            # no git writes: state.db lives in R2
 
 concurrency:
   # state.db is binary: concurrent writers rebase into an
@@ -73,17 +73,6 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python tools/embed.py
-
-      # always: a long run that times out must keep what it scored
-      - name: Commit
-        if: always()
-        run: |
-          git config user.name "digest-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add state.db || true
-          git commit -m "rescore + sleeve backfill $(date -u +%F)" || echo "no changes"
-          git pull --rebase --autostash origin master || true
-          git push || (git pull --rebase --autostash origin master && git push)
 
       # always: a run killed at its timeout must still store what it wrote.
       # dbsync refuses to push anything that fails a health check, because an

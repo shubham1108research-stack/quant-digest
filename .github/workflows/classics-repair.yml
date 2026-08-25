@@ -14,7 +14,7 @@ on:
         default: "0"
 
 permissions:
-  contents: write
+  contents: read            # no git writes: state.db lives in R2
 
 concurrency:
   # state.db is binary: concurrent writers rebase into an
@@ -47,18 +47,6 @@ jobs:
         env:
           CONTACT_EMAIL: ${{ secrets.GMAIL_ADDRESS }}
         run: python tools/ingest_classics.py --repair --limit ${{ github.event.inputs.limit || 0 }}
-      # always: the previous run fixed 103 papers and lost every one of
-      # them, because cancellation skipped a commit gated on success
-      - name: Commit
-        if: always()
-        run: |
-          git config user.name "digest-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add state.db || true
-          git commit -m "classics metadata repair $(date -u +%F)" || echo "no changes"
-          git pull --rebase --autostash origin master || true
-          git push || (git pull --rebase --autostash origin master && git push)
-
       # always: a run killed at its timeout must still store what it wrote.
       # dbsync refuses to push anything that fails a health check, because an
       # object store keeps no history to roll back to.

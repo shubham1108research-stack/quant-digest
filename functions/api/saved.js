@@ -1,16 +1,23 @@
 // Cloudflare Pages Function backing the cross-device Saved-papers sync.
-// Cloudflare Access already sits in front of the whole zone, so every
-// request here has already been authenticated; the Cf-Access-Authenticated-
-// User-Email header it injects is what keys each person's own KV entry --
-// no separate auth/session logic needed.
+//
+// The identity comes from _middleware.js, which VERIFIES the Access JWT
+// signature against the team JWKS. It used to be read straight off the
+// Cf-Access-Authenticated-User-Email header, which is an ordinary HTTP header:
+// anything reaching the origin by a path Access does not cover -- and Access
+// applications are per-hostname, while Pages publishes a permanent
+// <hash>.pages.dev for every deployment -- could set it to any address and
+// read or overwrite that person's saved papers.
+//
+// The old comment claimed "Access already sits in front of the whole zone".
+// It sat in front of one hostname.
 
-function userKey(request) {
-  const email = request.headers.get("Cf-Access-Authenticated-User-Email");
-  return email ? `saved:${email.toLowerCase()}` : null;
+function userKey(context) {
+  const email = context.data && context.data.email;
+  return email ? `saved:${String(email).toLowerCase()}` : null;
 }
 
 export async function onRequestGet(context) {
-  const key = userKey(context.request);
+  const key = userKey(context);
   if (!key) return new Response("unauthorized", { status: 401 });
   const value = await context.env.SAVED_PAPERS.get(key);
   return new Response(value || "{}", {
@@ -19,7 +26,7 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestPost(context) {
-  const key = userKey(context.request);
+  const key = userKey(context);
   if (!key) return new Response("unauthorized", { status: 401 });
   const body = await context.request.text();
   try {

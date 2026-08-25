@@ -2,8 +2,21 @@
 *.env
 .env
 
-# NOTE: state.db is intentionally NOT ignored -- the workflow commits it back
-# every run as the persistent cross-week dedup store (see README architecture).
+# state.db lives in R2 (tools/dbsync.py), NOT in git. It was tracked as the
+# cross-run dedup store before R2 existed, and both mechanisms then shipped at
+# once: the workflows all said "state.db lives in R2, not git" while six of
+# them still ran `git add state.db`.
+#
+# The cost of that was not theoretical. It is a 64 MB binary with no delta
+# compression, so every mutating run appended a fresh 64 MB blob -- the pack
+# reached 112 MiB against a repo whose actual source is a few hundred KB, and
+# GitHub hard-limits at 5 GB.
+#
+# History still carries the old blobs; this only stops it growing. R2 is the
+# single source of truth now, and dbsync's health check + state.db.prev is the
+# rollback story.
+state.db
+state.db.prev
 
 # Python
 __pycache__/

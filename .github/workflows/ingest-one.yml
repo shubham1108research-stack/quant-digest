@@ -17,7 +17,7 @@ on:
         required: true
 
 permissions:
-  contents: write
+  contents: read            # no git writes: state.db lives in R2
 
 concurrency:
   # state.db is binary: concurrent writers rebase into an
@@ -49,19 +49,6 @@ jobs:
 
       - name: Resolve and insert
         run: python tools/ingest_one.py --ids "${{ github.event.inputs.ids }}"
-
-      # A newly added paper is invisible to Ask until it has a vector, and the
-      # whole point of adding it was to be able to ask about it. Cached, so this
-      # embeds only what just arrived.
-      - name: Commit
-        if: always()
-        run: |
-          git config user.name "digest-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add state.db docs/ || true
-          git commit -m "ingest on request $(date -u +%F)" || echo "nothing to commit"
-          git pull --rebase --autostash origin master || true
-          git push || (git pull --rebase --autostash origin master && git push)
 
       # Everything under docs/ that is gitignored -- the embedding index, the
       # paper graph, the map -- is rebuilt here. A Pages deploy is a full
