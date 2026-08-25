@@ -100,10 +100,95 @@ def from_arxiv(aid):
     }
 
 
+def from_crossref(doi):
+    """Crossref record for a DOI. Complements OpenAlex rather than replacing it.
+
+    OpenAlex is richer where it has a work -- citation counts, a resolved
+    journal -- but it LAGS on fresh preprints, and SSRN is the case that
+    matters here: Crossref indexes an SSRN posting the same day and carries its
+    abstract, while OpenAlex may have nothing for weeks.
+
+    That gap is not theoretical. ssrn.7313339 ("Is Sector Rotation Causal?",
+    posted 2026-08-20) resolved through OpenAlex with no abstract, so its
+    vector was built from the title alone -- which the src provenance column
+    reported as "title 1" the first time it ran. Crossref had the abstract all
+    along.
+    """
+    r = requests.get(f"https://api.crossref.org/works/{doi}",
+                     params={"mailto": MAILTO}, headers=UA, timeout=30)
+    if not r.ok:
+        return None
+    w = (r.json() or {}).get("message") or {}
+    title = " ".join(w.get("title") or []).strip()
+    if not title:
+        return None
+    names = [" ".join(x for x in [a.get("given"), a.get("family")] if x)
+             for a in (w.get("author") or [])[:12]]
+    # created BEFORE issued, and via the collector's own helper rather than a
+    # second copy of the logic. issued for a fresh SSRN posting is often just
+    # [[2026]], which yields a bare "2026" -- unsortable against real dates and
+    # useless as a "%Y-%m" monthly key. created carries the actual posting day.
+    date = _cr_date(w.get("created") or w.get("issued") or {})
+    return {
+        "title": title,
+        "authors": ", ".join(n for n in names if n)[:300],
+        "url": w.get("URL") or f"https://doi.org/{doi}",
+        "date": date,
+        "doi": doi,
+        # Crossref abstracts are JATS-wrapped; sources._clean unescapes then
+        # strips, in that order, because publishers double-encode.
+        "abstract": _clean_abstract(w.get("abstract") or "")[:6000],
+        "journal": " ".join(w.get("container-title") or []) or "",
+        "cites": w.get("is-referenced-by-count") or 0,
+        "source": "SSRN (via Crossref)" if str(doi).startswith("10.2139")
+                  else "Crossref",
+    }
+
+
+def _cr_date(parts_obj):
+    """Crossref date-parts -> zero-padded ISO, via sources._cr_date_parts."""
+    try:
+        import sources
+        return sources._cr_date_parts(parts_obj)
+    except Exception:                                # noqa: BLE001
+        parts = (parts_obj.get("date-parts") or [[]])[0]
+        return "-".join(("%02d" % int(x)) if i else str(int(x))
+                        for i, x in enumerate(parts[:3])) if parts else ""
+
+
+def _clean_abstract(text):
+    """Reuse the collector's JATS/entity cleaning rather than a second copy."""
+    try:
+        import sources
+        return sources._clean(text)
+    except Exception:                                # noqa: BLE001
+        return re.sub(r"<[^>]+>", " ", text or "").strip()
+
+
 def resolve(ident):
     ident = ident.strip()
     if ident.lower().startswith("doi:"):
-        return from_openalex(ident[4:].strip().lower())
+        doi = ident[4:].strip().lower()
+        rec = from_openalex(doi)
+        # A record with no abstract is a title-only vector, which is a much
+        # weaker object in retrieval than it looks -- and indistinguishable
+        # from a good one once stored. Try the other authority before
+        # accepting one.
+        if not rec or not (rec.get("abstract") or "").strip():
+            alt = from_crossref(doi)
+            if alt and (alt.get("abstract") or "").strip():
+                if rec:
+                    # keep OpenAlex's richer metadata, take Crossref's abstract
+                    rec["abstract"] = alt["abstract"]
+                    log(f"[ingest] {doi}: abstract from Crossref "
+                        f"(OpenAlex had none)")
+                    return rec
+                log(f"[ingest] {doi}: resolved via Crossref "
+                    f"(OpenAlex had no record)")
+                return alt
+            if not rec:
+                return alt
+        return rec
     if ident.lower().startswith("arxiv:"):
         return from_arxiv(re.sub(r"v\d+$", "", ident[6:].strip()))
     return None
