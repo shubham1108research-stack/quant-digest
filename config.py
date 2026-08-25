@@ -917,6 +917,182 @@ SLEEVES = {
 }
 SLEEVES_MAX = 3          # tags per paper; more than this is not a judgement
 
+# ---- Subject tags ----------------------------------------------------
+# A FINER layer beneath SLEEVES. A sleeve says which book a paper belongs to
+# (trend_cta, carry, fx); a tag says what it is actually about (roll yield,
+# ZLB, positioning). Sleeves are 11 and mutually informative; tags are ~75 and
+# mostly independent.
+#
+# CLOSED VOCABULARY, deliberately. An open keyword extractor over these
+# abstracts produces exactly the tag list nobody wants -- "information",
+# "statistics", "data science", "U.S." -- because those words are frequent, not
+# meaningful. Every tag here had to earn its place by being something a person
+# would actually filter on. Adding one is a decision; the matcher will never
+# invent one.
+#
+# Seeded from Macrosynergy's own tag list, with the un-useful entries dropped
+# and the desk's vocabulary added (positioning, roll yield, basis, drawdown
+# control, capacity, execution, crowding). Their list also skewed to their
+# publishing history -- 82 "equity returns", 1 "gold" -- so frequency there was
+# not evidence of importance here.
+#
+# Each entry is: canonical tag -> surface forms to match, lower-cased. The
+# canonical form is what displays and filters; the surfaces are what appear in
+# real abstracts. Keep surfaces SPECIFIC: a surface that matches a common word
+# in another sense poisons the tag for everyone. "carry" alone would match
+# "carry out an analysis", which is why it is not in the carry surfaces.
+TAGS = {
+    # --- signals and styles
+    "trend following":      ["trend following", "trend-following", "time-series momentum",
+                             "time series momentum", "managed futures", "moving average rule",
+                             "cta"],
+    "carry":                ["carry trade", "currency carry", "carry strategy", "carry factor",
+                             "forward premium", "interest rate differential", "carry returns"],
+    "roll yield":           ["roll yield", "roll return", "convenience yield",
+                             "backwardation", "contango"],
+    "value":                ["value premium", "value factor", "book-to-market", "book to market",
+                             "cheapness", "valuation spread"],
+    "momentum":             ["cross-sectional momentum", "price momentum", "momentum factor",
+                             "momentum crash", "residual momentum"],
+    "mean reversion":       ["mean reversion", "mean-reverting", "reversal effect",
+                             "short-term reversal"],
+    "quality":              ["quality factor", "profitability factor", "gross profitability"],
+    "low beta":             ["betting against beta", "low-beta", "low volatility anomaly",
+                             "low-volatility anomaly"],
+    "seasonality":          ["seasonality", "seasonal effect", "turn-of-the-month",
+                             "holiday effect", "january effect"],
+
+    # --- asset classes
+    "FX":                   ["exchange rate", "currency market", "foreign exchange",
+                             "currencies", "dollar factor", "fx market"],
+    "commodities":          ["commodity futures", "commodity market", "commodity returns",
+                             "commodities"],
+    "rates":                ["interest rate", "yield curve", "term structure of interest",
+                             "government bond", "treasury market", "swap rate"],
+    "credit":               ["credit spread", "corporate bond", "credit risk premium",
+                             "default risk", "cds", "credit default swap"],
+    "equities":             ["equity returns", "stock returns", "equity market",
+                             "cross-section of stock", "cross section of stock",
+                             "cross-section of returns", "cross-sectional returns",
+                             "equity premium", "the cross-section"],
+    "crypto":               ["cryptocurrency", "bitcoin", "stablecoin", "digital asset",
+                             "defi", "decentralized finance"],
+    "options":              ["option pricing", "index option", "options market",
+                             "option-implied", "straddle", "put-call",
+                             "implied volatility surface", "delta hedg"],
+    "gold":                 ["gold price", "gold returns", "precious metal"],
+    "oil":                  ["oil price", "crude oil", "wti", "brent"],
+
+    # --- macro
+    "inflation":            ["inflation", "cpi", "price level", "deflation"],
+    "monetary policy":      ["monetary policy", "central bank", "policy rate",
+                             "quantitative easing", "asset purchase program", "fed funds"],
+    "Fed":                  ["federal reserve", "fomc", "the fed "],
+    "ECB":                  ["european central bank", "ecb"],
+    "term premium":         ["term premium", "bond risk premium", "expectations hypothesis"],
+    "growth":               ["gdp growth", "output gap", "business cycle", "recession"],
+    "labour market":        ["unemployment", "nonfarm payroll", "labour market", "labor market"],
+    "fiscal":               ["fiscal policy", "government debt", "government deficit",
+                             "public debt", "sovereign debt"],
+    "EM":                   ["emerging market", "emerging economies"],
+    "China":                ["china", "chinese market", "renminbi"],
+    "Japan":                ["japan", "japanese market", "yen"],
+    "euro area":            ["euro area", "eurozone", "euro crisis"],
+    "ZLB":                  ["zero lower bound", "effective lower bound",
+                             "negative interest rate"],
+    "nowcasting":           ["nowcast", "nowcasting", "real-time data", "data revision"],
+    "economic surprises":   ["economic surprise", "surprise index", "macro surprise"],
+    "capital flows":        ["capital flow", "capital control", "fx intervention",
+                             "foreign exchange intervention"],
+
+    # --- risk and volatility
+    "volatility":           ["realized volatility", "realised volatility", "volatility forecast",
+                             "stochastic volatility", "garch", "implied volatility"],
+    "VIX":                  ["vix", "volatility index"],
+    "variance risk premium": ["variance risk premium", "variance premium"],
+    "tail risk":            ["tail risk", "crash risk", "extreme returns", "left tail",
+                             "downside risk"],
+    "skewness":             ["skewness", "coskewness", "skew premium"],
+    "correlation":          ["correlation structure", "stock-bond correlation",
+                             "cross-asset correlation", "correlation breakdown"],
+    "regimes":              ["regime switching", "regime-switching", "market regime",
+                             "hidden markov", "structural break"],
+    "market turmoil":       ["financial crisis", "market stress", "flight to quality",
+                             "contagion", "systemic risk"],
+    "drawdown control":     ["drawdown", "maximum drawdown", "stop-loss", "stop loss"],
+    "vol targeting":        ["volatility targeting", "volatility target", "volatility scaling",
+                             "risk targeting"],
+    "hedging":              ["hedging strategy", "tail hedge", "dynamic hedging",
+                             "hedge ratio", "currency hedging"],
+
+    # --- portfolio construction
+    "risk parity":          ["risk parity", "equal risk contribution"],
+    "portfolio optimisation": ["mean-variance", "mean variance optimization", "markowitz",
+                               "portfolio optimization", "portfolio optimisation",
+                               "minimum variance", "asset allocation",
+                               "capital market assumption"],
+    "covariance estimation": ["covariance matrix", "shrinkage estimator", "ledoit",
+                              "precision matrix"],
+    "factor timing":        ["factor timing", "style rotation", "sector rotation",
+                             "tactical asset allocation"],
+    "diversification":      ["diversification", "1/n portfolio", "equal weight"],
+    "position sizing":      ["position sizing", "kelly criterion", "leverage constraint"],
+
+    # --- market structure and implementation
+    "transaction costs":    ["transaction cost", "trading cost", "market impact",
+                             "implementation shortfall", "slippage"],
+    "liquidity":            ["liquidity risk", "illiquidity", "bid-ask spread",
+                             "market liquidity", "funding liquidity"],
+    "execution":            ["optimal execution", "order execution", "execution algorithm",
+                             "vwap"],
+    "microstructure":       ["market microstructure", "order flow", "limit order book",
+                             "high-frequency trading", "high frequency trading"],
+    "capacity":             ["capacity constraint", "strategy capacity", "scalability of the strategy"],
+    "crowding":             ["crowded trade", "crowding", "arbitrage capital",
+                             "strategy decay", "alpha decay"],
+    "positioning":          ["positioning", "commitment of traders", "speculative position",
+                             "investor flows", "fund flows"],
+    "shorting":             ["short selling", "short interest", "securities lending"],
+
+    # --- institutions and plumbing
+    "banks":                ["bank lending", "banking sector", "bank capital",
+                             "capital regulation", "basel"],
+    "shadow banking":       ["shadow banking", "money market fund", "repo market"],
+    "collateral":           ["collateral", "haircut", "margin requirement"],
+    "clearing":             ["central counterparty", "ccp", "clearing house"],
+    "pensions":             ["pension fund", "defined benefit", "liability-driven"],
+    "ETFs":                 ["exchange-traded fund", "etf ", "etfs"],
+    "regulation":           ["financial regulation", "macroprudential", "regulatory reform"],
+
+    # --- method
+    "machine learning":     ["machine learning", "neural network", "random forest",
+                             "deep learning", "gradient boosting", "reinforcement learning"],
+    "graph methods":        ["graph neural", "network structure", "supply chain network",
+                             "spillover network"],
+    "text analysis":        ["textual analysis", "natural language", "sentiment analysis",
+                             "news sentiment", "large language model"],
+    "forecasting":          ["out-of-sample forecast", "forecast evaluation",
+                             "predictive regression", "return predictability"],
+    "backtesting":          ["backtest", "data snooping", "multiple testing",
+                             "p-hacking", "overfitting", "look-ahead bias"],
+    "econometrics":         ["panel regression", "instrumental variable", "gmm",
+                             "newey-west", "cointegration", "vector autoregression",
+                             "local projection", "bayesian model averaging",
+                             "quantile regression", "bootstrap inference",
+                             "model averaging", "shrinkage"],
+    "causal inference":     ["causal inference", "identification strategy",
+                             "difference-in-differences", "natural experiment",
+                             "lead-lag", "granger caus"],
+    "behavioural":          ["behavioral finance", "behavioural finance", "prospect theory",
+                             "overconfidence", "herding", "investor attention"],
+    "bubbles":              ["speculative bubble", "asset price bubble", "bubble detection"],
+}
+
+# Papers routinely touch several of these and there is no boundary to police,
+# so this is a display cap rather than a judgement -- more than six chips is a
+# wall of text on a card, not information.
+TAGS_MAX = 6
+
 # desk_fit -- how usable this is on a systematic macro / CTA desk, judged
 # SEPARATELY from research quality.
 DESK_FIT_ANCHORS = (

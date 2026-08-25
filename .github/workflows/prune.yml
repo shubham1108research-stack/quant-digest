@@ -1,4 +1,4 @@
-name: Prune Archive
+name: Archive Maintenance
 
 # Retires papers that should never have been collected: junk titles, records
 # with no text, future-dated metadata, and -- from sources that were selecting
@@ -12,6 +12,10 @@ name: Prune Archive
 # losing the memory that we already looked at it.
 #
 # Reversible per reason: `python tools/prune.py --restore adjacent_no_desk_fit`.
+#
+# Then tags what survives. Both are hygiene passes over state.db and they share
+# the same lock, so running them together is right -- and in this order, because
+# there is no point spending effort tagging rows that are about to be retired.
 #
 # Defaults to dry_run, because a run that retires more than expected should be
 # read before it is committed to.
@@ -53,6 +57,13 @@ jobs:
       - name: Prune
         run: |
           python tools/prune.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+
+      # Free and deterministic -- no model call -- so it re-runs over the whole
+      # archive in seconds after any vocabulary edit.
+      - name: Tag
+        run: |
+          python tools/test_tags.py
+          python tools/tags.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
 
       - name: Store state.db
         if: ${{ github.event.inputs.dry_run != 'true' }}

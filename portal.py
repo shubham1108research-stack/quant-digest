@@ -66,6 +66,10 @@ def _export(con) -> list[dict]:
             # record here came from an API or a feed
             "unverified": bool(m.get("unverified")),
             "topic": m.get("topic", ""),
+            # Subject tags (tools/tags.py) -- a finer layer beneath sleeves.
+            # Capped on export, not in the matcher: a paper may legitimately
+            # carry a dozen, and the cap is about how many fit on a card.
+            "tags": (m.get("tags") or [])[:config.TAGS_MAX],
             # the second classification: which parts of the desk's book this
             # touches, and how usable it is there
             "sleeves": m.get("sleeves") or [],
@@ -350,6 +354,17 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   margin-left:8px;padding:1px 7px;border-radius:5px;cursor:pointer;
   color:var(--accent);background:transparent;border:1px solid var(--line);}
 .mapbtn:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+.tg{font-family:var(--sans);font-size:10.5px;font-weight:500;letter-spacing:.01em;
+  color:var(--muted);background:transparent;border:1px solid var(--line);
+  border-radius:11px;padding:1.5px 8px;cursor:pointer;
+  transition:color .12s,border-color .12s,background .12s;}
+.tg:hover{color:var(--accent);border-color:var(--accent);}
+.tg.on{color:var(--panel);background:var(--ink);border-color:var(--ink);}
+.tagnote{font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.02em;
+  text-transform:none;color:var(--panel);background:var(--ink);border-radius:11px;
+  padding:2px 9px;cursor:pointer;}
+.tagnote:hover{opacity:.82;}
 .mapbtn.off{opacity:.42;cursor:help;}
 .mapbtn.off:hover{border-color:var(--line);background:none;}
 .pmapbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
@@ -990,15 +1005,42 @@ function entry(x,rank){
   const chips=sl.length?'<div class="sleeves">'+sl.map(k=>
     `<span class="sl${fit?' fit':''}" data-sleeve="${k}" title="Filter to ${esc(SLEEVE_LABEL[k]||k)}">${esc(SLEEVE_LABEL[k]||k)}</span>`).join('')+
     (fit?`<span class="sl fitn" title="usable on the desk">desk ${x.desk_fit}/3</span>`:'')+'</div>':'';
+  // Subject tags sit BELOW the sleeve chips and are visually quieter, because
+  // the hierarchy is real: a sleeve says which book this belongs to, a tag says
+  // what it is about. Same delegated-click pattern as the sleeve chips.
+  const tg=tagChips(x);
   return `<div class="${cls}${x.url&&x.url===SEL?' on':''}"${_rk(x)}>${sc}<div class="body">${badge}
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
     <div class="meta">${watch}${_unver(x)}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
-    ${chips}${sm}${subs}</div></div>`;
+    ${chips}${tg}${sm}${subs}</div></div>`;
 }
 // Desk sleeves are MULTI-LABEL -- a paper can be carry AND fx at once -- so this
 // is a membership test, not equality. Papers with no labels yet are HIDDEN when
 // a sleeve is chosen rather than shown: an unlabelled paper is not evidence of
 // belonging, and the backfill is still filling them in.
+// Subject tags. TAG_SEL is a single active tag, not a set: two tags ANDed
+// together on a 10k archive almost always returns nothing, and an empty result
+// reads as a broken filter rather than as a narrow one.
+let TAG_SEL='';
+function tagChips(x){
+  const t=(x.tags||[]);
+  if(!t.length)return '';
+  return '<div class="tags">'+t.map(k=>
+    `<span class="tg${k===TAG_SEL?' on':''}" data-tag="${esc(k)}" title="Filter to ${esc(k)}">${esc(k)}</span>`
+  ).join('')+'</div>';
+}
+function tagNote(){
+  if(!TAG_SEL)return '';
+  return `<span class="tagnote" data-tag="${esc(TAG_SEL)}" title="Clear this filter">tag: ${esc(TAG_SEL)} ×</span>`;
+}
+function tagFilter(rows){
+  if(!TAG_SEL)return rows;
+  return rows.filter(x=>(x.tags||[]).indexOf(TAG_SEL)>=0);
+}
+function setTag(k){
+  TAG_SEL=(TAG_SEL===k)?'':k;      // clicking the active tag clears it
+  archivePage=0;pracPage=0;render();
+}
 function sleeveFilter(rows,force){
   const s=force||SLEEVE;
   if(s==='all')return rows;
@@ -1088,6 +1130,8 @@ $('view').addEventListener('click',e=>{
   if(m){e.preventDefault();openPaperMap(m.dataset.pmap);return;}
   const im=e.target.closest('[data-impl]');
   if(im){e.preventDefault();openImplement(im.dataset.impl);}
+  const tg=e.target.closest('[data-tag]');
+  if(tg){e.preventDefault();e.stopPropagation();setTag(tg.dataset.tag);}
 });
 function grouped(rows){
   const q=$('q').value.toLowerCase().trim();
@@ -2930,11 +2974,11 @@ function renderPractitioners(){
   }
   const q=$('q').value.toLowerCase().trim();
   const src=$('psrc').value||'all';
-  const rows=sleeveFilter(ARCHIVE_DATA).filter(isPrac)
+  const rows=tagFilter(sleeveFilter(ARCHIVE_DATA)).filter(isPrac)
     .filter(x=>src==='all'||_psource(x)===src)
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.summary||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
-  let h=`<div class="dateline">Practitioner &amp; house research <span class="n">· ${rows.length} posts · by source · latest first</span></div>`;
+  let h=`<div class="dateline">Practitioner &amp; house research <span class="n">· ${rows.length} posts · by source · latest first</span>${tagNote()}</div>`;
   if(!rows.length){$('view').innerHTML=h+'<div class="empty">No matches.</div>';return;}
   // Paginated, like Archive: this list is now thousands of entries deep, and
   // rendering every card at once is what made Archive itself feel slow.
@@ -2990,7 +3034,7 @@ function renderArchive(){
   if(!ARCHIVE_DATA){loadArchive(renderArchive);return;}
   const q=$('q').value.toLowerCase().trim();
   const t=$('topic').value||'all';
-  let rows=sleeveFilter(ARCHIVE_DATA).filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
+  let rows=tagFilter(sleeveFilter(ARCHIVE_DATA)).filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.topic||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
   const label=t==='all'?'All topics':t;
@@ -3000,7 +3044,7 @@ function renderArchive(){
   const shown=rows.slice(0,shownCount);
   const remaining=rows.length-shownCount;
   const more=remaining>0?`<button class="loadmore" id="archmore">Show ${Math.min(ARCHIVE_PAGE_SIZE,remaining)} more <span class="n">(${remaining} left)</span></button>`:'';
-  $('view').innerHTML=`<div class="dateline">Archive · ${esc(label)} <span class="n">· ${rows.length} papers · date-wise</span></div>`+
+  $('view').innerHTML=`<div class="dateline">Archive · ${esc(label)} <span class="n">· ${rows.length} papers · date-wise</span>${tagNote()}</div>`+
     (rows.length?shown.map(x=>entry(x)).join(''):'<div class="empty">No matches.</div>')+more;
   if(remaining>0)$('archmore').onclick=()=>{archivePage++;renderArchive();};
 }
@@ -3300,6 +3344,8 @@ $('detail').addEventListener('click',e=>{
   if(m){e.preventDefault();openPaperMap(m.dataset.pmap);return;}
   const im=e.target.closest('[data-impl]');
   if(im){e.preventDefault();openImplement(im.dataset.impl);}
+  const tg=e.target.closest('[data-tag]');
+  if(tg){e.preventDefault();e.stopPropagation();setTag(tg.dataset.tag);}
 });
 
 // ---------------------------------------------------------- Keyboard

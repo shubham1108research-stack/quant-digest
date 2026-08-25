@@ -97,6 +97,14 @@ jobs:
         continue-on-error: true
         run: python tools/prune.py
 
+      # Subject tags from the closed vocabulary in config.TAGS. Free and
+      # deterministic, so it costs a second and can be re-run after any edit to
+      # the vocabulary. Papers it leaves untagged are the only ones the scorer
+      # is asked to tag, via the constrained `tags` field in its schema.
+      - name: Tag papers
+        continue-on-error: true
+        run: python tools/tags.py
+
       - name: Install Playwright Chromium (for AQR/Man/RA house research)
         run: python -m playwright install --with-deps chromium
 
