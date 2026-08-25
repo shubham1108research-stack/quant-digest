@@ -2507,6 +2507,10 @@ const _dkey=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 async function doBuild(q){
   q=(q||'').trim();
   if(!q||BUILD.state==='working')return;
+  if(!VEC||!VEC_UIDS){
+    BUILD={q:q,state:'error',err:'The semantic index is still loading — try again in a moment.'};
+    renderBuild();return;
+  }
   BUILD={q:q,state:'working',err:''};renderBuild();
   try{
     const er=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
@@ -2523,6 +2527,10 @@ async function doBuild(q){
     // the neighbours of a strong hit are often the prior work it builds on,
     // which nearest-neighbour retrieval on the question text never surfaces.
     let adjacent=[];
+    // "adjacent papers to refer to" is the whole point of this section, so
+    // fetch the graph if it is not in memory yet rather than quietly
+    // returning nothing and looking like the archive has no neighbours.
+    if(!E_OFF){ try{ await loadEdges(); }catch(e){} }
     if(E_OFF){
       const known=new Set(cands.map(c=>c._row));
       for(const [row,m] of expandGraph(cands.slice(0,8).map(c=>c._row),16)){
@@ -2555,6 +2563,15 @@ function _methodCard(m,p){
 }
 
 function renderBuild(){
+  // Build retrieves through the SAME index Ask does, so it needs the same
+  // guard. Without it, retrieve() dereferences a null VEC_UIDS the moment the
+  // tab is opened before the index has loaded -- which is exactly what
+  // "null is not an object (evaluating 'VEC_UIDS.length')" was.
+  if(!VEC||!ARCHIVE_DATA){
+    loadIndex(renderBuild);
+    $('view').innerHTML='<div class="empty">Loading the semantic index…</div>';
+    return;
+  }
   if(!ARTS&&!artsLoading){loadArts(renderBuild);}
   const q=esc(BUILD.q||'');
   const ex=BUILD_EXAMPLES.map(e=>`<b data-bex="${esc(e)}">${esc(e)}</b>`).join(' · ');
