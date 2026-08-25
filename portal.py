@@ -452,6 +452,22 @@ table.cot td.p{width:26%}
   display:inline-block;background:none;border:0;font-family:inherit}
 .cotmore:hover{text-decoration:underline}
 .cotstale{font-size:12px;color:var(--medium);margin:6px 0}
+.council{margin:14px 0 0;border-top:1px solid var(--line);padding-top:10px}
+.chead{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint);margin:0 0 7px}
+.csolo{font-family:var(--sans);font-size:11.5px;color:var(--medium);
+  border-left:2px solid var(--medium);padding:6px 9px;margin:0 0 8px;line-height:1.5}
+.cdet{border:1px solid var(--line);border-radius:6px;margin:0 0 6px;background:var(--panel)}
+.cdet summary{font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 11px;
+  cursor:pointer;color:var(--muted);list-style:none}
+.cdet summary::-webkit-details-marker{display:none}
+.cdet summary:before{content:'\u25b8';display:inline-block;margin-right:7px;
+  color:var(--faint);transition:transform .15s}
+.cdet[open] summary:before{transform:rotate(90deg)}
+.cdet summary:hover{color:var(--accent)}
+.cdet .cm{font-weight:400;color:var(--faint);font-size:10.5px}
+.cbody{padding:2px 13px 10px;font-size:13.5px;line-height:1.6}
+.cbody p{margin:0 0 8px}
 .bywhom{font-family:var(--sans);font-size:10.5px;color:var(--faint);
   margin:6px 0 0;letter-spacing:.02em}
 .askmode{display:flex;gap:0;margin:0 0 7px;align-self:flex-start;
@@ -1666,7 +1682,8 @@ function saveChats(){
     localStorage.setItem(CHATS_KEY,JSON.stringify(CHATS.slice(0,CHAT_MAX).map(c=>({
       id:c.id,title:c.title,ts:c.ts,
       turns:(c.turns||[]).filter(t=>t.state==='done').slice(-CHAT_TURNS).map(t=>({
-        q:t.q,answer:t.answer,model:t.model,state:'done',ts:t.ts,cached:t.cached,
+        q:t.q,answer:t.answer,model:t.model,council:t.council,councilSolo:t.councilSolo,
+        state:'done',ts:t.ts,cached:t.cached,
         sources:(t.sources||[]).map(x=>({title:x.title,url:x.url,authors:x.authors,
           date:x.date,seen:x.seen,source:x.source,score:x.score,uid:x.uid,
           _depth:x._depth,_sec:x._sec})),
@@ -2137,6 +2154,54 @@ async function doAsk(q,force){
       title:h.title,url:h.url,authors:h.authors,date:h.year?String(h.year):'',
       source:h.venue||'',uid:h.uid,_external:true})));
     turn.state='thinking';renderAsk();
+    // ---- Council ---------------------------------------------------------
+    // Four calls, sequenced HERE rather than inside one Function: the browser
+    // already fans out scan batches this way, it keeps each request well inside
+    // a Worker's limits, and it lets the UI show which stage is running instead
+    // of one long opaque wait.
+    if(askMode()==='council'){
+      const call=async (role,prior,rotate)=>{
+        const r=await fetch('/api/ask',{method:'POST',
+          headers:{'content-type':'application/json'},
+          body:JSON.stringify({mode:'council',role:role,q:q,ctx:ctxAll,
+                               prior:prior||'',rotate:rotate})});
+        const j=await r.json();
+        if(!r.ok)throw new Error(j.error||(role+' failed'));
+        return {text:j.answer||'',model:j.model||''};
+      };
+      turn.state='proposing';renderAsk();
+      const prop=await call('propose','',0);
+      turn.council={proposal:prop};renderAsk();
+
+      turn.state='challenging';renderAsk();
+      // rotate 1 and 2 so the challengers are answered by DIFFERENT providers
+      // than the proposer where more than one is configured -- a model arguing
+      // with itself agrees with itself
+      // The newline escapes below are doubled on purpose: this text passes
+      // through portal.py's non-raw _INDEX literal on its way to the browser,
+      // so a single escape arrives as a real newline and splits the string.
+      const priorProp='THE POSITION UNDER REVIEW:\\n\\n'+prop.text;
+      const [ev,im]=await Promise.all([
+        call('challenge_evidence',priorProp,1),
+        call('challenge_implementation',priorProp,2),
+      ]);
+      turn.council={proposal:prop,evidence:ev,implementation:im};renderAsk();
+
+      turn.state='reconciling';renderAsk();
+      const rec=await call('reconcile',
+        priorProp+'\\n\\nCHALLENGE - EVIDENCE:\\n\\n'+ev.text+
+        '\\n\\nCHALLENGE - IMPLEMENTATION:\\n\\n'+im.text,3);
+      turn.council={proposal:prop,evidence:ev,implementation:im,reconciled:rec};
+      turn.answer=rec.text;turn.model=rec.model;
+      // If every role landed on the same model the exchange is one model
+      // talking to itself. Say so rather than let the format imply an
+      // independence that was not there.
+      const models=[prop.model,ev.model,im.model,rec.model];
+      turn.councilSolo=models.every(m=>m===models[0]);
+      turn.state='done';
+      titleChat();saveChats();renderAsk();
+      asking=false;return;
+    }
     const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({mode:'answer',q:q,ctx:ctxAll,shape:askMode(),
         // prior turns, oldest first, so a follow-up resolves against the thread
@@ -2218,6 +2283,24 @@ function outsideCard(h){
     <button class="addbtn${q?' done':''}" data-add="${esc(h.uid)}" ${q?'disabled':''}
       title="Resolve it and add it to the archive">${q?'queued':'+ Add'}</button></div>`;
 }
+// The reconciled view is the answer; the argument sits under it, collapsed.
+// Worth keeping visible: "the identification objection was not answered" is
+// usually more informative than the confident paragraph above it, and a reader
+// who cannot see the challenges cannot tell scrutiny from ceremony.
+function councilBlock(t,ti){
+  const c=t.council;
+  if(!c||!c.reconciled)return '';
+  const part=(label,x)=>x&&x.text
+    ? `<details class="cdet"><summary>${esc(label)}${x.model?` <span class="cm">${esc(x.model)}</span>`:''}</summary>
+        <div class="cbody">${md(x.text,ti)}</div></details>` : '';
+  const solo=t.councilSolo
+    ? `<div class="csolo">Every role was answered by the same model \u2014 only one provider is
+        configured, so these are not independent views.</div>` : '';
+  return `<div class="council"><div class="chead">The argument</div>${solo}
+    ${part('Position',c.proposal)}
+    ${part('Challenge \u2014 evidence',c.evidence)}
+    ${part('Challenge \u2014 implementation',c.implementation)}</div>`;
+}
 let _lastTurns=-1;
 function renderAsk(notice){
   if(!VEC||!ARCHIVE_DATA){
@@ -2240,9 +2323,13 @@ function renderAsk(notice){
     else if(t.state==='scanning')body='<div class="thinking">Screening '+(t.scanning||0)+' further papers for relevant content\u2026</div>';
     else if(t.state==='passages')body='<div class="thinking">Reading full text \u00b7 ranking '+(t.npsg||0)+' passages\u2026</div>';
     else if(t.state==='outside')body='<div class="thinking">Searching the outside literature (OpenAlex, arXiv)\u2026</div>';
+    else if(t.state==='proposing')body='<div class="thinking">Opening the argument \u2014 stating a position from '+(t.sources||[]).length+' sources\u2026</div>';
+    else if(t.state==='challenging')body='<div class="thinking">Two challenges in parallel \u2014 evidence, and whether it can be run\u2026</div>';
+    else if(t.state==='reconciling')body='<div class="thinking">Reconciling \u2014 deciding what survives\u2026</div>';
     else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' sources'+(t.viaGraph?' ('+t.viaGraph+' via the citation/similarity graph)':'')+((t.passages||[]).length?' ('+t.passages.length+' full-text passages)':'')+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' \u00b7 '+t.reused+' from memory':'')+'\u2026</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
     else body='<div class="answer">'+md(t.answer,ti)+'</div>'
+      +councilBlock(t,ti)
       +(t.model?'<div class="bywhom">answered by '+esc(t.model)+'</div>':'');
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
       `<div class="src" id="src-${ti}-${i+1}"><span class="sn">${i+1}</span>
@@ -2265,15 +2352,19 @@ function renderAsk(notice){
         title="Read the evidence and give a view">Analyse</button>
       <button data-mode2="build" class="${askMode()==='build'?'on':''}"
         title="Architecture, data plan, pseudocode, traps and how to validate it">Build</button>
+      <button data-mode2="council" class="${askMode()==='council'?'on':''}"
+        title="A position, challenged on evidence and on implementation, then reconciled \u2014 four model calls, slower">Council</button>
     </div>
     <div class="askbox"><textarea id="askq" rows="2" placeholder="${
       askMode()==='build'
         ? (turns.length?'Follow up \u2014 same build, or change one thing'
                        :'What are you building? \u2014 e.g. a multi-asset strategy using graph neural networks')
+        : askMode()==='council'
+        ? 'A question worth arguing about \u2014 e.g. does trend following still work post-2010?'
         : (turns.length?'Follow up \u2014 it remembers this conversation'
                        :'Ask anything about the archive \u2014 e.g. what does the evidence say about trend decay?')
     }"></textarea>
-      <button id="asksend" ${asking?'disabled':''}>${asking?'\u2026':(askMode()==='build'?'Build':'Ask')}</button></div>
+      <button id="asksend" ${asking?'disabled':''}>${asking?'\u2026':(askMode()==='build'?'Build':askMode()==='council'?'Convene':'Ask')}</button></div>
     <label class="outtog"><input type="checkbox" id="outtog" ${ASK_OUTSIDE?'checked':''}> Also search outside the archive (OpenAlex, arXiv)</label>`;
   const send=$('asksend');if(send)send.onclick=askSubmit;
   document.querySelectorAll('[data-mode2]').forEach(b=>b.onclick=()=>setAskMode(b.dataset.mode2));
