@@ -62,6 +62,16 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python tools/dbsync.py pull
 
+      # Collect any artifact batch an earlier run opened. A no-op when
+      # nothing is pending, so it costs a second on most days -- and it is what
+      # makes submit/collect work at all: a 24h batch cannot be waited on
+      # inside one run, but the digest comes round every morning.
+      - name: Collect a pending artifact batch
+        continue-on-error: true
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python tools/artifacts.py --collect
+
       - name: Install Playwright Chromium (for AQR/Man/RA house research)
         run: python -m playwright install --with-deps chromium
 

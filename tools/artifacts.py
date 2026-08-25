@@ -29,12 +29,14 @@ record so the portal can show which is which.
 import argparse
 import datetime as dt
 import json
+import os
 import pathlib
 import re
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
+import batch   # noqa: E402
 import config  # noqa: E402
 import llm     # noqa: E402
 import store   # noqa: E402
@@ -305,6 +307,88 @@ def select(con, args) -> list[dict]:
     return todo
 
 
+_BATCH_KEY = "artifacts_batch"      # store.kv: {"id": ..., "map": {custom_id: uid}}
+
+
+def _batch_body(batch: list[dict]) -> dict:
+    """The SAME payload the synchronous path sends. Built here from the same
+    _SYSTEM and _prompt so the two routes cannot drift in what they ask for --
+    a batch that asks a subtly different question is worse than no batch."""
+    return {
+        "model": config.OPENAI_BULK_MODEL,
+        "messages": [{"role": "system", "content": _SYSTEM},
+                     {"role": "user", "content": _prompt(batch)}],
+        "max_completion_tokens": 8000,
+    }
+
+
+def submit_batch(con, todo, key, log) -> None:
+    if store.kv_get(con, _BATCH_KEY):
+        log("[artifacts] a batch is already pending; collect it before submitting "
+            "another (--collect)")
+        return
+    groups = [todo[i:i + config.ARTIFACT_BATCH]
+              for i in range(0, len(todo), config.ARTIFACT_BATCH)]
+    reqs, cmap = [], {}
+    for n, g in enumerate(groups):
+        cid = f"g{n}"
+        reqs.append({"custom_id": cid, "body": _batch_body(g)})
+        # depth travels with the id: _validate needs it at collection time, and
+        # by then the item objects that carried it are long gone
+        cmap[cid] = [{"uid": it["uid"], "depth": it["_depth"]} for it in g]
+    bid = batch.submit(key, reqs, log)
+    if not bid:
+        return
+    store.kv_set(con, _BATCH_KEY, json.dumps({"id": bid, "map": cmap}))
+    log(f"[artifacts] submitted {len(todo)} papers in {len(groups)} requests; "
+        f"run --collect on a later run to write them")
+
+
+def collect_batch(con, key, log) -> None:
+    raw = store.kv_get(con, _BATCH_KEY)
+    if not raw:
+        log("[artifacts] no batch pending")
+        return
+    pending = json.loads(raw)
+    state, results = batch.collect(key, pending["id"], log)
+    if state not in ("completed", "failed", "expired", "cancelled"):
+        log(f"[artifacts] batch still {state}; leaving it pending")
+        return
+
+    written = 0
+    for cid, members in (pending.get("map") or {}).items():
+        body = results.get(cid)
+        if not body:
+            continue
+        try:
+            text = body["choices"][0]["message"]["content"]
+        except Exception:                              # noqa: BLE001
+            continue
+        arr = llm._json_array(text) or []
+        by_i = {}
+        for obj in arr:
+            if isinstance(obj, dict):
+                try:
+                    by_i[int(obj.get("i"))] = obj
+                except (TypeError, ValueError):
+                    continue
+        for i, member in enumerate(members):
+            if i not in by_i:
+                continue
+            # Same validator as the synchronous path, unchanged. Batching
+            # changes delivery, not trust: a batched hallucination is still a
+            # hallucination, and the depth gate still blanks hyperparameters
+            # for abstract-only papers.
+            arts = _validate(by_i[i], member["depth"])
+            if store.update_meta(con, member["uid"], {ARTIFACT_KEY: arts}):
+                written += 1
+    con.commit()
+    # Cleared on ANY terminal state, including failure. A batch that will never
+    # complete must not wedge every later run behind it.
+    store.kv_set(con, _BATCH_KEY, "")
+    log(f"[artifacts] batch {state}: wrote {written} papers; pending cleared")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
@@ -315,6 +399,10 @@ def main():
                     help="re-extract papers that already have artifacts")
     ap.add_argument("--dry-run", action="store_true",
                     help="print the selection and one prompt; call nothing")
+    ap.add_argument("--submit", action="store_true",
+                    help="open an OpenAI batch (half price, ~24h) and exit")
+    ap.add_argument("--collect", action="store_true",
+                    help="collect a batch opened by an earlier run, if ready")
     ap.add_argument("--dump", type=int, default=0, metavar="N",
                     help="print N already-extracted papers and exit -- the "
                          "only way to eyeball quality when state.db lives in "
@@ -322,6 +410,14 @@ def main():
     args = ap.parse_args()
 
     con = store.connect()
+
+    if args.collect:
+        key = os.environ.get("OPENAI_API_KEY")
+        if not key:
+            log("[artifacts] OPENAI_API_KEY not set; cannot collect")
+            return
+        collect_batch(con, key, log)
+        return
 
     if args.dump:
         shown = 0
@@ -356,6 +452,14 @@ def main():
     log(f"[artifacts] {len(todo)} papers to extract "
         f"({full} full text, {len(todo) - full} abstract-only)")
     if not todo:
+        return
+
+    if args.submit:
+        key = os.environ.get("OPENAI_API_KEY")
+        if not key:
+            log("[artifacts] OPENAI_API_KEY not set; cannot submit a batch")
+            return
+        submit_batch(con, todo, key, log)
         return
 
     if args.dry_run:
