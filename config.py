@@ -236,10 +236,18 @@ PRACTITIONER_FEEDS = {
     # itself. Wired anyway: it costs one request and picks up if they resume.
     # The zero-yield warning in main.collect will keep saying it is quiet.
     "Verdad": ("https://verdadcap.com/archive?format=rss", 4),
-    # Macrosynergy: every URL on the domain returns a Cloudflare challenge --
-    # the feed, the research index, the site root, with an ordinary UA or a
-    # browser one. Not fetchable from a runner. Their research arrives by
-    # newsletter instead; subscribe the feed mailbox and sources.inbox() has it.
+    # Macrosynergy is NOT in this dict because its feed is unreliable, not
+    # because the site is closed. The claim that used to sit here -- "every URL
+    # on the domain returns a Cloudflare challenge, not fetchable from a
+    # runner" -- was wrong, and wrong in the direction that stops anyone
+    # looking again. Measured: /feed/ answers 403 to urllib about four times in
+    # five and 200 the fifth, which is far too flaky for a daily collector but
+    # is not a closed door.
+    #
+    # Their robots.txt allows everything except /transaction-costs-survey/ and
+    # advertises a sitemap for crawlers, so tools/backfill_macrosynergy.py
+    # walks the sitemap with bounded retries instead. The newsletter route via
+    # sources.inbox() still works and needs no retries at all.
     # "Macrosynergy": ("https://macrosynergy.com/research/feed/", 4),
 }
 
