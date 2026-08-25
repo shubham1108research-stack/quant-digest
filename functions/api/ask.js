@@ -442,23 +442,57 @@ function historyTurns(history) {
   return out;
 }
 
+// A 400 naming a parameter is a failure of the REQUEST, not of the provider.
+// Newer OpenAI reasoning models reject `temperature` at anything but their
+// default and renamed `max_tokens` to `max_completion_tokens`. Treating either
+// as a dead provider silently demotes the good model to whatever is next in
+// the chain -- which is exactly how Ask ended up answering from a 22B fallback
+// while the paid model sat unused and nothing in the response said so. Shed
+// the offending parameter and retry rather than failing over.
+function _shedParam(body, text) {
+  if (/max_completion_tokens/.test(text) && "max_tokens" in body) {
+    body.max_completion_tokens = body.max_tokens;
+    delete body.max_tokens;
+    return "max_tokens -> max_completion_tokens";
+  }
+  if (/temperature/.test(text) && "temperature" in body) {
+    delete body.temperature;                 // model accepts only its default
+    return "dropped temperature";
+  }
+  if (/max_tokens/.test(text) && "max_tokens" in body) {
+    delete body.max_tokens;
+    return "dropped max_tokens";
+  }
+  return null;
+}
+
 async function chat(url, key, model, question, ctx, history, shape) {
-  const r = await fetch(url, {
-    method: "POST",
-    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify({
+  const body = {
       model: model,
-      temperature: 0.2,
+      // Raised from 0.2. At 0.2 a model writes the modal sentence every time,
+      // which reads flat however specific the persona is. Removed entirely for
+      // models that only accept their default.
+      temperature: 0.45,
       messages: [
         { role: "system", content: systemFor(shape) },
         ...historyTurns(history),
         { role: "user",
           content: `Question: ${question}\n\nPapers:\n\n${contextBlock(ctx)}` },
       ],
-    }),
-  });
-  if (!r.ok) throw new Error(`${model} ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  return (await r.json()).choices[0].message.content;
+  };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (r.ok) return (await r.json()).choices[0].message.content;
+    const text = (await r.text()).slice(0, 400);
+    if (!(r.status === 400 && _shedParam(body, text))) {
+      throw new Error(`${model} ${r.status}: ${text.slice(0, 200)}`);
+    }
+  }
+  throw new Error(`${model}: still rejected after shedding parameters`);
 }
 
 // Breadth pass. Reading only the top handful risks missing a paper whose
@@ -604,7 +638,12 @@ async function answer(question, ctx, env, history, shape, rotate) {
       tried.push(`${model}: ${String(e.message || e).slice(0, 120)}`);
     }
   }
-  throw last;
+  // Report EVERY provider that was tried, not just the last one to fail.
+  // Surfacing only the tail is how "deepseek 402" became the visible symptom
+  // of an OpenAI request being rejected for a bad parameter -- the real cause
+  // was one line up and invisible.
+  throw new Error("no provider answered:\n  " + tried.join("\n  ")
+                  + (last ? "" : ""));
 }
 
 // ---------------------------------------------------------------- outside
