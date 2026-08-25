@@ -1,0 +1,81 @@
+name: Extract Artifacts
+
+# Decomposes papers into Method / Factor / Dataset / Thesis for the Build tab.
+# Separate from the digest because it is a backfill over the archive, not a
+# daily job: once a paper has artifacts it is never re-extracted (without
+# --force), so this converges and then costs nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Papers per run (0 = every outstanding one)"
+        required: false
+        default: "200"
+      min_fit:
+        description: "Minimum desk_fit (2 = 3,271 papers, 3 = 1,088)"
+        required: false
+        default: "2"
+      full_only:
+        description: "Only papers with parsed full text (best artifacts)"
+        type: boolean
+        default: true
+      force:
+        description: "Re-extract papers that already have artifacts"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  # state.db is binary and cannot be merged; share the digest's lock so two
+  # writers never race on it
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      # The full text lives in docs/ft/ and IS committed, so the checkout
+      # already has it -- that is what makes implementation-level extraction
+      # possible at all. Abstract-only papers yield a thesis and a method name
+      # and nothing more, by design.
+      - name: Extract artifacts
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python tools/artifacts.py \
+            --limit ${{ github.event.inputs.limit || 200 }} \
+            --min-fit ${{ github.event.inputs.min_fit || 2 }} \
+            ${{ github.event.inputs.full_only == 'true' && '--full-only' || '' }} \
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+
+      # always: a run killed at its timeout must still store what it paid for.
+      - name: Store state.db
+        if: always()
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push

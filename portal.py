@@ -106,6 +106,22 @@ def build(con) -> int:
         (docs / "nber.json").write_text("{}", encoding="utf-8")
     if not (docs / "cot.json").exists():            # placeholder until tools/cot.py runs
         (docs / "cot.json").write_text('{"groups":[]}', encoding="utf-8")
+
+    # Typed artifacts (tools/artifacts.py) ship SEPARATELY, keyed by uid, and
+    # are fetched only when the Build tab is opened. Inlining them into
+    # data.json would put a kilobyte or two of methods, datasets and pitfalls
+    # onto every page load for a tab most visits never open.
+    arts = {}
+    for uid, meta in con.execute("SELECT uid, meta FROM items"):
+        try:
+            m = json.loads(meta or "{}")
+        except Exception:                          # noqa: BLE001
+            continue
+        if m.get("retired") or not m.get("artifacts"):
+            continue
+        arts[uid] = m["artifacts"]
+    (docs / "artifacts.json").write_text(
+        json.dumps(arts, separators=(",", ":"), default=str), encoding="utf-8")
     html = _INDEX.replace(
         "__RELEVANCE_CONFIDENCE_PCT__", str(round(config.RELEVANCE_CONFIDENCE * 100))
     ).replace(
@@ -436,6 +452,44 @@ table.cot td.p{width:26%}
   display:inline-block;background:none;border:0;font-family:inherit}
 .cotmore:hover{text-decoration:underline}
 .cotstale{font-size:12px;color:var(--medium);margin:6px 0}
+.bwrap{max-width:none;padding:22px 20px 60px}
+.bhead{font-family:var(--sans);font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.55}
+.bform{display:flex;gap:8px;margin:0 0 6px}
+.bform textarea{flex:1;font-family:var(--sans);font-size:13.5px;line-height:1.5;
+  padding:10px 12px;border:1px solid var(--line);border-radius:7px;background:var(--panel);
+  color:var(--ink);resize:vertical;min-height:62px}
+.bform textarea:focus{outline:none;border-color:var(--accent)}
+.bform button{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:0 16px;
+  border:0;border-radius:7px;background:var(--ink);color:var(--panel);cursor:pointer;align-self:stretch}
+.bform button:disabled{opacity:.5;cursor:default}
+.bex{font-family:var(--sans);font-size:11.5px;color:var(--faint);margin:0 0 20px}
+.bex b{font-weight:500;color:var(--accent);cursor:pointer;border-bottom:1px dotted var(--accent)}
+.bsec{margin:26px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);
+  display:flex;align-items:baseline;gap:9px;font-weight:600;font-size:14px}
+.bsec .n{font-weight:400;font-size:11.5px;color:var(--faint)}
+.bcard{border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin:0 0 9px;
+  background:var(--panel)}
+.bcard h4{margin:0 0 4px;font-size:13.5px;font-weight:600;line-height:1.35}
+.bcard .fam{display:inline-block;font-family:var(--sans);font-size:10px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--accent);
+  border:1px solid var(--accent);border-radius:3px;padding:1px 5px;margin-right:7px}
+.bcard .row{font-size:12.5px;color:var(--muted);margin:5px 0 0;line-height:1.5}
+.bcard .row b{color:var(--ink);font-weight:600}
+.bcard .src{font-family:var(--sans);font-size:11px;color:var(--faint);margin-top:7px}
+.bcard .src a{color:var(--faint);text-decoration:none;border-bottom:1px solid var(--line)}
+.bcard .src a:hover{color:var(--accent)}
+.bpit{border-left:2px solid var(--medium);background:var(--line2);border-radius:0 5px 5px 0;
+  padding:8px 11px;margin:0 0 8px;font-size:12.5px;line-height:1.5}
+.bdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:8px}
+.bd{border:1px solid var(--line);border-radius:7px;padding:9px 11px;background:var(--panel);font-size:12.5px}
+.bd .nm{font-weight:600;margin-bottom:3px}
+.bd .mt{font-family:var(--sans);font-size:11px;color:var(--faint)}
+.acc{display:inline-block;font-family:var(--sans);font-size:9.5px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;border-radius:3px;padding:1px 5px;margin-left:5px}
+.acc.public{color:var(--strong);border:1px solid var(--strong)}
+.acc.licensed,.acc.proprietary{color:var(--medium);border:1px solid var(--medium)}
+.acc.unclear,.acc.synthetic{color:var(--faint);border:1px solid var(--line)}
+.bnote{font-family:var(--sans);font-size:11.5px;color:var(--faint);margin:6px 0 0;line-height:1.5}
 .unver{display:inline-block;font-family:var(--sans);font-size:10px;font-weight:700;
   letter-spacing:.06em;text-transform:uppercase;color:var(--medium);
   border:1px solid var(--medium);border-radius:3px;padding:1px 5px;margin-right:6px;
@@ -660,6 +714,7 @@ footer{padding:0 18px 8px;margin-top:32px;}
     <div class="navtabs" role="tablist" aria-label="Sections">
       <button id="g-papers" class="on">Papers</button>
       <button id="g-ask">Ask</button>
+      <button id="g-build">Build</button>
       <button id="g-shelf">Shelf</button>
       <button id="g-saved">Saved</button>
     </div>
@@ -676,6 +731,7 @@ footer{padding:0 18px 8px;margin-top:32px;}
       <button id="t-classics">Classics</button>
       <button id="t-anchors">Anchors</button>
       <button id="t-ask" hidden></button>
+      <button id="t-build" hidden></button>
       <button id="t-saved" hidden></button>
     </div>
     <div class="tagbar" id="tagbar" hidden></div>
@@ -2418,6 +2474,159 @@ function pracEntry(x){
     <div class="meta">${_unver(x)}${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
     ${sm}</div></div>`;
 }
+// ===================== Build =========================================
+// The rubric answers "is this paper good?". Build answers the question you
+// actually have with your hands on a keyboard: I am putting together X -- what
+// do these papers hand me, what data will I need, and what is going to bite me?
+//
+// No model call. tools/artifacts.py has already decomposed each paper into
+// Methods, Factors, Datasets and a Thesis; this retrieves papers the same way
+// Ask does (embed the question, nearest neighbours, then a graph hop for the
+// adjacent work similarity alone misses) and REGROUPS their artifacts by kind.
+// So it answers instantly, costs nothing, and cites a paper for every claim.
+let ARTS=null, artsLoading=false, BUILD={q:'',state:'idle',err:''};
+function loadArts(cb){
+  if(ARTS){cb();return;}
+  if(artsLoading)return;
+  artsLoading=true;
+  fetch('artifacts.json').then(r=>r.json()).then(a=>{
+    ARTS=a||{};artsLoading=false;if(VIEW==='build')cb();
+  }).catch(()=>{ARTS={};artsLoading=false;if(VIEW==='build')cb();});
+}
+const BUILD_EXAMPLES=[
+  'a macro model using graph neural networks',
+  'trend following with a volatility-scaled overlay',
+  'FX carry with a macro regime filter',
+  'estimating a term premium from a dynamic factor model',
+];
+// Two papers can name the same dataset differently ("CRSP", "CRSP daily
+// stock file"); collapse on a normalised key so the reader sees one entry
+// with two sources rather than two entries with one each.
+const _dkey=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+
+async function doBuild(q){
+  q=(q||'').trim();
+  if(!q||BUILD.state==='working')return;
+  BUILD={q:q,state:'working',err:''};renderBuild();
+  try{
+    const er=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({mode:'embed',q:q})});
+    const ej=await er.json();
+    if(!er.ok)throw new Error(ej.error||'embed failed');
+    if(VEC_DIM&&ej.vec.length!==VEC_DIM)
+      throw new Error('question embedded to '+ej.vec.length+' dims but the index is '+VEC_DIM+' — rebuild the semantic index');
+    let cands=retrieve(ej.vec,60);
+    const terms=qTerms(q);
+    cands.forEach(c=>{c._rank=askRank(c,terms);});
+    cands.sort((a,b)=>b._rank-a._rank);
+    // "adjacent papers to refer to" is a graph question, not a similarity one:
+    // the neighbours of a strong hit are often the prior work it builds on,
+    // which nearest-neighbour retrieval on the question text never surfaces.
+    let adjacent=[];
+    if(E_OFF){
+      const known=new Set(cands.map(c=>c._row));
+      for(const [row,m] of expandGraph(cands.slice(0,8).map(c=>c._row),16)){
+        if(known.has(row))continue;
+        const it=ITEM_BY_UID[VEC_UIDS[row]];
+        if(it&&ARTS&&ARTS[it.uid])adjacent.push(it);
+      }
+    }
+    BUILD.papers=cands.filter(c=>ARTS&&ARTS[c.uid]).slice(0,18);
+    BUILD.adjacent=adjacent.slice(0,6);
+    BUILD.state='done';
+  }catch(e){
+    BUILD.state='error';BUILD.err=String(e.message||e);
+  }
+  renderBuild();
+}
+
+function _methodCard(m,p){
+  const bits=[];
+  if(m.what)bits.push(`<div class="row">${esc(m.what)}</div>`);
+  if(m.inputs)bits.push(`<div class="row"><b>Needs:</b> ${esc(m.inputs)}</div>`);
+  // hyperparams and pitfalls exist ONLY where the extractor had full text --
+  // tools/artifacts.py blanks them for abstract-only papers rather than let a
+  // model infer a setting it never saw. Their absence here is that gate.
+  if(m.hyperparams)bits.push(`<div class="row"><b>Settings:</b> ${esc(m.hyperparams)}</div>`);
+  if(m.pitfalls)bits.push(`<div class="row"><b>Watch:</b> ${esc(m.pitfalls)}</div>`);
+  return `<div class="bcard"><h4><span class="fam">${esc(m.family||'other')}</span>${esc(m.name)}</h4>
+    ${bits.join('')}
+    <div class="src">from <a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a></div></div>`;
+}
+
+function renderBuild(){
+  if(!ARTS&&!artsLoading){loadArts(renderBuild);}
+  const q=esc(BUILD.q||'');
+  const ex=BUILD_EXAMPLES.map(e=>`<b data-bex="${esc(e)}">${esc(e)}</b>`).join(' · ');
+  let body='';
+  if(BUILD.state==='working'){
+    body='<div class="empty">Retrieving…</div>';
+  }else if(BUILD.state==='error'){
+    body=`<div class="empty">${esc(BUILD.err)}</div>`;
+  }else if(BUILD.state==='done'){
+    const papers=BUILD.papers||[];
+    if(!papers.length){
+      body='<div class="empty">Nothing in the archive has extracted artifacts for this yet. '
+          +'Run tools/artifacts.py, or try a broader description.</div>';
+    }else{
+      const methods=[],pitfalls=[],datasets={},factors=[];
+      papers.forEach(p=>{
+        const a=ARTS[p.uid]||{};
+        (a.methods||[]).forEach(m=>{methods.push([m,p]);
+          if(m.pitfalls)pitfalls.push([m.pitfalls,p]);});
+        (a.factors||[]).forEach(f=>factors.push([f,p]));
+        (a.datasets||[]).forEach(d=>{
+          const k=_dkey(d.name);if(!k)return;
+          if(!datasets[k])datasets[k]={d:d,n:0};
+          datasets[k].n++;
+        });
+      });
+      const ds=Object.values(datasets).sort((a,b)=>b.n-a.n);
+      body=''
+       +(methods.length?`<div class="bsec">Methods<span class="n">${methods.length} across ${papers.length} papers</span></div>`
+          +methods.slice(0,12).map(([m,p])=>_methodCard(m,p)).join(''):'')
+       +(pitfalls.length?`<div class="bsec">Watch out for<span class="n">stated by the papers themselves, from full text only</span></div>`
+          +pitfalls.slice(0,8).map(([t,p])=>`<div class="bpit">${esc(t)}
+             <div class="src">— <a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a></div></div>`).join(''):'')
+       +(ds.length?`<div class="bsec">Data you will need<span class="n">${ds.length} distinct</span></div><div class="bdgrid">`
+          +ds.slice(0,12).map(({d,n})=>`<div class="bd"><div class="nm">${esc(d.name)}
+             <span class="acc ${esc(d.access||'unclear')}">${esc(d.access||'unclear')}</span></div>
+             <div class="mt">${esc([d.provider,d.frequency,d.coverage].filter(Boolean).join(' · '))||'&nbsp;'}</div>
+             ${d.substitute?`<div class="mt">substitute: ${esc(d.substitute)}</div>`:''}
+             ${n>1?`<div class="mt">used by ${n} papers</div>`:''}</div>`).join('')+'</div>':'')
+       +(factors.length?`<div class="bsec">Signals<span class="n">${factors.length}</span></div>`
+          +factors.slice(0,6).map(([f,p])=>`<div class="bcard"><h4>${esc(f.name)}</h4>
+             ${f.construction?`<div class="row">${esc(f.construction)}</div>`:''}
+             <div class="row"><b>Universe:</b> ${esc(f.universe||'—')} · <b>Rebalance:</b> ${esc(f.rebalance||'—')}
+               · <b>Costs modelled:</b> ${f.costs?'yes':'no'}</div>
+             ${f.reported?`<div class="row"><b>Reported:</b> ${esc(f.reported)}</div>`:''}
+             <div class="src">from <a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a></div></div>`).join(''):'')
+       +`<div class="bsec">Papers<span class="n">${papers.length}</span></div>`
+       +papers.map(p=>entry(p)).join('')
+       +((BUILD.adjacent||[]).length?`<div class="bsec">Adjacent work<span class="n">neighbours in the citation/similarity graph, not direct hits</span></div>`
+          +BUILD.adjacent.map(p=>entry(p)).join(''):'');
+    }
+  }else{
+    body='<div class="empty">Describe what you are building.</div>';
+  }
+  $('view').innerHTML=`<div class="bwrap">
+    <div class="dateline">Build</div>
+    <p class="bhead">Say what you are putting together. This regroups the archive by what each
+      paper <em>gives</em> you — the methods and their settings, the data you will need to buy or
+      proxy, and the failure modes the papers themselves report — instead of ranking papers.
+      Settings and pitfalls are shown only where the extractor had the full text.</p>
+    <div class="bform">
+      <textarea id="bq" placeholder="e.g. a macro model using graph neural networks">${q}</textarea>
+      <button id="bgo"${BUILD.state==='working'?' disabled':''}>Build</button>
+    </div>
+    <p class="bex">Try: ${ex}</p>
+    ${body}</div>`;
+  const go=$('bgo');if(go)go.onclick=()=>doBuild($('bq').value);
+  const ta=$('bq');
+  if(ta)ta.onkeydown=e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))doBuild(ta.value);};
+  document.querySelectorAll('[data-bex]').forEach(b=>b.onclick=()=>{
+    $('bq').value=b.dataset.bex;doBuild(b.dataset.bex);});
+}
 function renderPractitioners(){
   const q=$('q').value.toLowerCase().trim();
   const src=$('psrc').value||'all';
@@ -2581,7 +2790,7 @@ function renderClassics(){
 function render(){if(VIEW.slice(0,3)==='sl:'){renderSleeve(VIEW.slice(3));return;}
   if(VIEW==="map"){renderMap();return;}
   if(VIEW==="pmap"){renderPaperMap();return;}
-  VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
+  VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="build"?renderBuild():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 // Eleven flat tabs gave every destination the same weight and scrolled half of
 // them off screen. They group by INTENT: read what's new, question the corpus,
 // consult the standing reference, revisit your own picks. Ask and Saved are
@@ -2589,6 +2798,7 @@ function render(){if(VIEW.slice(0,3)==='sl:'){renderSleeve(VIEW.slice(3));return
 const GROUPS={
   papers:['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap'],
   ask:['ask'],
+  build:['build'],
   shelf:['classics','anchors'],
   saved:['saved'],
 };

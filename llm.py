@@ -311,6 +311,25 @@ def _bool_or_null(v):
     return bool(v)
 
 
+def _json_array(text: str) -> list | None:
+    """First valid JSON array in a model response, or None.
+
+    Shared by every structured caller here. A greedy [.*] spans the FIRST "["
+    to the LAST "]", so any bracket in a preamble ("[note] Here is the JSON:
+    [...]") makes json.loads fail and the whole sub-batch is lost -- and lost
+    permanently, since filter_new drops those items from every later run.
+    Decoding from each "[" in turn tolerates stray prose on both sides.
+    """
+    for m in re.finditer(r"\[", text or ""):
+        try:
+            arr, _ = json.JSONDecoder().raw_decode(text[m.start():])
+        except Exception:                          # noqa: BLE001
+            continue
+        if isinstance(arr, list):
+            return arr
+    return None
+
+
 def _parse(text: str) -> dict[int, dict]:
     """-> {index: {relevance, generality, contribution, testability
     (each {level, why[, provisional]}), 4 robustness flags (bool|None),
@@ -322,16 +341,8 @@ def _parse(text: str) -> dict[int, dict]:
     # the whole sub-batch scores as nothing -- up to LLM_RANK_BATCH=40 items,
     # permanently, since filter_new drops them from every later run.
     # Decode from each "[" instead and take the first valid array.
-    arr = None
-    for _c in re.finditer(r"\[", text):
-        try:
-            _arr, _ = json.JSONDecoder().raw_decode(text[_c.start():])
-        except Exception:                          # noqa: BLE001
-            continue
-        if isinstance(_arr, list):
-            arr = _arr
-            break          # tolerate stray prose around it
-    else:
+    arr = _json_array(text)
+    if arr is None:
         return {}
     out: dict[int, dict] = {}
     for o in arr:
@@ -985,4 +996,144 @@ def consensus(items: list[dict], log, max_batches: int | None = None) -> list[di
             converged += int(agree)
     log(f"[consensus] refined {refined}/{len(short)} shortlist items via "
         f"ensemble; {converged} converged, {refined - converged} flagged uncertain")
+    return items
+
+
+# ======================================================================
+# Generic structured extraction (tools/artifacts.py)
+# ======================================================================
+# rank() bakes its own system prompt and parser into each provider function,
+# which is right for triage -- there is only one rubric -- but leaves no way to
+# ask the same provider chain a DIFFERENT structured question. These are the
+# provider-neutral pieces: one chat call, and one batched runner with the same
+# failover, budget and checkpoint behaviour that rank() learned the hard way.
+
+_CHAT_PROVIDERS = [
+    # (name, url, config attr for the model, env var holding the key)
+    ("openrouter", _OPENROUTER_URL, "OPENROUTER_MODEL", "OPENROUTER_API_KEY"),
+    ("mistral", _MISTRAL_URL, "MISTRAL_MODEL", "MISTRAL_API_KEY"),
+    ("groq", _GROQ_URL, "GROQ_MODEL", "GROQ_API_KEY"),
+    ("openai", _OPENAI_URL, "OPENAI_MODEL", "OPENAI_API_KEY"),
+]
+
+
+def _chat(url: str, key: str, model: str, system: str, user: str,
+          max_tokens: int = 8000, timeout: int = 180) -> str:
+    """One OpenAI-compatible chat completion -> the assistant's text.
+
+    Raises on a hard failure so the caller can retire the provider. Retries
+    only the statuses that clear on their own: a 429 may pass in a minute, a
+    413 will not, and retrying it with backoff on every batch is what wedged a
+    six-hour run once already.
+    """
+    body = {"model": model, "temperature": 0, "max_tokens": max_tokens,
+            "messages": [{"role": "system", "content": system},
+                         {"role": "user", "content": user}]}
+    r = None
+    for attempt in range(config.LLM_MAX_RETRIES + 1):
+        r = requests.post(url, headers={"Authorization": f"Bearer {key}"},
+                          json=body, timeout=timeout)
+        if r.status_code == 413:                   # payload/TPM cap: never clears
+            return ""
+        if r.status_code in (429, 500, 502, 503):
+            wait = int(float(r.headers.get("retry-after", 0))) or 10 * (attempt + 1)
+            time.sleep(min(wait, 45))
+            continue
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]["content"] or ""
+    if r is not None:
+        r.raise_for_status()
+    return ""
+
+
+def extract(items: list[dict], system: str, prompt_fn, validate_fn, key: str,
+            log, on_batch=None, batch_size: int = 6) -> list[dict]:
+    """Ask the provider chain a structured question about each item.
+
+    Writes validate_fn(obj, depth) onto item[key]. Mirrors rank(): batches run
+    in parallel because the work is output-bound; a provider that raises is
+    retired for the run; one that is simply unconfigured is retired too (those
+    were once indistinguishable, and the run span for two and a half hours
+    scoring nothing as a result); and results are handed to on_batch as they
+    complete so a killed run keeps what it paid for.
+    """
+    batches = [items[i:i + batch_size] for i in range(0, len(items), batch_size)]
+    workers = max(1, int(getattr(config, "LLM_CONCURRENCY", 1)))
+    dead: set[str] = set()
+    absent: set[str] = set()
+    lock = threading.Lock()
+    log(f"[extract] {len(items)} items in {len(batches)} batches of "
+        f"{batch_size}, {workers} in flight")
+
+    def run(batch):
+        text = prompt_fn(batch)
+        for name, url, model_attr, env in _CHAT_PROVIDERS:
+            with lock:
+                if name in dead or name in absent:
+                    continue
+            api_key = os.environ.get(env)
+            if not api_key:
+                with lock:
+                    absent.add(name)
+                continue
+            try:
+                raw = _chat(url, api_key, getattr(config, model_attr), system, text)
+            except Exception as e:                 # noqa: BLE001
+                log(f"[extract] {name} failed ({_err(e)}); failing over")
+                with lock:
+                    dead.add(name)
+                continue
+            arr = _json_array(raw)
+            if not arr:
+                continue
+            got = {}
+            for obj in arr:
+                if not isinstance(obj, dict):
+                    continue
+                try:
+                    idx = int(obj.get("i"))
+                except (TypeError, ValueError):
+                    continue
+                if 0 <= idx < len(batch):
+                    got[idx] = obj
+            if got:
+                return batch, got
+        return batch, {}
+
+    done = empty_streak = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(run, b): b for b in batches}
+        for fut in concurrent.futures.as_completed(futures):
+            try:
+                batch, got = fut.result()
+            except Exception as e:                 # noqa: BLE001
+                log(f"[extract] batch failed ({_err(e)})")
+                batch, got = futures[fut], {}
+            done += 1
+            if got:
+                empty_streak = 0
+                for i, it in enumerate(batch):
+                    if i in got:
+                        it[key] = validate_fn(got[i], it.get("_depth", "abstract"))
+                if on_batch is not None:
+                    try:
+                        on_batch([x for i, x in enumerate(batch) if i in got])
+                    except Exception as e:         # noqa: BLE001
+                        log(f"[extract] checkpoint failed ({_err(e)})")
+            else:
+                empty_streak += 1
+            if done % 5 == 0 or done == len(batches):
+                log(f"[extract] {done}/{len(batches)} batches")
+            with lock:
+                usable = [n for n, _, _, _ in _CHAT_PROVIDERS
+                          if n not in dead and n not in absent]
+            # Same two stop conditions rank() needed: no provider can still
+            # answer, or the chain has been returning nothing for long enough
+            # that it plainly will not start again.
+            if not usable or empty_streak >= 3:
+                log(f"[extract] stopping: usable={usable or 'none'}, "
+                    f"empty streak={empty_streak}")
+                for f in futures:
+                    f.cancel()
+                break
     return items

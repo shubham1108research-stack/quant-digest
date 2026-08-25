@@ -977,3 +977,74 @@ DIGEST_SKIP_SOURCES = (
     "alpha architect", "quantpedia", "newfound", "flirting with models",
     "verdad", "crossref", "openalex",
 )
+
+# ======================================================================
+# Typed artifact layer -- what a paper GIVES YOU, not how good it is
+# ======================================================================
+# The rubric answers "is this paper any good?". This answers the question you
+# actually have at the desk: "I am building X -- what does this paper hand me,
+# and what will bite me?" Four object types, extracted per paper and reusable
+# across papers.
+#
+# DEPTH GATING IS LOAD-BEARING. Implementation specifics -- hyperparameters,
+# data vintages, the pitfalls that only appear in a robustness section -- can
+# only be claimed from FULL TEXT. From an abstract you may state the thesis and
+# name a method, and nothing further. An invented hyperparameter is worse than
+# a missing one: it looks like knowledge and cannot be checked without the PDF
+# the reader does not have.
+ARTIFACT_DEPTHS = ("full", "abstract")
+
+# Method families. Constrained, like every other categorical here, so the
+# Build tab can group and filter rather than pattern-match free text.
+METHOD_FAMILIES = (
+    "graph",              # GNN, GAT, message passing, network/spillover models
+    "neural",             # MLP, CNN, RNN/LSTM, transformers, autoencoders
+    "tree_ensemble",      # random forest, GBM, XGBoost
+    "linear",             # OLS, ridge/lasso/elastic net, PCR, PLS
+    "bayesian",           # Bayesian inference, MCMC, hierarchical priors
+    "state_space",        # Kalman, HMM/Markov switching, dynamic factor models
+    "factor_model",       # APT-style, latent factors, IPCA, risk models
+    "optimization",       # mean-variance, robust/convex, RL for allocation
+    "econometric",        # GARCH, VAR, cointegration, panel, IV, event study
+    "simulation",         # Monte Carlo, bootstrap, agent-based, synthetic data
+    "text_nlp",           # embeddings, topic models, LLMs on documents
+    "other",
+)
+
+# How reproducible is it, from what the paper itself says.
+CODE_AVAILABILITY = ("none", "pseudocode", "partial", "full")
+DATA_ACCESS = ("public", "licensed", "proprietary", "synthetic", "unclear")
+BUILD_EFFORT = ("low", "medium", "high")       # to a working replication
+
+# How strongly the paper supports its own claim -- separate from whether the
+# claim is interesting, which the rubric already scores.
+EVIDENCE_STRENGTH = ("theoretical", "in_sample", "out_of_sample", "live")
+
+ARTIFACT_MAX_METHODS = 3
+ARTIFACT_MAX_FACTORS = 3
+ARTIFACT_MAX_DATASETS = 4
+ARTIFACT_MAX_PITFALLS = 4
+
+# Extraction budget. desk_fit >= this is the candidate set: 3,271 papers at 2,
+# 1,088 at 3. Full text exists for roughly a third of them, and those are the
+# only ones that can yield implementation detail.
+ARTIFACT_MIN_DESK_FIT = 2
+ARTIFACT_BATCH = 4              # papers per LLM call -- small, because each
+                                # response is a large structured object
+# Characters of full text sent per paper. The median parsed paper is ~54k
+# chars, far past any sane context budget, so sections are selected rather
+# than truncated -- see tools/artifacts.py:_select_passages.
+ARTIFACT_FULLTEXT_CHARS = 7000
+ARTIFACT_ABSTRACT_CHARS = 1500
+
+# Section headings worth sending, in priority order. GROBID keeps the paper's
+# own headings, and these are where specification actually lives -- an
+# Introduction tells you the story, a Methodology tells you the shape of the
+# model and a Data section tells you what you need to buy.
+ARTIFACT_SECTION_PRIORITY = (
+    "method", "methodology", "model", "estimation", "specification",
+    "implementation", "algorithm", "architecture", "framework",
+    "data", "sample", "dataset", "variables", "empirical design",
+    "results", "robustness", "limitations", "discussion",
+    "conclusion", "introduction",
+)
