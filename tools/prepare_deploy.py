@@ -58,6 +58,12 @@ def main():
     # happened to be committed. A re-score that ranked 6,078 papers went live
     # nowhere. Rebuilding here is required, not best-effort: shipping last
     # week's scores while reporting success is the failure being fixed.
+    # The portal is a JavaScript program held in a Python string, so a syntax
+    # error in it is invisible to every check Python can make and fatal in the
+    # browser. Cheap, and first: there is no point rebuilding a 2 MB index for
+    # a page that will load blank.
+    run(["tools/check_js.py"], required=True)
+
     sys.path.insert(0, str(ROOT))
     import portal, store                                  # noqa: E402
     con = store.connect()

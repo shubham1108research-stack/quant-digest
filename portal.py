@@ -1582,7 +1582,7 @@ let VEC=null,VEC_UIDS=null,VEC_DIM=0,VEC_SHARD=64,ITEM_BY_UID={},indexLoading=fa
 // as the index or it lands in a different vector space -- which returns
 // confident nonsense, not an error. Naming it in two files and hoping they
 // agree is how that happens; this makes the index describe itself.
-let VEC_MODEL='';
+let VEC_MODEL='',VEC_BUILD='';
 let indexWarning='';
 // The paper graph (docs/edges.bin, built by tools/graph.py). Packed triples of
 // <srcRow uint32, dstRow uint32, kind uint8, weight float32> against
@@ -1791,7 +1791,7 @@ function loadIndex(cb){
     ARCHIVE_DATA?Promise.resolve(ARCHIVE_DATA):fetch('archive.json').then(r=>r.json()),
   ]).then(([meta,buf,arch])=>{
     VEC_UIDS=meta.uids;VEC=new Int8Array(buf);VEC_DIM=meta.dim||0;VEC_SHARD=meta.shard||64;
-    VEC_MODEL=meta.model||'';
+    VEC_MODEL=meta.model||'';VEC_BUILD=meta.build||'';
     // vec.json is the MANIFEST for vec.bin -- row i of the buffer is uids[i].
     // If the two disagree, retrieve() reads past the end of an Int8Array,
     // which yields undefined rather than throwing: every score becomes NaN and
@@ -1964,8 +1964,25 @@ async function loadAbstracts(picks){
     const need=[...new Set(miss.map(p=>Math.floor(p._row/VEC_SHARD)))]
       .filter(s=>!(s in ABS_SHARD));
     await Promise.all(need.map(s=>
-      fetch('abs/'+s+'.json').then(r=>r.json()).then(j=>{ABS_SHARD[s]=j;})
-        .catch(()=>{ABS_SHARD[s]={};})));
+      // A shard is keyed by ROW INDEX, and row indices only mean anything
+      // relative to the manifest they were built with. A cached shard served
+      // against a newer vec.json therefore hands back a DIFFERENT paper's
+      // abstract, which goes into the Ask prompt as evidence -- no error, no
+      // warning, a confident answer citing a paper that was never read.
+      // Ascending row order makes that rare; _build makes it detectable.
+      // Discarding is safe: the abstract is an enrichment, and an answer built
+      // from summaries is merely thinner, while one built from the wrong
+      // abstracts is wrong.
+      fetch('abs/'+s+'.json').then(r=>r.json()).then(j=>{
+        const rows=(j&&j.rows)?j.rows:j;          // pre-stamp shards were flat
+        if(j&&j._build&&VEC_BUILD&&j._build!==VEC_BUILD){
+          console.warn('abs shard '+s+' was built for index '+j._build
+            +' but the manifest is '+VEC_BUILD+'; discarding it');
+          ABS_SHARD[s]={};
+          return;
+        }
+        ABS_SHARD[s]=rows||{};
+      }).catch(()=>{ABS_SHARD[s]={};})));
     miss.forEach(p=>{
       const sh=ABS_SHARD[Math.floor(p._row/VEC_SHARD)]||{};
       const a=sh[String(p._row)]||'';

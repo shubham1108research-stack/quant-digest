@@ -14,3 +14,4 @@ boto3==1.43.78       # Cloudflare R2 (S3 API) -- tools/dbsync.py
 numpy==2.5.2         # kNN graph, PCA/k-means map (tools/graph.py, map.py, embed_ab.py)
 # LLM triage and embeddings both use plain REST via requests -- no SDK, so no
 # extra dependency and no SDK-version surprises in an unattended run.
+esprima==4.0.1

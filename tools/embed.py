@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS embeddings (
     dim   INTEGER NOT NULL,
     vec   BLOB NOT NULL,          -- DIM int8 values
     txt   TEXT NOT NULL DEFAULT '',   -- sha1 of the embedded text
+    src   TEXT NOT NULL DEFAULT '',   -- abstract | summary | title
     PRIMARY KEY (uid, model, dim, txt)
 );
 """
@@ -118,6 +119,17 @@ def _migrate_cache(con) -> None:
     trusting. One re-embed of the archive costs about seven cents.
     """
     cols = {r[1] for r in con.execute("PRAGMA table_info(embeddings)")}
+    if cols and "txt" in cols and "src" not in cols:
+        # ADD COLUMN, deliberately NOT the rebuild below. The content-hash
+        # migration had to drop every row because there was no way to recover
+        # which text produced a stored vector. Provenance is a different case:
+        # it is simply unknown for old rows and knowable for new ones, and
+        # blank is an honest answer. Rebuilding here would re-embed the whole
+        # archive to acquire a label.
+        con.execute("ALTER TABLE embeddings ADD COLUMN src TEXT NOT NULL DEFAULT ''")
+        con.commit()
+        log("[embed] added the src column; existing rows keep a blank one")
+        return
     if not cols or "txt" in cols:
         return
     n = con.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0]
@@ -139,16 +151,34 @@ def _sha(text: str) -> str:
 
 
 def _text(m: dict, title: str) -> str:
-    """What we actually embed: the title carries the subject, the abstract the
-    method and findings. Falls back through abstract -> LLM summary -> title."""
-    body = (m.get("abstract") or "").strip() or (m.get("summary") or "").strip()
+    """What we actually embed. See _text_src; this keeps the old call shape."""
+    return _text_src(m, title)[0]
+
+
+def _text_src(m: dict, title: str):
+    """(text, src) -- src names the RICHEST field that went into the vector.
+
+    The title carries the subject, the abstract the method and findings; it
+    falls back abstract -> LLM summary -> title.
+
+    A vector built from a bare title is a far weaker object than one built from
+    a full abstract, and once stored the two are indistinguishable. An index
+    where 40% of rows are title-only would score exactly like one where none
+    are, right until someone wonders why recall is poor and has no way to look.
+    Recording which it was turns coverage quality from an assumption into a
+    query.
+    """
+    abstract = (m.get("abstract") or "").strip()
+    summary = (m.get("summary") or "").strip()
+    src = "abstract" if abstract else ("summary" if summary else "title")
+    body = abstract or summary
     topic = (m.get("topic") or "").strip()
     parts = [title or m.get("title", "")]
     if topic:
         parts.append(topic)
     if body:
         parts.append(body)
-    return " \n".join(p for p in parts if p)[:MAX_CHARS]
+    return " \n".join(p for p in parts if p)[:MAX_CHARS], src
 
 
 def _quantise(vec: list[float]) -> bytes:
@@ -272,7 +302,7 @@ def main() -> None:
         # in Ask's recall set, for a paper nothing will ever show.
         if m.get("retired"):
             continue
-        papers.append((uid, _text(m, title)))
+        papers.append((uid,) + _text_src(m, title))
     log(f"[embed] {len(papers)} papers in archive")
 
     # Cached on the TEXT, not just the uid. tools/fill_abstracts.py backfills
@@ -281,7 +311,7 @@ def main() -> None:
     # forever, invisibly, because nothing ever notices the input changed.
     cached = {(r[0], r[1]) for r in con.execute(
         "SELECT uid, txt FROM embeddings WHERE model=? AND dim=?", (MODEL, DIM))}
-    todo = [(u, t) for u, t in papers
+    todo = [(u, t, sr) for u, t, sr in papers
             if (u, _sha(t)) not in cached and t.strip()]
     log(f"[embed] {len(cached)} cached, {len(todo)} to embed ({MODEL} @ {DIM}d)")
 
@@ -293,12 +323,12 @@ def main() -> None:
     try:
         for i in range(0, len(todo), BATCH):
             chunk = todo[i:i + BATCH]
-            vecs = _embed_batch([t for _, t in chunk], key)
+            vecs = _embed_batch([t for _, t, _ in chunk], key)
             con.executemany(
-                "INSERT OR REPLACE INTO embeddings (uid, model, dim, txt, vec) "
-                "VALUES (?,?,?,?,?)",
-                [(u, MODEL, DIM, _sha(t), _quantise(v))
-                 for (u, t), v in zip(chunk, vecs)],
+                "INSERT OR REPLACE INTO embeddings "
+                "(uid, model, dim, txt, src, vec) VALUES (?,?,?,?,?,?)",
+                [(u, MODEL, DIM, _sha(t), sr, _quantise(v))
+                 for (u, t, sr), v in zip(chunk, vecs)],
             )
             con.commit()
             done = min(i + BATCH, len(todo))
@@ -314,7 +344,7 @@ def main() -> None:
     have = dict(con.execute(
         "SELECT uid, vec FROM embeddings WHERE model=? AND dim=?", (MODEL, DIM)))
     uids, blob = [], bytearray()
-    for uid, _ in papers:
+    for uid, _, _ in papers:
         v = have.get(uid)
         if v and len(v) == DIM:
             uids.append(uid)
@@ -349,10 +379,23 @@ def main() -> None:
             log("[embed] no embedding API key is set, which is usually the cause.")
         sys.exit(1)
 
+    # BUILD STAMP. abs/N.json shards are keyed on ROW INDEX, so a browser
+    # holding a cached shard against a freshly built manifest reads a different
+    # paper's abstract straight into the Ask prompt -- silently, with no error
+    # and a confident answer about a paper nobody cited. Ascending row order
+    # stops that skew from being CREATED; this lets a client DETECT skew that
+    # already reached it. Different jobs, both needed.
+    #
+    # Hashed from the uid list rather than stamped with a time, so it changes
+    # exactly when row assignment changes and not once per run. A timestamp
+    # would invalidate every cached shard on every build, which is the cost the
+    # append-only ordering exists to avoid.
+    build = hashlib.sha1("\n".join(uids).encode("utf-8")).hexdigest()[:12]
+
     (docs / "vec.bin").write_bytes(bytes(blob))
     (docs / "vec.json").write_text(json.dumps(
         {"model": MODEL, "dim": DIM, "n": len(uids), "shard": SHARD,
-         "uids": uids}), encoding="utf-8")
+         "build": build, "uids": uids}), encoding="utf-8")
 
     # Full abstracts, sharded to match the vector ROW ORDER. Ask needs the real
     # abstract (median ~1.4k chars) for the handful of papers it finally reads,
@@ -380,11 +423,21 @@ def main() -> None:
                 n_abs += 1
             block[str(start + off)] = text[:6000]     # cap pathological outliers
         (absdir / f"{start // SHARD}.json").write_text(
-            json.dumps(block), encoding="utf-8")
+            json.dumps({"_build": build, "rows": block}), encoding="utf-8")
     log(f"[embed] wrote {len(uids) // SHARD + 1} abstract shards "
         f"({n_abs} papers have full text)")
     log(f"[embed] wrote docs/vec.bin ({len(blob) / 1e6:.2f} MB, "
-        f"{len(uids)}/{len(papers)} papers = {pct:.0f}% coverage)")
+        f"{len(uids)}/{len(papers)} papers = {pct:.0f}% coverage, build {build})")
+    # Coverage QUALITY, not just quantity: a title-only vector and one built
+    # from a full abstract count the same in the percentage above and are not
+    # remotely the same object.
+    by_src = dict(con.execute(
+        "SELECT COALESCE(NULLIF(src, ''), 'unrecorded'), COUNT(*) "
+        "FROM embeddings WHERE model=? AND dim=? GROUP BY 1 ORDER BY 2 DESC",
+        (MODEL, DIM)))
+    if by_src:
+        log("[embed] vector provenance: "
+            + ", ".join(f"{k} {v:,}" for k, v in by_src.items()))
 
 
 if __name__ == "__main__":

@@ -204,7 +204,13 @@ def _rescore(cands, terms, variant):
             c["rank"] = (C["W_SIM"] * s + C["W_KW"] * _kw_of(c["it"], terms)
                          + C["W_QUALITY"] * ask_quality(c["it"])
                          + min(0.25, c["mass"] * C["GRAPH_W"]))
-    elif variant == "rrf":
+    elif variant.startswith("rrf"):
+        # K controls how flat the fusion is. At K=60 the gap between rank 0 and
+        # rank 1 is 1/60 - 1/61, which is almost nothing, so the top of the
+        # list is decided by near-ties and MRR collapses even while hit@20
+        # improves. Smaller K sharpens the head. Which value is right is an
+        # empirical question about this corpus, so it is a variant.
+        k = float(variant[3:]) if variant[3:] else RRF_K
         rs = _ranks_by(cands, lambda i: -cands[i]["sim"])
         rk = _ranks_by(cands, lambda i: -_kw_of(cands[i]["it"], terms))
         rq = _ranks_by(cands, lambda i: -ask_quality(cands[i]["it"]))
@@ -214,15 +220,15 @@ def _rescore(cands, terms, variant):
             # space an additive constant is not comparable to 1/(k+rank), and
             # bolting one on would silently make the graph either inert or
             # overwhelming depending on K.
-            c["rank"] = (1.0 / (RRF_K + rs[i]) + 1.0 / (RRF_K + rk[i])
-                         + 1.0 / (RRF_K + rq[i])
-                         + (1.0 / (RRF_K + rm[i]) if c["mass"] > 0 else 0.0))
+            c["rank"] = (1.0 / (k + rs[i]) + 1.0 / (k + rk[i])
+                         + 1.0 / (k + rq[i])
+                         + (1.0 / (k + rm[i]) if c["mass"] > 0 else 0.0))
     else:
         raise SystemExit("[eval] unknown variant %r" % variant)
     cands.sort(key=lambda c: -c["rank"])
 
 
-VARIANTS = ("current", "minmax", "rrf", "sim_only")
+VARIANTS = ("current", "minmax", "rrf", "rrf20", "rrf5", "sim_only")
 
 
 # ---------------------------------------------------------------- the index
