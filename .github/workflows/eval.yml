@@ -1,0 +1,103 @@
+name: Retrieval Eval
+
+# Measures whether Ask actually finds the paper that answers a question, against
+# eval/golden.json -- 30 questions whose answers are known and were checked
+# against the archive by hand.
+#
+# WHY THIS RUNS IN CI AND NOT ON SOMEONE'S LAPTOP
+# The three inputs it needs -- state.db, an embedding key, and a built index --
+# all live here. state.db is in R2, the key is a secret, and docs/ is gitignored
+# and rebuilt per run. So a local run is possible only for whoever holds all
+# three, which is nobody by design.
+#
+# WHY IT TOUCHES NOTHING
+# It pulls state.db and never pushes: embed.py writes vectors to the runner's
+# copy, and that copy is thrown away. The state-db concurrency group is
+# deliberately NOT used -- this job is a reader, and taking the writers' lock
+# would let a measurement queue behind a six-hour rescore, or cancel one.
+#
+# WHAT A FAILURE MEANS
+# --check fails the job when recall@20, hit@10 or MRR falls more than one
+# question's worth below eval/baseline.json. That is a real regression in what
+# the reader can find, and it is the only automated signal for it: every other
+# check in this repo verifies that something ran, not that it found anything.
+
+on:
+  workflow_dispatch:
+    inputs:
+      write_baseline:
+        description: "Record this run as the new baseline (do this deliberately)"
+        type: boolean
+        default: false
+  push:
+    branches: [master]
+    # Only the files that can actually change what retrieval returns. The
+    # ranking, the index, the graph, and the eval itself.
+    paths:
+      - "portal.py"
+      - "tools/embed.py"
+      - "tools/graph.py"
+      - "eval/**"
+      - ".github/workflows/eval.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: retrieval-eval
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      # The arithmetic behind the number, on a synthetic corpus where the right
+      # answer is known by construction. Runs FIRST and needs no key, no R2 and
+      # no index: if the harness is broken there is no point measuring with it.
+      - name: Self-test the harness
+        run: python eval/test_run.py
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      # Same path a deploy takes, so the eval measures what a visitor would get
+      # rather than something assembled specially for it. --skip-map because the
+      # knowledge map is not part of retrieval.
+      - name: Build the index and graph
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python tools/prepare_deploy.py --skip-map
+
+      - name: Measure
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python eval/run.py ${{ github.event.inputs.write_baseline == 'true' && '--write-baseline' || '--check' }}
+
+      # eval/qvec.json caches the 30 question vectors. CI cannot commit it
+      # (contents: read, deliberately), so it is uploaded instead: download it
+      # and commit it once and later runs stop re-embedding. Thirty short
+      # strings costs a fraction of a cent, so this is tidiness, not economy.
+      - name: Upload query-vector cache and baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-artifacts
+          path: |
+            eval/qvec.json
+            eval/baseline.json
+          if-no-files-found: ignore
+          retention-days: 30
