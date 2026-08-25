@@ -468,6 +468,14 @@ table.cot td.p{width:26%}
 .cdet .cm{font-weight:400;color:var(--faint);font-size:10.5px}
 .cbody{padding:2px 13px 10px;font-size:13.5px;line-height:1.6}
 .cbody p{margin:0 0 8px}
+.qok{font-family:var(--sans);font-size:11px;color:var(--strong);margin:8px 0 0;
+  letter-spacing:.01em}
+.qbad{font-family:var(--sans);font-size:12px;color:var(--medium);margin:10px 0 0;
+  border-left:2px solid var(--medium);background:var(--line2);
+  padding:8px 11px;border-radius:0 4px 4px 0;line-height:1.5}
+.qbad-q{font-family:var(--serif);font-size:12.5px;color:var(--ink);
+  margin:6px 0 0;padding-left:8px;border-left:1px solid var(--line)}
+.qbad-n{margin-top:7px;color:var(--muted);font-size:11px}
 .bywhom{font-family:var(--sans);font-size:10.5px;color:var(--faint);
   margin:6px 0 0;letter-spacing:.02em}
 .askmode{display:flex;gap:0;margin:0 0 7px;align-self:flex-start;
@@ -1688,7 +1696,8 @@ function saveChats(){
     localStorage.setItem(CHATS_KEY,JSON.stringify(CHATS.slice(0,CHAT_MAX).map(c=>({
       id:c.id,title:c.title,ts:c.ts,
       turns:(c.turns||[]).filter(t=>t.state==='done').slice(-CHAT_TURNS).map(t=>({
-        q:t.q,answer:t.answer,model:t.model,council:t.council,councilSolo:t.councilSolo,
+        q:t.q,answer:t.answer,model:t.model,quotes:t.quotes,
+        council:t.council,councilSolo:t.councilSolo,
         state:'done',ts:t.ts,cached:t.cached,
         sources:(t.sources||[]).map(x=>({title:x.title,url:x.url,authors:x.authors,
           date:x.date,seen:x.seen,source:x.source,score:x.score,uid:x.uid,
@@ -1976,6 +1985,71 @@ function typesetMath(el){
   }catch(e){}
 }
 const _mdEsc=s=>esc(s);
+// ---- Quote verification --------------------------------------------------
+// The depth contract REQUIRES a verbatim quote next to any specification-level
+// claim. Nothing checked it. QuantMind's summariser refuses a finding whose
+// quote is not a literal substring of its chunk -- an assertion in code, not a
+// request in prose -- and that single difference is why its citations can be
+// trusted and ours could only be hoped over.
+//
+// We still hold every passage we sent, so this is a substring test, not new
+// infrastructure. It FLAGS rather than rejects: the first pass also catches
+// legitimate near-misses -- smart quotes, ellipsis, a collapsed line break --
+// and normalising those is the actual work. Throwing away a good answer over
+// punctuation would be a worse failure than the one being fixed.
+//
+// Normalisation is deliberately generous, because a false alarm trains you to
+// ignore the flag, which is the only way this feature can truly fail.
+function _qnorm(t){
+  return String(t||'')
+    .replace(/[\u2018\u2019\u201b\u2032]/g,"'")     // curly singles -> '
+    .replace(/[\u201c\u201d\u201f\u2033]/g,'"')     // curly doubles -> "
+    .replace(/[\u2010-\u2015\u2212]/g,'-')          // dashes/minus -> -
+    .replace(/[\u2026]/g,'...')
+    .replace(/\\s+/g,' ')
+    .trim().toLowerCase();
+}
+// Quoted spans in the answer. Only doubles: single quotes are apostrophes far
+// more often than citations, and a check that fires on "don't" is noise.
+// Short spans are skipped -- a quoted term of art is not a sourced claim.
+const _QMIN=25;
+function _quotesIn(text){
+  const out=[];
+  const rx=/[\u201c"]([^\u201c\u201d"]{25,400})[\u201d"]/g;
+  let m;
+  while((m=rx.exec(String(text||''))))out.push(m[1]);
+  return out;
+}
+// A quote verifies if it appears in ANY supplied source, not only the one it
+// cites. Tying it to the bracketed number would flag correct quotes whenever
+// the model cited the right passage under a neighbouring index, and the claim
+// being tested here is "did this text come from the sources at all".
+function verifyQuotes(answer,ctx){
+  const quotes=_quotesIn(answer);
+  if(!quotes.length)return null;
+  const hay=(ctx||[]).map(p=>_qnorm(p.summary||'')).join(' \u2022 ');
+  const missing=quotes.filter(q=>{
+    const n=_qnorm(q);
+    if(n.length<_QMIN)return false;
+    if(hay.includes(n))return false;
+    // A quote elided mid-sentence ("... and therefore") is still faithful to
+    // its source; check the ends independently before calling it unsupported.
+    const parts=n.split('...').map(x=>x.trim()).filter(x=>x.length>=_QMIN);
+    return !(parts.length>1&&parts.every(x=>hay.includes(x)));
+  });
+  return {n:quotes.length,missing:missing};
+}
+function quoteBadge(v){
+  if(!v||!v.n)return '';
+  if(!v.missing.length)
+    return `<div class="qok" title="Every quoted passage was found verbatim in the sources supplied to the model">`
+      +`\u2713 ${v.n} quote${v.n>1?'s':''} verified against the sources</div>`;
+  const list=v.missing.slice(0,3).map(q=>
+    `<div class="qbad-q">\u201c${esc(q.slice(0,160))}${q.length>160?'\u2026':''}\u201d</div>`).join('');
+  return `<div class="qbad" title="These strings were not found in any source sent to the model">`
+    +`\u26a0 ${v.missing.length} of ${v.n} quoted passages could not be found in the sources`
+    +list+`<div class="qbad-n">Treat the claims resting on these as unsupported until you have checked the paper.</div></div>`;
+}
 function md(t,ti){
   const lines=String(t||'').split('\\n');let h='',ul=false;
   for(let raw of lines){
@@ -2200,6 +2274,7 @@ async function doAsk(q,force){
         '\\n\\nCHALLENGE - IMPLEMENTATION:\\n\\n'+im.text,3);
       turn.council={proposal:prop,evidence:ev,implementation:im,reconciled:rec};
       turn.answer=rec.text;turn.model=rec.model;
+      turn.quotes=verifyQuotes(rec.text,ctxAll);
       // If every role landed on the same model the exchange is one model
       // talking to itself. Say so rather than let the format imply an
       // independence that was not there.
@@ -2217,6 +2292,7 @@ async function doAsk(q,force){
     const aj=await ar.json();
     if(!ar.ok)throw new Error(aj.error||'answer failed');
     turn.answer=aj.answer;turn.model=aj.model||'';turn.state='done';
+    turn.quotes=verifyQuotes(aj.answer,ctxAll);
     // A four-provider chain that degrades silently is one nobody can
     // reason about: the only symptom of falling back to a much smaller
     // model is that the writing gets worse. Record what actually answered.
@@ -2336,6 +2412,7 @@ function renderAsk(notice){
     else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' sources'+(t.viaGraph?' ('+t.viaGraph+' via the citation/similarity graph)':'')+((t.passages||[]).length?' ('+t.passages.length+' full-text passages)':'')+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' \u00b7 '+t.reused+' from memory':'')+'\u2026</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
     else body='<div class="answer">'+md(t.answer,ti)+'</div>'
+      +quoteBadge(t.quotes)
       +councilBlock(t,ti)
       +(t.model?'<div class="bywhom">answered by '+esc(t.model)+'</div>':'');
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
