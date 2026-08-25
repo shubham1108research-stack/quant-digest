@@ -120,6 +120,29 @@ def _sleeve_block() -> str:
     )
 
 
+def _tag_block() -> str:
+    """The CLOSED tag vocabulary, listed so the model can only pick from it.
+
+    Canonical names only, not their surface forms: the surfaces exist for the
+    deterministic matcher in tools/tags.py, and pasting 330 of them here would
+    spend context teaching a model to do approximately what a regex already
+    does exactly.
+
+    The model is the FALLBACK here. tools/tags.py runs first, free and
+    repeatable, and only the papers it leaves untagged reach this -- so the
+    instruction is to return few tags or none, never to fill the field.
+    """
+    names = ", ".join(sorted(config.TAGS))
+    return (
+        "SUBJECT TAGS -- what the paper is ABOUT, finer than the sleeves "
+        "above. Choose ONLY from this list, copying the wording exactly. "
+        "Anything not on the list is discarded, so inventing one loses the tag "
+        "rather than adding it. Return [] when none genuinely apply: an empty "
+        "list is a correct answer, and a wrong tag is worse than a missing one "
+        f"because a tag is a filter. At most {config.TAGS_MAX}.\n" + names
+    )
+
+
 _SYSTEM = (
     "You are a research analyst EXTRACTING anchored rubric judgments for a "
     "quant practitioner's digest -- you classify against fixed anchors, you do "
@@ -243,7 +266,8 @@ _SYSTEM = (
     "Also write a crisp one-sentence summary (<= 30 words) of what the paper "
     "does and why it matters to a quant -- concrete about the method, finding, "
     "or asset class; not vague praise.\n\n"
-    + "\n\n" + _sleeve_block() + "\n\n"
+    + "\n\n" + _sleeve_block()
+    + "\n\n" + _tag_block() + "\n\n"
     "Return ONLY a JSON array, one object per item, no prose:\n"
     '[{"i": <int>, '
     '"relevance": {"level": 0-3, "why": "..."}, '
@@ -256,6 +280,7 @@ _SYSTEM = (
     '"isolated_backtest_only": bool_or_null, "no_costs_mentioned": bool_or_null, '
     '"extreme_claimed_sharpe": bool_or_null, "weak_stat_support": bool_or_null, '
     '"sleeves": ["<sleeve key>", ...], '
+    '"tags": ["<tag>", ...], '
     '"desk_fit": {"level": 0-3, "why": "..."}, '
     '"topic": "<topic>", "summary": "<one sentence>"}]'
 )
@@ -381,6 +406,24 @@ def _parse(text: str) -> dict[int, dict]:
                     sleeves.append(k)
             sleeves = [k for k in sleeves if k != "other"][:config.SLEEVES_MAX] \
                 or ["other"]                   # 'other' only when alone
+            # Tags are a CLOSED vocabulary, and this is where that is enforced.
+            # tools/tags.py has already matched the archive deterministically
+            # and for free; the model is asked only for what the matcher
+            # missed. Anything it returns outside config.TAGS is DROPPED, not
+            # kept: an invented tag is a filter nobody can find and a
+            # vocabulary nobody curated, which is exactly the open-keyword
+            # outcome the closed list exists to avoid.
+            raw_t = o.get("tags") or []
+            if isinstance(raw_t, str):
+                raw_t = [raw_t]
+            _known = {t.lower(): t for t in config.TAGS}
+            tags, seen_t = [], set()
+            for k in raw_t:
+                k = _known.get(str(k).strip().lower())
+                if k and k not in seen_t:
+                    seen_t.add(k)
+                    tags.append(k)
+            tags = tags[:config.TAGS_MAX]
             out[i] = {
                 "relevance": rel,
                 "relevance_category": rel_cat,
@@ -394,6 +437,7 @@ def _parse(text: str) -> dict[int, dict]:
                 "extreme_claimed_sharpe": _bool_or_null(o.get("extreme_claimed_sharpe")),
                 "weak_stat_support": _bool_or_null(o.get("weak_stat_support")),
                 "sleeves": sleeves,
+                "tags": tags,
                 "desk_fit": _axis(o, "desk_fit", fallback_level=0),
                 "topic": topic,
                 "summary": str(o.get("summary") or o.get("why", "")).strip()[:280],
@@ -905,6 +949,11 @@ def _apply_score(it: dict, s: dict) -> None:
     # the SECOND classification: which part of the desk's book this belongs to,
     # and how usable it is there -- judged separately from research quality
     it["sleeves"] = s.get("sleeves") or ["other"]
+    # Only fill from the model where the deterministic matcher found nothing:
+    # tools/tags.py is free and re-runnable, so its answer is the better one
+    # wherever it has an answer at all.
+    if not it.get("tags"):
+        it["tags"] = s.get("tags") or []
     it["desk_fit"] = (s.get("desk_fit") or {}).get("level", 0)
     it["summary"] = s["summary"]
     rel_post = relevance_posterior(s["topic"], s["relevance_category"])
