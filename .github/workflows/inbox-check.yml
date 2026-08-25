@@ -40,3 +40,36 @@ jobs:
           # collector never reads.
           FEED_IMAP_FOLDER: FEN,QuantDigest
         run: python tools/inbox_check.py
+
+      - run: pip install -r requirements.txt
+
+      # "The mailbox is reachable" and "the mail turns into papers" are
+      # different claims, and only the second one matters. sources.inbox()
+      # guards its only state write on `con is not None`, so calling it without
+      # a connection parses the mail and writes nothing -- no dedup marks, no
+      # rows, nothing for the real run to trip over afterwards.
+      - name: Parse the mail into papers (read-only, no state written)
+        env:
+          FEED_IMAP_HOST: ${{ secrets.FEED_IMAP_HOST }}
+          FEED_IMAP_USER: ${{ secrets.FEED_IMAP_USER }}
+          FEED_IMAP_PASS: ${{ secrets.FEED_IMAP_PASS }}
+          FEED_IMAP_FOLDER: FEN,QuantDigest
+        run: |
+          python - <<'EOF'
+          import collections
+          import sources
+          items = sources.inbox(print)          # no con -> nothing persisted
+          print("")
+          print("papers extracted : %d" % len(items))
+          by = collections.Counter(i.get("source", "?") for i in items)
+          for k, n in by.most_common(10):
+              print("   %-34s %d" % (k, n))
+          withabs = sum(1 for i in items if (i.get("abstract") or "").strip())
+          print("with an abstract : %d/%d" % (withabs, len(items)))
+          unver = sum(1 for i in items if i.get("unverified"))
+          if unver:
+              print("unverified       : %d (link the source site would not confirm)" % unver)
+          print("")
+          for i in items[:8]:
+              print("   %s" % (i.get("title") or "")[:76])
+          EOF
