@@ -1079,6 +1079,15 @@ INBOX_MAX = 60                      # messages examined per run
 # there is no reason to lose it. The id group stays anchored to
 # "abstract" so the author=<id> links in the same mail cannot match.
 _SSRN_ABS = re.compile(r"abstract(?:[_-]?id)?=(\d{5,9})", re.I)
+# One paper per block, blocks fenced by a rule of underscores.
+_SSRN_ENTRY_SEP = re.compile(r"^_{6,}\s*$", re.M)
+# Title is the first double-quoted run in the block and may wrap across lines.
+_SSRN_TITLE = re.compile(r'"([^"]{6,400})"', re.S)
+# One Contact: line per author; the affiliation lines under it are indented
+# and deliberately not captured.
+_SSRN_CONTACT = re.compile(r"^\s*Contact:\s*(.+?)\s*$", re.M)
+# ABSTRACT: runs to the end of the block.
+_SSRN_ABSTRACT = re.compile(r"^\s*ABSTRACT:\s*(.*)$", re.M | re.S)
 _SEEN_KEY = "inbox_seen_ids"
 
 
@@ -1100,50 +1109,103 @@ def _msg_text(msg) -> str:
 
 
 def _parse_ssrn_ejournal(body: str, sender: str) -> list[dict]:
-    """SSRN eJournal mailings: numbered entries, each ending in an abstract link.
+    """SSRN eJournal mailings -> one record per paper.
 
     The abstract id is the point. It yields 10.2139/ssrn.<id>, which is exactly
     the DOI the Crossref path already assigns -- so store.make_uid produces the
     SAME uid and cross-run dedup merges the two records instead of creating a
-    duplicate. The mail supplies the abstract that Crossref often lacks.
+    duplicate. The mail supplies the abstract that Crossref sometimes lacks.
+
+    TWO LAYOUTS, because SSRN changed theirs and old mail is still in the
+    mailbox. The current one is a labelled block per paper:
+
+        ______________________________
+        "Title, possibly wrapped
+        across two lines"
+          Contact:  AUTHOR NAME
+                      Their University
+            Email:  someone@example.edu
+        Auth-Page:  https://ssrn.com/author=6673635?dgcid=...
+        Full Text:  https://ssrn.com/abstract=6262319?dgcid=...
+        ABSTRACT: The abstract, wrapped over many lines.
+
+    The old one was `<n>. Title / by Authors / <url> / Abstract`.
+
+    Getting this wrong is not a parse error, it is a plausible-looking record:
+    the previous heuristic ran against the new layout and produced 60 papers
+    whose titles were "_____ T A B L E", the table-of-contents rule. So the
+    labelled fields are read as fields -- a quoted title, Contact: lines,
+    ABSTRACT: -- rather than inferred from position, and an entry that does not
+    yield a title is DROPPED rather than filled with whatever was nearby.
     """
-    out = []
-    # split on the abstract links; each chunk before one describes that paper
-    chunks = re.split(r"(?=\d+\.\s)", body)
-    for chunk in chunks:
-        m = _SSRN_ABS.search(chunk)
+    # The two layouts are delimited differently: current mail fences each paper
+    # with a rule of underscores, legacy mail numbers them "1. ", "2. ". Split
+    # on the rules first, then subdivide any chunk that carries no labelled
+    # fields -- otherwise a legacy body, which has no rules at all, arrives as
+    # ONE chunk and only its first paper is ever seen.
+    entries = []
+    for chunk in _SSRN_ENTRY_SEP.split(body):
+        if "Full Text:" in chunk or "ABSTRACT:" in chunk:
+            entries.append(chunk)
+        else:
+            entries.extend(re.split(r"(?=\d+\.\s)", chunk))
+    out, seen_ids = [], set()
+    for entry in entries:
+        m = _SSRN_ABS.search(entry)
         if not m:
             continue
-        if len(_clean(chunk)) < 60:
-            continue
-        # Split on the URL, not on whitespace. The entry is always
-        #   <n>. Title \n by Authors \n <abstract url> \n Abstract
-        # and _clean collapses the newlines, so a whitespace-based boundary
-        # runs the author list into the URL and truncates it at the first
-        # multi-space inside it.
-        url_start = chunk.rfind("http", 0, m.start())
-        head = _clean(chunk[:url_start if url_start > 0 else m.start()])
-        head = re.sub(r"^\d+\.\s*", "", head)
-        title, authors = head, ""
-        am = re.search(r"(?:^|\s)by\s+(.+)$", head)
-        if am:
-            title = head[:am.start()].strip(" .-,")
-            authors = am.group(1).strip()
-        abstract = _clean(re.sub(r"https?://\S+", " ", chunk[m.end():]))
         sid = m.group(1)
+        if sid in seen_ids:            # the table of contents links them too
+            continue
+
+        title, authors, abstract = "", "", ""
+        if "ABSTRACT:" in entry or "Full Text:" in entry:
+            # current layout. Title is the first quoted run; it may wrap, so
+            # match across newlines and collapse afterwards.
+            tm = _SSRN_TITLE.search(entry)
+            if tm:
+                title = _clean(tm.group(1))
+            # every Contact: line is an author; affiliation sits on the
+            # following indented lines and is deliberately not collected.
+            authors = ", ".join(
+                _clean(a) for a in _SSRN_CONTACT.findall(entry) if a.strip())
+            am = _SSRN_ABSTRACT.search(entry)
+            if am:
+                abstract = _clean(am.group(1))
+        else:
+            # legacy layout: "<n>. Title \n by Authors \n <url> \n Abstract".
+            # Split on the URL, not on whitespace: _clean collapses newlines,
+            # so a whitespace boundary runs the author list into the URL.
+            url_start = entry.rfind("http", 0, m.start())
+            head = _clean(entry[:url_start if url_start > 0 else m.start()])
+            head = re.sub(r"^\d+\.\s*", "", head)
+            title = head
+            am = re.search(r"(?:^|\s)by\s+(.+)$", head)
+            if am:
+                title = head[:am.start()].strip(" .-,")
+                authors = am.group(1).strip()
+            abstract = _clean(re.sub(r"https?://\S+", " ", entry[m.end():]))
+
+        # A record without a real title is worse than no record: it reaches the
+        # archive, gets scored, and shows on the page as a paper called
+        # "_____ T A B L E". Nothing downstream can tell it apart from a
+        # genuine one, so it stops here.
+        if not title or len(title) < 8 or title.strip("_ ").upper().startswith("T A B L E"):
+            continue
+        seen_ids.add(sid)
         out.append({
             "title": title[:300],
             "authors": authors[:300],
             "abstract": abstract[:6000],
-            "url": f"https://papers.ssrn.com/sol3/papers.cfm?abstract_id={sid}",
+            # canonical modern form; the old sol3 URL still resolves but this
+            # is what SSRN itself now publishes and what Crossref records.
+            "url": f"https://ssrn.com/abstract={sid}",
             "date": "",
             "doi": f"10.2139/ssrn.{sid}",
             "source": f"inbox:{sender}",
             "section": 3,
         })
     return out
-
-
 def _parse_generic(body: str, subject: str, sender: str) -> list[dict]:
     """Anything else: article links with their anchor text.
 

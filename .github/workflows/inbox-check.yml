@@ -43,6 +43,13 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      # Fixture tests for the mail parser. They run BEFORE the live
+      # probe because both of this parser's failures produced
+      # well-formed output -- zero papers, then sixty papers titled
+      # "_____ T A B L E" -- and a live run reports a count either way.
+      - name: Test the SSRN parser against fixtures
+        run: python tools/test_ssrn_parse.py
+
       # "The mailbox is reachable" and "the mail turns into papers" are
       # different claims, and only the second one matters. sources.inbox()
       # guards its only state write on `con is not None`, so calling it without
