@@ -58,8 +58,9 @@ jobs:
       - name: Score the backlog and label sleeves
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python tools/rescore.py --limit ${{ github.event.inputs.limit || 0 }} ${{ github.event.inputs.force == 'true' && '--force' || '' }} ${{ github.event.inputs.clear_stamps == 'true' && '--clear-stamps' || '' }}
 
       # A8: rescore DELETEs embeddings to invalidate them (rescore.py:140).

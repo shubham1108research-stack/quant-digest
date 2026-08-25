@@ -19,21 +19,30 @@ doesn't say -- absence of information is never treated as a red flag):
   weak_stat_support
 
 Two passes: (1) rank() TRIAGES every item with the first provider in the chain
-that responds (OpenRouter/DeepSeek -> Mistral -> Groq -> OpenAI). DeepSeek leads
-because a blind bake-off found every candidate refused the fabrication trap
-correctly, which left cost and concision to decide; the free tiers behind it
-rescue anything it drops. (2) consensus() re-scores just the promising SHORTLIST
-with the voting providers together and combines their votes, flagging
+that responds (OpenAI -> OpenRouter/DeepSeek). (2) consensus() re-scores just
+the promising SHORTLIST with both providers and combines their votes, flagging
 disagreement as provisional. Entirely optional: dormant unless a provider key
 is set, and every failure path degrades to the plain no-LLM feed rather than
 breaking the run.
 
-Keys (any/all, free tiers):
-  GEMINI_API_KEY (or GOOGLE_API_KEY)  -- https://aistudio.google.com/apikey
-  GROQ_API_KEY                        -- https://console.groq.com/keys
-  MISTRAL_API_KEY                     -- https://console.mistral.ai/api-keys
-  OPENROUTER_API_KEY                  -- https://openrouter.ai/keys
-  OPENAI_API_KEY                      -- https://platform.openai.com/api-keys
+The free tiers (Gemini, Mistral, Groq) were removed deliberately. They rescued
+items cheaply, but they also answered SILENTLY in place of the intended model:
+nothing in a scored item recorded which provider judged it, so a 22B model's
+verdict was indistinguishable downstream from a frontier one's. Their _rank_*
+functions are still here -- restoring one is a single line in _PROVIDERS.
+
+Keys:
+  OPENAI_API_KEY      -- https://platform.openai.com/api-keys   (primary, paid)
+  OPENROUTER_API_KEY  -- https://openrouter.ai/keys             (cheaper, secondary)
+
+Cost is bounded by TWO budgets, and both matter: LLM_RUN_BUDGET_S caps wall
+clock, LLM_RUN_BUDGET_TOKENS caps spend. Time stopped being a cost proxy the
+moment a paid provider led the chain -- a faster provider burns money faster
+while looking cheaper on the clock.
+
+NOTE: MISTRAL_API_KEY is still used by tools/embed.py as the EMBEDDING
+fallback. It is not a chat provider here any more, but removing the key from
+the workflows would still break retrieval.
 """
 
 import json
@@ -582,9 +591,17 @@ def _rank_openai(batch: list[dict], log) -> dict | None:
 # DeepSeek prices the whole bulk pass costs cents. Mistral and Groq follow as
 # free-tier rescue for anything it drops; OpenAI trails and is currently dead
 # (no credits) but costs nothing to leave in the chain.
-_PROVIDERS = [("openrouter", _rank_openrouter),
-              ("mistral", _rank_mistral), ("groq", _rank_groq),
-              ("openai", _rank_openai)]
+# OpenAI and OpenRouter only. The free tiers (Gemini, Mistral, Groq) are gone
+# deliberately: they rescued items cheaply, but they also answered SILENTLY in
+# place of the intended model, and a 22B model's judgement was indistinguishable
+# downstream from a frontier one's. That is what a chain with no attribution
+# buys you. Their _rank_* functions stay below -- restoring a provider is one
+# line here, and deleting working code to make a point is how you pay to write
+# it twice.
+#
+# OpenAI leads because it is the one with credit; OpenRouter has been answering
+# 402 and costs a fraction per token once it is funded again.
+_PROVIDERS = [("openai", _rank_openai), ("openrouter", _rank_openrouter)]
 # Free tiers only -- used for the consensus multi-vote so the PAID provider
 # (OpenAI) isn't billed on every shortlist item. OpenAI stays in _PROVIDERS as
 # the last-resort TRIAGE rescuer (free-first, so you only pay for the few items
@@ -594,33 +611,30 @@ _PROVIDERS = [("openrouter", _rank_openrouter),
 # ~250-item shortlist runs to a few cents, so excluding it would cost accuracy
 # to save nothing. OpenAI stays out: it is the one provider priced high enough
 # for per-item voting to matter.
-_VOTE_PROVIDERS = [p for p in _PROVIDERS if p[0] != "openai"]
+# Consensus needs two INDEPENDENT voters. Excluding the paid provider made
+# sense when three free ones remained; in a two-provider chain it leaves
+# exactly one, which is not a vote, it is a re-score wearing a rosette.
+# CONSENSUS_MAX_ITEMS is what bounds the bill now.
+_VOTE_PROVIDERS = list(_PROVIDERS)
+
+
+_KEY_ENVS = ("OPENAI_API_KEY", "OPENROUTER_API_KEY")
 
 
 def have_key() -> bool:
-    return bool(os.environ.get("GROQ_API_KEY")
-                or os.environ.get("MISTRAL_API_KEY")
-                or os.environ.get("OPENROUTER_API_KEY")
-                or os.environ.get("OPENAI_API_KEY"))
+    return any(os.environ.get(k) for k in _KEY_ENVS)
 
 
 def _n_configured() -> int:
     """How many distinct providers have a key set -- consensus needs >= 2 to be
     worth the extra calls (a single vote is just a re-score of the triage)."""
-    return sum(bool(k) for k in (
-        os.environ.get("GROQ_API_KEY"),
-        os.environ.get("MISTRAL_API_KEY"),
-        os.environ.get("OPENROUTER_API_KEY"),
-        os.environ.get("OPENAI_API_KEY")))
+    return sum(bool(os.environ.get(k)) for k in _KEY_ENVS)
 
 
 def _n_vote_configured() -> int:
-    """Providers eligible to vote in consensus with a key set -- the >=2 guard
-    counts these, since a single vote is just a re-score of the triage."""
-    return sum(bool(k) for k in (
-        os.environ.get("GROQ_API_KEY"),
-        os.environ.get("MISTRAL_API_KEY"),
-        os.environ.get("OPENROUTER_API_KEY")))
+    """Providers eligible to vote in consensus. Now the same set: with only two
+    providers left, holding one back leaves a single voter."""
+    return _n_configured()
 
 
 def _err(e) -> str:
@@ -634,6 +648,29 @@ def _err(e) -> str:
 
 
 _run_deadline: float | None = None      # single wall-clock cap across ALL passes
+# Tokens spent this run, summed across EVERY call in every pass. Per-response
+# accounting would measure nothing useful: one Council answer is four calls and
+# one extraction pass is hundreds, so the only meaningful unit is the run.
+_run_tokens = 0
+_tokens_lock = threading.Lock()
+
+
+def note_usage(usage: dict | None) -> None:
+    """Add one response's token usage to the run total. Tolerates a provider
+    that omits `usage` -- an unreported call is counted as zero rather than
+    crashing the run, which is the right failure direction for a meter."""
+    if not isinstance(usage, dict):
+        return
+    total = usage.get("total_tokens")
+    if total is None:
+        total = (usage.get("prompt_tokens") or 0) + (usage.get("completion_tokens") or 0)
+    global _run_tokens
+    with _tokens_lock:
+        _run_tokens += int(total or 0)
+
+
+def run_tokens() -> int:
+    return _run_tokens
 
 
 def start_run_budget(seconds: float | None = None) -> None:
@@ -649,7 +686,17 @@ def start_run_budget(seconds: float | None = None) -> None:
 
 
 def _run_budget_left() -> bool:
-    return _run_deadline is None or time.monotonic() < _run_deadline
+    """False once EITHER budget is spent -- wall clock or tokens.
+
+    Time alone stopped being a cost proxy the moment a paid provider led the
+    chain: a faster provider burns money faster while looking cheaper on the
+    clock. Tokens are the honest meter, and they are counted rather than priced
+    because a rate table in the repo is one that goes stale and lies.
+    """
+    if _run_deadline is not None and time.monotonic() >= _run_deadline:
+        return False
+    cap = getattr(config, "LLM_RUN_BUDGET_TOKENS", 0)
+    return not (cap and _run_tokens >= cap)
 
 
 def rank(items: list[dict], log, max_batches: int | None = None,
@@ -1010,10 +1057,9 @@ def consensus(items: list[dict], log, max_batches: int | None = None) -> list[di
 
 _CHAT_PROVIDERS = [
     # (name, url, config attr for the model, env var holding the key)
+    # Same two as _PROVIDERS, same order, same reasoning -- see there.
+    ("openai", _OPENAI_URL, "OPENAI_BULK_MODEL", "OPENAI_API_KEY"),
     ("openrouter", _OPENROUTER_URL, "OPENROUTER_MODEL", "OPENROUTER_API_KEY"),
-    ("mistral", _MISTRAL_URL, "MISTRAL_MODEL", "MISTRAL_API_KEY"),
-    ("groq", _GROQ_URL, "GROQ_MODEL", "GROQ_API_KEY"),
-    ("openai", _OPENAI_URL, "OPENAI_MODEL", "OPENAI_API_KEY"),
 ]
 
 
@@ -1061,7 +1107,9 @@ def _chat(url: str, key: str, model: str, system: str, user: str,
             time.sleep(min(wait, 45))
             continue
         r.raise_for_status()
-        return r.json()["choices"][0]["message"]["content"] or ""
+        body = r.json()
+        note_usage(body.get("usage"))
+        return body["choices"][0]["message"]["content"] or ""
     if r is not None and r.status_code == 429:
         raise RateLimited(f"429 after {config.LLM_MAX_RETRIES + 1} attempts")
     if r is not None:

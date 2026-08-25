@@ -77,9 +77,8 @@ jobs:
           # optional -- ranking is dormant if none are set. Triage uses the
           # first that responds (free-first); consensus on the shortlist uses
           # all together. OpenAI is paid (backstops triage; votes on shortlist).
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # subscription mailbox (sources.inbox): publishers who block

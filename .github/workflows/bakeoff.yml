@@ -44,6 +44,7 @@ jobs:
       - name: Run the bake-off
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python tools/bakeoff.py \
             --cases ${{ github.event.inputs.cases || 0 }} \

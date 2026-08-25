@@ -337,10 +337,25 @@ MISTRAL_MODEL = "mistral-small-latest"   # Mistral (fallback if MISTRAL_API_KEY 
 # fifth of the price, and was the most concise. One key fronts every model, so
 # swapping candidates later is a one-line change.
 OPENROUTER_MODEL = "deepseek/deepseek-v3.2"
-# OpenAI (paid; last in triage order so the free providers carry the 1500-item
-# bulk and OpenAI cost only hits the ~250-item consensus shortlist). Reliable,
-# high-quality ensemble vote. Set OPENAI_API_KEY.
-OPENAI_MODEL = "gpt-5.4-mini"
+# OpenAI, now the PRIMARY provider rather than the last resort -- the free
+# tiers are gone. Split by job, because one model everywhere is the wrong
+# shape: synthesis is a handful of calls a day at high value each, while
+# scoring and extraction are thousands of calls producing schema-validated
+# output where a mini model is near-indistinguishable.
+#
+# Both ids verified against GET /v1/models on this account rather than assumed
+# -- an invented id fails at request time and reads like a provider outage.
+OPENAI_ASK_MODEL = "gpt-5.5"        # Ask / Build / Council synthesis
+OPENAI_BULK_MODEL = "gpt-5.4-mini"  # triage, artifact extraction, screening
+# Back-compat: llm.py's provider table reads OPENAI_MODEL, and everything it
+# does is bulk work.
+OPENAI_MODEL = OPENAI_BULK_MODEL
+# Embeddings. Mistral rejects a width request so the index sits at 1024 dims
+# and vec.bin is ~9 MB that every portal visitor downloads; OpenAI honours
+# `dimensions`, which is what makes WANT_DIM=256 in tools/embed.py finally mean
+# something. Changing this re-embeds from scratch: vectors cache on
+# (uid, model, dim), so the two spaces can never mix.
+OPENAI_EMBED_MODEL = "text-embedding-3-small"
 LLM_RANK_BATCH = 40          # items scored per API call
 # Abstract characters sent per item. Was a hardcoded 500, which cut 76.5%
 # of abstracts mid-motivation and threw away 6.9M characters across the
@@ -1058,3 +1073,19 @@ ARTIFACT_SECTION_PRIORITY = (
     "results", "robustness", "limitations", "discussion",
     "conclusion", "introduction",
 )
+
+# ---- Spend cap ------------------------------------------------------
+# The existing budgets (LLM_RANK_BUDGET_S, LLM_RUN_BUDGET_S) are in MINUTES.
+# That was safe while the chain led with free tiers and the worst case was a
+# wasted afternoon -- the re-score that ran 4h28m cost nothing but time. With a
+# paid provider leading, a long run spends the balance instead of the clock,
+# and a FASTER provider spends it faster, which is exactly backwards.
+#
+# Counted in tokens, not dollars, deliberately: prices change per provider and
+# per week, and a rate table in the repo is a rate table that goes stale and
+# lies. Multiply by your own rates when you want a number.
+#
+# Accumulated ACROSS every call in a run, not per call -- one Council answer is
+# four calls and one extraction pass is hundreds, so a per-response check
+# measures nothing.
+LLM_RUN_BUDGET_TOKENS = 2_000_000

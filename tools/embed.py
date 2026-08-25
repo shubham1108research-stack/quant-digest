@@ -36,7 +36,24 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 import scoring  # noqa: E402  (repo root on path above)
 import store    # noqa: E402
 
-MODEL = "mistral-embed"
+# Provider is chosen by which key is present, OpenAI first. It is the primary
+# now for one concrete reason beyond being paid: Mistral rejects a width
+# request, so the index sits at its native 1024 dims and vec.bin is ~9 MB that
+# every portal visitor downloads on every visit. OpenAI honours `dimensions`,
+# which is what finally makes WANT_DIM below mean something -- roughly a
+# quarter the payload for the same recall.
+#
+# Switching model re-embeds from scratch and that is by design: vectors cache
+# on (uid, model, dim), so two vector spaces can never be mixed in one index.
+_PROVIDERS = [
+    # (env var, model, url, name of the width parameter or None if unsupported)
+    ("OPENAI_API_KEY", "text-embedding-3-small",
+     "https://api.openai.com/v1/embeddings", "dimensions"),
+    ("MISTRAL_API_KEY", "mistral-embed",
+     "https://api.mistral.ai/v1/embeddings", "output_dimension"),
+]
+MODEL = "mistral-embed"      # resolved by _pick_provider() at runtime
+_DIM_PARAM = "output_dimension"
 WANT_DIM = 256               # requested width; the API may ignore it (see _probe)
 DIM = 0                      # actual width, resolved at runtime by _probe()
 BATCH = 24                   # inputs per call; keeps a request well inside limits
@@ -44,6 +61,18 @@ MAX_CHARS = 1600             # per paper; abstracts past this add little signal
 SHARD = 64                   # vector rows per abstract shard (~90 KB each)
 PAUSE = 1.0                  # seconds between batches -- stay under free-tier RPM
 _URL = "https://api.mistral.ai/v1/embeddings"
+
+
+def _pick_provider() -> str | None:
+    """First provider with a key -> sets MODEL/_URL/_DIM_PARAM. Returns the key."""
+    global MODEL, _URL, _DIM_PARAM
+    for env, model, url, dim_param in _PROVIDERS:
+        key = os.environ.get(env)
+        if key:
+            MODEL, _URL, _DIM_PARAM = model, url, dim_param
+            log(f"[embed] provider {env.split('_')[0].lower()} / {MODEL}")
+            return key
+    return None
 
 _CACHE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS embeddings (
@@ -90,8 +119,10 @@ _send_dim = True             # flipped off if the API rejects output_dimension
 
 def _post(texts: list[str], key: str):
     body = {"model": MODEL, "input": texts}
-    if _send_dim:
-        body["output_dimension"] = WANT_DIM
+    # the width parameter is named differently per provider, and one of them
+    # rejects it outright -- _probe measures the result rather than trusting it
+    if _send_dim and _DIM_PARAM:
+        body[_DIM_PARAM] = WANT_DIM
     return requests.post(
         _URL,
         headers={"Authorization": f"Bearer {key}",
@@ -107,7 +138,7 @@ def _probe(key: str) -> int:
     both keyed on the real number, and the portal reads it from vec.json."""
     global _send_dim
     r = _post(["dimension probe"], key)
-    if not r.ok and _send_dim and ("output_dimension" in r.text
+    if not r.ok and _send_dim and (_DIM_PARAM in r.text
                                    or r.status_code in (400, 422)):
         log("[embed] output_dimension rejected; falling back to native width")
         _send_dim = False
@@ -151,7 +182,7 @@ def _embed_batch(texts: list[str], key: str) -> list[list[float]]:
 def main() -> None:
     global DIM
     rebuild = "--rebuild" in sys.argv
-    key = os.environ.get("MISTRAL_API_KEY")
+    key = _pick_provider()
     con = store.connect()
     con.executescript(_CACHE_SCHEMA)
 
@@ -193,7 +224,7 @@ def main() -> None:
     log(f"[embed] {len(cached)} cached, {len(todo)} to embed ({MODEL} @ {DIM}d)")
 
     if todo and not key:
-        log("[embed] MISTRAL_API_KEY not set -- writing index from cache only")
+        log("[embed] no OPENAI_API_KEY or MISTRAL_API_KEY -- index from cache only")
         todo = []
 
     done = 0

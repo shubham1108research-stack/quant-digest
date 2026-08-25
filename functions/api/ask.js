@@ -23,11 +23,22 @@
  * route sits behind Cloudflare Access.
  */
 
-const EMBED_MODEL = "mistral-embed";        // must match tools/embed.py
+// Embedding model is NOT hardcoded any more -- the browser reads it out of
+// vec.json and sends it, so the index is self-describing. It used to be named
+// here AND in tools/embed.py with nothing enforcing that they agree, and the
+// moment they drift every query lands in a different vector space than the
+// index it is searched against. That returns confident nonsense, not an error.
+const EMBED_FALLBACK = "mistral-embed";     // only if a manifest omits it
+const EMBED_URLS = {
+  "mistral-embed": "https://api.mistral.ai/v1/embeddings",
+  "text-embedding-3-small": "https://api.openai.com/v1/embeddings",
+  "text-embedding-3-large": "https://api.openai.com/v1/embeddings",
+};
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_ASK_MODEL = "gpt-5.5";         // must match config.OPENAI_ASK_MODEL
+const OPENAI_BULK_MODEL = "gpt-5.4-mini";   // must match config.OPENAI_BULK_MODEL
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_MODEL = "deepseek/deepseek-v3.2";  // must match config.OPENROUTER_MODEL
-const MISTRAL_MODEL = "mistral-small-latest";
-const GROQ_MODEL = "llama-3.3-70b-versatile";
 // Paid tier, used only if ANTHROPIC_API_KEY is set. Switch to "claude-sonnet-5"
 // for ~2.5x lower cost per question at close to the same synthesis quality.
 const CLAUDE_MODEL = "claude-opus-4-8";
@@ -341,14 +352,33 @@ function systemFor(shape) {
 // width too. Asking for a narrower query vector here would 400, or worse,
 // succeed one day and silently mismatch the index. The browser verifies the
 // returned length against vec.json before searching.
-async function embed(text, key) {
-  const r = await fetch("https://api.mistral.ai/v1/embeddings", {
+// The QUESTION must be embedded by the same model AND width as docs/vec.bin,
+// or it lands in a different vector space and retrieval returns confident
+// nonsense. So the model is not chosen here: the browser reads it from
+// vec.json -- the manifest that was written alongside the index -- and passes
+// it in. The index describes itself, and the two cannot drift apart.
+//
+// `dimensions` is OpenAI's parameter; Mistral rejects it outright, which is
+// why the existing index sits at 1024 dims and vec.bin is ~9 MB that every
+// visitor downloads. tools/embed.py resolves the ACTUAL width from the
+// response rather than trusting the request, so an ignored parameter is
+// discovered rather than assumed.
+async function embed(text, model, dim, env) {
+  const name = model || EMBED_FALLBACK;
+  const url = EMBED_URLS[name];
+  if (!url) throw new Error(`no embedding endpoint known for "${name}"`);
+  const openai = url.includes("openai.com");
+  const key = openai ? env.OPENAI_API_KEY : env.MISTRAL_API_KEY;
+  if (!key) {
+    throw new Error(`${openai ? "OPENAI_API_KEY" : "MISTRAL_API_KEY"} is not `
+      + `set on this Pages project, and the index was built with "${name}"`);
+  }
+  const body = { model: name, input: [text] };
+  if (openai && dim) body.dimensions = dim;
+  const r = await fetch(url, {
     method: "POST",
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify({
-      model: EMBED_MODEL,
-      input: [text],
-    }),
+    body: JSON.stringify(body),
   });
   if (!r.ok) throw new Error(`embed ${r.status}: ${(await r.text()).slice(0, 200)}`);
   const j = await r.json();
@@ -474,13 +504,11 @@ async function scan(question, papers, env) {
   if (env.OPENROUTER_API_KEY) {
     attempts.push([OPENROUTER_URL, env.OPENROUTER_API_KEY, OPENROUTER_MODEL]);
   }
-  if (env.MISTRAL_API_KEY) {
-    attempts.push(["https://api.mistral.ai/v1/chat/completions",
-                   env.MISTRAL_API_KEY, MISTRAL_MODEL]);
-  }
-  if (env.GROQ_API_KEY) {
-    attempts.push(["https://api.groq.com/openai/v1/chat/completions",
-                   env.GROQ_API_KEY, GROQ_MODEL]);
+  // Screening is the token-heavy pass -- a sentence per paper across 16 papers
+  // a call, fanned out by the browser -- and its output is one line per paper,
+  // so it gets the cheap model. This is where a bill is run up unnoticed.
+  if (env.OPENAI_API_KEY) {
+    attempts.push([OPENAI_URL, env.OPENAI_API_KEY, OPENAI_BULK_MODEL]);
   }
   for (const [url, key, model] of attempts) {
     try {
@@ -544,16 +572,16 @@ async function answer(question, ctx, env, history, shape, rotate) {
   // DeepSeek via OpenRouter is the chosen default: it matched the field on the
   // refusal test that matters and was the most concise, at a fraction of the
   // price. Mistral and Groq stay behind it as free-tier rescue.
+  // Synthesis gets the good model: a handful of calls a day at high value each,
+  // and it is the half of the system a person actually reads. The free tiers
+  // are gone -- a 22B model answering silently in place of a frontier one is
+  // invisible in the response and produced exactly the flat, enumerated prose
+  // that was being blamed on the prompt.
+  if (env.OPENAI_API_KEY) {
+    tries.push([OPENAI_URL, env.OPENAI_API_KEY, OPENAI_ASK_MODEL]);
+  }
   if (env.OPENROUTER_API_KEY) {
     tries.push([OPENROUTER_URL, env.OPENROUTER_API_KEY, OPENROUTER_MODEL]);
-  }
-  if (env.MISTRAL_API_KEY) {
-    tries.push(["https://api.mistral.ai/v1/chat/completions",
-                env.MISTRAL_API_KEY, MISTRAL_MODEL]);
-  }
-  if (env.GROQ_API_KEY) {
-    tries.push(["https://api.groq.com/openai/v1/chat/completions",
-                env.GROQ_API_KEY, GROQ_MODEL]);
   }
   if (!tries.length) throw new Error("no chat provider key configured");
   // Rotate which provider leads, so the council's roles are answered by
@@ -731,10 +759,8 @@ export async function onRequestPost({ request, env }) {
 
   try {
     if (body.mode === "embed") {
-      if (!env.MISTRAL_API_KEY) {
-        return json({ error: "MISTRAL_API_KEY is not set on this Pages project." }, 503);
-      }
-      return json({ vec: await embed(q, env.MISTRAL_API_KEY) });
+      // model/dim come from vec.json, which the browser has already loaded.
+      return json({ vec: await embed(q, body.model, Number(body.dim) || 0, env) });
     }
     if (body.mode === "scan") {
       const papers = Array.isArray(body.papers) ? body.papers.slice(0, MAX_SCAN) : [];

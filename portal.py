@@ -1569,6 +1569,12 @@ function renderMap(){
 // page until we have the shortlist. /api/ask (a Cloudflare Pages Function
 // holding the API key) only embeds the question and writes the final synthesis.
 let VEC=null,VEC_UIDS=null,VEC_DIM=0,VEC_SHARD=64,ITEM_BY_UID={},indexLoading=false;
+// The model the index was BUILT with, read from vec.json and sent back with
+// every query. The question has to be embedded by the same model and width
+// as the index or it lands in a different vector space -- which returns
+// confident nonsense, not an error. Naming it in two files and hoping they
+// agree is how that happens; this makes the index describe itself.
+let VEC_MODEL='';
 let indexWarning='';
 // The paper graph (docs/edges.bin, built by tools/graph.py). Packed triples of
 // <srcRow uint32, dstRow uint32, kind uint8, weight float32> against
@@ -1776,6 +1782,7 @@ function loadIndex(cb){
     ARCHIVE_DATA?Promise.resolve(ARCHIVE_DATA):fetch('archive.json').then(r=>r.json()),
   ]).then(([meta,buf,arch])=>{
     VEC_UIDS=meta.uids;VEC=new Int8Array(buf);VEC_DIM=meta.dim||0;VEC_SHARD=meta.shard||64;
+    VEC_MODEL=meta.model||'';
     // vec.json is the MANIFEST for vec.bin -- row i of the buffer is uids[i].
     // If the two disagree, retrieve() reads past the end of an Int8Array,
     // which yields undefined rather than throwing: every score becomes NaN and
@@ -2007,7 +2014,7 @@ async function doAsk(q,force){
   renderAsk();
   try{
     const er=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({mode:'embed',q:q})});
+      body:JSON.stringify({mode:'embed',q:q,model:VEC_MODEL,dim:VEC_DIM})});
     const ej=await er.json();
     if(!er.ok)throw new Error(ej.error||'embed failed');
     // a width mismatch means query and index are in different vector spaces --
