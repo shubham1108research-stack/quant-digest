@@ -1,0 +1,78 @@
+name: Backfill Macrosynergy
+
+# Walks the sitemap Macrosynergy publishes for crawlers and files the research.
+#
+# Their robots.txt allows everything except /transaction-costs-survey/ and
+# advertises the sitemap; the tool reads that policy at run time and obeys it,
+# aborting if it cannot be read at all. The WAF answers 403 intermittently --
+# roughly four requests in five to urllib -- so fetches retry with a delay and
+# the run stops dead after twelve consecutive refusals rather than hammering.
+#
+# Idempotent: store.filter_new drops anything already held, so a second pass
+# picks up whatever the intermittent 403s dropped the first time and changes
+# nothing else. Expect to need two passes.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sitemap:
+        description: "Which sitemap"
+        type: choice
+        options: [posts, notebooks, both]
+        default: posts
+      limit:
+        description: "Max URLs (0 = all 653)"
+        required: false
+        default: "0"
+      delay:
+        description: "Seconds between page fetches"
+        required: false
+        default: "1.5"
+      dry_run:
+        description: "Report what is out there and write nothing"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    # Generous: 653 pages at 1.5s, plus retries on the ones that get refused.
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Walk the sitemap
+        run: |
+          python tools/backfill_macrosynergy.py \
+            --sitemap "${{ github.event.inputs.sitemap }}" \
+            --limit "${{ github.event.inputs.limit }}" \
+            --delay "${{ github.event.inputs.delay }}" \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+
+      - name: Store state.db
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push
