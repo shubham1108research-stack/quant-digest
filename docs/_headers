@@ -21,3 +21,32 @@
 
 /cot.json
   Cache-Control: no-cache, must-revalidate
+
+# The RETRIEVAL PATH. Omitting these was the sharpest bug in the project: rows
+# were ordered first_seen DESC, so every paper's row index shifted on every
+# build, and abs/N.json is keyed on row index. A browser holding a cached
+# vec.json alongside a freshly-fetched abs/12.json reads the WRONG paper's
+# abstract into the Ask prompt -- no error, no warning, a confident wrong
+# answer. The manifest guard was written to catch exactly that mismatch and
+# does not watch this door.
+#
+# The ordering is now append-only (tools/embed.py), which stops new builds from
+# reshuffling; these headers close the window for clients that already hold a
+# stale copy.
+/vec.json
+  Cache-Control: no-cache, must-revalidate
+
+/vec.bin
+  Cache-Control: no-cache, must-revalidate
+
+/abs/*
+  Cache-Control: no-cache, must-revalidate
+
+/edges.bin
+  Cache-Control: no-cache, must-revalidate
+
+/map.json
+  Cache-Control: no-cache, must-revalidate
+
+/artifacts.json
+  Cache-Control: no-cache, must-revalidate

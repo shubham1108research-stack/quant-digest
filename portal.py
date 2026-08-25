@@ -1805,6 +1805,16 @@ function loadIndex(cb){
         ? 'The search index is truncated: '+rows.toLocaleString()+' of '+
           (meta.n||0).toLocaleString()+' papers have vectors. Run the "Semantic Index" workflow.'
         : 'The search index is empty — run the "Semantic Index" workflow.';
+    }else if(rows>VEC_UIDS.length){
+      // The SYMMETRIC case, which used to pass in silence. A .bin with MORE
+      // rows than the manifest names is just as much a mismatch: the surplus
+      // papers are unaddressable, retrieve() never sees them, and nothing
+      // anywhere says so. A half-written manifest looks exactly like a smaller
+      // archive.
+      indexWarning='The search index and its manifest disagree: vec.bin holds '+
+        rows.toLocaleString()+' vectors but vec.json names only '+
+        VEC_UIDS.length.toLocaleString()+
+        '. The extra rows are unreachable — rebuild with the "Semantic Index" workflow.';
     }
     ARCHIVE_DATA=arch;
     arch.forEach(x=>{if(x.uid)ITEM_BY_UID[x.uid]=x;if(x.url)ITEM_BY_URL[x.url]=x;});

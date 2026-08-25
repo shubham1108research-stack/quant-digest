@@ -2,17 +2,21 @@
 """Semantic index over the whole archive: embed every paper once, ship a compact
 int8 matrix the portal can search entirely in the browser.
 
-Provider is Mistral (mistral-embed) -- the free tier that is actually live on
-this account (OpenAI has no credits, the Gemini key's service account is
-disabled). We request output_dimension=256 but do not trust it: support is
-model-dependent, so _probe() measures the real width once and everything keys
-off that. Width matters -- 8.4k papers x 1024 dims x 4 bytes is ~34 MB, hopeless
-for a static page, while 256-dim int8 is ~2 MB. Cosine over unit vectors is just
-a dot product and int8 rounding is monotonic, so ranking survives the squeeze.
+Provider is whichever key is present, OpenAI first (see _PROVIDERS): OpenAI
+honours a width request, Mistral rejects it, and that is the difference between
+a 2.3 MB index and a 9 MB one that every portal visitor downloads. The
+requested width is never trusted either way -- _probe() measures what actually
+comes back once and everything keys off the real number. Width matters: 9k
+papers x 1024 dims x 4 bytes is ~34 MB, hopeless for a static page, while
+256-dim int8 is ~2 MB. Cosine over unit vectors is a dot product and int8
+rounding is monotonic, so ranking survives the squeeze.
 
-Vectors are cached in state.db keyed by (uid, model, dim), so a paper is
-embedded exactly ONCE ever -- a re-run only pays for genuinely new items, and
-changing model/dim naturally invalidates rather than silently mixing spaces.
+Vectors are cached in state.db keyed by (uid, model, dim, txt) where txt is a
+hash of the embedded TEXT. The content hash is what stops a paper keeping a
+stale vector: tools/fill_abstracts.py backfills abstracts onto papers first
+embedded from a title alone, and under a uid-only key every one of those kept
+its title-only vector permanently, with nothing to detect it. Changing model or
+dim still invalidates wholesale, so two vector spaces can never mix.
 
 Outputs:
   docs/vec.bin   int8 matrix, row-major, n x DIM (no header -- pure payload)
@@ -22,6 +26,7 @@ Usage:  python tools/embed.py            (incremental; embeds only what's new)
         python tools/embed.py --rebuild  (re-embed everything from scratch)
 """
 
+import hashlib
 import json
 import os
 import pathlib
@@ -57,7 +62,11 @@ _DIM_PARAM = "output_dimension"
 WANT_DIM = 256               # requested width; the API may ignore it (see _probe)
 DIM = 0                      # actual width, resolved at runtime by _probe()
 BATCH = 24                   # inputs per call; keeps a request well inside limits
-MAX_CHARS = 1600             # per paper; abstracts past this add little signal
+# The median abstract is ~1,374 characters and title+topic are prepended, so
+# 1600 was clipping a large share of them. text-embedding-3-small is $0.02 per
+# million tokens: the whole archive at 4,000 chars costs about twenty cents.
+# The old limit was saving nothing and losing the end of the method section.
+MAX_CHARS = 4000
 SHARD = 64                   # vector rows per abstract shard (~90 KB each)
 PAUSE = 1.0                  # seconds between batches -- stay under free-tier RPM
 _URL = "https://api.mistral.ai/v1/embeddings"
@@ -80,13 +89,48 @@ CREATE TABLE IF NOT EXISTS embeddings (
     model TEXT NOT NULL,
     dim   INTEGER NOT NULL,
     vec   BLOB NOT NULL,          -- DIM int8 values
-    PRIMARY KEY (uid, model, dim)
+    txt   TEXT NOT NULL DEFAULT '',   -- sha1 of the embedded text
+    PRIMARY KEY (uid, model, dim, txt)
 );
 """
 
 
 def log(m: str) -> None:
     print(m, flush=True)
+
+
+def _migrate_cache(con) -> None:
+    """Add the content hash to an EXISTING cache table.
+
+    CREATE TABLE IF NOT EXISTS is a no-op once the table exists, so a schema
+    edit alone would never reach a live state.db -- the column would silently
+    not be there and the next SELECT would fail. SQLite also cannot ALTER a
+    PRIMARY KEY, so the table is rebuilt.
+
+    Existing rows are DROPPED rather than carried over with an empty hash:
+    there is no way to recover which text produced a stored vector, so keeping
+    them would mean trusting exactly the thing this key exists to stop
+    trusting. One re-embed of the archive costs about seven cents.
+    """
+    cols = {r[1] for r in con.execute("PRAGMA table_info(embeddings)")}
+    if not cols or "txt" in cols:
+        return
+    n = con.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0]
+    log(f"[embed] migrating cache to a content-keyed schema; "
+        f"discarding {n} vectors whose source text cannot be verified")
+    con.executescript("""
+        DROP TABLE IF EXISTS embeddings_old;
+        ALTER TABLE embeddings RENAME TO embeddings_old;
+    """)
+    con.executescript(_CACHE_SCHEMA)
+    con.execute("DROP TABLE IF EXISTS embeddings_old")
+    con.commit()
+
+
+def _sha(text: str) -> str:
+    """Content fingerprint for the cache key, so a paper whose abstract arrives
+    later is re-embedded instead of keeping the vector built from its title."""
+    return hashlib.sha1((text or "").encode("utf-8")).hexdigest()[:16]
 
 
 def _text(m: dict, title: str) -> str:
@@ -185,6 +229,7 @@ def main() -> None:
     key = _pick_provider()
     con = store.connect()
     con.executescript(_CACHE_SCHEMA)
+    _migrate_cache(con)
 
     # resolve the real vector width BEFORE touching the cache -- every cache
     # lookup and the shipped index are keyed on it
@@ -200,7 +245,14 @@ def main() -> None:
         con.commit()
 
     rows = con.execute(
-        "SELECT uid, title, meta FROM items ORDER BY first_seen DESC, uid"
+        # ASCENDING, so row assignment is APPEND-ONLY. Descending put the newest
+        # paper at row 0 and shifted every other row on every build -- and
+        # abs/N.json shards are keyed on row index, so a browser holding a
+        # cached shard against a fresh manifest read the wrong paper's abstract
+        # straight into the Ask prompt. Silently: no error, no warning, a
+        # confident answer about a paper nobody cited. Ascending means only the
+        # LAST shard changes when papers are added.
+        "SELECT uid, title, meta FROM items ORDER BY first_seen ASC, uid"
     ).fetchall()
     papers = []
     for uid, title, meta in rows:
@@ -218,9 +270,14 @@ def main() -> None:
         papers.append((uid, _text(m, title)))
     log(f"[embed] {len(papers)} papers in archive")
 
-    cached = {r[0] for r in con.execute(
-        "SELECT uid FROM embeddings WHERE model=? AND dim=?", (MODEL, DIM))}
-    todo = [(u, t) for u, t in papers if u not in cached and t.strip()]
+    # Cached on the TEXT, not just the uid. tools/fill_abstracts.py backfills
+    # abstracts onto papers that were first embedded from a title alone -- and
+    # under a uid-only key every one of those keeps its title-only vector
+    # forever, invisibly, because nothing ever notices the input changed.
+    cached = {(r[0], r[1]) for r in con.execute(
+        "SELECT uid, txt FROM embeddings WHERE model=? AND dim=?", (MODEL, DIM))}
+    todo = [(u, t) for u, t in papers
+            if (u, _sha(t)) not in cached and t.strip()]
     log(f"[embed] {len(cached)} cached, {len(todo)} to embed ({MODEL} @ {DIM}d)")
 
     if todo and not key:
@@ -233,9 +290,10 @@ def main() -> None:
             chunk = todo[i:i + BATCH]
             vecs = _embed_batch([t for _, t in chunk], key)
             con.executemany(
-                "INSERT OR REPLACE INTO embeddings (uid, model, dim, vec) "
-                "VALUES (?,?,?,?)",
-                [(u, MODEL, DIM, _quantise(v)) for (u, _), v in zip(chunk, vecs)],
+                "INSERT OR REPLACE INTO embeddings (uid, model, dim, txt, vec) "
+                "VALUES (?,?,?,?,?)",
+                [(u, MODEL, DIM, _sha(t), _quantise(v))
+                 for (u, t), v in zip(chunk, vecs)],
             )
             con.commit()
             done = min(i + BATCH, len(todo))
