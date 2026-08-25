@@ -153,14 +153,59 @@ PMR_MAX_PER_JOURNAL = 30    # newest articles listed per journal per run
 # The prefix alone is an all-discipline firehose, so each finance query narrows
 # it before the LLM layer filters; queries overlap and dedup handles it.
 SSRN_CROSSREF_PREFIX = "10.2139"
-SSRN_ROWS = 60               # results per finance query
+SSRN_ROWS = 60               # results per query
+# WHY THESE, AND WHY MORE OF THEM THAN BEFORE.
+# SSRN registers ~42,000 DOIs a month across every discipline. Crossref will
+# only hand back what a query asks for, so this list IS the recall ceiling:
+# seven queries x 60 rows could see at most 420 of those 42,000, about 1%, and
+# anything outside those seven topics was invisible no matter how good it was.
+#
+# That is how "Is Sector Rotation Causal? A Geometric Test of the
+# Growth-to-Defensive Lead-Lag" (10.2139/ssrn.7313339, posted 2026-08-20) was
+# missed. It passed every filter -- inside the date window, sane record, has an
+# abstract -- and simply never appeared, because none of the seven queries
+# mentioned sector rotation, lead-lag or causality. A query naming them returns
+# it FIRST.
+#
+# The deeper problem was that five of the seven were equity cross-sectional
+# factor topics, which is not the desk this digest serves. There was nothing
+# for macro, rates, FX, commodities, trend, or cross-asset structure. The list
+# now covers the actual topic surface.
+#
+# Breadth rather than depth on purpose: another 40 rows on an existing query
+# buys progressively less relevant results, while another query opens a topic
+# that was previously unreachable at any depth.
+#
+# This is still a bounded, hand-written list, and the next paper on a topic
+# nobody thought to name is still missed. The structural fix is to stop letting
+# hand-picked vocabulary decide what is visible -- enumerate the window and
+# gate it on the embedding instead, which costs about a cent a month at
+# text-embedding-3-small prices. A naive keyword gate is NOT the answer: tried
+# on a 1,000-record sample it kept 16% including "cardiovascular risk
+# prediction" and "pulmonary tuberculosis", on the word "risk".
 SSRN_QUERIES = [
+    # cross-section and factors
     "asset pricing cross-section returns factor",
     "return predictability anomalies momentum value",
+    "factor timing style rotation sector allocation",
+    # portfolio construction and risk
     "portfolio optimization allocation risk parity",
+    "regime switching volatility targeting drawdown control",
+    "crowding capacity transaction costs strategy decay",
+    # macro, rates, FX, commodities -- the desk this digest serves
+    "macroeconomic risk business cycle inflation asset returns",
+    "term premium yield curve interest rate expectations",
+    "carry trade currency exchange rate forward premium",
+    "commodity futures term structure convenience yield",
+    "central bank monetary policy shocks financial markets",
+    # systematic / CTA
+    "trend following managed futures time-series momentum",
+    "cross-asset lead-lag causality spillover transmission",
+    # methods and market plumbing
     "machine learning deep learning trading finance",
     "market microstructure liquidity execution high-frequency",
     "volatility variance risk premium options derivatives",
+    "tail risk hedging skewness crash correlation",
     "hedge fund mutual fund performance flows",
 ]
 
