@@ -1,0 +1,83 @@
+name: Backfill Practitioner Archive
+
+# Walks a practitioner blog's RSS archive backwards and files what it finds.
+#
+# The live collector reads page one of each feed and keeps the last 30 days.
+# Alpha Architect's feed holds FIVE items -- about seventeen days at their
+# posting rate -- so everything older than the archive's own start was never
+# collected. Their /blog/, their category pages and their WordPress API all
+# return a Cloudflare challenge; the feed does not, and it paginates, so this
+# uses the one door the publisher leaves open, on their terms: their own
+# syndication feed, one request a second.
+#
+# Idempotent: store.filter_new assigns the uid and drops anything already held,
+# so re-running costs requests and changes nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      feed:
+        description: "Which feed"
+        type: choice
+        options: [alpha, quantpedia, newfound]
+        default: alpha
+      max_pages:
+        description: "Feed pages to walk (5 posts each)"
+        required: false
+        default: "400"
+      category:
+        description: "Keep only posts tagged with this (blank = everything)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Report what is out there and write nothing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  # state.db is binary and cannot be merged; share the digest's lock so two
+  # writers never race on it.
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Walk the archive
+        run: |
+          python tools/backfill_practitioner.py \
+            --feed "${{ github.event.inputs.feed }}" \
+            --max-pages "${{ github.event.inputs.max_pages }}" \
+            ${{ github.event.inputs.category != '' && format('--category "{0}"', github.event.inputs.category) || '' }} \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+
+      # Only on a real run: a dry run has nothing to store, and pushing an
+      # unchanged 66 MB database over an object store with no history is a risk
+      # taken for no reason.
+      - name: Store state.db
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push
