@@ -255,17 +255,17 @@ def test_variants():
     noisy = mk(40.0, title="carry trade momentum value")
     terms = ["carry", "trade", "momentum", "value"]
     pair = [dict(good), dict(noisy)]
-    run._rescore(pair, terms, "current")
-    check("current: keyword overlap beats a much better cosine",
+    run._rescore(pair, terms, "legacy")
+    check("legacy: keyword overlap beats a much better cosine",
           pair[0]["sim"], 40.0)
     pair = [dict(good), dict(noisy)]
     run._rescore(pair, terms, "minmax")
-    check("minmax: the better cosine wins instead", pair[0]["sim"], 80.0)
+    check("current: the better cosine wins instead", pair[0]["sim"], 80.0)
 
     # every candidate having the same similarity must not divide by zero
     flat = [mk(50.0, title="a"), mk(50.0, title="b")]
-    run._rescore(flat, ["a"], "minmax")
-    check("minmax survives a zero-range candidate set", len(flat), 2)
+    run._rescore(flat, ["a"], "current")
+    check("current survives a zero-range candidate set", len(flat), 2)
 
     # rrf: ranks only, so a huge numeric gap in one list cannot swamp the rest
     cands = [mk(127.0, title="zzz"), mk(126.0, title="carry"), mk(1.0, title="carry")]

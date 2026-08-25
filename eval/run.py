@@ -160,8 +160,12 @@ def ask_rank(x, terms, sim127):
 #   than 0.30 on a term that uses all of its own. The weights say similarity
 #   dominates; the arithmetic says keyword overlap does.
 #
-#   minmax   rescales sim across the candidate set so it uses [0,1] like the
-#            others. Smallest possible change: same three terms, same weights.
+#   current  what portal.py does NOW: rescale sim across the candidate set so
+#            it uses [0,1] like the others. Same three terms, same weights --
+#            the smallest change that addresses the diagnosed cause. Chosen by
+#            the comparison below, not by argument. ("minmax" still works as a
+#            name for it, so older invocations keep meaning the same thing.)
+#   legacy   what portal.py did BEFORE that, kept so the fix is falsifiable.
 #   rrf      Reciprocal Rank Fusion. Uses only RANKS, so no term's numeric
 #            range can dominate another's and the weights disappear entirely.
 #            Fuses THREE lists -- dense, keyword and the archive's own quality
@@ -187,7 +191,10 @@ def _rescore(cands, terms, variant):
     """Set c['rank'] for every candidate, then sort. Mutates in place."""
     if not cands:
         return
-    if variant == "current":
+    if variant == "legacy":
+        # The pre-2026-08-26 ranking, kept so the fix stays falsifiable: if a
+        # later change makes this win again, that is worth knowing rather than
+        # discovering by accident.
         for c in cands:
             c["rank"] = (ask_rank(c["it"], terms, c["sim"])
                          + min(0.25, c["mass"] * C["GRAPH_W"]))
@@ -195,7 +202,7 @@ def _rescore(cands, terms, variant):
         for c in cands:
             c["rank"] = (max(0.0, c["sim"] / 127.0)
                          + min(0.25, c["mass"] * C["GRAPH_W"]))
-    elif variant == "minmax":
+    elif variant in ("current", "minmax"):
         vals = [c["sim"] for c in cands if not c["via_graph"]] or [0.0]
         lo, hi = min(vals), max(vals)
         rng = (hi - lo) or 1.0
@@ -228,7 +235,7 @@ def _rescore(cands, terms, variant):
     cands.sort(key=lambda c: -c["rank"])
 
 
-VARIANTS = ("current", "minmax", "rrf", "rrf20", "rrf5", "sim_only")
+VARIANTS = ("current", "legacy", "rrf", "rrf20", "rrf5", "sim_only")
 
 
 # ---------------------------------------------------------------- the index

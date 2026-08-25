@@ -1755,14 +1755,49 @@ function askQuality(x){
   const q=scored?_strengthScore(x)/100:0.45;
   return Math.max(0,Math.min(1.2,q*(x.reputation||1)));
 }
+// Rescale similarity ACROSS THE CANDIDATE SET, so the three terms in askRank
+// actually span comparable ranges. Call before ranking; sets _simN on each.
+//
+// WHY. eval/run.py measured the old ranking and found it was discarding papers
+// the embedding had already found: cosine rank 1 came out 512th, rank 2 came
+// out 356th, and 8 of 14 misses were inside the recall set before this
+// function got to them. Ordering by cosine alone scored BETTER than the
+// re-rank (hit@20 0.57 against 0.53), which is the clearest possible statement
+// that the re-rank was subtracting value.
+//
+// The cause was a range mismatch rather than a wrong weight. kw uses the whole
+// of [0,1] -- a question whose every word appears scores exactly 1 -- and
+// quality reaches 1.2. But sim is a cosine, and cosines on this corpus sit
+// between roughly 0.2 and 0.7 and never approach 1. A 0.55 weight on a term
+// that moves through half its range is worth less than a 0.30 weight on a term
+// that uses all of its own, so the weights said similarity dominates while the
+// arithmetic said keyword overlap did. Fixing /127^2 to /127 removed one
+// instance of this; this is the rest of it.
+//
+// Measured over eval/golden.json, same candidate set, re-rank alone:
+//     hit@20  0.53 -> 0.63     vocab tier 0.10 -> 0.30
+//     abstract tier 0.92 -> 1.00, MRR 0.508 -> 0.486
+// RRF at k=20 reached hit@20 0.67 but dropped MRR to 0.355; one question of
+// coverage is not worth that, and this keeps the weights tunable.
+function scaleSims(cands){
+  let lo=Infinity,hi=-Infinity;
+  cands.forEach(c=>{if(!c._viaGraph){const s=c._sim||0;if(s<lo)lo=s;if(s>hi)hi=s;}});
+  const rng=(hi-lo)||1;
+  cands.forEach(c=>{
+    // graph arrivals have no similarity to the question at all -- they are
+    // here because of who they sit next to -- so they get the floor, not a
+    // rescaled zero, which below lo would come out negative.
+    c._simN=c._viaGraph?0:Math.max(0,Math.min(1,((c._sim||0)-lo)/rng));
+  });
+}
 function askRank(x,terms){
-  // /127, not /127^2. tools/embed.py stores unit vectors scaled by 127, but
-  // the QUERY vector arrives as raw floats from the embed call -- so the dot
-  // product peaks near 127, not 16129. Dividing by the square capped sim at
-  // ~0.008 against keyword's 0.30, which meant this re-rank was keyword
-  // overlap plus the archive's own quality score, with the embedding
-  // deciding only which 200 candidates got here and then being ignored.
-  const sim=Math.max(0,Math.min(1,(x._sim||0)/127));
+  // _simN when the caller has scaled the set, else fall back to the raw
+  // cosine. /127, not /127^2: tools/embed.py stores unit vectors scaled by
+  // 127 and the QUERY arrives as raw floats, so the dot product peaks near
+  // 127, not 16129. Dividing by the square capped sim at ~0.008 against
+  // keyword's 0.30 and made the embedding decide only which candidates got
+  // here before being ignored.
+  const sim=Math.max(0,Math.min(1,x._simN!=null?x._simN:(x._sim||0)/127));
   const kw=0.6*kwHit(terms,x.title)+0.4*kwHit(terms,x.summary);
   return W_SIM*sim+W_KW*kw+W_QUALITY*askQuality(x);
 }
@@ -2127,6 +2162,7 @@ async function doAsk(q,force){
     // stage 2: re-order by question-relevance BLENDED with the archive's own
     // scores -- free, instant, and it reuses work the pipeline already did
     const terms=qTerms(q);
+    scaleSims(cands);
     cands.forEach(c=>{c._rank=askRank(c,terms);});
     cands.sort((a,b)=>b._rank-a._rank);
     // Graph hop: bring in neighbours of the strongest candidates that
@@ -2141,7 +2177,11 @@ async function doAsk(q,force){
         if(known.has(row))continue;
         const uid=VEC_UIDS[row], it=ITEM_BY_UID[uid];
         if(!it)continue;
-        const c=Object.assign({},it,{_row:row,_sim:0,_viaGraph:true});
+        // _simN explicitly, not left to askRank's fallback: these arrive after
+        // scaleSims has run, and a graph paper has no similarity to the
+        // question by construction. Relying on the fallback would make the
+        // score depend on which branch happened to fire.
+        const c=Object.assign({},it,{_row:row,_sim:0,_simN:0,_viaGraph:true});
         c._rank=askRank(c,terms)+Math.min(0.25,m*GRAPH_W);
         cands.push(c);viaGraph++;
       }
