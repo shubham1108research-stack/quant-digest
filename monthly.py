@@ -50,6 +50,11 @@ def update_nber_current(log) -> None:
     by_wp = {}
     for it in items:
         by_wp[it.get("nber_wp") or it["url"]] = {
+            # uid, so the portal can offer the same buttons here as anywhere
+            # else. Without it nberEntry had no way to reach ITEM_BY_UID, and
+            # "near" and "implement" simply did not render on NBER cards --
+            # not disabled, absent, which reads as the feature not existing.
+            "uid": store.make_uid(it),
             "title": it["title"], "authors": it["authors"], "url": it["url"],
             "date": it["date"], "abstract": (it.get("abstract") or "")[:400],
             "wp": it.get("nber_wp", "")}

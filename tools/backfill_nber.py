@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config    # noqa: E402
 import sources   # noqa: E402
+import store     # noqa: E402
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    "docs", "nber.json")
@@ -158,7 +159,12 @@ def _months(start_ym: str, end_ym: str):
 
 
 def _slim(it: dict) -> dict:
-    return {"title": it["title"], "authors": it["authors"], "url": it["url"],
+    # uid is what lets the portal treat an NBER card like any other card. Both
+    # "near" (the paper's neighbourhood) and "implement" key off it, and
+    # without it they did not render at all -- absent rather than disabled,
+    # which reads as the feature not existing on this tab.
+    return {"uid": store.make_uid(it),
+            "title": it["title"], "authors": it["authors"], "url": it["url"],
             "date": it["date"], "abstract": (it.get("abstract") or "")[:400],
             "wp": it.get("nber_wp", ""), "cites": None, "cites_per_year": None}
 

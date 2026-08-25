@@ -900,8 +900,29 @@ function _pdfUrl(x){
 }
 // We parsed this paper's PDF into passages, so Ask can quote it by section
 // rather than paraphrase an abstract. That is worth knowing BEFORE you ask.
+// docs/nber.json records carried no uid until now, and both _mapBtn and
+// _implBtn key off one -- so NBER cards rendered with NEITHER button, which
+// reads as the feature not existing rather than as not applying here. The
+// writers now emit uid, but the file already on disk holds 16 years of records
+// without one, so resolve by URL against whatever is loaded until it is
+// regenerated. Same for any other renderer whose records are slimmed copies.
+let UID_BY_URL=null;
+function _uidIndex(){
+  if(UID_BY_URL)return UID_BY_URL;
+  UID_BY_URL={};
+  const add=r=>{if(r&&r.url&&r.uid)UID_BY_URL[r.url]=r.uid;};
+  (ARCHIVE_DATA||[]).forEach(add);
+  (DATA||[]).forEach(add);
+  return UID_BY_URL;
+}
+function _uid(x){
+  if(!x)return '';
+  if(x.uid)return x.uid;
+  return (x.url&&_uidIndex()[x.url])||'';
+}
 function _ftBtn(x){
-  return (FT_SET&&x.uid&&FT_SET.has(x.uid))
+  const uid=_uid(x);
+  return (FT_SET&&uid&&FT_SET.has(uid))
     ?'<span class="ftmark" title="Full text parsed - Ask can quote this paper by section">full text</span>':'';
 }
 // Turn ONE paper's method into a specification: notation, equations,
@@ -914,12 +935,13 @@ function _ftBtn(x){
 // someone spends a call rather than after. An abstract cannot support a lag
 // structure or a coefficient, and pseudocode is exactly those things.
 function _implBtn(x){
-  if(!x||!x.uid)return'';
-  const full=FT_SET&&FT_SET.has(x.uid);
+  const uid=_uid(x);
+  if(!uid)return'';
+  const full=FT_SET&&FT_SET.has(uid);
   if(!full){
     return `<span class="mapbtn off" title="Only the abstract is held for this paper. Pseudocode is a specification, a lag structure and an exact sample at once, and an abstract cannot support any of them — parse the full text first.">▸ implement</span>`;
   }
-  return `<button class="mapbtn" data-impl="${esc(x.uid)}" title="Method, notation, pseudocode with timing, traps, and what the paper leaves unspecified">▸ implement</button>`;
+  return `<button class="mapbtn" data-impl="${esc(uid)}" title="Method, notation, pseudocode with timing, traps, and what the paper leaves unspecified">▸ implement</button>`;
 }
 function _pdfBtn(x){
   const p=_pdfUrl(x);
@@ -928,8 +950,9 @@ function _pdfBtn(x){
 // Every card gets a way into its own neighbourhood. This is the map that was
 // actually wanted: not 11.5k points, but what sits around ONE paper.
 function _mapBtn(x){
-  if(!x||!x.uid)return'';
-  return `<button class="mapbtn" data-pmap="${esc(x.uid)}" title="Papers around this one">\u25c8 near</button>`;
+  const uid=_uid(x);
+  if(!uid)return'';
+  return `<button class="mapbtn" data-pmap="${esc(uid)}" title="Papers around this one">\u25c8 near</button>`;
 }
 function _saveBtn(x){
   if(!x||!x.url)return'';
@@ -2700,7 +2723,7 @@ function nberEntry(x){
   return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail">${cites}</div>
     <div class="body">
     <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${cls}</div>
-    <div class="meta">${x.authors?esc(x.authors):''} · ${esc(x.wp||'')}${_pdfBtn({url:x.url})}${_saveBtn({url:x.url,title:x.title,authors:x.authors})}</div>
+    <div class="meta">${x.authors?esc(x.authors):''} · ${esc(x.wp||'')}${_ftBtn(x)}${_pdfBtn({url:x.url})}${_implBtn(x)}${_mapBtn(x)}${_saveBtn({url:x.url,title:x.title,authors:x.authors})}</div>
     ${sm}</div></div>`;
 }
 let NBER_LOADED=false, nberLoading=false;
@@ -2920,7 +2943,8 @@ function pracEntry(x){
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
   return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail"></div><div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${_unver(x)}${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
+    <div class="meta">${_unver(x)}${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
+    ${tagChips(x)}
     ${sm}</div></div>`;
 }
 // ===================== Build =========================================
@@ -3068,7 +3092,7 @@ function monthlyEntry(x,rank){
       x.reputation!=null?(x.reputation-0.85)/0.30*100:0),
     _subBar('Author',x.author_score!=null?Math.round(x.author_score):'–',x.author_score||0),
   ].join('');
-  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}`;
+  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}`;
   const cval=Math.round(x.composite);
   return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail">
       <div class="rank">${rank}</div><div class="gauge" style="--pct:${cval};--gc:${band}"><span>${cval}</span></div><div class="cap">composite</div></div>
@@ -3109,7 +3133,7 @@ function canonEntry(x){
     <div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${tag}</div>
       ${why?`<div class="summary">${esc(why)}</div>`:''}
-      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
     </div></div>`;
 }
 function renderCanon(g,topic){
@@ -3134,7 +3158,7 @@ function renderClassics(){
     (rows.length?rows.map(x=>`<div class="entry classic${x.url===SEL?' on':''}"${_rk(x)}><div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="cites">${fmtK(x.cites||0)}<small>cites</small></span></div>
       <div class="bar"><i style="width:${((x.cites||0)/max*100).toFixed(1)}%"></i></div>
-      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
