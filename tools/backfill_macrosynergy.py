@@ -144,7 +144,28 @@ def main():
     ap.add_argument("--delay", type=float, default=1.5,
                     help="seconds between page fetches")
     ap.add_argument("--dry-run", action="store_true")
+    # The crawl and the write have different requirements and belong apart.
+    # Fetching needs an IP the WAF tolerates -- measured, a residential one
+    # gets through with retries and a GitHub runner is refused 6 times out of
+    # 6. Writing needs the R2 credentials, which live in CI. Neither machine
+    # can do both, so --json ends the crawl at a file and --from-json starts
+    # the write from one.
+    ap.add_argument("--json", default="",
+                    help="write the crawled records here instead of the archive")
+    ap.add_argument("--from-json", default="",
+                    help="skip the crawl; ingest records from this file")
     args = ap.parse_args()
+
+    if args.from_json:
+        import json
+        items = json.loads(pathlib.Path(args.from_json).read_text(encoding="utf-8"))
+        log(f"[macro] {len(items)} records from {args.from_json}")
+        con = store.connect()
+        fresh = store.filter_new(con, items)
+        store.save(con, fresh)
+        log(f"[macro] inserted {len(fresh)} new rows "
+            f"({len(items) - len(fresh)} already held)")
+        return 0
 
     # Their policy, read from their file -- through the SAME retrying fetch as
     # everything else.
@@ -234,6 +255,15 @@ def main():
         + (f", {dates[0]} to {dates[-1]}" if dates else ""))
     log(f"[macro] with an abstract: {withabs}/{len(items)}")
     log(f"[macro] refused after retries: {refused}")
+
+    if args.json:
+        import json
+        pathlib.Path(args.json).write_text(
+            json.dumps(items, ensure_ascii=False), encoding="utf-8")
+        log(f"\n[macro] wrote {len(items)} records to {args.json}")
+        log("[macro] this file is a publisher's own text and this repository is "
+            "PUBLIC -- ingest it and delete it, do not commit it.")
+        return 0
 
     if args.dry_run:
         log("\n[macro] --dry-run: nothing written")
