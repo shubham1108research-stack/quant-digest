@@ -60,3 +60,9 @@ bakeoff.html
 
 # your own PDFs, parsed by tools/ingest_dropped.py -- never committed
 pdfs/manual/
+# ...and anywhere else. pdfs/ only covers the directory tools/fetch_pdfs.py
+# writes to; a paper downloaded by hand lands in the repo root, where it shows
+# up as untracked in a PUBLIC repo and is one `git add -A` from being
+# published. principal_portfolios.pdf was sitting there.
+*.pdf
+
