@@ -8,6 +8,11 @@ name: Extract Artifacts
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: "sync = full price, results now. batch = half price, collected by a later digest run."
+        type: choice
+        options: [sync, batch]
+        default: sync
       limit:
         description: "Papers per run (0 = every outstanding one)"
         required: false
@@ -66,7 +71,8 @@ jobs:
             --limit ${{ github.event.inputs.limit || 200 }} \
             --min-fit ${{ github.event.inputs.min_fit || 2 }} \
             ${{ github.event.inputs.full_only == 'true' && '--full-only' || '' }} \
-            ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }} \
+            ${{ github.event.inputs.mode == 'batch' && '--submit' || '' }}
 
       # state.db lives in R2 and never reaches a developer machine, so the run
       # log is the only place the extraction can actually be inspected. Print a
