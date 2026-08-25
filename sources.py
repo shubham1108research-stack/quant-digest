@@ -1066,7 +1066,19 @@ IMAP_FOLDER = os.environ.get("FEED_IMAP_FOLDER") or "INBOX"
 IMAP_FOLDERS = [f.strip() for f in IMAP_FOLDER.split(",") if f.strip()]
 INBOX_MAX = 60                      # messages examined per run
 
-_SSRN_ABS = re.compile(r"abstract[_-]?id=(\d{5,9})", re.I)
+# SSRN changed its link shape. eJournal mail used to carry
+#     papers.ssrn.com/sol3/papers.cfm?abstract_id=1234567
+# and now carries
+#     ssrn.com/abstract=1234567?dgcid=ejournal_email_...
+# so the "_id" this pattern required stopped appearing and every mailing
+# parsed to zero papers. Nothing errored: 24 eJournal issues sat in the
+# mailbox being read, parsed and discarded, which from outside is
+# indistinguishable from nothing being subscribed.
+#
+# Both shapes are accepted, because old mail is still in the mailbox and
+# there is no reason to lose it. The id group stays anchored to
+# "abstract" so the author=<id> links in the same mail cannot match.
+_SSRN_ABS = re.compile(r"abstract(?:[_-]?id)?=(\d{5,9})", re.I)
 _SEEN_KEY = "inbox_seen_ids"
 
 
