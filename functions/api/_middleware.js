@@ -32,19 +32,22 @@
  *      hostname; gate 2 makes that trust unnecessary.
  *
  *
- * WHAT THIS GATE CANNOT DO -- read before concluding the hole is shut.
- * A Pages deployment is immutable and permanent. Each of the ~150 deploys
- * already made still serves ITS OWN bundle, from before this file existed, at
- * its own permanent alias, and no change committed here can reach them.
- * Verified after deploying this gate:
+ * WHAT THIS GATE DOES NOT REACH -- and what closed it instead.
+ * A Pages deployment is immutable and permanent, so each of the ~150 deploys
+ * made before this file existed still serves ITS OWN pre-fix bundle at its own
+ * permanent alias. No commit here can reach them; their hashes are in public
+ * Actions logs. Measured on 2026-08-26, an hour after this gate shipped:
  *
- *   POST https://b9a95264.<host>/api/ask   -> 403 (this gate)      new deploy
- *   POST https://0e784bf5.<host>/api/ask   -> 400 (ask.js ran)     old deploy
+ *   POST https://0e784bf5.<host>/api/ask   -> 400, ask.js ran for an anonymous
+ *                                             caller. A NEW deploy returned 403.
  *
- * The gate protects deployments made from now on. The historical aliases are
- * closed only from the Cloudflare side, by adding *.<host> to the Access
- * application or by deleting old deployments -- which is where this belonged
- * in the first place, and why this file is defence in depth and not the fence.
+ * That was closed from the Cloudflare side, which is where it belonged: a
+ * second Access application covering *.<host>. Re-measured after, every alias
+ * including that one redirects to the login. So this file is defence in depth
+ * behind the Access configuration, never a substitute for it -- if it ever
+ * looks like the only thing standing between /api/ask and the internet, the
+ * Access application has been lost and that is the emergency, not this.
+ *
  * A middleware rather than a check inside each function: the next endpoint
  * added is protected by default instead of by someone remembering.
  *
@@ -57,7 +60,7 @@
  *
  * CONFIGURE (Pages project -> Settings -> Environment variables, not secrets):
  *   ACCESS_TEAM_DOMAIN   e.g. yourteam.cloudflareaccess.com   (required)
- *   ACCESS_AUD           the Access application's AUD tag     (recommended)
+ *   ACCESS_AUD           AUD tag(s), comma-separated          (recommended)
  *   ACCESS_HOSTS         extra hostnames, comma-separated     (optional)
  *
  * ACCESS_TEAM_DOMAIN alone is the real boundary: only Cloudflare can sign a
@@ -142,9 +145,17 @@ async function verifyAccessJwt(token, team, aud) {
   // The issuer must be OUR team, or a valid token from any other Cloudflare
   // team would pass signature verification against that team's own JWKS.
   if (claims.iss && claims.iss !== `https://${team}`) return null;
+  // ACCESS_AUD may name MORE THAN ONE application, comma-separated, because
+  // this project genuinely has two: one on the canonical hostname (AUD
+  // df3db433...) and a second covering *.<host> for deployment aliases (AUD
+  // a74149fa...), each with its own tag. Comparing against a single value
+  // would reject every token minted by the other app -- the hardening step
+  // taking the site down. Measured from the meta JWT in each login redirect.
   if (aud) {
-    const a = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-    if (!a.includes(aud)) return null;
+    const want = String(aud).split(",").map(function (s) { return s.trim(); })
+      .filter(Boolean);
+    const have = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+    if (!want.some(function (w) { return have.indexOf(w) !== -1; })) return null;
   }
   return claims;
 }
