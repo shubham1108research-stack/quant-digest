@@ -1,0 +1,33 @@
+name: List OpenAI Models
+
+# One-shot diagnostic: what can this account actually call? Run before setting
+# OPENAI_ASK_MODEL / OPENAI_BULK_MODEL / OPENAI_EMBED_MODEL, because a wrong
+# model id fails at request time and reads like a provider outage rather than a
+# typo -- which is exactly how the artifact backfill lost every OpenAI call.
+
+on:
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "List every model, not just chat/embedding families"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  models:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: List models
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python tools/openai_models.py \
+            ${{ github.event.inputs.all == 'true' && '--all' || '' }}
