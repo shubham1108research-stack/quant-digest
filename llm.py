@@ -1017,13 +1017,24 @@ _CHAT_PROVIDERS = [
 ]
 
 
+class RateLimited(Exception):
+    """A provider is throttling us -- transient, unlike an exhausted quota.
+
+    Worth its own type because the two need opposite handling. A 402 means the
+    money is gone and the provider is finished for the run; a 429 usually means
+    "not this minute". Retiring on both is why a backfill stopped after 156 of
+    400 papers with three healthy providers sitting in the dead set.
+    """
+
+
 def _chat(url: str, key: str, model: str, system: str, user: str,
           max_tokens: int = 8000, timeout: int = 180) -> str:
     """One OpenAI-compatible chat completion -> the assistant's text.
 
-    Raises on a hard failure so the caller can retire the provider. Retries
-    only the statuses that clear on their own: a 429 may pass in a minute, a
-    413 will not, and retrying it with backoff on every batch is what wedged a
+    Raises RateLimited when throttled and a plain error otherwise, so the
+    caller can cool a provider off rather than retire it. Retries only the
+    statuses that clear on their own: a 429 may pass in a minute, a 413 will
+    not, and retrying THAT with backoff on every batch is what wedged a
     six-hour run once already.
     """
     body = {"model": model, "temperature": 0, "max_tokens": max_tokens,
@@ -1051,6 +1062,8 @@ def _chat(url: str, key: str, model: str, system: str, user: str,
             continue
         r.raise_for_status()
         return r.json()["choices"][0]["message"]["content"] or ""
+    if r is not None and r.status_code == 429:
+        raise RateLimited(f"429 after {config.LLM_MAX_RETRIES + 1} attempts")
     if r is not None:
         r.raise_for_status()
     return ""
@@ -1072,15 +1085,36 @@ def extract(items: list[dict], system: str, prompt_fn, validate_fn, key: str,
                                 getattr(config, "LLM_CONCURRENCY", 1))))
     dead: set[str] = set()
     absent: set[str] = set()
+    # provider -> monotonic time it becomes eligible again. A throttled
+    # provider is not a dead one, and conflating them left three healthy
+    # providers in the dead set while a backfill stopped two thirds short.
+    cooldown: dict[str, float] = {}
+    cool_s = float(getattr(config, "LLM_COOLDOWN_S", 90))
     lock = threading.Lock()
     log(f"[extract] {len(items)} items in {len(batches)} batches of "
         f"{batch_size}, {workers} in flight")
 
     def run(batch):
         text = prompt_fn(batch)
+        # If every surviving provider is resting, WAIT for the soonest one
+        # instead of returning empty. Returning empty would race through the
+        # remaining batches in seconds, scoring nothing, and look exactly like
+        # a chain that had genuinely failed.
+        for _ in range(4):
+            with lock:
+                live = [n for n, _, _, _ in _CHAT_PROVIDERS
+                        if n not in dead and n not in absent]
+                waits = [cooldown.get(n, 0) - time.monotonic() for n in live]
+            if not live or any(w <= 0 for w in waits):
+                break
+            nap = min(min(waits) + 1, cool_s)
+            log(f"[extract] all providers resting; waiting {nap:.0f}s")
+            time.sleep(max(1.0, nap))
         for name, url, model_attr, env in _CHAT_PROVIDERS:
             with lock:
                 if name in dead or name in absent:
+                    continue
+                if cooldown.get(name, 0) > time.monotonic():
                     continue
             api_key = os.environ.get(env)
             if not api_key:
@@ -1089,6 +1123,11 @@ def extract(items: list[dict], system: str, prompt_fn, validate_fn, key: str,
                 continue
             try:
                 raw = _chat(url, api_key, getattr(config, model_attr), system, text)
+            except RateLimited:
+                with lock:
+                    cooldown[name] = time.monotonic() + cool_s
+                log(f"[extract] {name} throttled; resting {cool_s:.0f}s")
+                continue
             except Exception as e:                 # noqa: BLE001
                 log(f"[extract] {name} failed ({_err(e)}); failing over")
                 with lock:
@@ -1138,12 +1177,24 @@ def extract(items: list[dict], system: str, prompt_fn, validate_fn, key: str,
             with lock:
                 usable = [n for n, _, _, _ in _CHAT_PROVIDERS
                           if n not in dead and n not in absent]
-            # Same two stop conditions rank() needed: no provider can still
-            # answer, or the chain has been returning nothing for long enough
-            # that it plainly will not start again.
-            if not usable or empty_streak >= 3:
-                log(f"[extract] stopping: usable={usable or 'none'}, "
-                    f"empty streak={empty_streak}")
+                resting = [n for n in usable
+                           if cooldown.get(n, 0) > time.monotonic()]
+            # Stop only when no provider CAN come back: dead or unconfigured.
+            # A chain that is merely resting is not a finished chain, and an
+            # empty streak while everything is throttled says nothing about
+            # whether the work can continue -- so the streak is only allowed to
+            # end the run when at least one provider was actually available to
+            # answer and still returned nothing.
+            if not usable:
+                log(f"[extract] stopping: no provider left "
+                    f"(dead={sorted(dead) or 'none'}, "
+                    f"absent={sorted(absent) or 'none'})")
+                for f in futures:
+                    f.cancel()
+                break
+            if empty_streak >= 3 and len(resting) < len(usable):
+                log(f"[extract] stopping: {empty_streak} consecutive batches "
+                    "returned nothing with a provider available")
                 for f in futures:
                     f.cancel()
                 break

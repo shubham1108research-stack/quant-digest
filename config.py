@@ -1035,6 +1035,10 @@ ARTIFACT_MIN_DESK_FIT = 2
 # to trip Mistral's free-tier limiter by ourselves, which is exactly what
 # happened: 429 on three workers at once, and the provider retired mid-run.
 LLM_EXTRACT_CONCURRENCY = 3
+# How long a throttled provider rests before it is tried again. A 429 means
+# "not this minute", not "never" -- retiring on it is why a 400-paper backfill
+# stopped at 156 with three recoverable providers in the dead set.
+LLM_COOLDOWN_S = 90
 ARTIFACT_BATCH = 4              # papers per LLM call -- small, because each
                                 # response is a large structured object
 # Characters of full text sent per paper. The median parsed paper is ~54k
