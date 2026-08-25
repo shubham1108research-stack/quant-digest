@@ -7,15 +7,29 @@
  * hostnames this project is served from:
  *
  *   - Access applications are configured PER HOSTNAME. Protecting the custom
- *     domain does nothing for quant-digest.pages.dev.
- *   - Pages publishes a fresh <hash>.quant-digest.pages.dev for EVERY
+ *     domain does nothing for quant-digest-e62.pages.dev.
+ *   - Pages publishes a fresh <hash>.quant-digest-e62.pages.dev for EVERY
  *     deployment, permanently. Those URLs are printed in plain text in the
  *     workflow logs.
  *
- * So an unauthenticated caller who read a run log could reach /api/ask, which
- * puts up to 120 caller-supplied "papers" straight into a prompt on a paid
- * model, and mode:"ingest", which dispatches a GitHub workflow using GH_TOKEN.
- * A free LLM proxy and a remote build trigger, billed to the repo owner.
+ * MEASURED, not theorised. On 2026-08-26, against the live site:
+ *
+ *   POST https://quant-digest-e62.pages.dev/api/ask            -> 302 to Access
+ *   POST https://0e784bf5.quant-digest-e62.pages.dev/api/ask   -> 400 from ask.js
+ *
+ * The second is the function running, for an anonymous caller, with no token.
+ * A well-formed body instead of that probe would have spent OpenAI credit; the
+ * mode:"ingest" branch dispatches a GitHub workflow with GH_TOKEN. The repo is
+ * public, config.py names the hostname, and public Actions logs print the
+ * deployment hash -- so every input to that URL is already published.
+ *
+ * TWO GATES, because they fail independently:
+ *
+ *   1. HOSTNAME (below). Needs no configuration, so it cannot be switched off
+ *      by a missing variable. This is the gate that closes the hole above.
+ *   2. TOKEN (verifyAccessJwt). Real authentication, once ACCESS_TEAM_DOMAIN
+ *      is set. Gate 1 without gate 2 still trusts Access to be in front of one
+ *      hostname; gate 2 makes that trust unnecessary.
  *
  * A middleware rather than a check inside each function: the next endpoint
  * added is protected by default instead of by someone remembering.
@@ -30,11 +44,29 @@
  * CONFIGURE (Pages project -> Settings -> Environment variables, not secrets):
  *   ACCESS_TEAM_DOMAIN   e.g. yourteam.cloudflareaccess.com   (required)
  *   ACCESS_AUD           the Access application's AUD tag     (recommended)
+ *   ACCESS_HOSTS         extra hostnames, comma-separated     (optional)
  *
  * ACCESS_TEAM_DOMAIN alone is the real boundary: only Cloudflare can sign a
  * token for your team. ACCESS_AUD narrows it further to this one application,
  * so a token minted for a different app in the same account is refused too.
+ * None of the three is a secret -- the team domain and AUD tag are both in the
+ * login redirect any visitor receives -- but they are deployment config, so
+ * they live in the environment and not in this file.
  */
+
+// Hostnames an Access application actually covers. A deployment alias is NOT
+// on this list and never can be: there is a new one every deploy, forever.
+// Serving the API from exactly the hostname the portal is served from costs
+// nothing -- the browser calls /api/ask as a same-origin relative URL, so a
+// legitimate call is always on the hostname the user loaded the page from.
+const CANONICAL_HOSTS = ["quant-digest-e62.pages.dev"];
+
+function hostAllowed(host, env) {
+  if (CANONICAL_HOSTS.indexOf(host) !== -1) return true;
+  const extra = String(env.ACCESS_HOSTS || "")
+    .split(",").map((h) => h.trim().toLowerCase()).filter(Boolean);
+  return extra.indexOf(host) !== -1;
+}
 
 const CERTS_TTL_MS = 60 * 60 * 1000;      // JWKS rotates rarely; cache an hour
 let _jwks = { at: 0, keys: null, team: "" };
@@ -106,14 +138,14 @@ async function verifyAccessJwt(token, team, aud) {
 export async function onRequest(context) {
   const { request, env, next, data } = context;
 
-  const team = env.ACCESS_TEAM_DOMAIN;
-  if (!team) {
-    // Fails CLOSED. An auth check that is skipped when unconfigured is not an
-    // auth check -- and this codebase already believed it was protected once.
+  // GATE 1 -- hostname. Deliberately before the token check and deliberately
+  // free of configuration: this is the gate that was measured open, and a gate
+  // that an unset variable can disable is the failure being fixed, not a fix.
+  const host = new URL(request.url).hostname.toLowerCase();
+  if (!hostAllowed(host, env)) {
     return deny(
-      "This API is not configured for authentication. Set ACCESS_TEAM_DOMAIN "
-      + "(e.g. yourteam.cloudflareaccess.com) and ideally ACCESS_AUD as "
-      + "environment variables on the Pages project.", 503);
+      `This API is served only from ${CANONICAL_HOSTS[0]}. "${host}" is a `
+      + "deployment alias, which no Cloudflare Access application covers.", 403);
   }
 
   // Access forwards the token in either place depending on how it was reached.
@@ -127,6 +159,28 @@ export async function onRequest(context) {
     if (cookie) token = cookie.slice("CF_Authorization=".length);
   }
   if (!token) return deny("No Cloudflare Access token on this request.", 401);
+
+  // GATE 2 -- the token itself. Unconfigured, we cannot verify a signature:
+  // the team domain is what says WHICH Cloudflare team may sign, and taking it
+  // from the token's own iss claim would let any team sign for us.
+  //
+  // Unconfigured is therefore degraded, not open, and the degradation is the
+  // status quo rather than a new hole: gate 1 has already established that the
+  // request arrived on a hostname Access covers, so a token is present at all
+  // only because Access put it there. Returning 503 here instead would take
+  // down the one hostname that is actually protected, in the name of security,
+  // while changing nothing an attacker could do. Set ACCESS_TEAM_DOMAIN and
+  // this branch stops running.
+  const team = env.ACCESS_TEAM_DOMAIN;
+  if (!team) {
+    data.email = request.headers.get("Cf-Access-Authenticated-User-Email") || "";
+    data.accessSub = "";
+    data.accessUnverified = true;
+    const r = await next();
+    const out = new Response(r.body, r);
+    out.headers.set("x-access-verification", "unconfigured");
+    return out;
+  }
 
   let claims;
   try {
