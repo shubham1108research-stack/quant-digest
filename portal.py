@@ -1727,8 +1727,17 @@ const ASK_EXAMPLES=[
   "What drives commodity carry beyond backwardation?",
   "Summarise recent work on term premium estimation.",
 ];
+// Callbacks waiting on the index, each remembering WHICH VIEW asked. Two
+// separate bugs lived in the old shape: the completion fired `if(VIEW==='ask')`
+// so any other tab waited forever (Build showed "Loading the semantic index"
+// permanently, and the neighbourhood map had the same defect), and
+// `if(indexLoading)return` dropped a second caller's callback on the floor
+// rather than queueing it. The view check belongs per-caller -- it exists so a
+// tab the reader has since navigated away from does not repaint over them.
+let _idxWaiters=[];
 function loadIndex(cb){
   if(VEC&&ARCHIVE_DATA){cb();return;}
+  _idxWaiters.push([VIEW,cb]);
   if(indexLoading)return;
   indexLoading=true;
   Promise.all([
@@ -1758,10 +1767,19 @@ function loadIndex(cb){
     // by the neighbourhood view, which awaits it itself. Holding the index
     // load on it put another megabyte in front of the first answer.
     loadEdges();
-    if(VIEW==='ask')cb();
+    const waiting=_idxWaiters;_idxWaiters=[];
+    waiting.forEach(([view,fn])=>{if(VIEW===view)fn();});
   }).catch(()=>{
     indexLoading=false;
-    if(VIEW==='ask')renderAsk('The semantic index has not been built yet — run the "Semantic Index" workflow once.');
+    const waiting=_idxWaiters;_idxWaiters=[];
+    const msg='The semantic index has not been built yet — run the "Semantic Index" workflow once.';
+    // Every waiter must be told, or a tab that asked sits on its loading
+    // message forever with no indication anything went wrong.
+    waiting.forEach(([view])=>{
+      if(VIEW!==view)return;
+      if(view==='ask')renderAsk(msg);
+      else $('view').innerHTML='<div class="empty">'+esc(msg)+'</div>';
+    });
   });
 }
 // cosine over unit vectors == dot product; int8 rounding is monotonic, so the
