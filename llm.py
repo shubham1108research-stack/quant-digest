@@ -1035,6 +1035,16 @@ def _chat(url: str, key: str, model: str, system: str, user: str,
                           json=body, timeout=timeout)
         if r.status_code == 413:                   # payload/TPM cap: never clears
             return ""
+        # OpenAI's newer models renamed max_tokens to max_completion_tokens and
+        # reject the old name outright. That 400 is not a failure of the
+        # provider, it is a failure of this request -- and treating it as the
+        # former retired OpenAI on its first call, losing the only provider
+        # with credit left while the free tiers were rate-limited. Rename and
+        # retry once rather than fail over.
+        if r.status_code == 400 and "max_completion_tokens" in r.text \
+                and "max_tokens" in body:
+            body["max_completion_tokens"] = body.pop("max_tokens")
+            continue
         if r.status_code in (429, 500, 502, 503):
             wait = int(float(r.headers.get("retry-after", 0))) or 10 * (attempt + 1)
             time.sleep(min(wait, 45))
@@ -1058,7 +1068,8 @@ def extract(items: list[dict], system: str, prompt_fn, validate_fn, key: str,
     complete so a killed run keeps what it paid for.
     """
     batches = [items[i:i + batch_size] for i in range(0, len(items), batch_size)]
-    workers = max(1, int(getattr(config, "LLM_CONCURRENCY", 1)))
+    workers = max(1, int(getattr(config, "LLM_EXTRACT_CONCURRENCY",
+                                getattr(config, "LLM_CONCURRENCY", 1))))
     dead: set[str] = set()
     absent: set[str] = set()
     lock = threading.Lock()

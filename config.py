@@ -1029,6 +1029,12 @@ ARTIFACT_MAX_PITFALLS = 4
 # 1,088 at 3. Full text exists for roughly a third of them, and those are the
 # only ones that can yield implementation detail.
 ARTIFACT_MIN_DESK_FIT = 2
+# Extraction runs at LOWER concurrency than triage. Each batch here carries
+# four papers of selected full text (~28k characters) against triage's forty
+# abstracts, so six in flight is several times the tokens-per-minute -- enough
+# to trip Mistral's free-tier limiter by ourselves, which is exactly what
+# happened: 429 on three workers at once, and the provider retired mid-run.
+LLM_EXTRACT_CONCURRENCY = 3
 ARTIFACT_BATCH = 4              # papers per LLM call -- small, because each
                                 # response is a large structured object
 # Characters of full text sent per paper. The median parsed paper is ~54k
