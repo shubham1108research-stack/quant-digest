@@ -193,10 +193,18 @@ _INDEX = """<!doctype html>
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 a{color:inherit;text-decoration:none;}
-#app{display:grid;grid-template-columns:244px minmax(0,1fr) minmax(0,1.12fr);
+#app{display:grid;grid-template-columns:244px minmax(0,1.25fr) minmax(0,1fr);
   grid-template-rows:minmax(0,1fr);height:100vh;overflow:hidden;}
 #app.wide{grid-template-columns:244px minmax(0,1fr);}
 #app.wide #detail{display:none;}
+/* The detail rail is hidden by VIEW (map/ask/pmap set .wide), never by width,
+   so on a 1280px laptop three columns split into a reading column barely wider
+   than the sidebar. The rail is a companion to the content, not the content,
+   so below this it is the one that goes. */
+@media (max-width:1200px){
+  #app{grid-template-columns:244px minmax(0,1fr);}
+  #detail{display:none;}
+}
 #rail{background:var(--rail);border-right:1px solid var(--line);display:flex;flex-direction:column;
   overflow-y:auto;overflow-x:hidden;min-width:0;min-height:0;}
 #listcol{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--ground);
@@ -536,7 +544,7 @@ table.cot td.p{width:26%}
 .sechead .cnt{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--faint);font-weight:400;}
 .sechead.t2{color:var(--muted);border-bottom-color:var(--line);}
-.entry{display:grid;grid-template-columns:40px 1fr;gap:13px;padding:13px 18px;margin:0;cursor:pointer;
+.entry{display:grid;grid-template-columns:40px 1fr;gap:16px;padding:18px 22px;margin:0;cursor:pointer;
   background:transparent;border:0;border-bottom:1px solid var(--line2);border-radius:0;box-shadow:none;
   transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;}
 .entry:hover{background:var(--panel);}
@@ -554,9 +562,9 @@ table.cot td.p{width:26%}
   font-family:var(--sans);font-size:13.5px;font-weight:700;line-height:1.15;text-align:right;
   font-variant-numeric:tabular-nums;color:var(--gc,var(--accent));}
 .rail .cap{display:none;}
-.title{font-size:15.5px;font-weight:600;line-height:1.3;text-wrap:pretty;transition:color .12s;}
+.title{font-size:17px;font-weight:600;line-height:1.35;text-wrap:pretty;transition:color .12s;}
 .title:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
-.meta{font-family:var(--sans);font-size:11.5px;letter-spacing:.02em;color:var(--muted);margin-top:4px;}
+.meta{font-family:var(--sans);font-size:12.5px;letter-spacing:.02em;color:var(--muted);margin-top:6px;line-height:1.55;}
 .meta .j{color:var(--ink);font-weight:500;}
 #toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:60;
   font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--panel);
@@ -590,7 +598,7 @@ table.cot td.p{width:26%}
 .sl.fit{border-color:transparent;background:color-mix(in srgb,var(--accent) 14%,transparent);
   color:var(--accent);}
 .sl.fitn{border-color:transparent;background:var(--accent);color:var(--panel);}
-.summary{font-size:15px;line-height:1.5;color:var(--ink);margin-top:7px;max-width:63ch;}
+.summary{font-size:16px;line-height:1.65;color:var(--ink);margin-top:10px;max-width:72ch;}
 .empty{color:var(--muted);font-style:italic;padding:56px 0;text-align:center;}
 .entry.classic{grid-template-columns:1fr;}
 .cwrap{display:flex;align-items:baseline;justify-content:space-between;gap:14px;}
@@ -1010,7 +1018,7 @@ function setSleeve(k){
   // choosing a sleeve from a pinned tab's view would be two filters fighting;
   // step back to Archive, where the tag rail is the only thing filtering
   if(VIEW.slice(0,3)==='sl:'){setView('archive');return;}
-  archivePage=0;renderTagbar();render();
+  archivePage=0;pracPage=0;renderTagbar();render();
 }
 function togglePin(k,ev){
   ev.stopPropagation();
@@ -2896,19 +2904,49 @@ function loadArts(){
     .catch(()=>{ARTS={};artsLoading=null;return ARTS;});
   return artsLoading;
 }
+// Reads ARCHIVE_DATA, not DATA, and that is the whole point.
+//
+// data.json is windowed to PORTAL_RECENT_WINDOW_DAYS (60) on the paper's own
+// date, and renderArchive() excludes practitioner items by design. So a
+// practitioner post older than 60 days was reachable from NO tab: not from
+// Archive, which filters it out, and not from here, which never saw it. That
+// was a handful of posts until the Alpha Architect backfill made it ~2,500,
+// and nothing looked broken because Ask reads archive.json + vec.bin directly
+// and could still find them.
+let pracPage=0,pracSrcFilled=false;
 function renderPractitioners(){
+  if(!ARCHIVE_DATA){loadArchive(renderPractitioners);return;}
+  // The source dropdown was built from DATA at init, so a publisher whose
+  // posts are all older than the 60-day window had no option at all. Rebuild
+  // it from the archive the first time we get here, preserving the selection.
+  if(!pracSrcFilled){
+    pracSrcFilled=true;
+    const sel=$('psrc'), keep=sel.value;
+    sel.innerHTML='';
+    sel.add(new Option('All sources','all'));
+    [...new Set(ARCHIVE_DATA.filter(isPrac).map(_psource))].sort()
+      .forEach(s=>sel.add(new Option(s,s)));
+    sel.value=[...sel.options].some(o=>o.value===keep)?keep:'all';
+  }
   const q=$('q').value.toLowerCase().trim();
   const src=$('psrc').value||'all';
-  const rows=DATA.filter(isPrac)
+  const rows=sleeveFilter(ARCHIVE_DATA).filter(isPrac)
     .filter(x=>src==='all'||_psource(x)===src)
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.summary||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
-  const groups={}; rows.forEach(x=>{const s=_psource(x);(groups[s]=groups[s]||[]).push(x);});
   let h=`<div class="dateline">Practitioner &amp; house research <span class="n">· ${rows.length} posts · by source · latest first</span></div>`;
   if(!rows.length){$('view').innerHTML=h+'<div class="empty">No matches.</div>';return;}
+  // Paginated, like Archive: this list is now thousands of entries deep, and
+  // rendering every card at once is what made Archive itself feel slow.
+  const shownCount=Math.min(rows.length,(pracPage+1)*ARCHIVE_PAGE_SIZE);
+  const shown=rows.slice(0,shownCount);
+  const remaining=rows.length-shownCount;
+  const groups={}; shown.forEach(x=>{const s=_psource(x);(groups[s]=groups[s]||[]).push(x);});
   Object.keys(groups).sort().forEach(s=>{const a=groups[s];
     h+=`<div class="sechead t2">${esc(s)}<span class="cnt">${a.length}</span></div>`+a.map(pracEntry).join('');});
+  if(remaining>0)h+=`<button class="loadmore" id="pracmore">Show ${Math.min(ARCHIVE_PAGE_SIZE,remaining)} more <span class="n">(${remaining} left)</span></button>`;
   $('view').innerHTML=h;
+  if(remaining>0)$('pracmore').onclick=()=>{pracPage++;renderPractitioners();};
 }
 // archive.json carries the FULL history (data.json is a bounded recent
 // window -- see portal.build) and only grows; fetch it once, lazily, the
@@ -3113,6 +3151,7 @@ function setView(v){
   if(!$('tagbar').hidden)renderTagbar();
   $('psrc').style.display=v==="practitioners"?'':'none';
   if(v==="archive"||v.slice(0,3)==='sl:')archivePage=0;
+  if(v==="practitioners"||v.slice(0,3)==='sl:')pracPage=0;
   render();
 }
 Object.keys(GROUPS).forEach(g=>{$('g-'+g).onclick=()=>setGroup(g);});
@@ -3128,12 +3167,12 @@ $('t-practitioners').onclick=()=>setView('practitioners');
 $('t-archive').onclick=()=>setView('archive');
 $('t-map').onclick=()=>setView('map');
 $('t-saved').onclick=()=>setView('saved');
-$('q').addEventListener('input',()=>{archivePage=0;render();});
+$('q').addEventListener('input',()=>{archivePage=0;pracPage=0;render();});
 $('month').addEventListener('change',render);
 $('nbermonth').addEventListener('change',render);
 $('cat').addEventListener('change',render);
-$('topic').addEventListener('change',()=>{archivePage=0;render();});
-$('psrc').addEventListener('change',render);
+$('topic').addEventListener('change',()=>{archivePage=0;pracPage=0;render();});
+$('psrc').addEventListener('change',()=>{pracPage=0;render();});
 $('jsel').addEventListener('change',render);
 const root=document.documentElement;
 $('toggle').onclick=()=>{
