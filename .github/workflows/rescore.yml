@@ -60,7 +60,6 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python tools/rescore.py --limit ${{ github.event.inputs.limit || 0 }} ${{ github.event.inputs.force == 'true' && '--force' || '' }} ${{ github.event.inputs.clear_stamps == 'true' && '--clear-stamps' || '' }}
 
       # A8: rescore DELETEs embeddings to invalidate them (rescore.py:140).
@@ -72,6 +71,7 @@ jobs:
         continue-on-error: true
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python tools/embed.py
 
       # always: a long run that times out must keep what it scored

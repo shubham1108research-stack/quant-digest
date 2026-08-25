@@ -51,7 +51,6 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python tools/redo_backfill_months.py ${{ github.event.inputs.months }}
 
       - name: Commit state + portal
@@ -76,6 +75,7 @@ jobs:
       - name: Build docs/ artefacts
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python tools/prepare_deploy.py
 
       - name: Deploy portal to Cloudflare Pages

@@ -80,7 +80,6 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # subscription mailbox (sources.inbox): publishers who block
           # crawlers but will mail you the same content -- SSRN eJournals
           # above all, which have no usable RSS at all. Absent, the collector
@@ -130,6 +129,7 @@ jobs:
       - name: Build docs/ artefacts
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python tools/prepare_deploy.py
 
       - name: Deploy portal to Cloudflare Pages (private hosting)
