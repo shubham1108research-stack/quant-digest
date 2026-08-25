@@ -66,10 +66,17 @@ def page_url(base, n):
     return base if n == 1 else f"{base}?paged={n}"
 
 
-def walk(base, label, section, max_pages, category, log):
-    """Every distinct post the feed will give up, newest first."""
+def walk(base, label, section, max_pages, category, log, start_page=1):
+    """Every distinct post the feed will give up, newest first.
+
+    start_page exists so a walk that stopped at a page cap can be RESUMED
+    rather than restarted. Re-walking from page one is not wrong -- the insert
+    is idempotent -- but it spends hundreds of requests on a publisher's server
+    to re-read what is already held, which is not a polite way to use a feed
+    they are serving for free.
+    """
     out, seen, dry = [], set(), 0
-    for n in range(1, max_pages + 1):
+    for n in range(start_page, max_pages + 1):
         url = page_url(base, n)
         try:
             r = requests.get(url, headers=UA, timeout=45)
@@ -130,6 +137,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--feed", default="alpha", choices=sorted(FEEDS))
     ap.add_argument("--max-pages", type=int, default=400)
+    ap.add_argument("--start-page", type=int, default=1,
+                    help="resume a capped walk instead of restarting it")
     ap.add_argument("--category", default="",
                     help="keep only posts whose feed tags contain this string")
     ap.add_argument("--dry-run", action="store_true",
@@ -138,7 +147,8 @@ def main():
 
     label, base, section = FEEDS[args.feed]
     log(f"[backfill] {label} -- {base}")
-    items = walk(base, label, section, args.max_pages, args.category, log)
+    items = walk(base, label, section, args.max_pages, args.category, log,
+                 start_page=args.start_page)
     if not items:
         log("[backfill] nothing collected")
         return

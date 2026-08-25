@@ -22,9 +22,13 @@ on:
         options: [alpha, quantpedia, newfound]
         default: alpha
       max_pages:
-        description: "Feed pages to walk (5 posts each)"
+        description: "Last feed page to walk (5 posts each)"
         required: false
         default: "400"
+      start_page:
+        description: "First page. Raise it to resume a capped walk politely."
+        required: false
+        default: "1"
       category:
         description: "Keep only posts tagged with this (blank = everything)"
         required: false
@@ -67,6 +71,7 @@ jobs:
           python tools/backfill_practitioner.py \
             --feed "${{ github.event.inputs.feed }}" \
             --max-pages "${{ github.event.inputs.max_pages }}" \
+            --start-page "${{ github.event.inputs.start_page }}" \
             ${{ github.event.inputs.category != '' && format('--category "{0}"', github.event.inputs.category) || '' }} \
             ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
 
