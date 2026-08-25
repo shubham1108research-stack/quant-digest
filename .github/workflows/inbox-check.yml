@@ -1,0 +1,42 @@
+name: Check Feed Mailbox
+
+# Is the subscription mailbox reachable, and is the Gmail filter putting mail
+# where the collector looks? Read-only, writes nothing, touches no state.
+#
+# It runs HERE rather than on a laptop so the app password stays a GitHub
+# secret. The alternative -- exporting FEED_IMAP_PASS into a shell to run
+# tools/inbox_check.py by hand -- puts a live credential in an environment and
+# a history file, to answer a question that takes twenty seconds in CI.
+#
+# It is also much cheaper than the previous way of finding out, which was to
+# run a whole digest and read "[inbox] 0 items" without learning whether that
+# meant a bad password, a missing label, or simply nothing subscribed yet.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # No pip install: inbox_check.py uses imaplib and email from the standard
+      # library on purpose, so this stays a diagnostic that cannot itself fail
+      # for an unrelated reason.
+      - name: Probe the mailbox
+        env:
+          FEED_IMAP_HOST: ${{ secrets.FEED_IMAP_HOST }}
+          FEED_IMAP_USER: ${{ secrets.FEED_IMAP_USER }}
+          FEED_IMAP_PASS: ${{ secrets.FEED_IMAP_PASS }}
+          # Must match digest.yml, or this proves something about a mailbox the
+          # collector never reads.
+          FEED_IMAP_FOLDER: FEN,QuantDigest
+        run: python tools/inbox_check.py

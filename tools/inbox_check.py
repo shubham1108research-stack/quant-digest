@@ -22,10 +22,19 @@ import os
 import sys
 import collections
 
-HOST = os.environ.get("FEED_IMAP_HOST", "imap.gmail.com")
-USER = os.environ.get("FEED_IMAP_USER")
-PASS = os.environ.get("FEED_IMAP_PASS")
-FOLDER = os.environ.get("FEED_IMAP_FOLDER", "INBOX")
+# `or`, not a get() default. An unset GitHub Secret still SETS the environment
+# variable -- to the empty string -- so get("FEED_IMAP_HOST", "imap.gmail.com")
+# returns "" and this connects to nowhere, reporting a mysterious failure for a
+# mailbox that is fine. sources.py already carries that warning; the tool
+# written to DIAGNOSE the mailbox had the bug itself.
+HOST = os.environ.get("FEED_IMAP_HOST") or "imap.gmail.com"
+USER = os.environ.get("FEED_IMAP_USER") or ""
+PASS = os.environ.get("FEED_IMAP_PASS") or ""
+# Comma-separated, matching the collector: SSRN alerts are filtered to one
+# label and the mailed-in digest to another, so checking only the first would
+# report an empty mailbox while the papers sat in the second.
+FOLDER = os.environ.get("FEED_IMAP_FOLDER") or "INBOX"
+FOLDERS = [f.strip() for f in FOLDER.split(",") if f.strip()]
 
 
 def main():
@@ -58,28 +67,53 @@ def main():
     print("login  : OK")
 
     try:
-        typ, _ = M.select(FOLDER, readonly=True)       # read-only, always
-        if typ != "OK":
-            print(f"SELECT {FOLDER} failed: {typ}")
-            return 1
-        typ, data = M.search(None, "ALL")
-        ids = data[0].split() if data and data[0] else []
-        print(f"folder : {len(ids)} messages\n")
+        # List the labels that actually exist first. A Gmail label IS an IMAP
+        # folder, so a filter nobody created, or a name differing only in case,
+        # shows up here as "not present" rather than as an empty mailbox --
+        # which is the difference between "subscribe to something" and "your
+        # filter is misspelled".
+        typ, boxes = M.list()
+        names = []
+        if typ == "OK":
+            for b in boxes or []:
+                line = b.decode("utf-8", "replace") if isinstance(b, bytes) else str(b)
+                if '"' in line:
+                    names.append(line.rsplit('"', 2)[-2])
+        if names:
+            print("labels present: " + ", ".join(sorted(names)[:24]))
+        print("")
+
+        total = 0
         senders = collections.Counter()
-        for num in ids[-40:]:
-            typ, raw = M.fetch(num, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT)])")
-            if typ != "OK" or not raw or not raw[0]:
+        for folder in FOLDERS:
+            if names and folder not in names:
+                print(f"{folder:<16} NOT PRESENT -- no label by that name")
                 continue
-            msg = email.message_from_bytes(raw[0][1])
-            frm = (msg.get("From") or "")
-            dom = frm.split("@")[-1].strip("> ").lower() if "@" in frm else "?"
-            senders[dom] += 1
+            typ, _ = M.select(f'"{folder}"', readonly=True)   # read-only, always
+            if typ != "OK":
+                print(f"{folder:<16} SELECT failed: {typ}")
+                continue
+            typ, data = M.search(None, "ALL")
+            ids = data[0].split() if data and data[0] else []
+            total += len(ids)
+            print(f"{folder:<16} {len(ids)} messages")
+            for num in ids[-40:]:
+                typ, raw = M.fetch(num, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT)])")
+                if typ != "OK" or not raw or not raw[0]:
+                    continue
+                msg = email.message_from_bytes(raw[0][1])
+                frm = (msg.get("From") or "")
+                dom = frm.split("@")[-1].strip("> ").lower() if "@" in frm else "?"
+                senders[dom] += 1
+        print("")
         if senders:
-            print("who is writing to this mailbox (last 40):")
+            print("who is writing to these labels (last 40 each):")
             for dom, n in senders.most_common(12):
                 print(f"   {dom:<34} {n:>3}")
-        else:
-            print("no messages yet -- subscribe to something and re-run")
+        elif total == 0:
+            print("no messages in those labels. Either nothing is subscribed yet,")
+            print("or the Gmail filter is not applying the label -- compare the")
+            print("label list above with FEED_IMAP_FOLDER.")
     finally:
         try:
             M.logout()
