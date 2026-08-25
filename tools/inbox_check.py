@@ -170,6 +170,23 @@ def main():
                     print("   a wrapped link, decoded:")
                     print("     " + red[0][:200])
 
+                # THE LAYOUT AROUND AN ENTRY. Finding the id is only half the
+                # job -- the parser also has to know where the title ends and
+                # the authors begin, and that is pure layout. Print a window
+                # around the LAST abstract link (the first is usually inside
+                # the table of contents, which is the trap) so the structure is
+                # visible instead of assumed.
+                spots = [m.start() for m in
+                         _re.finditer(r"abstract(?:[_-]?id)?=\d{5,9}", body, _re.I)]
+                if spots:
+                    at = spots[-1]
+                    lo, hi = max(0, at - 700), min(len(body), at + 260)
+                    print("")
+                    print("   layout around the last abstract link:")
+                    for line in body[lo:hi].split("\n"):
+                        if line.strip():
+                            print("     | " + line.rstrip()[:96])
+
         print("")
         if senders:
             print("who is writing to these labels (last 40 each):")
