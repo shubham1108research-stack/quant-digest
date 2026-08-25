@@ -299,9 +299,42 @@ def main():
                     help="re-extract papers that already have artifacts")
     ap.add_argument("--dry-run", action="store_true",
                     help="print the selection and one prompt; call nothing")
+    ap.add_argument("--dump", type=int, default=0, metavar="N",
+                    help="print N already-extracted papers and exit -- the "
+                         "only way to eyeball quality when state.db lives in "
+                         "R2 and never reaches the machine you are on")
     args = ap.parse_args()
 
     con = store.connect()
+
+    if args.dump:
+        shown = 0
+        for uid, title, meta in con.execute("SELECT uid, title, meta FROM items"):
+            d = json.loads(meta or "{}")
+            a = d.get(ARTIFACT_KEY)
+            if not a:
+                continue
+            log(f"\n=== {title[:78]}")
+            log(f"    depth={a.get('depth')}  repro={a.get('repro')}")
+            for m in a.get("methods") or []:
+                log(f"    METHOD [{m['family']}] {m['name']}")
+                for k in ("what", "inputs", "hyperparams", "pitfalls"):
+                    if m.get(k):
+                        log(f"        {k:12s} {m[k][:150]}")
+            for f in a.get("factors") or []:
+                log(f"    FACTOR {f['name']} | {f.get('universe')} | "
+                    f"costs={f.get('costs')} | {f.get('reported', '')[:70]}")
+            for ds in a.get("datasets") or []:
+                log(f"    DATA   {ds['name']} ({ds.get('access')}) "
+                    f"{ds.get('provider', '')} {ds.get('frequency', '')}")
+            th = a.get("thesis") or {}
+            if th.get("claim"):
+                log(f"    THESIS [{th.get('evidence')}] {th['claim'][:150]}")
+            shown += 1
+            if shown >= args.dump:
+                break
+        log(f"\n[artifacts] dumped {shown}")
+        return
     todo = select(con, args)
     full = sum(1 for x in todo if x["_depth"] == "full")
     log(f"[artifacts] {len(todo)} papers to extract "

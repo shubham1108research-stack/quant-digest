@@ -70,6 +70,14 @@ jobs:
             ${{ github.event.inputs.full_only == 'true' && '--full-only' || '' }} \
             ${{ github.event.inputs.force == 'true' && '--force' || '' }}
 
+      # state.db lives in R2 and never reaches a developer machine, so the run
+      # log is the only place the extraction can actually be inspected. Print a
+      # few, every time -- counts alone would have looked identical whether the
+      # model returned real methodology or confident boilerplate.
+      - name: Sample the extraction
+        if: always()
+        run: python tools/artifacts.py --dump 3
+
       # always: a run killed at its timeout must still store what it paid for.
       - name: Store state.db
         if: always()
