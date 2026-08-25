@@ -186,6 +186,28 @@ class Index:
                 adj[a].append((b, kind, w / 255.0))
         return adj
 
+    def cosine_ranks(self, qv, uids):
+        """Where each uid sits by RAW COSINE, before any re-ranking.
+
+        This is the diagnostic that says WHICH STAGE lost a paper, and without
+        it the headline numbers are uninterpretable. A paper that is 4,000th by
+        cosine was never reachable and no change to the weights will help --
+        that is an embedding problem. A paper that is 12th by cosine and 300th
+        after askRank was found and then thrown away, which is a weighting
+        problem and a much cheaper fix. Treating those two as one number is how
+        you end up rebuilding an index that was working.
+        """
+        sims = self.vec @ np.asarray(qv, dtype=np.float64)
+        order = np.argsort(-sims, kind="stable")
+        where = {}
+        for rank, i in enumerate(order):
+            u = self.uids[i]
+            if u in uids and u not in where:
+                where[u] = rank
+                if len(where) == len(uids):
+                    break
+        return where
+
     def search(self, qv, terms):
         """Candidates as the browser builds them: recall, re-rank, graph hop."""
         sims = self.vec @ np.asarray(qv, dtype=np.float64)
@@ -296,8 +318,10 @@ def measure(idx, golden, explain=None):
         expect = [u for u in g["expect"] if u in idx.by_uid]
         dropped = [u for u in g["expect"] if u not in idx.by_uid]
         ranks = sorted(pos.get(u, MISSING) for u in expect)
+        cos = idx.cosine_ranks(qvecs[g["q"]], set(expect))
         per_q.append({"q": g["q"], "tier": g["tier"], "expect": expect,
-                      "dropped": dropped, "ranks": ranks})
+                      "dropped": dropped, "ranks": ranks,
+                      "cos": dict((u, cos.get(u, MISSING)) for u in expect)})
         if explain is not None and n == explain:
             log("\n[eval] %s\n  tier=%s  terms=%s" % (g["q"], g["tier"], terms))
             for u in expect:
@@ -353,10 +377,25 @@ def render(summary, per_q):
 
     missed = [q for q in per_q if not q["ranks"] or q["ranks"][0] >= 20]
     if missed:
-        log("\n  missed at 20 (%d):" % len(missed))
+        # cos = where the expected paper sits by RAW COSINE over the whole
+        # index; final = where it sits after askRank and the graph hop. The two
+        # separate an embedding problem from a weighting one, and the fixes are
+        # nothing alike: a paper 4,000th by cosine was never reachable and no
+        # weight change saves it, while a paper 12th by cosine and 300th after
+        # the re-rank was found and then discarded. One number for both is how
+        # you end up rebuilding an index that was working fine.
+        log("\n  missed at 20 (%d)   cos = by cosine alone, final = after the "
+            "re-rank and graph hop:" % len(missed))
         for q in missed:
             r = "none" if not q["ranks"] or q["ranks"][0] >= MISSING else str(q["ranks"][0])
-            log("    [%-8s] rank=%5s  %s" % (q["tier"], r, q["q"][:64]))
+            c = min(q.get("cos", {}).values()) if q.get("cos") else MISSING
+            cs = "none" if c >= MISSING else str(c)
+            log("    [%-8s] cos=%6s final=%6s  %s" % (q["tier"], cs, r, q["q"][:56]))
+        buried = [q for q in missed
+                  if q.get("cos") and min(q["cos"].values()) < int(C["ASK_RECALL"])]
+        if buried:
+            log("\n  %d of those were INSIDE the cosine recall set and were lost "
+                "by the re-rank, not by the embedding." % len(buried))
 
     orphan = sorted(set(u for q in per_q for u in q["dropped"]))
     if orphan:
