@@ -127,8 +127,18 @@ FIELDS
     "inputs"   what you must have to run it (data, features, panel shape)
     "hyperparams"  FULL TEXT ONLY. Concrete settings the paper reports.
                    "" when working from an abstract.
-    "pitfalls"     FULL TEXT ONLY. What the paper itself says goes wrong --
-                   instability, leakage, sensitivity, cost. "" from abstract.
+    "pitfalls"     FULL TEXT ONLY, and ONLY things that GO WRONG: a stated
+                   limitation, an instability, a sensitivity, an assumption
+                   that fails, a cost that bites. It must be something that
+                   would make an implementer change what they do.
+                   YES: "unstable when the covariance is near-singular";
+                        "requires per-series retuning to stay calibrated";
+                        "does not rule out arbitrage".
+                   NO:  "robustness checks were performed"; "motivates the
+                        method"; "the authors also report Sharpe ratios".
+                   Those describe the paper, they do not warn the reader.
+                   Leave "" if the paper states no such limitation. Empty is
+                   the correct and common answer.
 
 "factors": up to {config.ARTIFACT_MAX_FACTORS} tradeable signals. Each:
     "name", "construction" (how it is computed), "universe", "rebalance",
