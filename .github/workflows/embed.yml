@@ -69,11 +69,31 @@ jobs:
           # ingest-one.yml. Absent, the button reports it is not configured and
           # everything else in Ask carries on working.
           GH_TOKEN: ${{ secrets.INGEST_DISPATCH_TOKEN }}
+          # Not keys: these two tell functions/api/_middleware.js which
+          # Cloudflare team may sign an Access token and which applications
+          # count. Both are public -- every visitor gets them in the login
+          # redirect -- but they are still deployment config, and config that
+          # lives only in a dashboard is config that vanishes the day the
+          # project is recreated.
+          #
+          # INERT UNTIL YOU OPT IN. The loop skips anything unset, and neither
+          # secret exists today, so this changes nothing until you run:
+          #
+          #   gh secret set ACCESS_TEAM_DOMAIN
+          #   gh secret set ACCESS_AUD
+          #
+          # Do that ONLY if you want GitHub to be the source of truth. Once
+          # set, every Semantic Index run overwrites whatever is on the Pages
+          # project -- which is the point when recovering a lost project, and a
+          # silent regression if the secret is stale and the dashboard is not.
+          ACCESS_TEAM_DOMAIN: ${{ secrets.ACCESS_TEAM_DOMAIN }}
+          ACCESS_AUD: ${{ secrets.ACCESS_AUD }}
         run: |
           # OPENAI_API_KEY MUST be in this list: Pages secrets are separate
           # from GitHub Secrets, so funding the OpenAI account does nothing
           # for the Ask tab until the key is synced to the Pages project.
-          for k in OPENAI_API_KEY OPENROUTER_API_KEY MISTRAL_API_KEY GH_TOKEN; do
+          for k in OPENAI_API_KEY OPENROUTER_API_KEY MISTRAL_API_KEY GH_TOKEN \
+                   ACCESS_TEAM_DOMAIN ACCESS_AUD; do
             [ -n "${!k}" ] || { echo "skipping $k (not set)"; continue; }
             printf '%s' "${!k}" | npx --yes wrangler@3 pages secret put "$k" --project-name=quant-digest
           done
