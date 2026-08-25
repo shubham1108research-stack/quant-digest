@@ -405,13 +405,24 @@ async function claude(key, question, ctx, history, shape) {
   return text;
 }
 
+// -> { text, model, tried }. Returning WHICH MODEL WROTE IT is not a nicety:
+// this chain degrades silently through four providers of very different
+// capability, and the only visible difference is that the answer gets worse.
+// With OpenRouter out of credit the fallback is a ~22B model being asked to
+// hold a long persona, the depth rules and 120 papers at once -- which reads
+// exactly like the "listy and academic" complaint that prompted this. Nobody
+// could tell, because the response never said.
 async function answer(question, ctx, env, history, shape) {
+  const tried = [];
   // Claude only if a key is explicitly set -- an opt-in override, not the
   // default. Left in place because switching back is then one secret.
   if (env.ANTHROPIC_API_KEY) {
     try {
-      return await claude(env.ANTHROPIC_API_KEY, question, ctx, history, shape);
-    } catch (e) { /* fall through */ }
+      return { text: await claude(env.ANTHROPIC_API_KEY, question, ctx, history, shape),
+               model: CLAUDE_MODEL, tried };
+    } catch (e) {
+      tried.push(`${CLAUDE_MODEL}: ${String(e.message || e).slice(0, 120)}`);
+    }
   }
   const tries = [];
   // DeepSeek via OpenRouter is the chosen default: it matched the field on the
@@ -432,9 +443,11 @@ async function answer(question, ctx, env, history, shape) {
   let last;
   for (const [url, key, model] of tries) {
     try {
-      return await chat(url, key, model, question, ctx, history, shape);
+      return { text: await chat(url, key, model, question, ctx, history, shape),
+               model, tried };
     } catch (e) {
       last = e;                              // free tier rate-limited -> next
+      tried.push(`${model}: ${String(e.message || e).slice(0, 120)}`);
     }
   }
   throw last;
@@ -605,7 +618,8 @@ export async function onRequestPost({ request, env }) {
     if (body.mode === "answer") {
       const ctx = Array.isArray(body.ctx) ? body.ctx.slice(0, MAX_CTX) : [];
       if (!ctx.length) return json({ error: "no context papers supplied" }, 400);
-      return json({ answer: await answer(q, ctx, env, body.history, body.shape) });
+      const a = await answer(q, ctx, env, body.history, body.shape);
+      return json({ answer: a.text, model: a.model, tried: a.tried });
     }
     if (body.mode === "outside") {
       return json(await outside(q, env));

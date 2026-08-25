@@ -452,6 +452,8 @@ table.cot td.p{width:26%}
   display:inline-block;background:none;border:0;font-family:inherit}
 .cotmore:hover{text-decoration:underline}
 .cotstale{font-size:12px;color:var(--medium);margin:6px 0}
+.bywhom{font-family:var(--sans);font-size:10.5px;color:var(--faint);
+  margin:6px 0 0;letter-spacing:.02em}
 .askmode{display:flex;gap:0;margin:0 0 7px;align-self:flex-start;
   border:1px solid var(--line);border-radius:7px;overflow:hidden;width:max-content}
 .askmode button{font-family:var(--sans);font-size:11.5px;font-weight:600;
@@ -1664,7 +1666,7 @@ function saveChats(){
     localStorage.setItem(CHATS_KEY,JSON.stringify(CHATS.slice(0,CHAT_MAX).map(c=>({
       id:c.id,title:c.title,ts:c.ts,
       turns:(c.turns||[]).filter(t=>t.state==='done').slice(-CHAT_TURNS).map(t=>({
-        q:t.q,answer:t.answer,state:'done',ts:t.ts,cached:t.cached,
+        q:t.q,answer:t.answer,model:t.model,state:'done',ts:t.ts,cached:t.cached,
         sources:(t.sources||[]).map(x=>({title:x.title,url:x.url,authors:x.authors,
           date:x.date,seen:x.seen,source:x.source,score:x.score,uid:x.uid,
           _depth:x._depth,_sec:x._sec})),
@@ -1978,7 +1980,7 @@ async function doAsk(q,force){
   const key=qKey(q),hit=(force||turns.length)?null:ANS[key];
   if(hit){
     hit.t=Date.now();persistAns();
-    turns.push({q:q,state:'done',answer:hit.answer,cached:true,ts:Date.now(),
+    turns.push({q:q,state:'done',answer:hit.answer,model:hit.model||'',cached:true,ts:Date.now(),
       sources:hit.sources||[],outside:hit.outside||[]});
     titleChat();saveChats();renderAsk();return;
   }
@@ -2142,7 +2144,11 @@ async function doAsk(q,force){
                      .slice(-HIST_SEND).map(t=>({q:t.q,a:t.answer||''}))})});
     const aj=await ar.json();
     if(!ar.ok)throw new Error(aj.error||'answer failed');
-    turn.answer=aj.answer;turn.state='done';
+    turn.answer=aj.answer;turn.model=aj.model||'';turn.state='done';
+    // A four-provider chain that degrades silently is one nobody can
+    // reason about: the only symptom of falling back to a much smaller
+    // model is that the writing gets worse. Record what actually answered.
+    if(aj.tried&&aj.tried.length)console.info('[ask] fell back:',aj.tried);
     // cache the FIRST turn only, for the same reason it is only read there
     if(!turns.slice(0,-1).length){
       // Cache the SOURCE LIST, not uids. The answer's [n] are numbered over
@@ -2151,7 +2157,7 @@ async function doAsk(q,force){
       // leading passages: every citation pointed at the wrong paper, shifted
       // by up to FT_PASSAGES. The depth and external flags were lost too, so
       // specification-level quotes appeared attributed to abstracts.
-      ANS[key]={answer:aj.answer,t:Date.now(),
+      ANS[key]={answer:aj.answer,model:aj.model||'',t:Date.now(),
         sources:(turn.sources||[]).map(x=>({title:x.title,url:x.url,authors:x.authors,
           date:x.date,seen:x.seen,source:x.source,score:x.score,uid:x.uid,
           _depth:x._depth,_sec:x._sec,_external:x._external})),
@@ -2236,7 +2242,8 @@ function renderAsk(notice){
     else if(t.state==='outside')body='<div class="thinking">Searching the outside literature (OpenAlex, arXiv)\u2026</div>';
     else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' sources'+(t.viaGraph?' ('+t.viaGraph+' via the citation/similarity graph)':'')+((t.passages||[]).length?' ('+t.passages.length+' full-text passages)':'')+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' \u00b7 '+t.reused+' from memory':'')+'\u2026</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
-    else body='<div class="answer">'+md(t.answer,ti)+'</div>';   // math typeset after insert
+    else body='<div class="answer">'+md(t.answer,ti)+'</div>'
+      +(t.model?'<div class="bywhom">answered by '+esc(t.model)+'</div>':'');
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
       `<div class="src" id="src-${ti}-${i+1}"><span class="sn">${i+1}</span>
         <div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
