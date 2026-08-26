@@ -29,6 +29,10 @@ on:
         description: "Record this run as the new baseline (do this deliberately)"
         type: boolean
         default: false
+      bm25:
+        description: "Add the lexical full-text channel (tools/bm25.py)"
+        type: boolean
+        default: false
       compare:
         description: "Score every ranking variant on the same questions instead"
         type: boolean
@@ -89,16 +93,23 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python tools/prepare_deploy.py --skip-map
 
+      # prepare_deploy has already pulled docs/ft from R2, so the text is here.
+      - name: Build the lexical index
+        if: ${{ github.event.inputs.bm25 == 'true' }}
+        run: python tools/bm25.py build
+
       - name: Measure
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
+          BM25=""
+          if [ "${{ github.event.inputs.bm25 }}" = "true" ]; then BM25="--bm25"; fi
           if [ "${{ github.event.inputs.compare }}" = "true" ]; then
-            python eval/run.py --compare
+            python eval/run.py --compare $BM25
           elif [ "${{ github.event.inputs.write_baseline }}" = "true" ]; then
-            python eval/run.py --write-baseline
+            python eval/run.py --write-baseline $BM25
           else
-            python eval/run.py --check
+            python eval/run.py --check $BM25
           fi
 
       # eval/qvec.json caches the 30 question vectors. CI cannot commit it

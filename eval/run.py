@@ -70,6 +70,14 @@ KS = (5, 10, 20, 50)
 # Set by --no-graph. Module-level because Index() reads it at construction,
 # the same way DOCS is read.
 NO_GRAPH = False
+# The lexical channel over parsed full text (tools/bm25.py). Off by default so
+# every number stays comparable to the baseline; turned on with --bm25.
+USE_BM25 = False
+# How deep the lexical channel reaches. It only ever covers the 2,381 papers
+# with parsed full text, so this is a large fraction of what it can return at
+# all -- the cost of a deep list here is nothing like the cost of a deep list
+# over the whole archive.
+BM25_RECALL = 200
 # How far a metric may fall before --check calls it a regression. Recall over
 # 30 questions moves in steps of about 3.3 points, so a tighter bound than one
 # question's worth of movement would fail on noise instead of on changes.
@@ -206,11 +214,13 @@ def _rescore(cands, terms, variant):
             c["rank"] = (max(0.0, c["sim"] / 127.0)
                          + min(0.25, c["mass"] * C["GRAPH_W"]))
     elif variant in ("current", "minmax"):
-        vals = [c["sim"] for c in cands if not c["via_graph"]] or [0.0]
+        vals = [c["sim"] for c in cands
+                if not c["via_graph"] and not c.get("via_bm25")] or [0.0]
         lo, hi = min(vals), max(vals)
         rng = (hi - lo) or 1.0
         for c in cands:
-            s = 0.0 if c["via_graph"] else max(0.0, min(1.0, (c["sim"] - lo) / rng))
+            blind = c["via_graph"] or c.get("via_bm25")
+            s = 0.0 if blind else max(0.0, min(1.0, (c["sim"] - lo) / rng))
             c["rank"] = (C["W_SIM"] * s + C["W_KW"] * _kw_of(c["it"], terms)
                          + C["W_QUALITY"] * ask_quality(c["it"])
                          + min(0.25, c["mass"] * C["GRAPH_W"]))
@@ -225,6 +235,7 @@ def _rescore(cands, terms, variant):
         rk = _ranks_by(cands, lambda i: -_kw_of(cands[i]["it"], terms))
         rq = _ranks_by(cands, lambda i: -ask_quality(cands[i]["it"]))
         rm = _ranks_by(cands, lambda i: -cands[i]["mass"])
+        rb = _ranks_by(cands, lambda i: -cands[i].get("bm25", 0.0))
         for i, c in enumerate(cands):
             # the graph is a fourth list rather than an additive bonus: in rank
             # space an additive constant is not comparable to 1/(k+rank), and
@@ -232,7 +243,13 @@ def _rescore(cands, terms, variant):
             # overwhelming depending on K.
             c["rank"] = (1.0 / (k + rs[i]) + 1.0 / (k + rk[i])
                          + 1.0 / (k + rq[i])
-                         + (1.0 / (k + rm[i]) if c["mass"] > 0 else 0.0))
+                         + (1.0 / (k + rm[i]) if c["mass"] > 0 else 0.0)
+                         # a fifth list, on the same terms as the others: a
+                         # paper the lexical channel never saw contributes
+                         # nothing here rather than contributing a last place,
+                         # which would punish the 89% of the archive that has
+                         # no parsed full text for a fact about our coverage.
+                         + (1.0 / (k + rb[i]) if c.get("bm25", 0) > 0 else 0.0))
     else:
         raise SystemExit("[eval] unknown variant %r" % variant)
     cands.sort(key=lambda c: -c["rank"])
@@ -321,6 +338,28 @@ class Index:
                     break
         return where
 
+    def load_bm25(self):
+        """The lexical index, or a clear refusal. Never a silent no-op.
+
+        A measurement that quietly skipped the channel it was asked to measure
+        would report the control's numbers under the treatment's name, which is
+        the worst failure mode available to a harness.
+        """
+        sys.path.insert(0, str(ROOT / "tools"))
+        import bm25 as bm25mod                                # noqa: PLC0415
+        if not (DOCS / "bm25.bin").exists():
+            raise SystemExit(
+                "[eval] --bm25 given but %s/bm25.bin is missing. Build it with "
+                "`python tools/bm25.py build` (which needs docs/ft, so run "
+                "`python tools/dbsync.py ftpull` first)." % DOCS)
+        self.bm25mod = bm25mod
+        self.bm25 = bm25mod.Bm25(DOCS)
+        covered = sum(1 for u in self.bm25.uids if u in self.by_uid)
+        log("[eval] lexical channel ON -- %s docs indexed, %s of them in the "
+            "archive (%.1f%% of %s rows)"
+            % (f"{self.bm25.n:,}", f"{covered:,}",
+               100.0 * covered / max(len(self.uids), 1), f"{len(self.uids):,}"))
+
     def search(self, qv, terms, variant="current"):
         """Candidates as the browser builds them: recall, re-rank, graph hop.
 
@@ -365,6 +404,29 @@ class Index:
                     continue
                 cands.append({"uid": it["uid"], "row": row, "it": it,
                               "sim": 0.0, "mass": m, "via_graph": True})
+        # THE LEXICAL CHANNEL, added as RECALL rather than as a re-rank.
+        # Its whole purpose is the papers cosine never returned -- ranks 2,889
+        # and 5,124 in the failing set -- so adding it after the candidate list
+        # is closed would be pointless. Everything it finds that cosine already
+        # had just gets a second vote.
+        if getattr(self, "bm25", None) is not None:
+            known = set(c["uid"] for c in cands)
+            for uid, sc in self.bm25.search(terms, limit=BM25_RECALL):
+                it = self.by_uid.get(uid)
+                if it is None:
+                    continue                       # parsed, but not in archive.json
+                if uid in known:
+                    for c in cands:
+                        if c["uid"] == uid:
+                            c["bm25"] = sc
+                            break
+                    continue
+                if it.get("title") in seen_title or it.get("unverified"):
+                    continue
+                seen_title.add(it.get("title"))
+                cands.append({"uid": uid, "row": -1, "it": it, "sim": 0.0,
+                              "mass": 0.0, "via_graph": False, "via_bm25": True,
+                              "bm25": sc})
         _rescore(cands, terms, variant)
         return cands
 
@@ -560,6 +622,9 @@ def main():
                     help="measure an index in another directory (a bake-off "
                          "build), leaving docs/ untouched")
     ap.add_argument("--variant", default="current", choices=VARIANTS)
+    ap.add_argument("--bm25", action="store_true",
+                    help="add the lexical full-text channel as a fifth fusion "
+                         "list (tools/bm25.py); needs docs/bm25.bin")
     ap.add_argument("--compare", action="store_true",
                     help="score every ranking variant on the same questions")
     args = ap.parse_args()
@@ -578,6 +643,8 @@ def main():
         DOCS = pathlib.Path(args.docs)
         log("[eval] measuring the index in %s" % DOCS)
     idx = Index()
+    if args.bm25:
+        idx.load_bm25()
 
     if args.compare:
         # Same index, same questions, same candidate set -- only the ordering

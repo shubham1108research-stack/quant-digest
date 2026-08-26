@@ -78,3 +78,10 @@ pdfs/manual/
 # published. principal_portfolios.pdf was sitting there.
 *.pdf
 
+
+# The lexical full-text index (tools/bm25.py). Derived from docs/ft, which
+# lives in R2 precisely so paper text is not published from a public repo --
+# a term-frequency index of that text does not belong here either. Built at
+# deploy time like vec.bin and edges.bin.
+docs/bm25.bin
+docs/bm25.json
