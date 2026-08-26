@@ -1,0 +1,98 @@
+name: Embedding Bake-off
+
+# A local Hugging Face model against the paid OpenAI embedder, on the same
+# corpus and the same 30 golden questions, decided by a number.
+#
+# WHY IT IS WORTH ASKING. Not cost -- 25,633 papers is about nine cents through
+# text-embedding-3-small. Embeddings are the paid dependency on the path that
+# breaks FIRST: when the credits lapse, embed.py cannot rebuild the index and
+# Ask's mode:"embed" fails outright, so retrieval stops rather than degrades. A
+# local embedder makes search survive an expired card.
+#
+# WHAT IS HELD CONSTANT. Same corpus, same text, same int8 quantisation, same
+# funnel. Only the model differs.
+#
+# THE GRAPH IS OFF FOR BOTH SIDES. docs/edges.bin is built from the OpenAI
+# vectors, so leaving it on would let one model's neighbours rescue the other
+# model's misses -- measuring a hybrid nobody would ship. That also means these
+# numbers are NOT comparable to eval/baseline.json, which includes the graph.
+# The OpenAI run here is the control.
+#
+# Writes nothing: no index is replaced, no state.db is pushed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "sentence-transformers model"
+        required: false
+        default: "BAAI/bge-small-en-v1.5"
+      limit:
+        description: "Papers to embed (0 = the whole archive)"
+        required: false
+        default: "0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: embed-bakeoff
+  cancel-in-progress: true
+
+jobs:
+  bakeoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      # CPU-only torch: the GPU build is several GB and there is no GPU here.
+      - name: Install sentence-transformers (CPU)
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch
+          pip install sentence-transformers
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      # The control side needs the CURRENT index and archive.json, which are
+      # gitignored and rebuilt per run.
+      - name: Build the OpenAI index (the control)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+          python -c "import portal, store; con=store.connect(); print('archive.json ->', portal.build(con), 'items')"
+          python tools/embed.py
+
+      - name: Build the local index
+        run: |
+          python tools/embed_local.py --out docs_local \
+            --model "${{ github.event.inputs.model }}" \
+            --limit "${{ github.event.inputs.limit }}"
+
+      - name: Measure — OpenAI (control)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python eval/run.py --no-graph
+
+      - name: Measure — local model
+        run: python eval/run.py --no-graph --docs docs_local
+
+      - name: Keep the query-vector caches
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bakeoff-qvec
+          path: eval/qvec.json
+          if-no-files-found: ignore
+          retention-days: 14

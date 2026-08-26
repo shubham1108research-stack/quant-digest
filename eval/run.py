@@ -67,6 +67,9 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 EVAL = ROOT / "eval"
 DOCS = ROOT / "docs"
 KS = (5, 10, 20, 50)
+# Set by --no-graph. Module-level because Index() reads it at construction,
+# the same way DOCS is read.
+NO_GRAPH = False
 # How far a metric may fall before --check calls it a regression. Recall over
 # 30 questions moves in steps of about 3.3 points, so a tighter bound than one
 # question's worth of movement would fail on noise instead of on changes.
@@ -254,9 +257,19 @@ class Index:
                 "the wrong thing, so rebuild the index first."
                 % (rows, len(self.uids)))
         self.vec = raw[:rows * self.dim].reshape(rows, self.dim).astype(np.float64)
-        arch = json.loads((DOCS / "archive.json").read_text(encoding="utf-8"))
+        # archive.json is the PAPERS, not the vectors, and is identical for any
+        # embedder -- so a bake-off directory holding only vec.bin/vec.json
+        # falls back to the real one rather than needing a copy.
+        arch_p = DOCS / "archive.json"
+        if not arch_p.exists():
+            arch_p = ROOT / "docs" / "archive.json"
+        arch = json.loads(arch_p.read_text(encoding="utf-8"))
         self.by_uid = {x["uid"]: x for x in arch}
-        self.edges = self._load_edges(rows)
+        # docs/edges.bin is derived FROM the OpenAI vectors. Loading it for a
+        # different embedder would let one model's neighbours rescue another
+        # model's misses, which measures a hybrid nobody would ship. NO_GRAPH
+        # turns it off for both sides so the comparison is the embedding alone.
+        self.edges = None if NO_GRAPH else self._load_edges(rows)
         log("[eval] index %s @ %dd, %s rows, %s archive items, %s"
             % (self.model, self.dim, format(rows, ","),
                format(len(self.by_uid), ","),
@@ -375,6 +388,21 @@ def query_vectors(questions, model, dim):
                 "OPENAI_API_KEY is not set. Run this where the key exists (the "
                 "eval workflow) to refresh eval/qvec.json."
                 % (len(missing), model, dim))
+        if "/" in model:
+            # A local sentence-transformers model, named org/model. The QUERY
+            # must be embedded by the same model as the index or the two land
+            # in different vector spaces and every number below is noise
+            # wearing a measurement's clothes.
+            log("[eval] embedding %d question(s) locally with %s"
+                % (len(missing), model))
+            from sentence_transformers import SentenceTransformer  # noqa: PLC0415
+            st = SentenceTransformer(model)
+            vecs = st.encode(missing, convert_to_numpy=True,
+                             normalize_embeddings=False)
+            for q, v in zip(missing, vecs):
+                cache[_key(q, model, dim)] = [round(float(x), 6) for x in v]
+            path.write_text(json.dumps(cache), encoding="utf-8")
+            return dict((q, cache[_key(q, model, dim)]) for q in questions)
         if not model.startswith("text-embedding"):
             # The query MUST be embedded by the model the index was built with,
             # or it lands in a different vector space and every number below is
@@ -514,6 +542,12 @@ def main():
     ap.add_argument("--explain", type=int, default=None,
                     help="print the full ranking for question N (0-based)")
     ap.add_argument("--golden", default=str(EVAL / "golden.json"))
+    ap.add_argument("--no-graph", action="store_true",
+                    help="ignore edges.bin -- required when comparing two "
+                         "embedders, since the graph is built from one of them")
+    ap.add_argument("--docs", default="",
+                    help="measure an index in another directory (a bake-off "
+                         "build), leaving docs/ untouched")
     ap.add_argument("--variant", default="current", choices=VARIANTS)
     ap.add_argument("--compare", action="store_true",
                     help="score every ranking variant on the same questions")
@@ -521,6 +555,17 @@ def main():
 
     golden = json.loads(
         pathlib.Path(args.golden).read_text(encoding="utf-8"))["questions"]
+    if args.no_graph:
+        global NO_GRAPH
+        NO_GRAPH = True
+        log("[eval] graph hop DISABLED -- measuring the embedding alone")
+    if args.docs:
+        # Index() reads the module-level DOCS. Repointing it is how the
+        # self-tests already build synthetic corpora, so this needs no new
+        # plumbing -- and it keeps the live index strictly read-only.
+        global DOCS
+        DOCS = pathlib.Path(args.docs)
+        log("[eval] measuring the index in %s" % DOCS)
     idx = Index()
 
     if args.compare:
