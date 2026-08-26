@@ -70,6 +70,11 @@ def _export(con) -> list[dict]:
             # Capped on export, not in the matcher: a paper may legitimately
             # carry a dozen, and the cap is about how many fit on a card.
             "tags": (m.get("tags") or [])[:config.TAGS_MAX],
+            # A free PDF a resolver already found -- OpenAlex's
+            # best_oa_location, mostly. _pdfUrl derives arXiv and NBER from
+            # the identifier, but everything else is only knowable because
+            # something went looking, and it was not being shipped at all.
+            "pdf_url": m.get("pdf_url") or "",
             # the second classification: which parts of the desk's book this
             # touches, and how usable it is there
             "sleeves": m.get("sleeves") or [],
@@ -366,6 +371,11 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   padding:2px 9px;cursor:pointer;}
 .tagnote:hover{opacity:.82;}
 .mapbtn.off{opacity:.42;cursor:help;}
+.navtoggle{font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.02em;
+  color:var(--muted);background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;padding:5px 12px;cursor:pointer;transition:all .13s;}
+.navtoggle:hover{border-color:var(--accent);color:var(--accent);}
+.navtoggle.on{color:var(--panel);background:var(--ink);border-color:var(--ink);}
 .mapbtn.addpdf{opacity:.72;border-style:dashed;}
 .mapbtn.addpdf:hover{opacity:1;border-style:solid;border-color:var(--accent);
   background:color-mix(in srgb,var(--accent) 10%,transparent);}
@@ -655,6 +665,9 @@ table.cot td.p{width:26%}
   margin-left:8px;text-decoration:none;vertical-align:1px;display:inline-block;
   transition:background .15s,color .15s,transform .15s;}
 .pdfbtn:hover{background:var(--accent);color:var(--panel);transform:translateY(-1px);}
+.pdfpages{display:flex;flex-direction:column;gap:14px;align-items:center;padding:12px 0;}
+.pdfpage{max-width:100%;height:auto;background:#fff;border:1px solid var(--line);
+  box-shadow:0 2px 10px rgba(0,0,0,.16);border-radius:2px;}
 .loadmore{display:block;width:100%;font-family:var(--sans);font-size:13px;font-weight:600;
   color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:10px;
   padding:12px;margin:14px 0 0;cursor:pointer;transition:border-color .15s,color .15s;}
@@ -789,6 +802,7 @@ footer{padding:0 18px 8px;margin-top:32px;}
       <button id="t-archive">Archive</button>
       <button id="t-map">Map</button>
       <button id="t-pmap" hidden></button>
+      <button id="t-pdf" hidden></button>
       <button id="t-classics">Classics</button>
       <button id="t-anchors">Anchors</button>
       <button id="t-ask" hidden></button>
@@ -804,6 +818,8 @@ footer{padding:0 18px 8px;margin-top:32px;}
       </select>
       <select id="topic" title="Topic" style="display:none"></select>
       <select id="psrc" title="Source" style="display:none"></select>
+      <select id="asrc" title="Journal or source" style="display:none"></select>
+      <button id="pdfonly" class="navtoggle" title="Only papers with a PDF we can open" style="display:none">PDF only</button>
       <select id="jsel" title="Journal" style="display:none"></select>
       <select id="month" style="display:none"></select>
       <select id="nbermonth" title="NBER month" style="display:none"></select>
@@ -837,7 +853,7 @@ const SLEEVES=__SLEEVES_JSON__;
 const SLEEVE_LABEL=Object.fromEntries(SLEEVES);
 const PINS_KEY='qd_pins_v1', PIN_MAX=4;
 let SLEEVE='all', PINS=[];
-const BASE_PAPERS=['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap'];
+const BASE_PAPERS=['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap','pdf'];
 let _toastT=null;
 function toast(msg){
   let el=$('toast');
@@ -879,6 +895,9 @@ async function syncSavedFromServer(){
 // papers) or already point at a PDF directly. SSRN/journal links have no
 // reliable public-PDF pattern, so they fall through to the normal link.
 function _pdfUrl(x){
+  // A resolver's answer wins over any pattern: it is a URL something actually
+  // fetched, where the patterns below are derivations that can go stale.
+  if(x.pdf_url)return x.pdf_url;
   const u=x.url||'';
   let m=u.match(/arxiv\\.org\\/abs\\/([^\\/?#]+)/i);
   if(m)return 'https://arxiv.org/pdf/'+m[1];
@@ -952,7 +971,11 @@ function _implBtn(x){
 }
 function _pdfBtn(x){
   const p=_pdfUrl(x);
-  return p?`<a class="pdfbtn" href="${esc(p)}" target="_blank" rel="noopener" title="Open the publisher's own PDF — save from there">PDF</a>`:'';
+  if(!p)return '';
+  // href is kept so middle-click and "open in new tab" still work; the click
+  // handler opens it in the reading pane instead, because leaving the portal
+  // to read a paper loses the tab, the filter and the place in the list.
+  return `<a class="pdfbtn" href="${esc(p)}" data-pdf="${esc(p)}" data-pdftitle="${esc(x.title||'')}" target="_blank" rel="noopener" title="Open the PDF here">PDF</a>`;
 }
 // Every card gets a way into its own neighbourhood. This is the map that was
 // actually wanted: not 11.5k points, but what sits around ONE paper.
@@ -1162,6 +1185,13 @@ $('view').addEventListener('click',e=>{
   if(im){e.preventDefault();openImplement(im.dataset.impl);}
   const ap=e.target.closest('[data-addpdf]');
   if(ap){e.preventDefault();e.stopPropagation();addPdf(ap.dataset.addpdf);return;}
+  const pv=e.target.closest('[data-pdf]');
+  // A modified click is a deliberate "open this elsewhere" and stays the
+  // browser's to handle; a plain click reads it here.
+  if(pv&&!(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)){
+    e.preventDefault();e.stopPropagation();
+    openPdf(pv.dataset.pdf,pv.dataset.pdftitle);return;
+  }
   const tg=e.target.closest('[data-tag]');
   if(tg){e.preventDefault();e.stopPropagation();setTag(tg.dataset.tag);}
 });
@@ -2583,7 +2613,12 @@ function _pagePassages(items){
 async function parsePdf(file,onProgress){
   const pdfjs=await loadPdfJs();
   const buf=await file.arrayBuffer();
-  const doc=await pdfjs.getDocument({data:buf}).promise;
+  return parsePdfDoc(await pdfjs.getDocument({data:buf}).promise,onProgress);
+}
+// Split from parsePdf so a document fetched from a URL and one chosen from
+// disk go through exactly the same extraction -- an uploaded paper and an
+// auto-fetched one must not become different kinds of record.
+async function parsePdfDoc(doc,onProgress){
   const out=[]; let sec='', para='';
   const flush=()=>{
     const t=para.replace(/\\s+/g,' ').trim();
@@ -2627,8 +2662,156 @@ function _trimPassages(ps,budget){
   keep.sort((a,b)=>a.i-b.i);                 // restore reading order
   return keep.map(x=>x.p);
 }
+// ---- reading a PDF without leaving -----------------------------------
+// Every PDF link used to be target="_blank". Leaving the portal to read a
+// paper loses the tab, the filter and the place in a list 21,000 rows deep,
+// and coming back means rebuilding all three by hand.
+//
+// TWO WAYS TO GET THE BYTES, and the reason is CORS, measured rather than
+// assumed: arxiv.org sends `access-control-allow-origin: *`, so the page can
+// fetch it directly and the proxy is not involved at all. nber.org sends no
+// CORS header, and neither do most publisher hosts, so those go through
+// /api/pdf -- which is host-allowlisted precisely because a Worker that
+// fetches any URL it is handed is an open proxy.
+//
+// Direct first, proxy on failure: it keeps arXiv -- much of the archive --
+// off the Worker entirely, and a fetch that CORS blocks fails immediately.
+async function pdfBytes(url){
+  try{
+    const r=await fetch(url,{mode:'cors'});
+    if(r.ok)return await r.arrayBuffer();
+  }catch(e){ /* CORS or network: fall through to the proxy */ }
+  const r2=await fetch('/api/pdf?url='+encodeURIComponent(url));
+  if(!r2.ok){
+    let msg='could not fetch that PDF';
+    try{ msg=(await r2.json()).error||msg; }catch(e){}
+    throw new Error(msg);
+  }
+  return await r2.arrayBuffer();
+}
+
+let PDF_VIEW=null;
+async function openPdf(url,title){
+  if(!url)return;
+  // The canvases live in a DETACHED node that render() re-attaches. A filter
+  // change elsewhere calls render(), which rewrites #view -- without this the
+  // pages would vanish and never come back, because the render loop has
+  // already finished by then.
+  const host=document.createElement('div'); host.className='pdfpages';
+  const v={url:url,title:title||'',state:'loading',err:'',pages:0,host:host};
+  PDF_VIEW=v;
+  setView('pdf'); render();
+  try{
+    const buf=await pdfBytes(url);
+    const pdfjs=await loadPdfJs();
+    const doc=await pdfjs.getDocument({data:buf}).promise;
+    if(PDF_VIEW!==v)return;                       // navigated away while fetching
+    v.state='ready'; v.pages=doc.numPages; render();
+    // A page at a time: a 60-page paper is 60 canvases, and building them all
+    // up front freezes the tab for several seconds.
+    for(let p=1;p<=doc.numPages;p++){
+      const page=await doc.getPage(p);
+      if(PDF_VIEW!==v)return;
+      const wide=(host.clientWidth||820)-24;
+      const raw=page.getViewport({scale:1});
+      const vp=page.getViewport({scale:Math.max(.5,Math.min(2,wide/raw.width))});
+      const cv=document.createElement('canvas');
+      cv.className='pdfpage'; cv.width=vp.width; cv.height=vp.height;
+      host.appendChild(cv);
+      await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+    }
+  }catch(e){
+    if(PDF_VIEW!==v)return;
+    v.state='error'; v.err=String(e.message||e); render();
+  }
+}
+function renderPdf(){
+  const v=PDF_VIEW;
+  if(!v){$('view').innerHTML='<div class="empty">No PDF open.</div>';return;}
+  $('view').innerHTML='<div class="dateline">'+esc(v.title||'PDF')
+    +'<span class="n"> · '+(v.state==='ready'?(v.pages+' pages'):esc(v.state))+'</span>'
+    +' <a class="pdfbtn" href="'+esc(v.url)+'" target="_blank" rel="noopener"'
+    +' title="Open at the source">source</a></div>';
+  if(v.state==='error'){
+    $('view').innerHTML+='<div class="empty">'+esc(v.err)+'</div>';
+    return;
+  }
+  if(v.state==='loading'){
+    $('view').innerHTML+='<div class="empty">Fetching the PDF…</div>';
+    return;
+  }
+  $('view').appendChild(v.host);
+}
+
+// The send half, shared by the file picker and the automatic fetch: a paper
+// added by hand and one taken from a URL must land as the same record.
+async function sendPassages(uid,it,ps,turn){
+  if(ps.length<3||ps.reduce((a,b)=>a+b.t.split(' ').length,0)<400){
+    throw new Error('this PDF yielded almost no text ('+ps.length+' passages). '
+      +'It is probably a scan with no text layer, and archiving it would let '
+      +'Implement claim a specification nobody can check.');
+  }
+  const before=ps.length;
+  ps=_trimPassages(ps,FT_UPLOAD_MAX);
+  turn.state='thinking';
+  turn.npsg=ps.length; renderAsk();
+  const r=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({mode:'ingest_ft',uid:uid,title:(it&&it.title)||'',passages:ps})});
+  const j=await r.json();
+  if(!r.ok)throw new Error(j.error||'upload failed');
+  turn.state='done';
+  turn.answer='**Parsed in your browser and sent to the archive.**\\n\\n'
+    +'- '+before+' passages extracted'
+    +(ps.length<before?(', '+ps.length+' sent (references and appendices dropped first to fit)'):'')
+    +'\\n- The PDF itself was never uploaded.\\n'
+    +'\\nThe archive is being updated now. Once it finishes, this paper shows a '
+    +'**full text** marker and **▸ implement** becomes available on its card. '
+    +'That takes a few minutes and a redeploy.';
+  // The uid is parsed NOW so the button stops offering an upload again in
+  // this session, even though the deployed index has not caught up yet.
+  if(FT_SET)FT_SET.add(uid);
+}
+
+// Papers whose automatic fetch already failed this session. Without this the
+// button would retry the same dead URL forever instead of falling back.
+const PDF_AUTO_FAILED={};
+
+// A KNOWN PDF IS NOT SOMETHING TO ASK SOMEONE FOR. An NBER working paper, an
+// arXiv preprint and every open-access record carry a derivable PDF location,
+// so fetching it is strictly better than opening a file picker in front of
+// someone who would have to go and download that exact file first.
+async function implementFromPdf(uid,url){
+  const it=ITEM_BY_UID[uid];
+  setView('ask'); newChat(true);
+  const chat=curChat(); const turns=chat?chat.turns:[];
+  const label='Add PDF: '+((it&&it.title)||uid);
+  const turn={q:label,state:'passages',ts:Date.now()};
+  turns.push(turn); titleChat(); renderAsk();
+  try{
+    let hostname=url; try{hostname=new URL(url).hostname;}catch(e){}
+    turn.q='Add PDF: fetching from '+hostname; renderAsk();
+    const buf=await pdfBytes(url);
+    const pdfjs=await loadPdfJs();
+    const doc=await pdfjs.getDocument({data:buf}).promise;
+    const ps=await parsePdfDoc(doc,(p,n)=>{
+      turn.npsg=0; turn.q='Add PDF: parsing page '+p+' of '+n; renderAsk();
+    });
+    turn.q=label;
+    await sendPassages(uid,it,ps,turn);
+  }catch(e){
+    // The picker stays reachable: an allowlist miss, a paywall or a stale
+    // derivation is a reason to offer it, not to give up on the paper.
+    turn.error=String(e.message||e)+' — press ▸ implement again to choose the file by hand.';
+    turn.state='error';
+    PDF_AUTO_FAILED[uid]=1;
+  }
+  saveChats(); renderAsk();
+}
+
 function addPdf(uid){
   const it=ITEM_BY_UID[uid];
+  const url=(it&&!PDF_AUTO_FAILED[uid])?_pdfUrl(it):'';
+  if(url)return implementFromPdf(uid,url);
   const inp=document.createElement('input');
   inp.type='file'; inp.accept='application/pdf,.pdf';
   inp.onchange=async ()=>{
@@ -2640,34 +2823,11 @@ function addPdf(uid){
     const turn={q:'Add PDF: '+((it&&it.title)||uid),state:'passages',ts:Date.now()};
     turns.push(turn); titleChat(); renderAsk();
     try{
-      let ps=await parsePdf(f,(p,n)=>{
+      const ps=await parsePdf(f,(p,n)=>{
         turn.npsg=0; turn.q='Add PDF: parsing page '+p+' of '+n; renderAsk();
       });
       turn.q='Add PDF: '+((it&&it.title)||uid);
-      if(ps.length<3||ps.reduce((a,b)=>a+b.t.split(' ').length,0)<400){
-        throw new Error('this PDF yielded almost no text ('+ps.length+' passages). '
-          +'It is probably a scan with no text layer, and archiving it would let '
-          +'Implement claim a specification nobody can check.');
-      }
-      const before=ps.length;
-      ps=_trimPassages(ps,FT_UPLOAD_MAX);
-      turn.state='thinking';
-      turn.npsg=ps.length; renderAsk();
-      const r=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
-        body:JSON.stringify({mode:'ingest_ft',uid:uid,title:(it&&it.title)||'',passages:ps})});
-      const j=await r.json();
-      if(!r.ok)throw new Error(j.error||'upload failed');
-      turn.state='done';
-      turn.answer='**Parsed in your browser and sent to the archive.**\\n\\n'
-        +'- '+before+' passages extracted'
-        +(ps.length<before?(', '+ps.length+' sent (references and appendices dropped first to fit)'):'')
-        +'\\n- The PDF itself was never uploaded.\\n'
-        +'\\nThe archive is being updated now. Once it finishes, this paper shows a '
-        +'**full text** marker and **▸ implement** becomes available on its card. '
-        +'That takes a few minutes and a redeploy.';
-      // The uid is parsed NOW so the button stops offering an upload again in
-      // this session, even though the deployed index has not caught up yet.
-      if(FT_SET)FT_SET.add(uid);
+      await sendPassages(uid,it,ps,turn);
     }catch(e){
       turn.error=String(e.message||e); turn.state='error';
     }
@@ -3099,6 +3259,18 @@ function renderForYou(){
 // quietly presenting a generated item as established fact.
 const _unver=x=>x.unverified?'<span class="unver" title="Mailed in by the Claude digest; the source site would not confirm this link, so it has not been verified">unverified</span>':'';
 const _psource=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'').trim()||'Other';
+// Archive's own source label. Kept separate from _psource because Archive holds
+// the whole corpus -- journals, NEP, arXiv, SSRN -- and a topic-sweep source
+// like "topic:asset allocation,topic:momentum" is a list, not a name.
+const _asource=x=>{
+  const s=String(x.source||'').split(',')[0].trim();
+  if(s.startsWith('journal:'))return s.slice(8);
+  if(s.startsWith('topic:')||s==='topic-sweep')return 'Topic sweep';
+  return s||'Other';
+};
+// A PDF-availability filter, because "which of these can I actually read right
+// now" is a different question from what any other control answers.
+let PDF_ONLY=false;
 function pracEntry(x){
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
   return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail"></div><div class="body">
@@ -3141,12 +3313,30 @@ function loadArts(){
 // was a handful of posts until the Alpha Architect backfill made it ~2,500,
 // and nothing looked broken because Ask reads archive.json + vec.bin directly
 // and could still find them.
-let pracPage=0,pracSrcFilled=false;
+let pracPage=0,pracSrcFilled=false,archSrcFilled=false;
+// The Archive dropdown is built from ARCHIVE_DATA, not DATA: a journal whose
+// papers are all older than the 60-day window -- which after the backfill is
+// most of them -- has no entry otherwise.
+function _fillArchiveSources(){
+  if(archSrcFilled||!ARCHIVE_DATA)return;
+  archSrcFilled=true;
+  const sel=$('asrc'), keep=sel.value;
+  const counts={};
+  ARCHIVE_DATA.filter(x=>!isPrac(x)).forEach(x=>{
+    const k=_asource(x); counts[k]=(counts[k]||0)+1;
+  });
+  sel.innerHTML='';
+  sel.add(new Option('All sources','all'));
+  Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b))
+    .forEach(k=>sel.add(new Option(k+' ('+counts[k]+')',k)));
+  sel.value=[...sel.options].some(o=>o.value===keep)?keep:'all';
+}
 function renderPractitioners(){
   if(!ARCHIVE_DATA){loadArchive(renderPractitioners);return;}
   // The source dropdown was built from DATA at init, so a publisher whose
   // posts are all older than the 60-day window had no option at all. Rebuild
   // it from the archive the first time we get here, preserving the selection.
+  _fillArchiveSources();
   if(!pracSrcFilled){
     pracSrcFilled=true;
     const sel=$('psrc'), keep=sel.value;
@@ -3216,9 +3406,13 @@ function renderSleeve(key){
 }
 function renderArchive(){
   if(!ARCHIVE_DATA){loadArchive(renderArchive);return;}
+  _fillArchiveSources();
   const q=$('q').value.toLowerCase().trim();
   const t=$('topic').value||'all';
+  const asrc=$('asrc').value||'all';
   let rows=tagFilter(sleeveFilter(ARCHIVE_DATA)).filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
+    .filter(x=>asrc==='all'||_asource(x)===asrc)
+    .filter(x=>!PDF_ONLY||!!_pdfUrl(x))
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.topic||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
   const label=t==='all'?'All topics':t;
@@ -3325,13 +3519,14 @@ function renderClassics(){
 function render(){if(VIEW.slice(0,3)==='sl:'){renderSleeve(VIEW.slice(3));return;}
   if(VIEW==="map"){renderMap();return;}
   if(VIEW==="pmap"){renderPaperMap();return;}
+  if(VIEW==="pdf"){renderPdf();return;}
   VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 // Eleven flat tabs gave every destination the same weight and scrolled half of
 // them off screen. They group by INTENT: read what's new, question the corpus,
 // consult the standing reference, revisit your own picks. Ask and Saved are
 // groups of one -- they are modes, not lists, so they get no sub-row.
 const GROUPS={
-  papers:['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap'],
+  papers:['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap','pdf'],
   ask:['ask'],
   shelf:['classics','anchors'],
   saved:['saved'],
@@ -3374,10 +3569,13 @@ function setView(v){
   // unlike the other facets this one is not view-specific: sleeves are a
   // property of the paper, so it applies anywhere papers are listed. On a
   // pinned tab the sleeve is already decided, so the rail only shows which.
-  $('app').classList.toggle('wide',v==='map'||v==='ask'||v==='pmap');
+  $('app').classList.toggle('wide',v==='map'||v==='ask'||v==='pmap'||v==='pdf');
   $('tagbar').hidden=!(SLEEVE_VIEWS.indexOf(v)>=0||v.slice(0,3)==='sl:');
   if(!$('tagbar').hidden)renderTagbar();
   $('psrc').style.display=v==="practitioners"?'':'none';
+  const arch=(v==="archive"||v.slice(0,3)==='sl:');
+  $('asrc').style.display=arch?'':'none';
+  $('pdfonly').style.display=arch?'':'none';
   if(v==="archive"||v.slice(0,3)==='sl:')archivePage=0;
   if(v==="practitioners"||v.slice(0,3)==='sl:')pracPage=0;
   render();
@@ -3401,6 +3599,12 @@ $('nbermonth').addEventListener('change',render);
 $('cat').addEventListener('change',render);
 $('topic').addEventListener('change',()=>{archivePage=0;pracPage=0;render();});
 $('psrc').addEventListener('change',()=>{pracPage=0;render();});
+$('asrc').addEventListener('change',()=>{archivePage=0;render();});
+$('pdfonly').addEventListener('click',()=>{
+  PDF_ONLY=!PDF_ONLY;
+  $('pdfonly').classList.toggle('on',PDF_ONLY);
+  archivePage=0;render();
+});
 $('jsel').addEventListener('change',render);
 const root=document.documentElement;
 $('toggle').onclick=()=>{
@@ -3530,6 +3734,13 @@ $('detail').addEventListener('click',e=>{
   if(im){e.preventDefault();openImplement(im.dataset.impl);}
   const ap=e.target.closest('[data-addpdf]');
   if(ap){e.preventDefault();e.stopPropagation();addPdf(ap.dataset.addpdf);return;}
+  const pv=e.target.closest('[data-pdf]');
+  // A modified click is a deliberate "open this elsewhere" and stays the
+  // browser's to handle; a plain click reads it here.
+  if(pv&&!(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)){
+    e.preventDefault();e.stopPropagation();
+    openPdf(pv.dataset.pdf,pv.dataset.pdftitle);return;
+  }
   const tg=e.target.closest('[data-tag]');
   if(tg){e.preventDefault();e.stopPropagation();setTag(tg.dataset.tag);}
 });
@@ -3590,7 +3801,8 @@ addEventListener('keydown',e=>{
     case '/': e.preventDefault();$('q').focus();$('q').select();break;
     case '?': e.preventDefault();toggleHelp();break;
     case 's': {const b=document.querySelector('.entry.on .savebtn');if(b)b.click();break;}
-    case 'p': {const a=document.querySelector('.entry.on .pdfbtn');if(a)open(a.href,'_blank','noopener');break;}
+    case 'p': {const a=document.querySelector('.entry.on .pdfbtn');
+      if(a)openPdf(a.dataset.pdf,a.dataset.pdftitle);break;}
     case 'n': {const b=document.querySelector('.entry.on [data-pmap]');if(b)openPaperMap(b.dataset.pmap);break;}
     case '[': _cycleView(-1);break;
     case ']': _cycleView(1);break;

@@ -41,10 +41,18 @@
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 a{color:inherit;text-decoration:none;}
-#app{display:grid;grid-template-columns:244px minmax(0,1fr) minmax(0,1.12fr);
+#app{display:grid;grid-template-columns:244px minmax(0,1.25fr) minmax(0,1fr);
   grid-template-rows:minmax(0,1fr);height:100vh;overflow:hidden;}
 #app.wide{grid-template-columns:244px minmax(0,1fr);}
 #app.wide #detail{display:none;}
+/* The detail rail is hidden by VIEW (map/ask/pmap set .wide), never by width,
+   so on a 1280px laptop three columns split into a reading column barely wider
+   than the sidebar. The rail is a companion to the content, not the content,
+   so below this it is the one that goes. */
+@media (max-width:1200px){
+  #app{grid-template-columns:244px minmax(0,1fr);}
+  #detail{display:none;}
+}
 #rail{background:var(--rail);border-right:1px solid var(--line);display:flex;flex-direction:column;
   overflow-y:auto;overflow-x:hidden;min-width:0;min-height:0;}
 #listcol{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--ground);
@@ -190,6 +198,27 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   margin-left:8px;padding:1px 7px;border-radius:5px;cursor:pointer;
   color:var(--accent);background:transparent;border:1px solid var(--line);}
 .mapbtn:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+.tg{font-family:var(--sans);font-size:10.5px;font-weight:500;letter-spacing:.01em;
+  color:var(--muted);background:transparent;border:1px solid var(--line);
+  border-radius:11px;padding:1.5px 8px;cursor:pointer;
+  transition:color .12s,border-color .12s,background .12s;}
+.tg:hover{color:var(--accent);border-color:var(--accent);}
+.tg.on{color:var(--panel);background:var(--ink);border-color:var(--ink);}
+.tagnote{font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.02em;
+  text-transform:none;color:var(--panel);background:var(--ink);border-radius:11px;
+  padding:2px 9px;cursor:pointer;}
+.tagnote:hover{opacity:.82;}
+.mapbtn.off{opacity:.42;cursor:help;}
+.navtoggle{font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.02em;
+  color:var(--muted);background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;padding:5px 12px;cursor:pointer;transition:all .13s;}
+.navtoggle:hover{border-color:var(--accent);color:var(--accent);}
+.navtoggle.on{color:var(--panel);background:var(--ink);border-color:var(--ink);}
+.mapbtn.addpdf{opacity:.72;border-style:dashed;}
+.mapbtn.addpdf:hover{opacity:1;border-style:solid;border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 10%,transparent);}
+.mapbtn.off:hover{border-color:var(--line);background:none;}
 .pmapbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
   justify-content:space-between;margin:8px 2px 2px;}
 /* the list and the canvas are one control surface: a row highlights its node
@@ -300,6 +329,78 @@ table.cot td.p{width:26%}
   display:inline-block;background:none;border:0;font-family:inherit}
 .cotmore:hover{text-decoration:underline}
 .cotstale{font-size:12px;color:var(--medium);margin:6px 0}
+.council{margin:14px 0 0;border-top:1px solid var(--line);padding-top:10px}
+.chead{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint);margin:0 0 7px}
+.csolo{font-family:var(--sans);font-size:11.5px;color:var(--medium);
+  border-left:2px solid var(--medium);padding:6px 9px;margin:0 0 8px;line-height:1.5}
+.cdet{border:1px solid var(--line);border-radius:6px;margin:0 0 6px;background:var(--panel)}
+.cdet summary{font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 11px;
+  cursor:pointer;color:var(--muted);list-style:none}
+.cdet summary::-webkit-details-marker{display:none}
+.cdet summary:before{content:'▸';display:inline-block;margin-right:7px;
+  color:var(--faint);transition:transform .15s}
+.cdet[open] summary:before{transform:rotate(90deg)}
+.cdet summary:hover{color:var(--accent)}
+.cdet .cm{font-weight:400;color:var(--faint);font-size:10.5px}
+.cbody{padding:2px 13px 10px;font-size:13.5px;line-height:1.6}
+.cbody p{margin:0 0 8px}
+.qok{font-family:var(--sans);font-size:11px;color:var(--strong);margin:8px 0 0;
+  letter-spacing:.01em}
+.qbad{font-family:var(--sans);font-size:12px;color:var(--medium);margin:10px 0 0;
+  border-left:2px solid var(--medium);background:var(--line2);
+  padding:8px 11px;border-radius:0 4px 4px 0;line-height:1.5}
+.qbad-q{font-family:var(--serif);font-size:12.5px;color:var(--ink);
+  margin:6px 0 0;padding-left:8px;border-left:1px solid var(--line)}
+.qbad-n{margin-top:7px;color:var(--muted);font-size:11px}
+.bywhom{font-family:var(--sans);font-size:10.5px;color:var(--faint);
+  margin:6px 0 0;letter-spacing:.02em}
+.askmode{display:flex;gap:0;margin:0 0 7px;align-self:flex-start;
+  border:1px solid var(--line);border-radius:7px;overflow:hidden;width:max-content}
+.askmode button{font-family:var(--sans);font-size:11.5px;font-weight:600;
+  letter-spacing:.02em;padding:5px 13px;border:0;background:var(--panel);
+  color:var(--muted);cursor:pointer;transition:background .12s,color .12s}
+.askmode button+button{border-left:1px solid var(--line)}
+.askmode button:hover:not(.on){color:var(--accent)}
+.askmode button.on{background:var(--ink);color:var(--panel)}
+.bwrap{max-width:none;padding:22px 20px 60px}
+.bhead{font-family:var(--sans);font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.55}
+.bform{display:flex;gap:8px;margin:0 0 6px}
+.bform textarea{flex:1;font-family:var(--sans);font-size:13.5px;line-height:1.5;
+  padding:10px 12px;border:1px solid var(--line);border-radius:7px;background:var(--panel);
+  color:var(--ink);resize:vertical;min-height:62px}
+.bform textarea:focus{outline:none;border-color:var(--accent)}
+.bform button{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:0 16px;
+  border:0;border-radius:7px;background:var(--ink);color:var(--panel);cursor:pointer;align-self:stretch}
+.bform button:disabled{opacity:.5;cursor:default}
+.bex{font-family:var(--sans);font-size:11.5px;color:var(--faint);margin:0 0 20px}
+.bex b{font-weight:500;color:var(--accent);cursor:pointer;border-bottom:1px dotted var(--accent)}
+.bsec{margin:26px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);
+  display:flex;align-items:baseline;gap:9px;font-weight:600;font-size:14px}
+.bsec .n{font-weight:400;font-size:11.5px;color:var(--faint)}
+.bcard{border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin:0 0 9px;
+  background:var(--panel)}
+.bcard h4{margin:0 0 4px;font-size:13.5px;font-weight:600;line-height:1.35}
+.bcard .fam{display:inline-block;font-family:var(--sans);font-size:10px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--accent);
+  border:1px solid var(--accent);border-radius:3px;padding:1px 5px;margin-right:7px}
+.bcard .row{font-size:12.5px;color:var(--muted);margin:5px 0 0;line-height:1.5}
+.bcard .row b{color:var(--ink);font-weight:600}
+.bcard .src{font-family:var(--sans);font-size:11px;color:var(--faint);margin-top:7px}
+.bcard .src a{color:var(--faint);text-decoration:none;border-bottom:1px solid var(--line)}
+.bcard .src a:hover{color:var(--accent)}
+.bpit{border-left:2px solid var(--medium);background:var(--line2);border-radius:0 5px 5px 0;
+  padding:8px 11px;margin:0 0 8px;font-size:12.5px;line-height:1.5}
+.bdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:8px}
+.bd{border:1px solid var(--line);border-radius:7px;padding:9px 11px;background:var(--panel);font-size:12.5px}
+.bd .nm{font-weight:600;margin-bottom:3px}
+.bd .mt{font-family:var(--sans);font-size:11px;color:var(--faint)}
+.acc{display:inline-block;font-family:var(--sans);font-size:9.5px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;border-radius:3px;padding:1px 5px;margin-left:5px}
+.acc.public{color:var(--strong);border:1px solid var(--strong)}
+.acc.licensed,.acc.proprietary{color:var(--medium);border:1px solid var(--medium)}
+.acc.unclear,.acc.synthetic{color:var(--faint);border:1px solid var(--line)}
+.bnote{font-family:var(--sans);font-size:11.5px;color:var(--faint);margin:6px 0 0;line-height:1.5}
 .unver{display:inline-block;font-family:var(--sans);font-size:10px;font-weight:700;
   letter-spacing:.06em;text-transform:uppercase;color:var(--medium);
   border:1px solid var(--medium);border-radius:3px;padding:1px 5px;margin-right:6px;
@@ -310,7 +411,7 @@ table.cot td.p{width:26%}
 .sechead .cnt{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--faint);font-weight:400;}
 .sechead.t2{color:var(--muted);border-bottom-color:var(--line);}
-.entry{display:grid;grid-template-columns:40px 1fr;gap:13px;padding:13px 18px;margin:0;cursor:pointer;
+.entry{display:grid;grid-template-columns:40px 1fr;gap:16px;padding:18px 22px;margin:0;cursor:pointer;
   background:transparent;border:0;border-bottom:1px solid var(--line2);border-radius:0;box-shadow:none;
   transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;}
 .entry:hover{background:var(--panel);}
@@ -328,9 +429,9 @@ table.cot td.p{width:26%}
   font-family:var(--sans);font-size:13.5px;font-weight:700;line-height:1.15;text-align:right;
   font-variant-numeric:tabular-nums;color:var(--gc,var(--accent));}
 .rail .cap{display:none;}
-.title{font-size:15.5px;font-weight:600;line-height:1.3;text-wrap:pretty;transition:color .12s;}
+.title{font-size:17px;font-weight:600;line-height:1.35;text-wrap:pretty;transition:color .12s;}
 .title:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
-.meta{font-family:var(--sans);font-size:11.5px;letter-spacing:.02em;color:var(--muted);margin-top:4px;}
+.meta{font-family:var(--sans);font-size:12.5px;letter-spacing:.02em;color:var(--muted);margin-top:6px;line-height:1.55;}
 .meta .j{color:var(--ink);font-weight:500;}
 #toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:60;
   font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--panel);
@@ -364,7 +465,7 @@ table.cot td.p{width:26%}
 .sl.fit{border-color:transparent;background:color-mix(in srgb,var(--accent) 14%,transparent);
   color:var(--accent);}
 .sl.fitn{border-color:transparent;background:var(--accent);color:var(--panel);}
-.summary{font-size:15px;line-height:1.5;color:var(--ink);margin-top:7px;max-width:63ch;}
+.summary{font-size:16px;line-height:1.65;color:var(--ink);margin-top:10px;max-width:72ch;}
 .empty{color:var(--muted);font-style:italic;padding:56px 0;text-align:center;}
 .entry.classic{grid-template-columns:1fr;}
 .cwrap{display:flex;align-items:baseline;justify-content:space-between;gap:14px;}
@@ -403,6 +504,9 @@ table.cot td.p{width:26%}
   margin-left:8px;text-decoration:none;vertical-align:1px;display:inline-block;
   transition:background .15s,color .15s,transform .15s;}
 .pdfbtn:hover{background:var(--accent);color:var(--panel);transform:translateY(-1px);}
+.pdfpages{display:flex;flex-direction:column;gap:14px;align-items:center;padding:12px 0;}
+.pdfpage{max-width:100%;height:auto;background:#fff;border:1px solid var(--line);
+  box-shadow:0 2px 10px rgba(0,0,0,.16);border-radius:2px;}
 .loadmore{display:block;width:100%;font-family:var(--sans);font-size:13px;font-weight:600;
   color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:10px;
   padding:12px;margin:14px 0 0;cursor:pointer;transition:border-color .15s,color .15s;}
@@ -537,6 +641,7 @@ footer{padding:0 18px 8px;margin-top:32px;}
       <button id="t-archive">Archive</button>
       <button id="t-map">Map</button>
       <button id="t-pmap" hidden></button>
+      <button id="t-pdf" hidden></button>
       <button id="t-classics">Classics</button>
       <button id="t-anchors">Anchors</button>
       <button id="t-ask" hidden></button>
@@ -552,6 +657,8 @@ footer{padding:0 18px 8px;margin-top:32px;}
       </select>
       <select id="topic" title="Topic" style="display:none"></select>
       <select id="psrc" title="Source" style="display:none"></select>
+      <select id="asrc" title="Journal or source" style="display:none"></select>
+      <button id="pdfonly" class="navtoggle" title="Only papers with a PDF we can open" style="display:none">PDF only</button>
       <select id="jsel" title="Journal" style="display:none"></select>
       <select id="month" style="display:none"></select>
       <select id="nbermonth" title="NBER month" style="display:none"></select>
@@ -585,7 +692,7 @@ const SLEEVES=[["trend_cta", "Trend / CTA"], ["carry", "Carry"], ["fx", "FX"], [
 const SLEEVE_LABEL=Object.fromEntries(SLEEVES);
 const PINS_KEY='qd_pins_v1', PIN_MAX=4;
 let SLEEVE='all', PINS=[];
-const BASE_PAPERS=['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap'];
+const BASE_PAPERS=['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap','pdf'];
 let _toastT=null;
 function toast(msg){
   let el=$('toast');
@@ -627,6 +734,9 @@ async function syncSavedFromServer(){
 // papers) or already point at a PDF directly. SSRN/journal links have no
 // reliable public-PDF pattern, so they fall through to the normal link.
 function _pdfUrl(x){
+  // A resolver's answer wins over any pattern: it is a URL something actually
+  // fetched, where the patterns below are derivations that can go stale.
+  if(x.pdf_url)return x.pdf_url;
   const u=x.url||'';
   let m=u.match(/arxiv\.org\/abs\/([^\/?#]+)/i);
   if(m)return 'https://arxiv.org/pdf/'+m[1];
@@ -651,19 +761,67 @@ function _pdfUrl(x){
 }
 // We parsed this paper's PDF into passages, so Ask can quote it by section
 // rather than paraphrase an abstract. That is worth knowing BEFORE you ask.
+// docs/nber.json records carried no uid until now, and both _mapBtn and
+// _implBtn key off one -- so NBER cards rendered with NEITHER button, which
+// reads as the feature not existing rather than as not applying here. The
+// writers now emit uid, but the file already on disk holds 16 years of records
+// without one, so resolve by URL against whatever is loaded until it is
+// regenerated. Same for any other renderer whose records are slimmed copies.
+let UID_BY_URL=null;
+function _uidIndex(){
+  if(UID_BY_URL)return UID_BY_URL;
+  UID_BY_URL={};
+  const add=r=>{if(r&&r.url&&r.uid)UID_BY_URL[r.url]=r.uid;};
+  (ARCHIVE_DATA||[]).forEach(add);
+  (DATA||[]).forEach(add);
+  return UID_BY_URL;
+}
+function _uid(x){
+  if(!x)return '';
+  if(x.uid)return x.uid;
+  return (x.url&&_uidIndex()[x.url])||'';
+}
 function _ftBtn(x){
-  return (FT_SET&&x.uid&&FT_SET.has(x.uid))
+  const uid=_uid(x);
+  return (FT_SET&&uid&&FT_SET.has(uid))
     ?'<span class="ftmark" title="Full text parsed - Ask can quote this paper by section">full text</span>':'';
+}
+// Turn ONE paper's method into a specification: notation, equations,
+// pseudocode with the timing written on every line, the traps, and an explicit
+// list of what the paper never says.
+//
+// Only offered when the full text is parsed, and the gate is enforced again
+// server-side in functions/api/ask.js -- a disabled button is a courtesy, not
+// a control, and the reason it exists here is so the limit is legible BEFORE
+// someone spends a call rather than after. An abstract cannot support a lag
+// structure or a coefficient, and pseudocode is exactly those things.
+function _implBtn(x){
+  const uid=_uid(x);
+  if(!uid)return'';
+  const full=FT_SET&&FT_SET.has(uid);
+  if(!full){
+    // Not disabled -- an INVITATION. The gate is real (an abstract cannot
+    // support a lag structure) but it is a missing input, not a permanent no,
+    // and a greyed control that only explains why is a dead end. If you have
+    // the PDF, the paper can be read here and now.
+    return `<button class="mapbtn addpdf" data-addpdf="${esc(uid)}" title="Only the abstract is held, and pseudocode needs a specification, a lag structure and an exact sample. Add the PDF and it is parsed in your browser — the file itself is never uploaded.">▸ implement — add PDF</button>`;
+  }
+  return `<button class="mapbtn" data-impl="${esc(uid)}" title="Method, notation, pseudocode with timing, traps, and what the paper leaves unspecified">▸ implement</button>`;
 }
 function _pdfBtn(x){
   const p=_pdfUrl(x);
-  return p?`<a class="pdfbtn" href="${esc(p)}" target="_blank" rel="noopener" title="Open the publisher's own PDF — save from there">PDF</a>`:'';
+  if(!p)return '';
+  // href is kept so middle-click and "open in new tab" still work; the click
+  // handler opens it in the reading pane instead, because leaving the portal
+  // to read a paper loses the tab, the filter and the place in the list.
+  return `<a class="pdfbtn" href="${esc(p)}" data-pdf="${esc(p)}" data-pdftitle="${esc(x.title||'')}" target="_blank" rel="noopener" title="Open the PDF here">PDF</a>`;
 }
 // Every card gets a way into its own neighbourhood. This is the map that was
 // actually wanted: not 11.5k points, but what sits around ONE paper.
 function _mapBtn(x){
-  if(!x||!x.uid)return'';
-  return `<button class="mapbtn" data-pmap="${esc(x.uid)}" title="Papers around this one">◈ near</button>`;
+  const uid=_uid(x);
+  if(!uid)return'';
+  return `<button class="mapbtn" data-pmap="${esc(uid)}" title="Papers around this one">◈ near</button>`;
 }
 function _saveBtn(x){
   if(!x||!x.url)return'';
@@ -739,15 +897,42 @@ function entry(x,rank){
   const chips=sl.length?'<div class="sleeves">'+sl.map(k=>
     `<span class="sl${fit?' fit':''}" data-sleeve="${k}" title="Filter to ${esc(SLEEVE_LABEL[k]||k)}">${esc(SLEEVE_LABEL[k]||k)}</span>`).join('')+
     (fit?`<span class="sl fitn" title="usable on the desk">desk ${x.desk_fit}/3</span>`:'')+'</div>':'';
+  // Subject tags sit BELOW the sleeve chips and are visually quieter, because
+  // the hierarchy is real: a sleeve says which book this belongs to, a tag says
+  // what it is about. Same delegated-click pattern as the sleeve chips.
+  const tg=tagChips(x);
   return `<div class="${cls}${x.url&&x.url===SEL?' on':''}"${_rk(x)}>${sc}<div class="body">${badge}
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${watch}${_unver(x)}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
-    ${chips}${sm}${subs}</div></div>`;
+    <div class="meta">${watch}${_unver(x)}<span class="j">${esc(jlabel(x))}</span>${who} · ${esc(x.date||x.seen)}${x.topic?' · '+esc(x.topic):''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
+    ${chips}${tg}${sm}${subs}</div></div>`;
 }
 // Desk sleeves are MULTI-LABEL -- a paper can be carry AND fx at once -- so this
 // is a membership test, not equality. Papers with no labels yet are HIDDEN when
 // a sleeve is chosen rather than shown: an unlabelled paper is not evidence of
 // belonging, and the backfill is still filling them in.
+// Subject tags. TAG_SEL is a single active tag, not a set: two tags ANDed
+// together on a 10k archive almost always returns nothing, and an empty result
+// reads as a broken filter rather than as a narrow one.
+let TAG_SEL='';
+function tagChips(x){
+  const t=(x.tags||[]);
+  if(!t.length)return '';
+  return '<div class="tags">'+t.map(k=>
+    `<span class="tg${k===TAG_SEL?' on':''}" data-tag="${esc(k)}" title="Filter to ${esc(k)}">${esc(k)}</span>`
+  ).join('')+'</div>';
+}
+function tagNote(){
+  if(!TAG_SEL)return '';
+  return `<span class="tagnote" data-tag="${esc(TAG_SEL)}" title="Clear this filter">tag: ${esc(TAG_SEL)} ×</span>`;
+}
+function tagFilter(rows){
+  if(!TAG_SEL)return rows;
+  return rows.filter(x=>(x.tags||[]).indexOf(TAG_SEL)>=0);
+}
+function setTag(k){
+  TAG_SEL=(TAG_SEL===k)?'':k;      // clicking the active tag clears it
+  archivePage=0;pracPage=0;render();
+}
 function sleeveFilter(rows,force){
   const s=force||SLEEVE;
   if(s==='all')return rows;
@@ -767,7 +952,7 @@ function setSleeve(k){
   // choosing a sleeve from a pinned tab's view would be two filters fighting;
   // step back to Archive, where the tag rail is the only thing filtering
   if(VIEW.slice(0,3)==='sl:'){setView('archive');return;}
-  archivePage=0;renderTagbar();render();
+  archivePage=0;pracPage=0;renderTagbar();render();
 }
 function togglePin(k,ev){
   ev.stopPropagation();
@@ -834,7 +1019,20 @@ $('view').addEventListener('click',e=>{
   // delegated: cards are re-rendered on every filter change, so per-node
   // handlers would be rebound (and leak) constantly
   const m=e.target.closest('[data-pmap]');
-  if(m){e.preventDefault();openPaperMap(m.dataset.pmap);}
+  if(m){e.preventDefault();openPaperMap(m.dataset.pmap);return;}
+  const im=e.target.closest('[data-impl]');
+  if(im){e.preventDefault();openImplement(im.dataset.impl);}
+  const ap=e.target.closest('[data-addpdf]');
+  if(ap){e.preventDefault();e.stopPropagation();addPdf(ap.dataset.addpdf);return;}
+  const pv=e.target.closest('[data-pdf]');
+  // A modified click is a deliberate "open this elsewhere" and stays the
+  // browser's to handle; a plain click reads it here.
+  if(pv&&!(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)){
+    e.preventDefault();e.stopPropagation();
+    openPdf(pv.dataset.pdf,pv.dataset.pdftitle);return;
+  }
+  const tg=e.target.closest('[data-tag]');
+  if(tg){e.preventDefault();e.stopPropagation();setTag(tg.dataset.tag);}
 });
 function grouped(rows){
   const q=$('q').value.toLowerCase().trim();
@@ -1353,6 +1551,12 @@ function renderMap(){
 // page until we have the shortlist. /api/ask (a Cloudflare Pages Function
 // holding the API key) only embeds the question and writes the final synthesis.
 let VEC=null,VEC_UIDS=null,VEC_DIM=0,VEC_SHARD=64,ITEM_BY_UID={},indexLoading=false;
+// The model the index was BUILT with, read from vec.json and sent back with
+// every query. The question has to be embedded by the same model and width
+// as the index or it lands in a different vector space -- which returns
+// confident nonsense, not an error. Naming it in two files and hoping they
+// agree is how that happens; this makes the index describe itself.
+let VEC_MODEL='',VEC_BUILD='';
 let indexWarning='';
 // The paper graph (docs/edges.bin, built by tools/graph.py). Packed triples of
 // <srcRow uint32, dstRow uint32, kind uint8, weight float32> against
@@ -1431,6 +1635,11 @@ const CTX_MAX=120;         // must match MAX_CTX in functions/api/ask.js
 const OUTSIDE_SHOW=14;     // outside hits listed under an answer
 const OUTSIDE_CTX=8;       // outside hits the agent is allowed to see
 let CHATS=[],CHAT_ID=null,asking=false,ASK_OUTSIDE=true,QUEUED={};
+// Analyse vs Build is a property of the CONVERSATION, not of the app: a
+// follow-up ("now do it for FX instead") has to inherit the shape of the answer
+// it is following up on, or the thread changes character halfway through.
+function askMode(){const c=curChat();return (c&&c.mode)||'analyse';}
+function setAskMode(m){const c=curChat();if(!c)return;c.mode=m;saveChats();renderAsk();}
 // guards every browser-state writer: persisting before the load has run
 // would overwrite the stored copy with an empty one
 let STATE_LOADED=false;
@@ -1461,7 +1670,9 @@ function saveChats(){
     localStorage.setItem(CHATS_KEY,JSON.stringify(CHATS.slice(0,CHAT_MAX).map(c=>({
       id:c.id,title:c.title,ts:c.ts,
       turns:(c.turns||[]).filter(t=>t.state==='done').slice(-CHAT_TURNS).map(t=>({
-        q:t.q,answer:t.answer,state:'done',ts:t.ts,cached:t.cached,
+        q:t.q,answer:t.answer,model:t.model,quotes:t.quotes,
+        council:t.council,councilSolo:t.councilSolo,
+        state:'done',ts:t.ts,cached:t.cached,
         sources:(t.sources||[]).map(x=>({title:x.title,url:x.url,authors:x.authors,
           date:x.date,seen:x.seen,source:x.source,score:x.score,uid:x.uid,
           _depth:x._depth,_sec:x._sec})),
@@ -1518,14 +1729,49 @@ function askQuality(x){
   const q=scored?_strengthScore(x)/100:0.45;
   return Math.max(0,Math.min(1.2,q*(x.reputation||1)));
 }
+// Rescale similarity ACROSS THE CANDIDATE SET, so the three terms in askRank
+// actually span comparable ranges. Call before ranking; sets _simN on each.
+//
+// WHY. eval/run.py measured the old ranking and found it was discarding papers
+// the embedding had already found: cosine rank 1 came out 512th, rank 2 came
+// out 356th, and 8 of 14 misses were inside the recall set before this
+// function got to them. Ordering by cosine alone scored BETTER than the
+// re-rank (hit@20 0.57 against 0.53), which is the clearest possible statement
+// that the re-rank was subtracting value.
+//
+// The cause was a range mismatch rather than a wrong weight. kw uses the whole
+// of [0,1] -- a question whose every word appears scores exactly 1 -- and
+// quality reaches 1.2. But sim is a cosine, and cosines on this corpus sit
+// between roughly 0.2 and 0.7 and never approach 1. A 0.55 weight on a term
+// that moves through half its range is worth less than a 0.30 weight on a term
+// that uses all of its own, so the weights said similarity dominates while the
+// arithmetic said keyword overlap did. Fixing /127^2 to /127 removed one
+// instance of this; this is the rest of it.
+//
+// Measured over eval/golden.json, same candidate set, re-rank alone:
+//     hit@20  0.53 -> 0.63     vocab tier 0.10 -> 0.30
+//     abstract tier 0.92 -> 1.00, MRR 0.508 -> 0.486
+// RRF at k=20 reached hit@20 0.67 but dropped MRR to 0.355; one question of
+// coverage is not worth that, and this keeps the weights tunable.
+function scaleSims(cands){
+  let lo=Infinity,hi=-Infinity;
+  cands.forEach(c=>{if(!c._viaGraph){const s=c._sim||0;if(s<lo)lo=s;if(s>hi)hi=s;}});
+  const rng=(hi-lo)||1;
+  cands.forEach(c=>{
+    // graph arrivals have no similarity to the question at all -- they are
+    // here because of who they sit next to -- so they get the floor, not a
+    // rescaled zero, which below lo would come out negative.
+    c._simN=c._viaGraph?0:Math.max(0,Math.min(1,((c._sim||0)-lo)/rng));
+  });
+}
 function askRank(x,terms){
-  // /127, not /127^2. tools/embed.py stores unit vectors scaled by 127, but
-  // the QUERY vector arrives as raw floats from the embed call -- so the dot
-  // product peaks near 127, not 16129. Dividing by the square capped sim at
-  // ~0.008 against keyword's 0.30, which meant this re-rank was keyword
-  // overlap plus the archive's own quality score, with the embedding
-  // deciding only which 200 candidates got here and then being ignored.
-  const sim=Math.max(0,Math.min(1,(x._sim||0)/127));
+  // _simN when the caller has scaled the set, else fall back to the raw
+  // cosine. /127, not /127^2: tools/embed.py stores unit vectors scaled by
+  // 127 and the QUERY arrives as raw floats, so the dot product peaks near
+  // 127, not 16129. Dividing by the square capped sim at ~0.008 against
+  // keyword's 0.30 and made the embedding decide only which candidates got
+  // here before being ignored.
+  const sim=Math.max(0,Math.min(1,x._simN!=null?x._simN:(x._sim||0)/127));
   const kw=0.6*kwHit(terms,x.title)+0.4*kwHit(terms,x.summary);
   return W_SIM*sim+W_KW*kw+W_QUALITY*askQuality(x);
 }
@@ -1535,8 +1781,17 @@ const ASK_EXAMPLES=[
   "What drives commodity carry beyond backwardation?",
   "Summarise recent work on term premium estimation.",
 ];
+// Callbacks waiting on the index, each remembering WHICH VIEW asked. Two
+// separate bugs lived in the old shape: the completion fired `if(VIEW==='ask')`
+// so any other tab waited forever (Build showed "Loading the semantic index"
+// permanently, and the neighbourhood map had the same defect), and
+// `if(indexLoading)return` dropped a second caller's callback on the floor
+// rather than queueing it. The view check belongs per-caller -- it exists so a
+// tab the reader has since navigated away from does not repaint over them.
+let _idxWaiters=[];
 function loadIndex(cb){
   if(VEC&&ARCHIVE_DATA){cb();return;}
+  _idxWaiters.push([VIEW,cb]);
   if(indexLoading)return;
   indexLoading=true;
   Promise.all([
@@ -1545,6 +1800,7 @@ function loadIndex(cb){
     ARCHIVE_DATA?Promise.resolve(ARCHIVE_DATA):fetch('archive.json').then(r=>r.json()),
   ]).then(([meta,buf,arch])=>{
     VEC_UIDS=meta.uids;VEC=new Int8Array(buf);VEC_DIM=meta.dim||0;VEC_SHARD=meta.shard||64;
+    VEC_MODEL=meta.model||'';VEC_BUILD=meta.build||'';
     // vec.json is the MANIFEST for vec.bin -- row i of the buffer is uids[i].
     // If the two disagree, retrieve() reads past the end of an Int8Array,
     // which yields undefined rather than throwing: every score becomes NaN and
@@ -1558,6 +1814,16 @@ function loadIndex(cb){
         ? 'The search index is truncated: '+rows.toLocaleString()+' of '+
           (meta.n||0).toLocaleString()+' papers have vectors. Run the "Semantic Index" workflow.'
         : 'The search index is empty — run the "Semantic Index" workflow.';
+    }else if(rows>VEC_UIDS.length){
+      // The SYMMETRIC case, which used to pass in silence. A .bin with MORE
+      // rows than the manifest names is just as much a mismatch: the surplus
+      // papers are unaddressable, retrieve() never sees them, and nothing
+      // anywhere says so. A half-written manifest looks exactly like a smaller
+      // archive.
+      indexWarning='The search index and its manifest disagree: vec.bin holds '+
+        rows.toLocaleString()+' vectors but vec.json names only '+
+        VEC_UIDS.length.toLocaleString()+
+        '. The extra rows are unreachable — rebuild with the "Semantic Index" workflow.';
     }
     ARCHIVE_DATA=arch;
     arch.forEach(x=>{if(x.uid)ITEM_BY_UID[x.uid]=x;if(x.url)ITEM_BY_URL[x.url]=x;});
@@ -1566,10 +1832,19 @@ function loadIndex(cb){
     // by the neighbourhood view, which awaits it itself. Holding the index
     // load on it put another megabyte in front of the first answer.
     loadEdges();
-    if(VIEW==='ask')cb();
+    const waiting=_idxWaiters;_idxWaiters=[];
+    waiting.forEach(([view,fn])=>{if(VIEW===view)fn();});
   }).catch(()=>{
     indexLoading=false;
-    if(VIEW==='ask')renderAsk('The semantic index has not been built yet — run the "Semantic Index" workflow once.');
+    const waiting=_idxWaiters;_idxWaiters=[];
+    const msg='The semantic index has not been built yet — run the "Semantic Index" workflow once.';
+    // Every waiter must be told, or a tab that asked sits on its loading
+    // message forever with no indication anything went wrong.
+    waiting.forEach(([view])=>{
+      if(VIEW!==view)return;
+      if(view==='ask')renderAsk(msg);
+      else $('view').innerHTML='<div class="empty">'+esc(msg)+'</div>';
+    });
   });
 }
 // cosine over unit vectors == dot product; int8 rounding is monotonic, so the
@@ -1698,8 +1973,25 @@ async function loadAbstracts(picks){
     const need=[...new Set(miss.map(p=>Math.floor(p._row/VEC_SHARD)))]
       .filter(s=>!(s in ABS_SHARD));
     await Promise.all(need.map(s=>
-      fetch('abs/'+s+'.json').then(r=>r.json()).then(j=>{ABS_SHARD[s]=j;})
-        .catch(()=>{ABS_SHARD[s]={};})));
+      // A shard is keyed by ROW INDEX, and row indices only mean anything
+      // relative to the manifest they were built with. A cached shard served
+      // against a newer vec.json therefore hands back a DIFFERENT paper's
+      // abstract, which goes into the Ask prompt as evidence -- no error, no
+      // warning, a confident answer citing a paper that was never read.
+      // Ascending row order makes that rare; _build makes it detectable.
+      // Discarding is safe: the abstract is an enrichment, and an answer built
+      // from summaries is merely thinner, while one built from the wrong
+      // abstracts is wrong.
+      fetch('abs/'+s+'.json').then(r=>r.json()).then(j=>{
+        const rows=(j&&j.rows)?j.rows:j;          // pre-stamp shards were flat
+        if(j&&j._build&&VEC_BUILD&&j._build!==VEC_BUILD){
+          console.warn('abs shard '+s+' was built for index '+j._build
+            +' but the manifest is '+VEC_BUILD+'; discarding it');
+          ABS_SHARD[s]={};
+          return;
+        }
+        ABS_SHARD[s]=rows||{};
+      }).catch(()=>{ABS_SHARD[s]={};})));
     miss.forEach(p=>{
       const sh=ABS_SHARD[Math.floor(p._row/VEC_SHARD)]||{};
       const a=sh[String(p._row)]||'';
@@ -1729,6 +2021,71 @@ function typesetMath(el){
   }catch(e){}
 }
 const _mdEsc=s=>esc(s);
+// ---- Quote verification --------------------------------------------------
+// The depth contract REQUIRES a verbatim quote next to any specification-level
+// claim. Nothing checked it. QuantMind's summariser refuses a finding whose
+// quote is not a literal substring of its chunk -- an assertion in code, not a
+// request in prose -- and that single difference is why its citations can be
+// trusted and ours could only be hoped over.
+//
+// We still hold every passage we sent, so this is a substring test, not new
+// infrastructure. It FLAGS rather than rejects: the first pass also catches
+// legitimate near-misses -- smart quotes, ellipsis, a collapsed line break --
+// and normalising those is the actual work. Throwing away a good answer over
+// punctuation would be a worse failure than the one being fixed.
+//
+// Normalisation is deliberately generous, because a false alarm trains you to
+// ignore the flag, which is the only way this feature can truly fail.
+function _qnorm(t){
+  return String(t||'')
+    .replace(/[‘’‛′]/g,"'")     // curly singles -> '
+    .replace(/[“”‟″]/g,'"')     // curly doubles -> "
+    .replace(/[‐-―−]/g,'-')          // dashes/minus -> -
+    .replace(/[…]/g,'...')
+    .replace(/\s+/g,' ')
+    .trim().toLowerCase();
+}
+// Quoted spans in the answer. Only doubles: single quotes are apostrophes far
+// more often than citations, and a check that fires on "don't" is noise.
+// Short spans are skipped -- a quoted term of art is not a sourced claim.
+const _QMIN=25;
+function _quotesIn(text){
+  const out=[];
+  const rx=/[“"]([^“”"]{25,400})[”"]/g;
+  let m;
+  while((m=rx.exec(String(text||''))))out.push(m[1]);
+  return out;
+}
+// A quote verifies if it appears in ANY supplied source, not only the one it
+// cites. Tying it to the bracketed number would flag correct quotes whenever
+// the model cited the right passage under a neighbouring index, and the claim
+// being tested here is "did this text come from the sources at all".
+function verifyQuotes(answer,ctx){
+  const quotes=_quotesIn(answer);
+  if(!quotes.length)return null;
+  const hay=(ctx||[]).map(p=>_qnorm(p.summary||'')).join(' • ');
+  const missing=quotes.filter(q=>{
+    const n=_qnorm(q);
+    if(n.length<_QMIN)return false;
+    if(hay.includes(n))return false;
+    // A quote elided mid-sentence ("... and therefore") is still faithful to
+    // its source; check the ends independently before calling it unsupported.
+    const parts=n.split('...').map(x=>x.trim()).filter(x=>x.length>=_QMIN);
+    return !(parts.length>1&&parts.every(x=>hay.includes(x)));
+  });
+  return {n:quotes.length,missing:missing};
+}
+function quoteBadge(v){
+  if(!v||!v.n)return '';
+  if(!v.missing.length)
+    return `<div class="qok" title="Every quoted passage was found verbatim in the sources supplied to the model">`
+      +`✓ ${v.n} quote${v.n>1?'s':''} verified against the sources</div>`;
+  const list=v.missing.slice(0,3).map(q=>
+    `<div class="qbad-q">“${esc(q.slice(0,160))}${q.length>160?'…':''}”</div>`).join('');
+  return `<div class="qbad" title="These strings were not found in any source sent to the model">`
+    +`⚠ ${v.missing.length} of ${v.n} quoted passages could not be found in the sources`
+    +list+`<div class="qbad-n">Treat the claims resting on these as unsupported until you have checked the paper.</div></div>`;
+}
 function md(t,ti){
   const lines=String(t||'').split('\n');let h='',ul=false;
   for(let raw of lines){
@@ -1757,7 +2114,7 @@ async function doAsk(q,force){
   const key=qKey(q),hit=(force||turns.length)?null:ANS[key];
   if(hit){
     hit.t=Date.now();persistAns();
-    turns.push({q:q,state:'done',answer:hit.answer,cached:true,ts:Date.now(),
+    turns.push({q:q,state:'done',answer:hit.answer,model:hit.model||'',cached:true,ts:Date.now(),
       sources:hit.sources||[],outside:hit.outside||[]});
     titleChat();saveChats();renderAsk();return;
   }
@@ -1767,7 +2124,7 @@ async function doAsk(q,force){
   renderAsk();
   try{
     const er=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({mode:'embed',q:q})});
+      body:JSON.stringify({mode:'embed',q:q,model:VEC_MODEL,dim:VEC_DIM})});
     const ej=await er.json();
     if(!er.ok)throw new Error(ej.error||'embed failed');
     // a width mismatch means query and index are in different vector spaces --
@@ -1779,6 +2136,7 @@ async function doAsk(q,force){
     // stage 2: re-order by question-relevance BLENDED with the archive's own
     // scores -- free, instant, and it reuses work the pipeline already did
     const terms=qTerms(q);
+    scaleSims(cands);
     cands.forEach(c=>{c._rank=askRank(c,terms);});
     cands.sort((a,b)=>b._rank-a._rank);
     // Graph hop: bring in neighbours of the strongest candidates that
@@ -1793,7 +2151,11 @@ async function doAsk(q,force){
         if(known.has(row))continue;
         const uid=VEC_UIDS[row], it=ITEM_BY_UID[uid];
         if(!it)continue;
-        const c=Object.assign({},it,{_row:row,_sim:0,_viaGraph:true});
+        // _simN explicitly, not left to askRank's fallback: these arrive after
+        // scaleSims has run, and a graph paper has no similarity to the
+        // question by construction. Relying on the fallback would make the
+        // score depend on which branch happened to fire.
+        const c=Object.assign({},it,{_row:row,_sim:0,_simN:0,_viaGraph:true});
         c._rank=askRank(c,terms)+Math.min(0.25,m*GRAPH_W);
         cands.push(c);viaGraph++;
       }
@@ -1861,15 +2223,25 @@ async function doAsk(q,force){
     // Passages lead the context so their citation numbers come first, and the
     // section label travels with them -- a specification claim has to be
     // attributable to "Section 4.2", not to the paper in general.
+    // Build answers are written FROM the typed artifacts, so fetch them before
+    // assembling context. Analyse never pays for this.
+    if(askMode()==='build'){ try{ await loadArts(); }catch(e){} }
+    // Typed artifacts, attached only in Build mode and only where they exist.
+    // ARTS is keyed by uid, so a passage and its parent paper resolve to the
+    // same block -- deliberately: the extractor read the whole paper, not the
+    // one section BM25 happened to surface.
+    const _arts=p=>(askMode()==='build'&&ARTS&&p&&p.uid)?ARTS[p.uid]:undefined;
     const ctx=psg.map(x=>({title:x.paper.title+(x.sec?' — '+x.sec:''),
         authors:x.paper.authors,date:x.paper.date,source:x.paper.source,
-        topic:x.paper.topic,summary:x.text,depth:'full'}))
+        topic:x.paper.topic,summary:x.text,depth:'full',
+        artifacts:_arts(x.paper)}))
       .concat(picks.map(p=>({title:p.title,authors:p.authors,
         date:p.date,source:p.source,topic:p.topic,
         summary:foundBy[p._row]||p._full||p.summary,
         // tell the agent HOW MUCH text is behind each source, so it can refuse a
         // specification question on an abstract instead of inventing one
-        depth:p._full?'abstract':'summary_only'})));
+        depth:p._full?'abstract':'summary_only',
+        artifacts:_arts(p)})));
     // The archive is a curated slice, not the literature. Look outside for what
     // it does not hold, and let the agent SEE the best few -- marked as not
     // held, so it can say "there is a 2024 paper you do not have that does
@@ -1904,14 +2276,68 @@ async function doAsk(q,force){
       title:h.title,url:h.url,authors:h.authors,date:h.year?String(h.year):'',
       source:h.venue||'',uid:h.uid,_external:true})));
     turn.state='thinking';renderAsk();
+    // ---- Council ---------------------------------------------------------
+    // Four calls, sequenced HERE rather than inside one Function: the browser
+    // already fans out scan batches this way, it keeps each request well inside
+    // a Worker's limits, and it lets the UI show which stage is running instead
+    // of one long opaque wait.
+    if(askMode()==='council'){
+      const call=async (role,prior,rotate)=>{
+        const r=await fetch('/api/ask',{method:'POST',
+          headers:{'content-type':'application/json'},
+          body:JSON.stringify({mode:'council',role:role,q:q,ctx:ctxAll,
+                               prior:prior||'',rotate:rotate})});
+        const j=await r.json();
+        if(!r.ok)throw new Error(j.error||(role+' failed'));
+        return {text:j.answer||'',model:j.model||''};
+      };
+      turn.state='proposing';renderAsk();
+      const prop=await call('propose','',0);
+      turn.council={proposal:prop};renderAsk();
+
+      turn.state='challenging';renderAsk();
+      // rotate 1 and 2 so the challengers are answered by DIFFERENT providers
+      // than the proposer where more than one is configured -- a model arguing
+      // with itself agrees with itself
+      // The newline escapes below are doubled on purpose: this text passes
+      // through portal.py's non-raw _INDEX literal on its way to the browser,
+      // so a single escape arrives as a real newline and splits the string.
+      const priorProp='THE POSITION UNDER REVIEW:\n\n'+prop.text;
+      const [ev,im]=await Promise.all([
+        call('challenge_evidence',priorProp,1),
+        call('challenge_implementation',priorProp,2),
+      ]);
+      turn.council={proposal:prop,evidence:ev,implementation:im};renderAsk();
+
+      turn.state='reconciling';renderAsk();
+      const rec=await call('reconcile',
+        priorProp+'\n\nCHALLENGE - EVIDENCE:\n\n'+ev.text+
+        '\n\nCHALLENGE - IMPLEMENTATION:\n\n'+im.text,3);
+      turn.council={proposal:prop,evidence:ev,implementation:im,reconciled:rec};
+      turn.answer=rec.text;turn.model=rec.model;
+      turn.quotes=verifyQuotes(rec.text,ctxAll);
+      // If every role landed on the same model the exchange is one model
+      // talking to itself. Say so rather than let the format imply an
+      // independence that was not there.
+      const models=[prop.model,ev.model,im.model,rec.model];
+      turn.councilSolo=models.every(m=>m===models[0]);
+      turn.state='done';
+      titleChat();saveChats();renderAsk();
+      asking=false;return;
+    }
     const ar=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({mode:'answer',q:q,ctx:ctxAll,
+      body:JSON.stringify({mode:'answer',q:q,ctx:ctxAll,shape:askMode(),
         // prior turns, oldest first, so a follow-up resolves against the thread
         history:turns.slice(0,-1).filter(t=>t.state==='done')
                      .slice(-HIST_SEND).map(t=>({q:t.q,a:t.answer||''}))})});
     const aj=await ar.json();
     if(!ar.ok)throw new Error(aj.error||'answer failed');
-    turn.answer=aj.answer;turn.state='done';
+    turn.answer=aj.answer;turn.model=aj.model||'';turn.state='done';
+    turn.quotes=verifyQuotes(aj.answer,ctxAll);
+    // A four-provider chain that degrades silently is one nobody can
+    // reason about: the only symptom of falling back to a much smaller
+    // model is that the writing gets worse. Record what actually answered.
+    if(aj.tried&&aj.tried.length)console.info('[ask] fell back:',aj.tried);
     // cache the FIRST turn only, for the same reason it is only read there
     if(!turns.slice(0,-1).length){
       // Cache the SOURCE LIST, not uids. The answer's [n] are numbered over
@@ -1920,7 +2346,7 @@ async function doAsk(q,force){
       // leading passages: every citation pointed at the wrong paper, shifted
       // by up to FT_PASSAGES. The depth and external flags were lost too, so
       // specification-level quotes appeared attributed to abstracts.
-      ANS[key]={answer:aj.answer,t:Date.now(),
+      ANS[key]={answer:aj.answer,model:aj.model||'',t:Date.now(),
         sources:(turn.sources||[]).map(x=>({title:x.title,url:x.url,authors:x.authors,
           date:x.date,seen:x.seen,source:x.source,score:x.score,uid:x.uid,
           _depth:x._depth,_sec:x._sec,_external:x._external})),
@@ -1935,6 +2361,362 @@ async function doAsk(q,force){
 }
 function askSubmit(){
   const el=$('askq');const q=el.value;el.value='';doAsk(q);
+}
+// IMPLEMENT: one paper, read closely, turned into a specification.
+//
+// Retrieval here is the opposite of the Ask flow's. Ask casts wide and narrows;
+// this reads deep into a SINGLE paper and deliberately fuses in nothing else.
+// Cross-paper contamination is how the wrong lag structure ends up attributed
+// to the wrong author, and that mistake is invisible in the output -- it reads
+// exactly like the right answer.
+const IMPL_PASSAGES=20;      // within one paper, not across the corpus
+// Sections in the order this mode needs them. The method, the data and the
+// results table are all required and are almost never adjacent, so taking the
+// first N passages would reliably return the introduction three times.
+const IMPL_SECTION_RANK=[
+  [/method|model|estimat|specif|framework|approach|algorithm/i,0],
+  [/data|sample|universe|variable/i,1],
+  [/result|table|empirical|finding|evidence/i,2],
+  [/robust|appendix|supplement/i,3],
+];
+function _implRank(sec){
+  const s=String(sec||'');
+  for(const [re,r] of IMPL_SECTION_RANK)if(re.test(s))return r;
+  return 4;
+}
+// A passage carrying an equation is worth more here than one that does not:
+// this mode's whole output is symbols and their timing.
+function _hasMath(t){
+  // Every backslash is DOUBLED because _INDEX is a non-raw Python string:
+  // written once, Python turns a word-boundary escape into a backspace byte
+  // (0x08) and ships a regex that parses fine and silently matches nothing.
+  // tools/check_js.py fails the build on those bytes now -- this has happened
+  // three times, and it caught the comment that used to be on this line too.
+  return /[=<>]\s*[-+(]?\s*\w|\\[a-zA-Z]+|\bsum_|\balpha\b|\bbeta\b|_\{|\^\{/.test(String(t||''));
+}
+// ---- add a PDF -------------------------------------------------------
+// The reader has the paper; the archive does not. Rather than leaving the
+// Implement button greyed with an explanation, take the PDF.
+//
+// IT IS PARSED IN THE BROWSER AND THE FILE IS NEVER UPLOADED. pdf.js runs
+// locally, and only the extracted passages are sent. A paper someone has a
+// licence to read stays on their machine; the archive gains the text it needs
+// to quote it by section.
+//
+// This is weaker than GROBID, which is what tools/fulltext.py uses server-side:
+// no reference parsing, no table extraction, headings recovered by shape rather
+// than by understanding. The depth gate does not care -- what makes an
+// Implement answer trustworthy is the verbatim-quote requirement and the "gaps
+// may not be empty" contract, and both work on any faithful text.
+const PDFJS_SRC='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.mjs';
+const PDFJS_WORKER='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs';
+const FT_UPLOAD_MAX=52000;      // must stay under FT_MAX_CHARS in ask.js
+let _pdfjs=null;
+function loadPdfJs(){
+  if(_pdfjs)return _pdfjs;
+  _pdfjs=import(PDFJS_SRC).then(m=>{
+    m.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
+    return m;
+  });
+  return _pdfjs;
+}
+// A heading, by shape rather than by meaning: numbered ("4.2 Robustness"), or
+// a short line in title/upper case with no terminal full stop. Crude, and it
+// only has to be good enough to label a passage -- a wrong label costs a
+// citation that reads oddly, a wrong PASSAGE would cost the answer.
+const HEAD_NUM=/^\s*(\d{1,2}(\.\d{1,2}){0,2})[.)]?\s+(\S.{0,70})$/;
+const HEAD_WORDS=/^(abstract|introduction|related work|literature|data|methodology|methods?|model|estimation|results?|empirical|robustness|discussion|conclusions?|appendix|references)\b/i;
+function _looksHeading(line){
+  const s=line.trim();
+  if(s.length<3||s.length>80)return false;
+  if(/[.;:,]$/.test(s))return false;
+  if(HEAD_NUM.test(s))return true;
+  if(HEAD_WORDS.test(s))return true;
+  // ALL CAPS, few words -- common in older working papers
+  return s.length<50&&s===s.toUpperCase()&&/[A-Z]{3}/.test(s)&&s.split(/\s+/).length<=7;
+}
+// Join the per-item text pdf.js returns into lines, then lines into passages
+// under the last heading seen. Paragraph breaks come from the y coordinate,
+// because pdf.js gives position, not structure.
+function _pagePassages(items){
+  const lines=[]; let cur='', lastY=null;
+  items.forEach(it=>{
+    const y=(it.transform&&it.transform[5])||0;
+    if(lastY!==null&&Math.abs(y-lastY)>3){ if(cur.trim())lines.push(cur.trim()); cur=''; }
+    cur+=it.str+(it.hasEOL?' ':'');
+    lastY=y;
+  });
+  if(cur.trim())lines.push(cur.trim());
+  return lines;
+}
+async function parsePdf(file,onProgress){
+  const pdfjs=await loadPdfJs();
+  const buf=await file.arrayBuffer();
+  return parsePdfDoc(await pdfjs.getDocument({data:buf}).promise,onProgress);
+}
+// Split from parsePdf so a document fetched from a URL and one chosen from
+// disk go through exactly the same extraction -- an uploaded paper and an
+// auto-fetched one must not become different kinds of record.
+async function parsePdfDoc(doc,onProgress){
+  const out=[]; let sec='', para='';
+  const flush=()=>{
+    const t=para.replace(/\s+/g,' ').trim();
+    // Below ~80 characters it is a caption, a page number or a stray line.
+    if(t.length>=80)out.push({s:sec.slice(0,120),t:t});
+    para='';
+  };
+  for(let p=1;p<=doc.numPages;p++){
+    const page=await doc.getPage(p);
+    const content=await page.getTextContent();
+    _pagePassages(content.items).forEach(line=>{
+      if(_looksHeading(line)){ flush(); sec=line; return; }
+      para+=' '+line;
+      if(para.length>1400)flush();          // keep passages citable, not chapters
+    });
+    flush();
+    if(onProgress)onProgress(p,doc.numPages);
+  }
+  return out;
+}
+// References and appendices are the bulk of a long paper and the least useful
+// part for an implementation, so they go first when trimming to fit. What
+// Implement needs is method, data and results.
+function _trimPassages(ps,budget){
+  const rank=s=>{
+    const x=String(s||'').toLowerCase();
+    if(/refer|bibliograph/.test(x))return 4;
+    if(/appendix|supplement/.test(x))return 3;
+    if(/result|table|empirical|evidence/.test(x))return 1;
+    if(/method|model|estimat|data|specif/.test(x))return 0;
+    return 2;
+  };
+  const sorted=ps.map((p,i)=>({p:p,i:i,r:rank(p.s)}))
+                 .sort((a,b)=>a.r-b.r||a.i-b.i);
+  const keep=[]; let size=2;
+  for(const it of sorted){
+    const cost=JSON.stringify(it.p).length+1;
+    if(size+cost>budget)continue;
+    size+=cost; keep.push(it);
+  }
+  keep.sort((a,b)=>a.i-b.i);                 // restore reading order
+  return keep.map(x=>x.p);
+}
+// ---- reading a PDF without leaving -----------------------------------
+// Every PDF link used to be target="_blank". Leaving the portal to read a
+// paper loses the tab, the filter and the place in a list 21,000 rows deep,
+// and coming back means rebuilding all three by hand.
+//
+// TWO WAYS TO GET THE BYTES, and the reason is CORS, measured rather than
+// assumed: arxiv.org sends `access-control-allow-origin: *`, so the page can
+// fetch it directly and the proxy is not involved at all. nber.org sends no
+// CORS header, and neither do most publisher hosts, so those go through
+// /api/pdf -- which is host-allowlisted precisely because a Worker that
+// fetches any URL it is handed is an open proxy.
+//
+// Direct first, proxy on failure: it keeps arXiv -- much of the archive --
+// off the Worker entirely, and a fetch that CORS blocks fails immediately.
+async function pdfBytes(url){
+  try{
+    const r=await fetch(url,{mode:'cors'});
+    if(r.ok)return await r.arrayBuffer();
+  }catch(e){ /* CORS or network: fall through to the proxy */ }
+  const r2=await fetch('/api/pdf?url='+encodeURIComponent(url));
+  if(!r2.ok){
+    let msg='could not fetch that PDF';
+    try{ msg=(await r2.json()).error||msg; }catch(e){}
+    throw new Error(msg);
+  }
+  return await r2.arrayBuffer();
+}
+
+let PDF_VIEW=null;
+async function openPdf(url,title){
+  if(!url)return;
+  // The canvases live in a DETACHED node that render() re-attaches. A filter
+  // change elsewhere calls render(), which rewrites #view -- without this the
+  // pages would vanish and never come back, because the render loop has
+  // already finished by then.
+  const host=document.createElement('div'); host.className='pdfpages';
+  const v={url:url,title:title||'',state:'loading',err:'',pages:0,host:host};
+  PDF_VIEW=v;
+  setView('pdf'); render();
+  try{
+    const buf=await pdfBytes(url);
+    const pdfjs=await loadPdfJs();
+    const doc=await pdfjs.getDocument({data:buf}).promise;
+    if(PDF_VIEW!==v)return;                       // navigated away while fetching
+    v.state='ready'; v.pages=doc.numPages; render();
+    // A page at a time: a 60-page paper is 60 canvases, and building them all
+    // up front freezes the tab for several seconds.
+    for(let p=1;p<=doc.numPages;p++){
+      const page=await doc.getPage(p);
+      if(PDF_VIEW!==v)return;
+      const wide=(host.clientWidth||820)-24;
+      const raw=page.getViewport({scale:1});
+      const vp=page.getViewport({scale:Math.max(.5,Math.min(2,wide/raw.width))});
+      const cv=document.createElement('canvas');
+      cv.className='pdfpage'; cv.width=vp.width; cv.height=vp.height;
+      host.appendChild(cv);
+      await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+    }
+  }catch(e){
+    if(PDF_VIEW!==v)return;
+    v.state='error'; v.err=String(e.message||e); render();
+  }
+}
+function renderPdf(){
+  const v=PDF_VIEW;
+  if(!v){$('view').innerHTML='<div class="empty">No PDF open.</div>';return;}
+  $('view').innerHTML='<div class="dateline">'+esc(v.title||'PDF')
+    +'<span class="n"> · '+(v.state==='ready'?(v.pages+' pages'):esc(v.state))+'</span>'
+    +' <a class="pdfbtn" href="'+esc(v.url)+'" target="_blank" rel="noopener"'
+    +' title="Open at the source">source</a></div>';
+  if(v.state==='error'){
+    $('view').innerHTML+='<div class="empty">'+esc(v.err)+'</div>';
+    return;
+  }
+  if(v.state==='loading'){
+    $('view').innerHTML+='<div class="empty">Fetching the PDF…</div>';
+    return;
+  }
+  $('view').appendChild(v.host);
+}
+
+// The send half, shared by the file picker and the automatic fetch: a paper
+// added by hand and one taken from a URL must land as the same record.
+async function sendPassages(uid,it,ps,turn){
+  if(ps.length<3||ps.reduce((a,b)=>a+b.t.split(' ').length,0)<400){
+    throw new Error('this PDF yielded almost no text ('+ps.length+' passages). '
+      +'It is probably a scan with no text layer, and archiving it would let '
+      +'Implement claim a specification nobody can check.');
+  }
+  const before=ps.length;
+  ps=_trimPassages(ps,FT_UPLOAD_MAX);
+  turn.state='thinking';
+  turn.npsg=ps.length; renderAsk();
+  const r=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({mode:'ingest_ft',uid:uid,title:(it&&it.title)||'',passages:ps})});
+  const j=await r.json();
+  if(!r.ok)throw new Error(j.error||'upload failed');
+  turn.state='done';
+  turn.answer='**Parsed in your browser and sent to the archive.**\n\n'
+    +'- '+before+' passages extracted'
+    +(ps.length<before?(', '+ps.length+' sent (references and appendices dropped first to fit)'):'')
+    +'\n- The PDF itself was never uploaded.\n'
+    +'\nThe archive is being updated now. Once it finishes, this paper shows a '
+    +'**full text** marker and **▸ implement** becomes available on its card. '
+    +'That takes a few minutes and a redeploy.';
+  // The uid is parsed NOW so the button stops offering an upload again in
+  // this session, even though the deployed index has not caught up yet.
+  if(FT_SET)FT_SET.add(uid);
+}
+
+// Papers whose automatic fetch already failed this session. Without this the
+// button would retry the same dead URL forever instead of falling back.
+const PDF_AUTO_FAILED={};
+
+// A KNOWN PDF IS NOT SOMETHING TO ASK SOMEONE FOR. An NBER working paper, an
+// arXiv preprint and every open-access record carry a derivable PDF location,
+// so fetching it is strictly better than opening a file picker in front of
+// someone who would have to go and download that exact file first.
+async function implementFromPdf(uid,url){
+  const it=ITEM_BY_UID[uid];
+  setView('ask'); newChat(true);
+  const chat=curChat(); const turns=chat?chat.turns:[];
+  const label='Add PDF: '+((it&&it.title)||uid);
+  const turn={q:label,state:'passages',ts:Date.now()};
+  turns.push(turn); titleChat(); renderAsk();
+  try{
+    let hostname=url; try{hostname=new URL(url).hostname;}catch(e){}
+    turn.q='Add PDF: fetching from '+hostname; renderAsk();
+    const buf=await pdfBytes(url);
+    const pdfjs=await loadPdfJs();
+    const doc=await pdfjs.getDocument({data:buf}).promise;
+    const ps=await parsePdfDoc(doc,(p,n)=>{
+      turn.npsg=0; turn.q='Add PDF: parsing page '+p+' of '+n; renderAsk();
+    });
+    turn.q=label;
+    await sendPassages(uid,it,ps,turn);
+  }catch(e){
+    // The picker stays reachable: an allowlist miss, a paywall or a stale
+    // derivation is a reason to offer it, not to give up on the paper.
+    turn.error=String(e.message||e)+' — press ▸ implement again to choose the file by hand.';
+    turn.state='error';
+    PDF_AUTO_FAILED[uid]=1;
+  }
+  saveChats(); renderAsk();
+}
+
+function addPdf(uid){
+  const it=ITEM_BY_UID[uid];
+  const url=(it&&!PDF_AUTO_FAILED[uid])?_pdfUrl(it):'';
+  if(url)return implementFromPdf(uid,url);
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='application/pdf,.pdf';
+  inp.onchange=async ()=>{
+    const f=inp.files&&inp.files[0];
+    if(!f)return;
+    setView('ask');
+    newChat(true);
+    const chat=curChat(); const turns=chat?chat.turns:[];
+    const turn={q:'Add PDF: '+((it&&it.title)||uid),state:'passages',ts:Date.now()};
+    turns.push(turn); titleChat(); renderAsk();
+    try{
+      const ps=await parsePdf(f,(p,n)=>{
+        turn.npsg=0; turn.q='Add PDF: parsing page '+p+' of '+n; renderAsk();
+      });
+      turn.q='Add PDF: '+((it&&it.title)||uid);
+      await sendPassages(uid,it,ps,turn);
+    }catch(e){
+      turn.error=String(e.message||e); turn.state='error';
+    }
+    saveChats(); renderAsk();
+  };
+  inp.click();
+}
+
+async function openImplement(uid){
+  if(asking)return;
+  setView('ask');
+  loadIndex(async ()=>{
+    await loadFtIndex();
+    const it=ITEM_BY_UID[uid];
+    if(!it){alert('That paper is not in the loaded archive.');return;}
+    newChat(true);
+    const chat=curChat();if(chat)chat.mode='analyse';   // implement is per-turn
+    const turns=chat?chat.turns:[];
+    const q='Implement: '+(it.title||uid);
+    const turn={q:q,state:'passages',ts:Date.now()};
+    turns.push(turn);titleChat();renderAsk();
+    asking=true;
+    try{
+      const psg=await loadPassages([it]);
+      if(!psg.length)throw new Error('no parsed passages for this paper — run tools/fulltext.py on it first');
+      // rank by section priority, then by whether the passage carries maths,
+      // then by position, so the ordering is deterministic and explicable
+      psg.sort((a,b)=>_implRank(a.sec)-_implRank(b.sec)
+        ||(_hasMath(b.text)?1:0)-(_hasMath(a.text)?1:0)||a.k-b.k);
+      const ctx=psg.slice(0,IMPL_PASSAGES).map(p=>({
+        uid:it.uid,title:it.title,authors:it.authors,url:it.url,date:it.date||it.seen,
+        source:it.source,depth:'full',sec:p.sec,text:p.text}));
+      turn.state='thinking';turn.npsg=ctx.length;renderAsk();
+      const r=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({mode:'answer',q:q,ctx:ctx,shape:'implement',target:uid})});
+      const j=await r.json();
+      if(!r.ok)throw new Error(j.error||'implement failed');
+      turn.answer=j.answer;turn.model=j.model||'';turn.state='done';
+      turn.refused=!!j.refused;
+      // The Source column of the notation table and every line under
+      // SPECIFICATION are supposed to be verbatim. This is where a fabricated
+      // quote does the most damage, because it arrives wearing quotation marks
+      // and a symbol definition, so it gets checked like any other answer.
+      turn.quotes=verifyQuotes(j.answer,ctx);
+      turn.sources=ctx.map(c=>Object.assign({},it,{_depth:'full',_sec:c.sec}));
+    }catch(e){
+      turn.error=String(e.message||e);turn.state='error';
+    }
+    asking=false;saveChats();renderAsk();
+  });
 }
 // The first question a conversation asks is what it is about, so it names it.
 function titleChat(){
@@ -1981,6 +2763,24 @@ function outsideCard(h){
     <button class="addbtn${q?' done':''}" data-add="${esc(h.uid)}" ${q?'disabled':''}
       title="Resolve it and add it to the archive">${q?'queued':'+ Add'}</button></div>`;
 }
+// The reconciled view is the answer; the argument sits under it, collapsed.
+// Worth keeping visible: "the identification objection was not answered" is
+// usually more informative than the confident paragraph above it, and a reader
+// who cannot see the challenges cannot tell scrutiny from ceremony.
+function councilBlock(t,ti){
+  const c=t.council;
+  if(!c||!c.reconciled)return '';
+  const part=(label,x)=>x&&x.text
+    ? `<details class="cdet"><summary>${esc(label)}${x.model?` <span class="cm">${esc(x.model)}</span>`:''}</summary>
+        <div class="cbody">${md(x.text,ti)}</div></details>` : '';
+  const solo=t.councilSolo
+    ? `<div class="csolo">Every role was answered by the same model — only one provider is
+        configured, so these are not independent views.</div>` : '';
+  return `<div class="council"><div class="chead">The argument</div>${solo}
+    ${part('Position',c.proposal)}
+    ${part('Challenge — evidence',c.evidence)}
+    ${part('Challenge — implementation',c.implementation)}</div>`;
+}
 let _lastTurns=-1;
 function renderAsk(notice){
   if(!VEC||!ARCHIVE_DATA){
@@ -2003,9 +2803,15 @@ function renderAsk(notice){
     else if(t.state==='scanning')body='<div class="thinking">Screening '+(t.scanning||0)+' further papers for relevant content…</div>';
     else if(t.state==='passages')body='<div class="thinking">Reading full text · ranking '+(t.npsg||0)+' passages…</div>';
     else if(t.state==='outside')body='<div class="thinking">Searching the outside literature (OpenAlex, arXiv)…</div>';
+    else if(t.state==='proposing')body='<div class="thinking">Opening the argument — stating a position from '+(t.sources||[]).length+' sources…</div>';
+    else if(t.state==='challenging')body='<div class="thinking">Two challenges in parallel — evidence, and whether it can be run…</div>';
+    else if(t.state==='reconciling')body='<div class="thinking">Reconciling — deciding what survives…</div>';
     else if(t.state==='thinking')body='<div class="thinking">Synthesising from '+(t.sources||[]).length+' sources'+(t.viaGraph?' ('+t.viaGraph+' via the citation/similarity graph)':'')+((t.passages||[]).length?' ('+t.passages.length+' full-text passages)':'')+(t.extra?' ('+t.extra+' surfaced by the wider screen)':'')+(t.reused?' · '+t.reused+' from memory':'')+'…</div>';
     else if(t.state==='error')body='<div class="askerr">'+esc(t.error)+'</div>';
-    else body='<div class="answer">'+md(t.answer,ti)+'</div>';   // math typeset after insert
+    else body='<div class="answer">'+md(t.answer,ti)+'</div>'
+      +quoteBadge(t.quotes)
+      +councilBlock(t,ti)
+      +(t.model?'<div class="bywhom">answered by '+esc(t.model)+'</div>':'');
     const src=(t.sources&&t.state==='done')?'<div class="srch">Sources</div>'+t.sources.map((p,i)=>
       `<div class="src" id="src-${ti}-${i+1}"><span class="sn">${i+1}</span>
         <div><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
@@ -2022,10 +2828,27 @@ function renderAsk(notice){
   const follow=turns.length?' · follow-ups keep the thread':'';
   $('view').innerHTML=`<div class="dateline">Ask the archive <span class="n">· ${VEC_UIDS?VEC_UIDS.length.toLocaleString():'—'} papers indexed · searched in your browser, ranked by similarity + your own paper scores + keyword fit; top ${ASK_DEEP} read in full and the next ${ASK_SCAN-ASK_DEEP} screened${follow}</span></div>
     ${bar}${note}${chips}${thread}
-    <div class="askbox"><textarea id="askq" rows="2" placeholder="${turns.length?'Follow up — it remembers this conversation':'Ask anything about the archive — e.g. what does the evidence say about trend decay?'}"></textarea>
-      <button id="asksend" ${asking?'disabled':''}>${asking?'…':'Ask'}</button></div>
+    <div class="askmode">
+      <button data-mode2="analyse" class="${askMode()==='analyse'?'on':''}"
+        title="Read the evidence and give a view">Analyse</button>
+      <button data-mode2="build" class="${askMode()==='build'?'on':''}"
+        title="Architecture, data plan, pseudocode, traps and how to validate it">Build</button>
+      <button data-mode2="council" class="${askMode()==='council'?'on':''}"
+        title="A position, challenged on evidence and on implementation, then reconciled — four model calls, slower">Council</button>
+    </div>
+    <div class="askbox"><textarea id="askq" rows="2" placeholder="${
+      askMode()==='build'
+        ? (turns.length?'Follow up — same build, or change one thing'
+                       :'What are you building? — e.g. a multi-asset strategy using graph neural networks')
+        : askMode()==='council'
+        ? 'A question worth arguing about — e.g. does trend following still work post-2010?'
+        : (turns.length?'Follow up — it remembers this conversation'
+                       :'Ask anything about the archive — e.g. what does the evidence say about trend decay?')
+    }"></textarea>
+      <button id="asksend" ${asking?'disabled':''}>${asking?'…':(askMode()==='build'?'Build':askMode()==='council'?'Convene':'Ask')}</button></div>
     <label class="outtog"><input type="checkbox" id="outtog" ${ASK_OUTSIDE?'checked':''}> Also search outside the archive (OpenAlex, arXiv)</label>`;
   const send=$('asksend');if(send)send.onclick=askSubmit;
+  document.querySelectorAll('[data-mode2]').forEach(b=>b.onclick=()=>setAskMode(b.dataset.mode2));
   const ta=$('askq');
   if(ta){ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askSubmit();}};ta.focus();}
   const tog=$('outtog');if(tog)tog.onchange=()=>{ASK_OUTSIDE=tog.checked;};
@@ -2059,7 +2882,7 @@ function nberEntry(x){
   return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail">${cites}</div>
     <div class="body">
     <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${cls}</div>
-    <div class="meta">${x.authors?esc(x.authors):''} · ${esc(x.wp||'')}${_pdfBtn({url:x.url})}${_saveBtn({url:x.url,title:x.title,authors:x.authors})}</div>
+    <div class="meta">${x.authors?esc(x.authors):''} · ${esc(x.wp||'')}${_ftBtn(x)}${_pdfBtn({url:x.url})}${_implBtn(x)}${_mapBtn(x)}${_saveBtn({url:x.url,title:x.title,authors:x.authors})}</div>
     ${sm}</div></div>`;
 }
 let NBER_LOADED=false, nberLoading=false;
@@ -2275,26 +3098,112 @@ function renderForYou(){
 // quietly presenting a generated item as established fact.
 const _unver=x=>x.unverified?'<span class="unver" title="Mailed in by the Claude digest; the source site would not confirm this link, so it has not been verified">unverified</span>':'';
 const _psource=x=>String(x.source||'').replace(/^journal:/,'').replace(/^topic:/,'').trim()||'Other';
+// Archive's own source label. Kept separate from _psource because Archive holds
+// the whole corpus -- journals, NEP, arXiv, SSRN -- and a topic-sweep source
+// like "topic:asset allocation,topic:momentum" is a list, not a name.
+const _asource=x=>{
+  const s=String(x.source||'').split(',')[0].trim();
+  if(s.startsWith('journal:'))return s.slice(8);
+  if(s.startsWith('topic:')||s==='topic-sweep')return 'Topic sweep';
+  return s||'Other';
+};
+// A PDF-availability filter, because "which of these can I actually read right
+// now" is a different question from what any other control answers.
+let PDF_ONLY=false;
 function pracEntry(x){
   const sm=x.summary?`<div class="summary">${esc(x.summary)}</div>`:'';
   return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail"></div><div class="body">
     <a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>
-    <div class="meta">${_unver(x)}${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
+    <div class="meta">${_unver(x)}${x.authors?esc(x.authors)+' · ':''}${esc(x.date||x.seen)}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
+    ${tagChips(x)}
     ${sm}</div></div>`;
 }
+// ===================== Build =========================================
+// The rubric answers "is this paper good?". Build answers the question you
+// actually have with your hands on a keyboard: I am putting together X -- what
+// do these papers hand me, what data will I need, and what is going to bite me?
+//
+// No model call. tools/artifacts.py has already decomposed each paper into
+// Methods, Factors, Datasets and a Thesis; this retrieves papers the same way
+// Ask does (embed the question, nearest neighbours, then a graph hop for the
+// adjacent work similarity alone misses) and REGROUPS their artifacts by kind.
+// So it answers instantly, costs nothing, and cites a paper for every claim.
+// Typed artifacts (tools/artifacts.py), fetched once and only when a Build
+// answer actually needs them -- 1.9 MB has no business loading for a reader who
+// only ever asks analytical questions.
+let ARTS=null, artsLoading=null;
+function loadArts(){
+  if(ARTS)return Promise.resolve(ARTS);
+  if(artsLoading)return artsLoading;          // concurrent callers share one fetch
+  artsLoading=fetch('artifacts.json').then(r=>r.json())
+    .then(a=>{ARTS=a||{};artsLoading=null;return ARTS;})
+    // An absent or broken artifacts.json must not stop the answer: Build then
+    // runs on the model's own knowledge and the papers' text, which is worse
+    // but still useful, and the prompt already forbids inventing settings.
+    .catch(()=>{ARTS={};artsLoading=null;return ARTS;});
+  return artsLoading;
+}
+// Reads ARCHIVE_DATA, not DATA, and that is the whole point.
+//
+// data.json is windowed to PORTAL_RECENT_WINDOW_DAYS (60) on the paper's own
+// date, and renderArchive() excludes practitioner items by design. So a
+// practitioner post older than 60 days was reachable from NO tab: not from
+// Archive, which filters it out, and not from here, which never saw it. That
+// was a handful of posts until the Alpha Architect backfill made it ~2,500,
+// and nothing looked broken because Ask reads archive.json + vec.bin directly
+// and could still find them.
+let pracPage=0,pracSrcFilled=false,archSrcFilled=false;
+// The Archive dropdown is built from ARCHIVE_DATA, not DATA: a journal whose
+// papers are all older than the 60-day window -- which after the backfill is
+// most of them -- has no entry otherwise.
+function _fillArchiveSources(){
+  if(archSrcFilled||!ARCHIVE_DATA)return;
+  archSrcFilled=true;
+  const sel=$('asrc'), keep=sel.value;
+  const counts={};
+  ARCHIVE_DATA.filter(x=>!isPrac(x)).forEach(x=>{
+    const k=_asource(x); counts[k]=(counts[k]||0)+1;
+  });
+  sel.innerHTML='';
+  sel.add(new Option('All sources','all'));
+  Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b))
+    .forEach(k=>sel.add(new Option(k+' ('+counts[k]+')',k)));
+  sel.value=[...sel.options].some(o=>o.value===keep)?keep:'all';
+}
 function renderPractitioners(){
+  if(!ARCHIVE_DATA){loadArchive(renderPractitioners);return;}
+  // The source dropdown was built from DATA at init, so a publisher whose
+  // posts are all older than the 60-day window had no option at all. Rebuild
+  // it from the archive the first time we get here, preserving the selection.
+  _fillArchiveSources();
+  if(!pracSrcFilled){
+    pracSrcFilled=true;
+    const sel=$('psrc'), keep=sel.value;
+    sel.innerHTML='';
+    sel.add(new Option('All sources','all'));
+    [...new Set(ARCHIVE_DATA.filter(isPrac).map(_psource))].sort()
+      .forEach(s=>sel.add(new Option(s,s)));
+    sel.value=[...sel.options].some(o=>o.value===keep)?keep:'all';
+  }
   const q=$('q').value.toLowerCase().trim();
   const src=$('psrc').value||'all';
-  const rows=DATA.filter(isPrac)
+  const rows=tagFilter(sleeveFilter(ARCHIVE_DATA)).filter(isPrac)
     .filter(x=>src==='all'||_psource(x)===src)
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.summary||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
-  const groups={}; rows.forEach(x=>{const s=_psource(x);(groups[s]=groups[s]||[]).push(x);});
-  let h=`<div class="dateline">Practitioner &amp; house research <span class="n">· ${rows.length} posts · by source · latest first</span></div>`;
+  let h=`<div class="dateline">Practitioner &amp; house research <span class="n">· ${rows.length} posts · by source · latest first</span>${tagNote()}</div>`;
   if(!rows.length){$('view').innerHTML=h+'<div class="empty">No matches.</div>';return;}
+  // Paginated, like Archive: this list is now thousands of entries deep, and
+  // rendering every card at once is what made Archive itself feel slow.
+  const shownCount=Math.min(rows.length,(pracPage+1)*ARCHIVE_PAGE_SIZE);
+  const shown=rows.slice(0,shownCount);
+  const remaining=rows.length-shownCount;
+  const groups={}; shown.forEach(x=>{const s=_psource(x);(groups[s]=groups[s]||[]).push(x);});
   Object.keys(groups).sort().forEach(s=>{const a=groups[s];
     h+=`<div class="sechead t2">${esc(s)}<span class="cnt">${a.length}</span></div>`+a.map(pracEntry).join('');});
+  if(remaining>0)h+=`<button class="loadmore" id="pracmore">Show ${Math.min(ARCHIVE_PAGE_SIZE,remaining)} more <span class="n">(${remaining} left)</span></button>`;
   $('view').innerHTML=h;
+  if(remaining>0)$('pracmore').onclick=()=>{pracPage++;renderPractitioners();};
 }
 // archive.json carries the FULL history (data.json is a bounded recent
 // window -- see portal.build) and only grows; fetch it once, lazily, the
@@ -2336,9 +3245,13 @@ function renderSleeve(key){
 }
 function renderArchive(){
   if(!ARCHIVE_DATA){loadArchive(renderArchive);return;}
+  _fillArchiveSources();
   const q=$('q').value.toLowerCase().trim();
   const t=$('topic').value||'all';
-  let rows=sleeveFilter(ARCHIVE_DATA).filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
+  const asrc=$('asrc').value||'all';
+  let rows=tagFilter(sleeveFilter(ARCHIVE_DATA)).filter(x=>!isPrac(x)&&(t==='all'||((x.topic||'Other')===t)))
+    .filter(x=>asrc==='all'||_asource(x)===asrc)
+    .filter(x=>!PDF_ONLY||!!_pdfUrl(x))
     .filter(x=>!q||(x.title+' '+x.authors+' '+x.source+' '+(x.topic||'')).toLowerCase().includes(q))
     .slice().sort(byDate);
   const label=t==='all'?'All topics':t;
@@ -2348,7 +3261,7 @@ function renderArchive(){
   const shown=rows.slice(0,shownCount);
   const remaining=rows.length-shownCount;
   const more=remaining>0?`<button class="loadmore" id="archmore">Show ${Math.min(ARCHIVE_PAGE_SIZE,remaining)} more <span class="n">(${remaining} left)</span></button>`:'';
-  $('view').innerHTML=`<div class="dateline">Archive · ${esc(label)} <span class="n">· ${rows.length} papers · date-wise</span></div>`+
+  $('view').innerHTML=`<div class="dateline">Archive · ${esc(label)} <span class="n">· ${rows.length} papers · date-wise</span>${tagNote()}</div>`+
     (rows.length?shown.map(x=>entry(x)).join(''):'<div class="empty">No matches.</div>')+more;
   if(remaining>0)$('archmore').onclick=()=>{archivePage++;renderArchive();};
 }
@@ -2372,7 +3285,7 @@ function monthlyEntry(x,rank){
       x.reputation!=null?(x.reputation-0.85)/0.30*100:0),
     _subBar('Author',x.author_score!=null?Math.round(x.author_score):'–',x.author_score||0),
   ].join('');
-  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}`;
+  const meta=`<span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${x.date?' · '+esc(x.date):''}${x.cites!=null?' · '+fmtK(x.cites)+' cites':''}${x.consensus_n?' · '+x.consensus_n+'× '+(x.consensus_agree?'agree':'split'):''}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}`;
   const cval=Math.round(x.composite);
   return `<div class="entry${x.url===SEL?' on':''}"${_rk(x)}><div class="rail">
       <div class="rank">${rank}</div><div class="gauge" style="--pct:${cval};--gc:${band}"><span>${cval}</span></div><div class="cap">composite</div></div>
@@ -2413,7 +3326,7 @@ function canonEntry(x){
     <div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>${tag}</div>
       ${why?`<div class="summary">${esc(why)}</div>`:''}
-      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''}${cites}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
     </div></div>`;
 }
 function renderCanon(g,topic){
@@ -2438,20 +3351,21 @@ function renderClassics(){
     (rows.length?rows.map(x=>`<div class="entry classic${x.url===SEL?' on':''}"${_rk(x)}><div class="body">
       <div class="cwrap"><a class="title" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="cites">${fmtK(x.cites||0)}<small>cites</small></span></div>
       <div class="bar"><i style="width:${((x.cites||0)/max*100).toFixed(1)}%"></i></div>
-      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}${_ftBtn(x)}${_pdfBtn(x)}${_saveBtn(x)}</div>
+      <div class="meta"><span class="j">${esc(x.journal||'')}</span>${x.authors?' · '+esc(x.authors):''} · ${esc(x.year||'')}${_ftBtn(x)}${_pdfBtn(x)}${_implBtn(x)}${_mapBtn(x)}${_saveBtn(x)}</div>
       ${x.summary?`<div class="summary">${esc(x.summary)}</div>`:''}</div></div>`).join('')
       :'<div class="empty">No history generated yet — run backfill.py.</div>');
 }
 function render(){if(VIEW.slice(0,3)==='sl:'){renderSleeve(VIEW.slice(3));return;}
   if(VIEW==="map"){renderMap();return;}
   if(VIEW==="pmap"){renderPaperMap();return;}
+  if(VIEW==="pdf"){renderPdf();return;}
   VIEW==="monthly"?renderMonthly():VIEW==="ask"?renderAsk():VIEW==="foryou"?renderForYou():VIEW==="watched"?renderWatched():VIEW==="anchors"?renderAnchors():VIEW==="nber"?renderNBER():VIEW==="recent"?renderRecent():VIEW==="practitioners"?renderPractitioners():VIEW==="archive"?renderArchive():VIEW==="saved"?renderSaved():renderClassics();}
 // Eleven flat tabs gave every destination the same weight and scrolled half of
 // them off screen. They group by INTENT: read what's new, question the corpus,
 // consult the standing reference, revisit your own picks. Ask and Saved are
 // groups of one -- they are modes, not lists, so they get no sub-row.
 const GROUPS={
-  papers:['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap'],
+  papers:['recent','foryou','watched','nber','monthly','practitioners','archive','map','pmap','pdf'],
   ask:['ask'],
   shelf:['classics','anchors'],
   saved:['saved'],
@@ -2494,11 +3408,15 @@ function setView(v){
   // unlike the other facets this one is not view-specific: sleeves are a
   // property of the paper, so it applies anywhere papers are listed. On a
   // pinned tab the sleeve is already decided, so the rail only shows which.
-  $('app').classList.toggle('wide',v==='map'||v==='ask'||v==='pmap');
+  $('app').classList.toggle('wide',v==='map'||v==='ask'||v==='pmap'||v==='pdf');
   $('tagbar').hidden=!(SLEEVE_VIEWS.indexOf(v)>=0||v.slice(0,3)==='sl:');
   if(!$('tagbar').hidden)renderTagbar();
   $('psrc').style.display=v==="practitioners"?'':'none';
+  const arch=(v==="archive"||v.slice(0,3)==='sl:');
+  $('asrc').style.display=arch?'':'none';
+  $('pdfonly').style.display=arch?'':'none';
   if(v==="archive"||v.slice(0,3)==='sl:')archivePage=0;
+  if(v==="practitioners"||v.slice(0,3)==='sl:')pracPage=0;
   render();
 }
 Object.keys(GROUPS).forEach(g=>{$('g-'+g).onclick=()=>setGroup(g);});
@@ -2514,12 +3432,18 @@ $('t-practitioners').onclick=()=>setView('practitioners');
 $('t-archive').onclick=()=>setView('archive');
 $('t-map').onclick=()=>setView('map');
 $('t-saved').onclick=()=>setView('saved');
-$('q').addEventListener('input',()=>{archivePage=0;render();});
+$('q').addEventListener('input',()=>{archivePage=0;pracPage=0;render();});
 $('month').addEventListener('change',render);
 $('nbermonth').addEventListener('change',render);
 $('cat').addEventListener('change',render);
-$('topic').addEventListener('change',()=>{archivePage=0;render();});
-$('psrc').addEventListener('change',render);
+$('topic').addEventListener('change',()=>{archivePage=0;pracPage=0;render();});
+$('psrc').addEventListener('change',()=>{pracPage=0;render();});
+$('asrc').addEventListener('change',()=>{archivePage=0;render();});
+$('pdfonly').addEventListener('click',()=>{
+  PDF_ONLY=!PDF_ONLY;
+  $('pdfonly').classList.toggle('on',PDF_ONLY);
+  archivePage=0;render();
+});
 $('jsel').addEventListener('change',render);
 const root=document.documentElement;
 $('toggle').onclick=()=>{
@@ -2627,7 +3551,7 @@ function showDetail(url){
     '<h1 class="dtitle">'+esc(n.title)+'</h1>'+
     '<div class="dauth">'+esc(n.authors||'Unattributed')+'</div>'+
     '<div class="dacts"><a class="dbtn prim" href="'+esc(x.url)+'" target="_blank" rel="noopener">Open paper</a>'+
-      _pdfBtn(x)+_mapBtn(x)+_saveBtn(x)+'</div>'+
+      _pdfBtn(x)+_implBtn(x)+_mapBtn(x)+_saveBtn(x)+'</div>'+
     chips+
     (x.cites!=null?'<div class="dkick" style="margin-top:22px;font-size:24px;letter-spacing:-.01em;'+
       'text-transform:none;color:var(--cite);font-family:var(--serif);font-weight:600">'+fmtK(x.cites)+
@@ -2644,7 +3568,20 @@ $('detail').addEventListener('click',e=>{
   const c=e.target.closest('.sl[data-sleeve]');
   if(c){setSleeve(c.dataset.sleeve);return;}
   const m=e.target.closest('[data-pmap]');
-  if(m){e.preventDefault();openPaperMap(m.dataset.pmap);}
+  if(m){e.preventDefault();openPaperMap(m.dataset.pmap);return;}
+  const im=e.target.closest('[data-impl]');
+  if(im){e.preventDefault();openImplement(im.dataset.impl);}
+  const ap=e.target.closest('[data-addpdf]');
+  if(ap){e.preventDefault();e.stopPropagation();addPdf(ap.dataset.addpdf);return;}
+  const pv=e.target.closest('[data-pdf]');
+  // A modified click is a deliberate "open this elsewhere" and stays the
+  // browser's to handle; a plain click reads it here.
+  if(pv&&!(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)){
+    e.preventDefault();e.stopPropagation();
+    openPdf(pv.dataset.pdf,pv.dataset.pdftitle);return;
+  }
+  const tg=e.target.closest('[data-tag]');
+  if(tg){e.preventDefault();e.stopPropagation();setTag(tg.dataset.tag);}
 });
 
 // ---------------------------------------------------------- Keyboard
@@ -2703,7 +3640,8 @@ addEventListener('keydown',e=>{
     case '/': e.preventDefault();$('q').focus();$('q').select();break;
     case '?': e.preventDefault();toggleHelp();break;
     case 's': {const b=document.querySelector('.entry.on .savebtn');if(b)b.click();break;}
-    case 'p': {const a=document.querySelector('.entry.on .pdfbtn');if(a)open(a.href,'_blank','noopener');break;}
+    case 'p': {const a=document.querySelector('.entry.on .pdfbtn');
+      if(a)openPdf(a.dataset.pdf,a.dataset.pdftitle);break;}
     case 'n': {const b=document.querySelector('.entry.on [data-pmap]');if(b)openPaperMap(b.dataset.pmap);break;}
     case '[': _cycleView(-1);break;
     case ']': _cycleView(1);break;
