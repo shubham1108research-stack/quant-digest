@@ -60,6 +60,25 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python tools/dbsync.py pull
 
+      # RESTORE THE EXISTING CORPUS BEFORE PARSING INTO IT. This step was
+      # missing, and its absence destroyed the archive: fulltext.py wrote its
+      # 314 newly-parsed papers into an EMPTY docs/ft, and the ftpush below
+      # then replaced R2's copy with only those. 2,381 papers became 315.
+      #
+      # ftpush's health check did not catch it, and could not: it requires an
+      # index and >=200 members, and 315 papers satisfies both. A floor detects
+      # a broken archive, never a shrunken one -- only comparing against what
+      # was already there can do that.
+      - name: Restore the existing passage corpus
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          python tools/dbsync.py ftpull
+          echo "docs/ft holds $(ls docs/ft 2>/dev/null | wc -l) papers before parsing"
+
       # the container is up before the service is: GROBID loads its models for
       # the better part of a minute, so poll rather than assume
       - name: Wait for GROBID

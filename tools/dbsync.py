@@ -254,6 +254,17 @@ def ftpull(args):
     return 0
 
 
+def _ft_members(path):
+    """Papers in a tarball, without unpacking it."""
+    import tarfile                                            # noqa: PLC0415
+    try:
+        with tarfile.open(path, "r:gz") as t:
+            return sum(1 for m in t.getmembers()
+                       if m.isfile() and m.name.endswith(".json"))
+    except Exception:                                         # noqa: BLE001
+        return 0
+
+
 def ftpush(args):
     cfg = _cfg()
     if not cfg:
@@ -270,6 +281,47 @@ def ftpush(args):
         log(f"[dbsync] REFUSING to push ft: {why}")
         return 1
     cli = _client(cfg)
+
+    # A SHRINKING ARCHIVE IS A BUG, NOT AN UPDATE.
+    #
+    # _ft_healthy checks an absolute floor -- an index and >=200 members -- and
+    # that floor cannot see a regression. It passed a push that took the corpus
+    # from 2,381 papers to 315, because 315 is a perfectly healthy archive; it
+    # is simply not this one. The cause was a workflow that parsed into an empty
+    # docs/ft without restoring the existing corpus first, and the only reason
+    # the papers were recoverable is that FT_PREV happened to be kept.
+    #
+    # So compare against what is actually live. Anything below SHRINK_OK of the
+    # current member count is refused, and --allow-shrink is the deliberate
+    # escape for a genuine prune.
+    SHRINK_OK = 0.9
+    try:
+        cur = cli.head_object(Bucket=cfg["R2_BUCKET"], Key=FT_KEY)
+        prev_n = int((cur.get("Metadata") or {}).get("members") or 0)
+        if not prev_n:
+            # Older uploads carry no member count, so fall back to the tarball
+            # size, which tracks it closely enough to catch an 87% loss.
+            prev_sz, new_sz = cur["ContentLength"], tmp.stat().st_size
+            if new_sz < prev_sz * SHRINK_OK and not getattr(args, "allow_shrink", False):
+                tmp.unlink(missing_ok=True)
+                log(f"[dbsync] REFUSING to push ft: {new_sz/1e6:.1f} MB would "
+                    f"replace {prev_sz/1e6:.1f} MB -- a {100*(1-new_sz/prev_sz):.0f}% "
+                    f"loss. Restore the corpus first (ftpull), or pass "
+                    f"--allow-shrink if the prune is intended.")
+                return 1
+        else:
+            new_n = _ft_members(tmp)
+            if new_n < prev_n * SHRINK_OK and not getattr(args, "allow_shrink", False):
+                tmp.unlink(missing_ok=True)
+                log(f"[dbsync] REFUSING to push ft: {new_n:,} papers would "
+                    f"replace {prev_n:,} -- a loss of {prev_n-new_n:,}. Restore "
+                    f"the corpus first (ftpull), or pass --allow-shrink.")
+                return 1
+    except Exception as e:                            # noqa: BLE001
+        if not ("404" in str(e) or "NoSuchKey" in str(e)):
+            log(f"[dbsync] could not compare against the live archive: "
+                f"{type(e).__name__} -- pushing anyway")
+
     try:                                              # keep one version back
         cli.copy_object(Bucket=cfg["R2_BUCKET"], Key=FT_PREV,
                         CopySource={"Bucket": cfg["R2_BUCKET"], "Key": FT_KEY})
@@ -277,7 +329,10 @@ def ftpush(args):
     except Exception as e:                            # noqa: BLE001
         if not ("404" in str(e) or "NoSuchKey" in str(e)):
             log(f"[dbsync] could not snapshot the previous ft archive: {type(e).__name__}")
-    cli.upload_file(str(tmp), cfg["R2_BUCKET"], FT_KEY)
+    # Stamped so the NEXT push can compare papers rather than bytes -- the
+    # byte fallback above works but is coarse.
+    cli.upload_file(str(tmp), cfg["R2_BUCKET"], FT_KEY,
+                    ExtraArgs={"Metadata": {"members": str(_ft_members(tmp))}})
     head = cli.head_object(Bucket=cfg["R2_BUCKET"], Key=FT_KEY)
     if head["ContentLength"] != tmp.stat().st_size:
         log(f"[dbsync] ft size mismatch after upload: "
@@ -324,13 +379,47 @@ def rollback(args):
     return 0
 
 
+def ftrollback(args):
+    """Promote ft.tar.gz.prev back to live.
+
+    `rollback` existed for state.db and had no counterpart here, which is how a
+    workflow that pushed a truncated corpus left no way back. It cost 2,381
+    parsed papers down to 315: fulltext.yml pulled state.db but never ftpull'd
+    the existing corpus, so GROBID parsed into an EMPTY docs/ft and ftpush
+    replaced the archive with only that run's output.
+
+    The health check in ftpush did not catch it because 315 papers is a
+    perfectly healthy archive -- just not this one. A floor cannot detect a
+    regression; only comparing against what was already there can.
+    """
+    cfg = _cfg()
+    if not cfg:
+        log("[dbsync] R2 not configured")
+        return 1
+    cli = _client(cfg)
+    try:
+        head = cli.head_object(Bucket=cfg["R2_BUCKET"], Key=FT_PREV)
+    except Exception as e:                                    # noqa: BLE001
+        log(f"[dbsync] no {FT_PREV} to roll back to: {type(e).__name__}")
+        return 1
+    log(f"[dbsync] {FT_PREV} is {head['ContentLength']/1e6:.1f} MB, "
+        f"modified {head['LastModified']}")
+    cli.copy_object(Bucket=cfg["R2_BUCKET"], Key=FT_KEY,
+                    CopySource={"Bucket": cfg["R2_BUCKET"], "Key": FT_PREV})
+    log(f"[dbsync] {FT_PREV} promoted to {FT_KEY} -- ftpull to pick it up")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("action", choices=("pull", "push", "status", "rollback",
-                                       "ftpull", "ftpush"))
+                                       "ftpull", "ftpush", "ftrollback"))
+    ap.add_argument("--allow-shrink", action="store_true",
+                    help="ftpush: permit an archive smaller than the live one")
     args = ap.parse_args()
     return {"pull": pull, "push": push, "status": status, "rollback": rollback,
-            "ftpull": ftpull, "ftpush": ftpush}[args.action](args)
+            "ftpull": ftpull, "ftpush": ftpush,
+            "ftrollback": ftrollback}[args.action](args)
 
 
 if __name__ == "__main__":
