@@ -90,14 +90,37 @@ def main():
 
     # ---- the graph ---------------------------------------------------------
     edges = {}
+    # The similarity graph is NOT in state.db. graph.py keeps it in
+    # state_graph.db, which is gitignored and never synced to R2 -- deliberately,
+    # because sim edges are derived from the vectors and prepare_deploy rebuilds
+    # them in about twelve seconds on every deploy. So on any runner that only
+    # pulled state.db the table is absent, and reporting that as "(unreadable)"
+    # reads like a fault when it is the design.
+    #
+    # docs/edges.bin is the deployed artefact and carries the counts in its
+    # header, so read them from there instead:
+    #     magic "QDG1" | nodes uint32 | edges uint32 | width uint8 | 3 pad
+    eb = pathlib.Path("docs/edges.bin")
+    if eb.exists():
+        raw = eb.read_bytes()[:16]
+        if raw[:4] == b"QDG1":
+            import struct                                     # noqa: PLC0415
+            nodes, ecount, width = struct.unpack_from("<IIB3x", raw, 4)
+            edges["sim+cites (docs/edges.bin)"] = ecount
+            edges["  ...nodes it spans"] = nodes
+            edges["  ...edges per paper"] = round(ecount / max(nodes, 1), 1)
+        else:
+            edges["docs/edges.bin"] = "present but wrong magic"
+    else:
+        edges["docs/edges.bin"] = "absent -- rebuilt by prepare_deploy"
     try:
         from graph import graph_con                          # noqa: PLC0415
         g = graph_con(con)
         for kind, cnt in g.execute(
                 "SELECT kind, count(*) FROM g.edges GROUP BY kind"):
-            edges[kind] = cnt
-    except Exception as e:                                    # noqa: BLE001
-        edges["(unreadable)"] = str(e)[:40]
+            edges["state_graph.db " + kind] = cnt
+    except Exception:                                         # noqa: BLE001
+        edges["state_graph.db"] = "not on this runner (expected)"
     try:
         edges["cites-table"] = con.execute(
             "SELECT count(*) FROM cites").fetchone()[0]
