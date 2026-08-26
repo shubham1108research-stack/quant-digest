@@ -282,15 +282,129 @@ def cmd_match(args):
     return 0
 
 
+def cmd_authors(args):
+    """The watched roster's FULL publication history.
+
+    THE PLAN CALLS THIS THE LARGEST CLEAN EXPANSION OF THE CORE, and it has
+    never run: `watchlist author` sits on 55 rows because
+    WATCHLIST_LOOKBACK_DAYS = 60 with MAX_PER_AUTHOR = 8 only ever catches an
+    author's NEW work. Their back catalogue was never fetched.
+
+    RESOLUTION IS BY PAPER, NOT BY NAME, and this is the whole care of the
+    function. /author/search for "Bryan Kelly" returns a clinician with
+    h-index 4 who publishes on post-COVID clinics -- measured -- not the Yale
+    asset-pricing one. Building a roster on name search would import an
+    oncologist's bibliography as desk-relevant research and nothing downstream
+    would notice.
+
+    So an author is resolved through papers we ALREADY HOLD and already
+    attribute to them: s2.py stores `s2_author_ids` from the batch call, taken
+    off a paper whose DOI we matched. An authorId reached that way cannot be a
+    different person. Names are used only to decide WHICH stored id we want,
+    never to look one up.
+
+    Papers found this way are NOT ingested here. They are recorded as
+    candidates with their S2 ids, because a watched author's every paper is a
+    strong prior and not a hard label -- Kelly writes on ML asset pricing and
+    also on things this desk does not trade.
+    """
+    con = store.connect()
+    import config                                             # noqa: PLC0415
+    seed = {a["name"].lower(): a for a in getattr(config, "WATCHLIST_SEED", [])}
+    if not seed:
+        log("[harvest] no WATCHLIST_SEED in config")
+        return 1
+
+    # name -> {authorId: how many held papers attribute them to it}
+    votes = collections.defaultdict(collections.Counter)
+    held_s2 = set()
+    for uid, title, m in _rows(con):
+        ids = m.get("s2_author_ids") or []
+        names = [n.strip().lower() for n in (m.get("authors") or "").split(",")]
+        for sid in ids:
+            held_s2.add(str(sid))
+        if not ids or not names:
+            continue
+        for want in seed:
+            last = want.split()[-1]
+            # A held paper listing this surname AND carrying S2 author ids is
+            # evidence; several such papers agreeing is the resolution.
+            if any(last in n for n in names):
+                for sid in ids:
+                    votes[want][str(sid)] += 1
+
+    resolved = {}
+    for want, c in votes.items():
+        if c:
+            sid, n = c.most_common(1)[0]
+            # One paper is not a resolution -- a co-author's id would win by
+            # accident. Two independent papers agreeing is.
+            if n >= 2:
+                resolved[want] = (sid, n)
+    log(f"[harvest] {len(seed)} watched authors; {len(resolved)} resolved to an "
+        f"S2 id through papers we hold (>=2 agreeing)")
+    if not resolved:
+        log("[harvest] none resolved -- run `s2.py enrich` first so papers "
+            "carry s2_author_ids")
+        return 0
+    if args.dry_run:
+        for want, (sid, n) in sorted(resolved.items())[:12]:
+            log(f"[harvest]    {seed[want]['name']:<28} id={sid:<12} ({n} papers agree)")
+        log(f"[harvest] DRY RUN: would spend up to {args.max_requests} requests")
+        return 0
+
+    budget = Budget(args.max_requests)
+    got = collections.Counter()
+    found = []
+    for want, (sid, _n) in sorted(resolved.items()):
+        if not budget:
+            break
+        d = _get(f"{API}/author/{sid}/papers"
+                 f"?fields=title,year,externalIds,citationCount&limit=100", budget)
+        if not d or d.get("_notfound"):
+            got["author not found"] += 1
+            time.sleep(PAUSE)
+            continue
+        for x in (d.get("data") or []):
+            doi = (x.get("externalIds") or {}).get("DOI")
+            if not doi:
+                continue
+            found.append({"doi": doi.lower(), "title": x.get("title") or "",
+                          "year": x.get("year"),
+                          "cites": x.get("citationCount"),
+                          "author": seed[want]["name"], "s2_author": sid})
+        got["authors done"] += 1
+        time.sleep(PAUSE)
+
+    out = pathlib.Path("export/watched_author_papers.json")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    seen_doi = set()
+    for uid, title, m in _rows(con):
+        d = (m.get("doi") or "").lower().strip()
+        if d:
+            seen_doi.add(d)
+    fresh = [f for f in found if f["doi"] not in seen_doi]
+    out.write_text(json.dumps(fresh, indent=1), encoding="utf-8")
+    log(f"[harvest] spent {budget.used} requests ({budget.throttled} throttled)")
+    for k, v in got.most_common():
+        log(f"[harvest]    {k:<20} {v:,}")
+    log(f"[harvest] {len(found):,} papers by watched authors, {len(fresh):,} NOT "
+        f"already held -> {out}")
+    log("[harvest] candidates only -- an author's every paper is a strong prior, "
+        "not a label, so ingestion is a separate decision")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="action", required=True)
-    for name in ("refs", "match"):
+    for name in ("refs", "match", "authors"):
         p = sub.add_parser(name)
         p.add_argument("--max-requests", type=int, default=RATE_REQUESTS)
         p.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
-    return cmd_refs(args) if args.action == "refs" else cmd_match(args)
+    return {"refs": cmd_refs, "match": cmd_match,
+            "authors": cmd_authors}[args.action](args)
 
 
 if __name__ == "__main__":

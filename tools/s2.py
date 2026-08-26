@@ -72,7 +72,12 @@ BATCH_MAX = 500                      # S2's documented cap per request
 PAUSE = 1.5                          # between batches, unauthenticated
 FIELDS = ("title,abstract,tldr,citationCount,influentialCitationCount,"
           "referenceCount,openAccessPdf,externalIds,publicationVenue,year,"
-          "authors.hIndex,authors.name")
+          # authorId is the disambiguation anchor. Resolving a watched author
+          # by NAME is unreliable -- /author/search for "Bryan Kelly" returns a
+          # clinician with h-index 4 publishing on post-COVID clinics, not the
+          # Yale asset-pricing one. An authorId taken from a paper we KNOW is
+          # theirs cannot be the wrong person.
+          "authors.authorId,authors.hIndex,authors.name")
 UA = "quant-digest/1.0 (personal research portal; mailto:%s)"
 
 
@@ -199,6 +204,11 @@ def enrich(args):
                 got["influential"] += 1
             if p.get("referenceCount") is not None:
                 patch["reference_count"] = int(p["referenceCount"])
+            aids = [a.get("authorId") for a in (p.get("authors") or [])
+                    if a.get("authorId")]
+            if aids and not m.get("s2_author_ids"):
+                patch["s2_author_ids"] = aids
+                got["author_ids"] += 1
             hs = [a.get("hIndex") for a in (p.get("authors") or [])
                   if a.get("hIndex") is not None]
             if hs:
