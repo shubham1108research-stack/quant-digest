@@ -366,6 +366,9 @@ header.scrolled{border-color:var(--line);box-shadow:0 6px 18px -12px rgba(0,0,0,
   padding:2px 9px;cursor:pointer;}
 .tagnote:hover{opacity:.82;}
 .mapbtn.off{opacity:.42;cursor:help;}
+.mapbtn.addpdf{opacity:.72;border-style:dashed;}
+.mapbtn.addpdf:hover{opacity:1;border-style:solid;border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 10%,transparent);}
 .mapbtn.off:hover{border-color:var(--line);background:none;}
 .pmapbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
   justify-content:space-between;margin:8px 2px 2px;}
@@ -939,7 +942,11 @@ function _implBtn(x){
   if(!uid)return'';
   const full=FT_SET&&FT_SET.has(uid);
   if(!full){
-    return `<span class="mapbtn off" title="Only the abstract is held for this paper. Pseudocode is a specification, a lag structure and an exact sample at once, and an abstract cannot support any of them — parse the full text first.">▸ implement</span>`;
+    // Not disabled -- an INVITATION. The gate is real (an abstract cannot
+    // support a lag structure) but it is a missing input, not a permanent no,
+    // and a greyed control that only explains why is a dead end. If you have
+    // the PDF, the paper can be read here and now.
+    return `<button class="mapbtn addpdf" data-addpdf="${esc(uid)}" title="Only the abstract is held, and pseudocode needs a specification, a lag structure and an exact sample. Add the PDF and it is parsed in your browser — the file itself is never uploaded.">▸ implement — add PDF</button>`;
   }
   return `<button class="mapbtn" data-impl="${esc(uid)}" title="Method, notation, pseudocode with timing, traps, and what the paper leaves unspecified">▸ implement</button>`;
 }
@@ -1153,6 +1160,8 @@ $('view').addEventListener('click',e=>{
   if(m){e.preventDefault();openPaperMap(m.dataset.pmap);return;}
   const im=e.target.closest('[data-impl]');
   if(im){e.preventDefault();openImplement(im.dataset.impl);}
+  const ap=e.target.closest('[data-addpdf]');
+  if(ap){e.preventDefault();e.stopPropagation();addPdf(ap.dataset.addpdf);return;}
   const tg=e.target.closest('[data-tag]');
   if(tg){e.preventDefault();e.stopPropagation();setTag(tg.dataset.tag);}
 });
@@ -2516,6 +2525,157 @@ function _hasMath(t){
   // three times, and it caught the comment that used to be on this line too.
   return /[=<>]\\s*[-+(]?\\s*\\w|\\\\[a-zA-Z]+|\\bsum_|\\balpha\\b|\\bbeta\\b|_\\{|\\^\\{/.test(String(t||''));
 }
+// ---- add a PDF -------------------------------------------------------
+// The reader has the paper; the archive does not. Rather than leaving the
+// Implement button greyed with an explanation, take the PDF.
+//
+// IT IS PARSED IN THE BROWSER AND THE FILE IS NEVER UPLOADED. pdf.js runs
+// locally, and only the extracted passages are sent. A paper someone has a
+// licence to read stays on their machine; the archive gains the text it needs
+// to quote it by section.
+//
+// This is weaker than GROBID, which is what tools/fulltext.py uses server-side:
+// no reference parsing, no table extraction, headings recovered by shape rather
+// than by understanding. The depth gate does not care -- what makes an
+// Implement answer trustworthy is the verbatim-quote requirement and the "gaps
+// may not be empty" contract, and both work on any faithful text.
+const PDFJS_SRC='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.mjs';
+const PDFJS_WORKER='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs';
+const FT_UPLOAD_MAX=52000;      // must stay under FT_MAX_CHARS in ask.js
+let _pdfjs=null;
+function loadPdfJs(){
+  if(_pdfjs)return _pdfjs;
+  _pdfjs=import(PDFJS_SRC).then(m=>{
+    m.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
+    return m;
+  });
+  return _pdfjs;
+}
+// A heading, by shape rather than by meaning: numbered ("4.2 Robustness"), or
+// a short line in title/upper case with no terminal full stop. Crude, and it
+// only has to be good enough to label a passage -- a wrong label costs a
+// citation that reads oddly, a wrong PASSAGE would cost the answer.
+const HEAD_NUM=/^\\s*(\\d{1,2}(\\.\\d{1,2}){0,2})[.)]?\\s+(\\S.{0,70})$/;
+const HEAD_WORDS=/^(abstract|introduction|related work|literature|data|methodology|methods?|model|estimation|results?|empirical|robustness|discussion|conclusions?|appendix|references)\\b/i;
+function _looksHeading(line){
+  const s=line.trim();
+  if(s.length<3||s.length>80)return false;
+  if(/[.;:,]$/.test(s))return false;
+  if(HEAD_NUM.test(s))return true;
+  if(HEAD_WORDS.test(s))return true;
+  // ALL CAPS, few words -- common in older working papers
+  return s.length<50&&s===s.toUpperCase()&&/[A-Z]{3}/.test(s)&&s.split(/\\s+/).length<=7;
+}
+// Join the per-item text pdf.js returns into lines, then lines into passages
+// under the last heading seen. Paragraph breaks come from the y coordinate,
+// because pdf.js gives position, not structure.
+function _pagePassages(items){
+  const lines=[]; let cur='', lastY=null;
+  items.forEach(it=>{
+    const y=(it.transform&&it.transform[5])||0;
+    if(lastY!==null&&Math.abs(y-lastY)>3){ if(cur.trim())lines.push(cur.trim()); cur=''; }
+    cur+=it.str+(it.hasEOL?' ':'');
+    lastY=y;
+  });
+  if(cur.trim())lines.push(cur.trim());
+  return lines;
+}
+async function parsePdf(file,onProgress){
+  const pdfjs=await loadPdfJs();
+  const buf=await file.arrayBuffer();
+  const doc=await pdfjs.getDocument({data:buf}).promise;
+  const out=[]; let sec='', para='';
+  const flush=()=>{
+    const t=para.replace(/\\s+/g,' ').trim();
+    // Below ~80 characters it is a caption, a page number or a stray line.
+    if(t.length>=80)out.push({s:sec.slice(0,120),t:t});
+    para='';
+  };
+  for(let p=1;p<=doc.numPages;p++){
+    const page=await doc.getPage(p);
+    const content=await page.getTextContent();
+    _pagePassages(content.items).forEach(line=>{
+      if(_looksHeading(line)){ flush(); sec=line; return; }
+      para+=' '+line;
+      if(para.length>1400)flush();          // keep passages citable, not chapters
+    });
+    flush();
+    if(onProgress)onProgress(p,doc.numPages);
+  }
+  return out;
+}
+// References and appendices are the bulk of a long paper and the least useful
+// part for an implementation, so they go first when trimming to fit. What
+// Implement needs is method, data and results.
+function _trimPassages(ps,budget){
+  const rank=s=>{
+    const x=String(s||'').toLowerCase();
+    if(/refer|bibliograph/.test(x))return 4;
+    if(/appendix|supplement/.test(x))return 3;
+    if(/result|table|empirical|evidence/.test(x))return 1;
+    if(/method|model|estimat|data|specif/.test(x))return 0;
+    return 2;
+  };
+  const sorted=ps.map((p,i)=>({p:p,i:i,r:rank(p.s)}))
+                 .sort((a,b)=>a.r-b.r||a.i-b.i);
+  const keep=[]; let size=2;
+  for(const it of sorted){
+    const cost=JSON.stringify(it.p).length+1;
+    if(size+cost>budget)continue;
+    size+=cost; keep.push(it);
+  }
+  keep.sort((a,b)=>a.i-b.i);                 // restore reading order
+  return keep.map(x=>x.p);
+}
+function addPdf(uid){
+  const it=ITEM_BY_UID[uid];
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='application/pdf,.pdf';
+  inp.onchange=async ()=>{
+    const f=inp.files&&inp.files[0];
+    if(!f)return;
+    setView('ask');
+    newChat(true);
+    const chat=curChat(); const turns=chat?chat.turns:[];
+    const turn={q:'Add PDF: '+((it&&it.title)||uid),state:'passages',ts:Date.now()};
+    turns.push(turn); titleChat(); renderAsk();
+    try{
+      let ps=await parsePdf(f,(p,n)=>{
+        turn.npsg=0; turn.q='Add PDF: parsing page '+p+' of '+n; renderAsk();
+      });
+      turn.q='Add PDF: '+((it&&it.title)||uid);
+      if(ps.length<3||ps.reduce((a,b)=>a+b.t.split(' ').length,0)<400){
+        throw new Error('this PDF yielded almost no text ('+ps.length+' passages). '
+          +'It is probably a scan with no text layer, and archiving it would let '
+          +'Implement claim a specification nobody can check.');
+      }
+      const before=ps.length;
+      ps=_trimPassages(ps,FT_UPLOAD_MAX);
+      turn.state='thinking';
+      turn.npsg=ps.length; renderAsk();
+      const r=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({mode:'ingest_ft',uid:uid,title:(it&&it.title)||'',passages:ps})});
+      const j=await r.json();
+      if(!r.ok)throw new Error(j.error||'upload failed');
+      turn.state='done';
+      turn.answer='**Parsed in your browser and sent to the archive.**\\n\\n'
+        +'- '+before+' passages extracted'
+        +(ps.length<before?(', '+ps.length+' sent (references and appendices dropped first to fit)'):'')
+        +'\\n- The PDF itself was never uploaded.\\n'
+        +'\\nThe archive is being updated now. Once it finishes, this paper shows a '
+        +'**full text** marker and **▸ implement** becomes available on its card. '
+        +'That takes a few minutes and a redeploy.';
+      // The uid is parsed NOW so the button stops offering an upload again in
+      // this session, even though the deployed index has not caught up yet.
+      if(FT_SET)FT_SET.add(uid);
+    }catch(e){
+      turn.error=String(e.message||e); turn.state='error';
+    }
+    saveChats(); renderAsk();
+  };
+  inp.click();
+}
+
 async function openImplement(uid){
   if(asking)return;
   setView('ask');
@@ -3368,6 +3528,8 @@ $('detail').addEventListener('click',e=>{
   if(m){e.preventDefault();openPaperMap(m.dataset.pmap);return;}
   const im=e.target.closest('[data-impl]');
   if(im){e.preventDefault();openImplement(im.dataset.impl);}
+  const ap=e.target.closest('[data-addpdf]');
+  if(ap){e.preventDefault();e.stopPropagation();addPdf(ap.dataset.addpdf);return;}
   const tg=e.target.closest('[data-tag]');
   if(tg){e.preventDefault();e.stopPropagation();setTag(tg.dataset.tag);}
 });

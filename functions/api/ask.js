@@ -915,6 +915,51 @@ async function ingest(ids, env) {
   return clean;
 }
 
+// Passages a reader's browser extracted from their own PDF. The PDF itself
+// never comes here -- pdf.js parses it on their machine and only the text
+// arrives -- so a paper someone has a licence to read is not uploaded anywhere.
+//
+// The size cap is a real constraint, not caution. A workflow_dispatch input is
+// limited, and a long paper's passages exceed it; the caller is told exactly
+// that rather than having the dispatch fail with a GitHub error nobody can act
+// on. The browser trims to the sections that matter before sending.
+const FT_MAX_CHARS = 55000;
+
+async function ingestFt(body, env) {
+  if (!env.GH_TOKEN) throw new Error("GH_TOKEN is not set on this Pages project");
+  const uid = String(body.uid || "").trim();
+  if (!/^(doi:|arxiv:|t:)[\w./:+-]{3,180}$/i.test(uid)) {
+    throw new Error("uid must be a doi:, arxiv: or t: identifier");
+  }
+  const passages = Array.isArray(body.passages) ? body.passages : [];
+  if (passages.length < 3) {
+    throw new Error("too few passages -- a scanned PDF with no text layer "
+      + "parses to almost nothing, and archiving it would licence "
+      + "specification claims nobody can check");
+  }
+  const payload = JSON.stringify(passages);
+  if (payload.length > FT_MAX_CHARS) {
+    throw new Error(`passages are ${Math.round(payload.length / 1000)} KB, over `
+      + `the ${Math.round(FT_MAX_CHARS / 1000)} KB a workflow input accepts. `
+      + `Send fewer sections.`);
+  }
+  const repo = env.GH_REPO || "shubham1108research-stack/quant-digest";
+  const r = await fetch(
+    "https://api.github.com/repos/" + repo + "/actions/workflows/ingest-ft.yml/dispatches",
+    { method: "POST",
+      headers: { authorization: "Bearer " + env.GH_TOKEN,
+                 accept: "application/vnd.github+json",
+                 "user-agent": "quant-digest-portal",
+                 "content-type": "application/json" },
+      body: JSON.stringify({ ref: "master", inputs: {
+        uid: uid,
+        title: String(body.title || "").slice(0, 300),
+        passages: payload,
+      } }) });
+  if (!r.ok) throw new Error("github " + r.status + ": " + (await r.text()).slice(0, 200));
+  return { uid: uid, passages: passages.length, bytes: payload.length };
+}
+
 export async function onRequestPost({ request, env }) {
   let body;
   try {
@@ -987,7 +1032,11 @@ export async function onRequestPost({ request, env }) {
       const ids = Array.isArray(body.ids) ? body.ids : [];
       return json({ queued: await ingest(ids, env) });
     }
-    return json({ error: "mode must be 'embed', 'scan', 'answer', 'outside' or 'ingest'" }, 400);
+    if (body.mode === "ingest_ft") {
+      return json({ queued: await ingestFt(body, env) });
+    }
+    return json({ error: "mode must be 'embed', 'scan', 'answer', 'outside', "
+      + "'ingest' or 'ingest_ft'" }, 400);
   } catch (e) {
     return json({ error: String((e && e.message) || e) }, 502);
   }

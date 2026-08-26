@@ -1,0 +1,75 @@
+name: Ingest Uploaded Full Text
+
+# The write end of the portal's "add PDF" button on a paper card.
+#
+# The PDF itself never leaves the reader's machine. It is parsed in the browser
+# with pdf.js, and only the extracted passages arrive here -- so a paper you
+# have a licence to read is not uploaded anywhere, and the archive gains the
+# text it needs to quote the paper by section.
+#
+# Passages land in docs/ft and are pushed to R2, NOT committed. That corpus was
+# in git until today, in a public repository, which was publication rather than
+# personal use; this button existed in draft then and would have industrialised
+# it. It is deliberately wired to the private bucket instead.
+
+on:
+  workflow_dispatch:
+    inputs:
+      uid:
+        description: "Paper uid (doi:... / arxiv:... / t:...)"
+        required: true
+      title:
+        description: "Paper title, for the passage file's own header"
+        required: false
+        default: ""
+      passages:
+        description: "JSON array of {s: section, t: text}"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  # docs/ft is written here and tarred to R2, and state.db records the parse.
+  # Share the writers' lock so two uploads cannot race.
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db and the passage corpus
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          python tools/dbsync.py pull
+          python tools/dbsync.py ftpull
+
+      - name: Store the passages
+        env:
+          FT_UID: ${{ github.event.inputs.uid }}
+          FT_TITLE: ${{ github.event.inputs.title }}
+          FT_PASSAGES: ${{ github.event.inputs.passages }}
+        run: python tools/ingest_ft.py
+
+      - name: Push the corpus and the database
+        if: always()
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          python tools/dbsync.py ftpush
+          python tools/dbsync.py push
