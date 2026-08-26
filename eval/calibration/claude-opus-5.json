@@ -1,0 +1,1326 @@
+[
+ {
+  "uid": "t:e8aba8555063b41a",
+  "relevance": {
+   "level": 1,
+   "why": "Blog post comparing moving-average rules; no method or statistics"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "One index, one family of crossover rules"
+  },
+  "contribution": {
+   "level": 0,
+   "why": "Well-worn crossover comparison; nothing new claimed",
+   "provisional": false
+  },
+  "novelty_type": "none",
+  "testability": {
+   "level": 3,
+   "why": "SMA and EMA rules on the S&P are trivial to replicate"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": true,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "trend_cta"
+  ],
+  "tags": [
+   "trend following",
+   "backtesting"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "Trend rules are the sleeve but this adds no usable result"
+  },
+  "topic": "Other",
+  "summary": "Blog comparison of simple against exponential moving-average crossover rules on the S&P 500, reporting hypothetical backtest results with no method."
+ },
+ {
+  "uid": "doi:10.3386/w33004",
+  "relevance": {
+   "level": 3,
+   "why": "Cross-sectional asset pricing with a new firm-level return measure"
+  },
+  "relevance_category": "core_fit",
+  "generality": {
+   "level": 3,
+   "why": "Attacks the joint hypothesis problem, not one anomaly"
+  },
+  "contribution": {
+   "level": 3,
+   "why": "New measure that shuts down cross-sectional risk differences",
+   "provisional": false
+  },
+  "novelty_type": "method",
+  "testability": {
+   "level": 2,
+   "why": "Needs analyst forecast data; construction is involved"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "equity_xs"
+  ],
+  "tags": [
+   "equities"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "Equity cross-section, outside the macro and CTA sleeves"
+  },
+  "topic": "Asset Pricing & Factor Models",
+  "summary": "Constructs Expectations Based Returns from analyst forecast errors and revisions to attack the joint hypothesis problem in cross-sectional asset pricing."
+ },
+ {
+  "uid": "doi:10.3386/w15992",
+  "relevance": {
+   "level": 2,
+   "why": "Cost of capital and liquidity; finance but corporate rather than signal"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 2,
+   "why": "Cross-section and time series within equities"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "Documents a counter-cyclical liquidity discount",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 2,
+   "why": "Real asset liquidity measures need construction"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "equity_xs"
+  ],
+  "tags": [
+   "liquidity",
+   "equities"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "Corporate liquidity is distant from the desk's sleeves"
+  },
+  "topic": "Asset Pricing & Factor Models",
+  "summary": "Finds a counter-cyclical asset-liquidity discount in firms' cost of capital, in the cross section and over time."
+ },
+ {
+  "uid": "doi:10.3386/w25046",
+  "relevance": {
+   "level": 1,
+   "why": "Ratings and allocation behaviour; no tradeable content"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "One experimental setting on rating categories"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "Novel experimental design on categorised ratings",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 1,
+   "why": "Lab experiment; not reproducible from public data"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [
+   "behavioural"
+  ],
+  "desk_fit": {
+   "level": 0,
+   "why": "Retail rating behaviour is not a desk input"
+  },
+  "topic": "Market Efficiency & Behavioral",
+  "summary": "Experimental study of how categorised ordinal investment ratings such as Morningstar's distort comparison and asset allocation choices."
+ },
+ {
+  "uid": "doi:10.3905/snp.2026.jwm.012",
+  "relevance": {
+   "level": 1,
+   "why": "Tax structuring of collars; no quant finance result"
+  },
+  "relevance_category": "off_topic",
+  "generality": {
+   "level": 1,
+   "why": "One US tax treatment comparison"
+  },
+  "contribution": {
+   "level": 0,
+   "why": "Digest of an existing argument; nothing new",
+   "provisional": false
+  },
+  "novelty_type": "none",
+  "testability": {
+   "level": 1,
+   "why": "Tax character claims are not empirically testable here"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [
+   "options"
+  ],
+  "desk_fit": {
+   "level": 0,
+   "why": "Tax structuring is not a systematic desk concern"
+  },
+  "topic": "Derivatives & Option Pricing",
+  "summary": "Summary article arguing variable prepaid forwards beat listed option collars with margin loans on tax character and phantom income."
+ },
+ {
+  "uid": "arxiv:2605.17724",
+  "relevance": {
+   "level": 3,
+   "why": "Intraday futures prediction with ML; directly testable"
+  },
+  "relevance_category": "core_fit",
+  "generality": {
+   "level": 1,
+   "why": "Single instrument, one bar frequency, one target"
+  },
+  "contribution": {
+   "level": 1,
+   "why": "Standard model comparison; the negative result is the finding",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 3,
+   "why": "Walk-forward design and target are precisely specified"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "equity_xs"
+  ],
+  "tags": [
+   "machine learning",
+   "forecasting",
+   "backtesting"
+  ],
+  "desk_fit": {
+   "level": 2,
+   "why": "A clean negative result on intraday futures is useful context"
+  },
+  "topic": "Machine Learning in Finance",
+  "summary": "Compares gradient boosting against LSTM for intraday directional prediction on Micro E-mini Nasdaq futures under strict walk-forward validation, finding no exploitable structure."
+ },
+ {
+  "uid": "t:62d37d84d2c48783",
+  "relevance": {
+   "level": 0,
+   "why": "Posted allocation weights; no testable content"
+  },
+  "relevance_category": "off_topic",
+  "generality": {
+   "level": 0,
+   "why": "A single month's weights"
+  },
+  "contribution": {
+   "level": 0,
+   "why": "Nothing is claimed or contributed",
+   "provisional": false
+  },
+  "novelty_type": "none",
+  "testability": {
+   "level": 0,
+   "why": "No method to operationalise"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [],
+  "desk_fit": {
+   "level": 0,
+   "why": "A weights posting is not research"
+  },
+  "topic": "Other",
+  "summary": "Monthly posting of tactical asset allocation weights for a proprietary index, with no method, data or result."
+ },
+ {
+  "uid": "doi:10.3386/w32900",
+  "relevance": {
+   "level": 3,
+   "why": "Currency risk premia and the investment frontier; core to the desk"
+  },
+  "relevance_category": "core_fit",
+  "generality": {
+   "level": 3,
+   "why": "Prices strategies across both G10 and emerging currencies"
+  },
+  "contribution": {
+   "level": 3,
+   "why": "Reassesses the sources of currency risk premia with a wider frontier",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 2,
+   "why": "Needs EM currency data with care over convertibility"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "fx",
+   "carry"
+  ],
+  "tags": [
+   "FX",
+   "carry",
+   "EM"
+  ],
+  "desk_fit": {
+   "level": 3,
+   "why": "Directly usable: currency risk premia and portfolio construction"
+  },
+  "topic": "Asset Pricing & Factor Models",
+  "summary": "Shows floating-rate emerging market currencies expand the mean-variance frontier beyond G10 and price both G10 and EM currency strategies out of sample."
+ },
+ {
+  "uid": "doi:10.9734/ajpas/2026/v28i7926",
+  "relevance": {
+   "level": 2,
+   "why": "Conditional volatility modelling, though on a single local series"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "One currency, one country, one sample"
+  },
+  "contribution": {
+   "level": 1,
+   "why": "Standard GARCH family comparison on new data",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 2,
+   "why": "Monthly exchange-rate data and standard estimators"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "fx",
+   "macro_regime"
+  ],
+  "tags": [
+   "volatility",
+   "forecasting",
+   "econometrics",
+   "FX"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "Nigerian NEER volatility is outside the traded sleeves"
+  },
+  "topic": "Volatility Modeling",
+  "summary": "Compares ARMA-GARCH against smooth transition GARCH for forecasting Nigerian exchange-rate conditional mean and variance over 2000-2025."
+ },
+ {
+  "uid": "doi:10.5281/zenodo.21898304",
+  "relevance": {
+   "level": 0,
+   "why": "Not research; an automated prompt about a trading video"
+  },
+  "relevance_category": "off_topic",
+  "generality": {
+   "level": 0,
+   "why": "No mechanism is proposed"
+  },
+  "contribution": {
+   "level": 0,
+   "why": "Nothing is contributed",
+   "provisional": false
+  },
+  "novelty_type": "none",
+  "testability": {
+   "level": 0,
+   "why": "Nothing to operationalise"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [],
+  "desk_fit": {
+   "level": 0,
+   "why": "Not usable on any desk"
+  },
+  "topic": "Other",
+  "summary": "Automated evaluation prompt asking a model to judge a YouTube video about Wyckoff accumulation for a scalping system; contains no research."
+ },
+ {
+  "uid": "t:33f0f087fb789bf4",
+  "relevance": {
+   "level": 2,
+   "why": "Anomaly decay after publication; almost no content given"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "A general observation with no specific setup"
+  },
+  "contribution": {
+   "level": 1,
+   "why": "Restates the well-known post-publication decay result",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 1,
+   "why": "The note gives no method or sample to test"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "equity_xs"
+  ],
+  "tags": [
+   "equities"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "Known decay effect, no actionable specification"
+  },
+  "topic": "Market Efficiency & Behavioral",
+  "summary": "Brief note observing that academic anomalies formed after information events decay as practitioners trade them once published."
+ },
+ {
+  "uid": "doi:10.36713/epra30876",
+  "relevance": {
+   "level": 1,
+   "why": "Fund comparison with a standard factor model"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "One fund universe, one comparison"
+  },
+  "contribution": {
+   "level": 1,
+   "why": "Routine application of multi-factor attribution",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 2,
+   "why": "Fund returns and factor data are available"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "equity_xs"
+  ],
+  "tags": [
+   "diversification",
+   "equities"
+  ],
+  "desk_fit": {
+   "level": 0,
+   "why": "Mutual fund ESG comparison is not a desk input"
+  },
+  "topic": "Fund Performance & Institutional",
+  "summary": "Compares diversification efficiency of ESG mutual funds against conventional equity funds using a multi-factor model."
+ },
+ {
+  "uid": "doi:10.5281/zenodo.21096549",
+  "relevance": {
+   "level": 2,
+   "why": "Cross-asset regime variable spanning gold, oil and government bonds"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 2,
+   "why": "Claims to govern regimes across several asset classes"
+  },
+  "contribution": {
+   "level": 1,
+   "why": "Reframes a spread as a regime variable; evidence is thin",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 2,
+   "why": "The spread is public; thresholds look sample-fitted"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "macro_regime",
+   "rates_credit",
+   "commodities",
+   "cross_asset"
+  ],
+  "tags": [
+   "regimes",
+   "rates",
+   "gold",
+   "oil",
+   "China"
+  ],
+  "desk_fit": {
+   "level": 2,
+   "why": "A cross-asset regime signal is the kind of input the desk wants"
+  },
+  "topic": "Macro & Monetary",
+  "summary": "Argues the China-US yield spread acts as a regime variable rather than a pricing factor, with deep inversion signalling gold bull markets."
+ },
+ {
+  "uid": "arxiv:2607.15057v2",
+  "relevance": {
+   "level": 2,
+   "why": "Microstructure theory; no directly tradeable result"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 2,
+   "why": "General result for the multi-insider Kyle class"
+  },
+  "contribution": {
+   "level": 3,
+   "why": "Resolves two long-standing open problems in the literature",
+   "provisional": false
+  },
+  "novelty_type": "theory",
+  "testability": {
+   "level": 1,
+   "why": "Existence proofs are not empirically falsifiable"
+  },
+  "antecedent_match": "no_antecedent",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "microstructure"
+  ],
+  "tags": [
+   "microstructure"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "Foundational theory, not a desk technique"
+  },
+  "topic": "Market Microstructure & Liquidity",
+  "summary": "Proves equilibrium exists in the Foster-Viswanathan multiple-insider Kyle model and that it converges to the continuous-time equilibrium."
+ },
+ {
+  "uid": "doi:10.1017/s002210902610324x",
+  "relevance": {
+   "level": 0,
+   "why": "Corporate governance, and the abstract field holds a URL"
+  },
+  "relevance_category": "off_topic",
+  "generality": {
+   "level": 0,
+   "why": "Nothing judgeable is present"
+  },
+  "contribution": {
+   "level": 0,
+   "why": "No contribution can be read from the record",
+   "provisional": false
+  },
+  "novelty_type": "none",
+  "testability": {
+   "level": 0,
+   "why": "No method is stated"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [],
+  "desk_fit": {
+   "level": 0,
+   "why": "Board composition is not a desk input"
+  },
+  "topic": "Other",
+  "summary": "Corporate board composition study; the record carries an image URL in place of an abstract, so nothing can be judged from its content."
+ },
+ {
+  "uid": "t:bd7114980bab2eba",
+  "relevance": {
+   "level": 1,
+   "why": "Text classification of economics papers; not a finance result"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 2,
+   "why": "The approach travels to any taxonomy assignment problem"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "Two evaluations that avoid assuming author codes are correct",
+   "provisional": false
+  },
+  "novelty_type": "method",
+  "testability": {
+   "level": 2,
+   "why": "RePEc records are public; the LLM step is reproducible"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [
+   "text analysis",
+   "machine learning"
+  ],
+  "desk_fit": {
+   "level": 0,
+   "why": "Bibliographic classification is not a desk input"
+  },
+  "topic": "Other",
+  "summary": "Uses a language model to assign JEL codes from titles and abstracts, and shows model codes are more internally consistent than author-assigned ones."
+ },
+ {
+  "uid": "t:aaacd9849b3f3e52",
+  "relevance": {
+   "level": 1,
+   "why": "Allocation commentary built on survey evidence"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "One asset class, one argument"
+  },
+  "contribution": {
+   "level": 1,
+   "why": "Opinion piece rather than a new result",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 1,
+   "why": "Survey citations give nothing to test"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [
+   "equities"
+  ],
+  "desk_fit": {
+   "level": 0,
+   "why": "REIT allocation is outside the desk's sleeves"
+  },
+  "topic": "Other",
+  "summary": "Commentary arguing against REIT allocations, citing survey evidence that investors call real estate overvalued while maintaining allocations."
+ },
+ {
+  "uid": "doi:10.5281/zenodo.21546074",
+  "relevance": {
+   "level": 1,
+   "why": "Exchange-rate regime analysis; policy rather than signal"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "Two specific currency unions"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "Extends Ngouana's NEER volatility result to both zones",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 2,
+   "why": "NEER series are constructible from public trade weights"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "fx",
+   "macro_regime"
+  ],
+  "tags": [
+   "FX",
+   "EM"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "CFA zone pegs are outside the desk's tradeable currencies"
+  },
+  "topic": "Macro & Monetary",
+  "summary": "Asks what the CFA franc's euro peg actually stabilises, measuring nominal effective exchange-rate volatility for WAEMU and CEMAC."
+ },
+ {
+  "uid": "doi:10.3386/w25764",
+  "relevance": {
+   "level": 2,
+   "why": "Risk aversion and risk premia, through a macro labour channel"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 2,
+   "why": "A general household preference mechanism"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "Extends Swanson's flexible-labour risk aversion result",
+   "provisional": false
+  },
+  "novelty_type": "theory",
+  "testability": {
+   "level": 1,
+   "why": "Structural calibration rather than a sharp empirical test"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "macro_regime"
+  ],
+  "tags": [
+   "labour market"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "Theoretical risk premium determinants, not a desk technique"
+  },
+  "topic": "Asset Pricing & Factor Models",
+  "summary": "Shows a flexible labour margin lets households absorb wealth shocks through hours worked, altering risk aversion and implied risk premia."
+ },
+ {
+  "uid": "doi:10.3386/w16175",
+  "relevance": {
+   "level": 1,
+   "why": "Mortgage origination conduct; historical credit study"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "One originator, one crisis episode"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "New evidence on broker incentives from proprietary data",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 1,
+   "why": "New Century loan-level data is not publicly available"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [
+   "credit",
+   "banks"
+  ],
+  "desk_fit": {
+   "level": 0,
+   "why": "Subprime origination history is not a desk input"
+  },
+  "topic": "Fixed Income & Credit",
+  "summary": "Uses New Century loan data to document mortgage broker compensation and behaviour in the run-up to the subprime crisis."
+ },
+ {
+  "uid": "doi:10.5281/zenodo.22059837",
+  "relevance": {
+   "level": 3,
+   "why": "Statistical arbitrage tested under realistic execution costs"
+  },
+  "relevance_category": "core_fit",
+  "generality": {
+   "level": 2,
+   "why": "104 pairs across several structural relationships"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "A carefully designed negative result with held-out evaluation",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 3,
+   "why": "ETF prices are public and the selection window is preregistered"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": false,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "equity_xs",
+   "cross_asset"
+  ],
+  "tags": [
+   "mean reversion",
+   "transaction costs",
+   "ETFs",
+   "backtesting"
+  ],
+  "desk_fit": {
+   "level": 2,
+   "why": "Tells the desk where daily pairs trading stops paying"
+  },
+  "topic": "Market Efficiency & Behavioral",
+  "summary": "Finds cost-viable and cointegrated ETF pairs are nearly disjoint, a ground-truth-validated negative result for daily statistical arbitrage under retail costs."
+ },
+ {
+  "uid": "doi:10.3386/w32454",
+  "relevance": {
+   "level": 2,
+   "why": "Dollar and safe-asset convenience yields; macro asset pricing"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 2,
+   "why": "A general mechanism for reserve currency dynamics"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "New safe-asset explanation of exorbitant privilege",
+   "provisional": false
+  },
+  "novelty_type": "theory",
+  "testability": {
+   "level": 1,
+   "why": "Convenience yield identification is hard to pin down"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "fx",
+   "macro_regime",
+   "rates_credit"
+  ],
+  "tags": [
+   "FX",
+   "collateral",
+   "rates"
+  ],
+  "desk_fit": {
+   "level": 2,
+   "why": "Dollar behaviour in recessions is real macro context"
+  },
+  "topic": "Macro & Monetary",
+  "summary": "Models the reserve currency paradigm through liquidity demand for safe assets, generating a stronger dollar and countercyclical seigniorage in global recessions."
+ },
+ {
+  "uid": "doi:10.1093/rfs/hhag012",
+  "relevance": {
+   "level": 1,
+   "why": "Bank compensation incentives; not a market result"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "One institutional setting"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "Model plus matching empirical evidence on bonus correlation",
+   "provisional": false
+  },
+  "novelty_type": "theory",
+  "testability": {
+   "level": 1,
+   "why": "German bank employee data is not publicly available"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [
+   "banks",
+   "regulation"
+  ],
+  "desk_fit": {
+   "level": 0,
+   "why": "Bank pay structure is not a desk input"
+  },
+  "topic": "Other",
+  "summary": "Shows positive correlation between risk manager and front office bonus incentives is privately optimal but socially excessive in leveraged banks, using German data."
+ },
+ {
+  "uid": "doi:10.3386/w31849",
+  "relevance": {
+   "level": 2,
+   "why": "How FOMC uncertainty shapes policy decisions; macro context"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 2,
+   "why": "A general distinction applicable across policy settings"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "Separates two sources of uncertainty in policy choice",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 1,
+   "why": "Requires constructing uncertainty measures from FOMC material"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "macro_regime"
+  ],
+  "tags": [
+   "monetary policy",
+   "Fed"
+  ],
+  "desk_fit": {
+   "level": 2,
+   "why": "Understanding Fed reaction functions is desk-relevant background"
+  },
+  "topic": "Macro & Monetary",
+  "summary": "Distinguishes Fed-managed uncertainty from uncertainty originating in the economy and studies how each affects FOMC decision-making."
+ },
+ {
+  "uid": "doi:10.3386/w18241",
+  "relevance": {
+   "level": 1,
+   "why": "Retail social influence; no market-level result"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "One brokerage, one experimental design"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "Novel design separating two theorised channels",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 1,
+   "why": "Field experiment cannot be replicated from public data"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [
+   "behavioural"
+  ],
+  "desk_fit": {
+   "level": 0,
+   "why": "Retail peer effects are not a desk input"
+  },
+  "topic": "Market Efficiency & Behavioral",
+  "summary": "Field experiment with a brokerage separating two channels of social influence on individual investors' asset purchase decisions."
+ },
+ {
+  "uid": "doi:10.2139/ssrn.7257784",
+  "relevance": {
+   "level": 2,
+   "why": "Order book reconstruction and market data analytics infrastructure"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 2,
+   "why": "The architecture generalises across venues and instruments"
+  },
+  "contribution": {
+   "level": 1,
+   "why": "Engineering benchmark of known kdb+ optimisations",
+   "provisional": false
+  },
+  "novelty_type": "method",
+  "testability": {
+   "level": 2,
+   "why": "Optimisations are specified but the data feed is not public"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "microstructure"
+  ],
+  "tags": [
+   "microstructure",
+   "execution",
+   "liquidity"
+  ],
+  "desk_fit": {
+   "level": 2,
+   "why": "Order book infrastructure is directly relevant to execution"
+  },
+  "topic": "Market Microstructure & Liquidity",
+  "summary": "Benchmarks an in-memory kdb+/q harness for limit order book reconstruction and proposes a tickerplant, RDB, HDB and gateway production architecture."
+ },
+ {
+  "uid": "t:a8d31cf5e471ba5f",
+  "relevance": {
+   "level": 1,
+   "why": "Summary of a 1986 value screen study"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "One screen on one market"
+  },
+  "contribution": {
+   "level": 0,
+   "why": "A summary of existing work; nothing new",
+   "provisional": false
+  },
+  "novelty_type": "none",
+  "testability": {
+   "level": 2,
+   "why": "Net current asset screens are simple to rebuild"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "equity_xs"
+  ],
+  "tags": [
+   "value",
+   "equities"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "Deep value screens sit outside the macro and CTA sleeves"
+  },
+  "topic": "Asset Pricing & Factor Models",
+  "summary": "Summary of Oppenheimer's 1986 Financial Analysts Journal study updating the performance of Benjamin Graham's net current asset value screen."
+ },
+ {
+  "uid": "doi:10.1016/j.jcorpfin.2026.102962",
+  "relevance": {
+   "level": 1,
+   "why": "Corporate M&A financing; no market-level signal"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "One collateral type in one deal setting"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "Instrumented evidence linking collateral value to deal performance",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 1,
+   "why": "Hand-collected loan agreements are not reproducible cheaply"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [
+   "credit",
+   "collateral"
+  ],
+  "desk_fit": {
+   "level": 0,
+   "why": "M&A covenant structure is not a desk input"
+  },
+  "topic": "Other",
+  "summary": "Shows real estate collateral in acquisition financing carries tighter covenants and higher announcement returns, with instrumental-variable support for causality."
+ },
+ {
+  "uid": "doi:10.2139/ssrn.7003418",
+  "relevance": {
+   "level": 2,
+   "why": "Alternative data used to predict equity returns"
+  },
+  "relevance_category": "core_fit",
+  "generality": {
+   "level": 2,
+   "why": "Satellite measures could extend to other real-activity signals"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "New combination of satellite energy data with emissions records",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 2,
+   "why": "Satellite products are public but processing is heavy"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "equity_xs"
+  ],
+  "tags": [
+   "equities"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "Equity alpha from alternative data, outside the desk's sleeves"
+  },
+  "topic": "Asset Pricing & Factor Models",
+  "summary": "Combines official CO2 emissions with satellite measures of energy consumption to test whether environmental degradation predicts equity returns."
+ },
+ {
+  "uid": "doi:10.2139/ssrn.6468799",
+  "relevance": {
+   "level": 1,
+   "why": "A return decomposition framework with no tested application"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 1,
+   "why": "Claims generality but demonstrates no specific use"
+  },
+  "contribution": {
+   "level": 1,
+   "why": "Repackages log return additivity as a five-dimension framework",
+   "provisional": false
+  },
+  "novelty_type": "method",
+  "testability": {
+   "level": 1,
+   "why": "Sampling-frequency dependence is acknowledged but unresolved"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [
+   "volatility"
+  ],
+  "desk_fit": {
+   "level": 1,
+   "why": "A descriptive framework with no signal attached"
+  },
+  "topic": "Financial Econometrics",
+  "summary": "Decomposes logarithmic returns into positive and negative components to describe markets through probability, volatility, risk, bias and edge."
+ },
+ {
+  "uid": "doi:10.3386/w16222",
+  "relevance": {
+   "level": 3,
+   "why": "Decomposes equity drawdowns into discount rate and cash flow causes"
+  },
+  "relevance_category": "core_fit",
+  "generality": {
+   "level": 2,
+   "why": "The decomposition applies to any market downturn"
+  },
+  "contribution": {
+   "level": 3,
+   "why": "Sharp result distinguishing two superficially similar crashes",
+   "provisional": false
+  },
+  "novelty_type": "empirical",
+  "testability": {
+   "level": 2,
+   "why": "Requires a return decomposition with identification choices"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "equity_xs",
+   "macro_regime"
+  ],
+  "tags": [
+   "equities",
+   "regimes"
+  ],
+  "desk_fit": {
+   "level": 2,
+   "why": "How drawdowns decompose is useful macro regime context"
+  },
+  "topic": "Asset Pricing & Factor Models",
+  "summary": "Shows the 2000-2002 and 2007-09 equity downturns had different causes: rising rational discount rates in the first, falling cash flow expectations in the second."
+ },
+ {
+  "uid": "doi:10.3386/w23140",
+  "relevance": {
+   "level": 2,
+   "why": "High-dimensional network estimation applied to bank linkages"
+  },
+  "relevance_category": "adjacent",
+  "generality": {
+   "level": 2,
+   "why": "The LASSO connectedness approach travels to other panels"
+  },
+  "contribution": {
+   "level": 2,
+   "why": "Applies shrinkage to make the connectedness network estimable",
+   "provisional": false
+  },
+  "novelty_type": "method",
+  "testability": {
+   "level": 2,
+   "why": "Bank equity data is public; window choices matter"
+  },
+  "antecedent_match": "ambiguous",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "macro_regime",
+   "rates_credit"
+  ],
+  "tags": [
+   "banks",
+   "graph methods",
+   "tail risk",
+   "econometrics"
+  ],
+  "desk_fit": {
+   "level": 2,
+   "why": "Systemic connectedness is a usable macro risk input"
+  },
+  "topic": "Financial Econometrics",
+  "summary": "Uses LASSO to estimate the high-dimensional connectedness network among the world's top 150 banks, static and rolling, over 2003-2014."
+ },
+ {
+  "uid": "doi:10.29303/akurasi.v9i1.839",
+  "relevance": {
+   "level": 0,
+   "why": "Bibliometric survey; no finance result"
+  },
+  "relevance_category": "off_topic",
+  "generality": {
+   "level": 0,
+   "why": "A literature map, not a mechanism"
+  },
+  "contribution": {
+   "level": 0,
+   "why": "Counts and co-authorship networks; nothing new about markets",
+   "provisional": false
+  },
+  "novelty_type": "none",
+  "testability": {
+   "level": 0,
+   "why": "Nothing to operationalise as a test"
+  },
+  "antecedent_match": "matches_known",
+  "isolated_backtest_only": null,
+  "no_costs_mentioned": null,
+  "extreme_claimed_sharpe": null,
+  "weak_stat_support": null,
+  "sleeves": [
+   "other"
+  ],
+  "tags": [
+   "machine learning"
+  ],
+  "desk_fit": {
+   "level": 0,
+   "why": "A literature survey is not a desk input"
+  },
+  "topic": "Other",
+  "summary": "Bibliometric mapping of 197 Scopus-indexed articles on machine learning for financial forecasting between 2015 and 2025."
+ }
+]
