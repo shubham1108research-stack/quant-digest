@@ -52,6 +52,7 @@ Non-commercial use only, per their terms.
 import argparse
 import collections
 import gzip
+import html
 import json
 import pathlib
 import re
@@ -108,8 +109,24 @@ def _norm_journal(s):
     holds "Journal of Banking and Finance": an ampersand and a publisher
     suffix. Both have to go or nothing matches -- the first attempt at this
     scored 0 of 29 for exactly that reason.
+
+    TWO MORE FORMS, and they cost 172 abstracts (19% of the gap) before anyone
+    looked. The archive does not hold one spelling per journal:
+
+        "Journal of Banking &amp; Finance"      un-decoded HTML entity
+        "journal:Journal of Corporate Finance"  a source prefix
+
+    The ampersand replacement below ran BEFORE punctuation was stripped, so
+    "&amp;" became " and amp;" and left the word `amp` sitting in the middle of
+    the name -- "journal of banking and amp finance", which matches nothing.
+    The prefixed form doubled the leading word. Both look like missing data
+    downstream and neither is: the abstracts were there the whole time.
     """
-    s = (s or "").lower().replace("&", " and ")
+    s = html.unescape(s or "")
+    # Source prefixes ("journal:Journal of ...") come from the collector, not
+    # from the journal, and duplicate the leading word once normalised.
+    s = re.sub(r"^\s*(journal|series|source)\s*:\s*", "", s, flags=re.I)
+    s = s.lower().replace("&", " and ")
     s = re.sub(r"^the\s+", "", s)
     return re.sub(r"[^a-z0-9]+", " ", s).strip()
 
