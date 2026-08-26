@@ -335,12 +335,20 @@ def cmd_authors(args):
 
     resolved = {}
     for want, c in votes.items():
-        if c:
-            sid, n = c.most_common(1)[0]
-            # One paper is not a resolution -- a co-author's id would win by
-            # accident. Two independent papers agreeing is.
-            if n >= 2:
-                resolved[want] = (sid, n)
+        # EVERY id meeting the threshold, not just the top one. S2 fragments
+        # people across profiles: the Yale Bryan T. Kelly resolves to an id
+        # carrying 19 papers when he has far more, so picking one id returns a
+        # partial bibliography and calls it complete.
+        #
+        # And NOT the highest h-index either. Measured on this exact name:
+        #     5342498      h=78, 313 papers -> an orthopaedic surgeon
+        #     2411588366   h=18,  19 papers -> "Text as Data", "Hedging
+        #                                       Climate Change News"
+        # The h-index heuristic picks the surgeon. Only the papers we hold
+        # know which person we mean.
+        keep = [(sid, n) for sid, n in c.most_common() if n >= 2]
+        if keep:
+            resolved[want] = keep
     log(f"[harvest] {len(seed)} watched authors; {len(resolved)} resolved to an "
         f"S2 id through papers we hold (>=2 agreeing)")
     if not resolved:
@@ -348,33 +356,37 @@ def cmd_authors(args):
             "carry s2_author_ids")
         return 0
     if args.dry_run:
-        for want, (sid, n) in sorted(resolved.items())[:12]:
-            log(f"[harvest]    {seed[want]['name']:<28} id={sid:<12} ({n} papers agree)")
-        log(f"[harvest] DRY RUN: would spend up to {args.max_requests} requests")
+        for want, ids in sorted(resolved.items())[:12]:
+            shown = " ".join(f"{sid}({n})" for sid, n in ids[:3])
+            log(f"[harvest]    {seed[want]['name']:<28} {shown}")
+        log(f"[harvest] DRY RUN: would spend up to {args.max_requests} requests "
+            f"across {sum(len(v) for v in resolved.values())} author profiles")
         return 0
 
     budget = Budget(args.max_requests)
     got = collections.Counter()
     found = []
-    for want, (sid, _n) in sorted(resolved.items()):
-        if not budget:
-            break
-        d = _get(f"{API}/author/{sid}/papers"
-                 f"?fields=title,year,externalIds,citationCount&limit=100", budget)
-        if not d or d.get("_notfound"):
-            got["author not found"] += 1
-            time.sleep(PAUSE)
-            continue
-        for x in (d.get("data") or []):
-            doi = (x.get("externalIds") or {}).get("DOI")
-            if not doi:
+    for want, ids in sorted(resolved.items()):
+        for sid, _n in ids:
+            if not budget:
+                break
+            d = _get(f"{API}/author/{sid}/papers"
+                     f"?fields=title,year,externalIds,citationCount&limit=100",
+                     budget)
+            if not d or d.get("_notfound"):
+                got["profile not found"] += 1
+                time.sleep(PAUSE)
                 continue
-            found.append({"doi": doi.lower(), "title": x.get("title") or "",
-                          "year": x.get("year"),
-                          "cites": x.get("citationCount"),
-                          "author": seed[want]["name"], "s2_author": sid})
-        got["authors done"] += 1
-        time.sleep(PAUSE)
+            for x in (d.get("data") or []):
+                doi = (x.get("externalIds") or {}).get("DOI")
+                if not doi:
+                    continue
+                found.append({"doi": doi.lower(), "title": x.get("title") or "",
+                              "year": x.get("year"),
+                              "cites": x.get("citationCount"),
+                              "author": seed[want]["name"], "s2_author": sid})
+            got["profiles done"] += 1
+            time.sleep(PAUSE)
 
     out = pathlib.Path("export/watched_author_papers.json")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -395,16 +407,116 @@ def cmd_authors(args):
     return 0
 
 
+def cmd_discover(args):
+    """Find finance papers the archive does NOT have.
+
+    Every other action here enriches rows we already hold. This one looks
+    outward -- which is what the plan means by a core graph that expands, and
+    what the existing collectors cannot do: they read fixed feeds, so the
+    archive only ever contains what those feeds happened to carry.
+
+    /paper/search/bulk takes a query with year and field-of-study filters,
+    sorts by citation count, and pages through a continuation token. Verified:
+
+        query="time series momentum managed futures"
+        year=2024-  fieldsOfStudy=Economics,Business  sort=citationCount:desc
+        -> 200, total 2, both with DOIs
+
+    QUERIES COME FROM config.TAGS, the 75-term closed vocabulary already used
+    for tagging. That is deliberate: the vocabulary was built to describe what
+    this desk cares about, so it is the right thing to search with, and reusing
+    it means discovery and tagging cannot drift apart into two different
+    notions of the subject.
+
+    NOTHING IS INGESTED. Results are written to export/ as candidates. The
+    archive already carries what unreviewed topic sweeps produce -- a Zenodo
+    entry titled "LAB #958 NEUTRAL: VIDEO SCOUT" that the LLM then scored -- and
+    a discovery route that writes straight into the corpus is how you get more
+    of that. Finding is cheap; deciding is the expensive part and stays manual.
+    """
+    con = store.connect()
+    import config                                             # noqa: PLC0415
+    held = set()
+    for uid, title, m in _rows(con):
+        d = (m.get("doi") or "").lower().strip()
+        if d:
+            held.add(d)
+    terms = list(getattr(config, "TAGS", []) or [])
+    if args.query:
+        terms = [args.query]
+    log(f"[harvest] {len(held):,} DOIs held; searching {len(terms)} term(s) "
+        f"from the tag vocabulary, year {args.since}-")
+    if args.dry_run:
+        log(f"[harvest] DRY RUN: would spend up to {args.max_requests} requests")
+        log(f"[harvest]   sample terms: {terms[:8]}")
+        return 0
+
+    budget = Budget(args.max_requests)
+    got = collections.Counter()
+    fresh, seen = [], set()
+    for term in terms:
+        if not budget:
+            break
+        q = urllib.parse.quote(f'"{term}"' if " " in term else term)
+        d = _get(f"{API}/paper/search/bulk?query={q}"
+                 f"&fields=title,year,externalIds,citationCount,abstract"
+                 f"&year={args.since}-&fieldsOfStudy=Economics,Business"
+                 f"&sort=citationCount:desc", budget)
+        if not d or d.get("_notfound"):
+            got["term failed"] += 1
+            time.sleep(PAUSE)
+            continue
+        got["terms searched"] += 1
+        for x in (d.get("data") or [])[:args.per_term]:
+            doi = (x.get("externalIds") or {}).get("DOI")
+            if not doi:
+                got["no doi"] += 1
+                continue
+            doi = doi.lower()
+            if doi in held:
+                got["already held"] += 1
+                continue
+            if doi in seen:
+                continue
+            seen.add(doi)
+            fresh.append({"doi": doi, "title": x.get("title") or "",
+                          "year": x.get("year"),
+                          "cites": x.get("citationCount"),
+                          "has_abstract": bool((x.get("abstract") or "").strip()),
+                          "found_by": term})
+        time.sleep(PAUSE)
+
+    out = pathlib.Path("export/discovered.json")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fresh.sort(key=lambda f: -(f["cites"] or 0))
+    out.write_text(json.dumps(fresh, indent=1), encoding="utf-8")
+    log(f"[harvest] spent {budget.used} requests ({budget.throttled} throttled)")
+    for k, v in got.most_common():
+        log(f"[harvest]    {k:<16} {v:,}")
+    log(f"[harvest] {len(fresh):,} papers NOT already held -> {out}")
+    for f in fresh[:8]:
+        log(f"[harvest]    {f['year']} c={f['cites']:<5} {f['title'][:52]}")
+    log("[harvest] candidates only -- nothing ingested. Review before adding.")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="action", required=True)
-    for name in ("refs", "match", "authors"):
+    for name in ("refs", "match", "authors", "discover"):
         p = sub.add_parser(name)
         p.add_argument("--max-requests", type=int, default=RATE_REQUESTS)
         p.add_argument("--dry-run", action="store_true")
+        if name == "discover":
+            p.add_argument("--since", type=int, default=2024,
+                           help="earliest publication year")
+            p.add_argument("--per-term", type=int, default=10,
+                           help="candidates kept per search term")
+            p.add_argument("--query", default="",
+                           help="one query instead of the tag vocabulary")
     args = ap.parse_args()
-    return {"refs": cmd_refs, "match": cmd_match,
-            "authors": cmd_authors}[args.action](args)
+    return {"refs": cmd_refs, "match": cmd_match, "authors": cmd_authors,
+            "discover": cmd_discover}[args.action](args)
 
 
 if __name__ == "__main__":
