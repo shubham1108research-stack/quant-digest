@@ -12,11 +12,29 @@ name: Embedding Bake-off
 # WHAT IS HELD CONSTANT. Same corpus, same text, same int8 quantisation, same
 # funnel. Only the model differs.
 #
-# THE GRAPH IS OFF FOR BOTH SIDES. docs/edges.bin is built from the OpenAI
-# vectors, so leaving it on would let one model's neighbours rescue the other
-# model's misses -- measuring a hybrid nobody would ship. That also means these
-# numbers are NOT comparable to eval/baseline.json, which includes the graph.
-# The OpenAI run here is the control.
+# THE GRAPH. Each model gets its OWN, built from its own vectors by
+# `graph.py local`, identically on both sides and sim-edges only.
+#
+# The first version of this workflow disabled the graph instead, because
+# docs/edges.bin is derived from the OpenAI vectors and letting one model's
+# neighbours rescue the other model's misses measures a hybrid nobody would
+# ship. That reasoning was right and the remedy was the weaker of the two: the
+# graph is DOWNSTREAM of the embedding, so a good embedder should produce a
+# good neighbourhood, and refusing to measure that hands the comparison a
+# handicap it would never have in production. The portal always runs with the
+# graph on, so the decision should be made with it on.
+#
+# Both are still measured graph-off as well, as the controlled comparison of
+# the embeddings alone. Two numbers, two questions, neither pretending to be
+# the other.
+#
+# Citation edges are deliberately absent: they come from the database, are
+# identical for both models, and are therefore not what a bake-off compares.
+#
+# SIM_FLOOR is a tuned constant that does not transfer for free between models
+# of different width. Watch the edges-per-paper line on both sides -- an
+# order-of-magnitude gap means the floor is wrong for one of them, not that
+# its neighbourhood is better.
 #
 # Writes nothing: no index is replaced, no state.db is pushed.
 
@@ -80,12 +98,31 @@ jobs:
             --model "${{ github.event.inputs.model }}" \
             --limit "${{ github.event.inputs.limit }}"
 
-      - name: Measure — OpenAI (control)
+      # Same construction on both sides, each from its own vec.bin.
+      - name: Build each model its own graph
+        run: |
+          python tools/graph.py local --docs docs
+          python tools/graph.py local --docs docs_local
+
+      - name: Measure — OpenAI, graph on (what ships)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python eval/run.py
+
+      - name: Measure — local model, graph on (what would ship)
+        run: python eval/run.py --docs docs_local
+
+      # The embeddings alone, with the graph out of the way. This is the
+      # cleaner answer to "which embedder is better"; the pair above is the
+      # answer to "which portal would be better".
+      - name: Measure — OpenAI, graph off (control)
+        if: always()
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python eval/run.py --no-graph
 
-      - name: Measure — local model
+      - name: Measure — local model, graph off (control)
+        if: always()
         run: python eval/run.py --no-graph --docs docs_local
 
       - name: Keep the query-vector caches

@@ -378,12 +378,102 @@ def export(con, args):
         f"{len(head)+len(recs):,} bytes at {width*2+2} b/edge")
 
 
+def build_local(con, args):
+    """A graph built straight from a docs directory's vec.bin. No database.
+
+    WHY THIS IS SEPARATE FROM build_sim. build_sim reads the `embeddings`
+    table, keyed by (model, dim), because that is where tools/embed.py caches
+    what it paid for. tools/embed_local.py caches nothing -- a local model is
+    free to re-run, so there is no reason to store its output in the DB and a
+    good reason not to: state.db is pushed to R2 and shared, and a bake-off is
+    an experiment, not a deployment.
+
+    WHY IT EXISTS AT ALL. The bake-off used to measure both embedders with the
+    graph hop disabled, because docs/edges.bin is derived from the OpenAI
+    vectors and letting one model's neighbours rescue the other model's misses
+    measures a hybrid nobody would ship. Disabling it is one way out; giving
+    each model ITS OWN graph is the better one, because the graph is downstream
+    of the embedding and a good embedder should produce a good neighbourhood.
+    That also measures the configuration that actually ships, which is with the
+    graph on.
+
+    SIM_FLOOR is a tuned constant and it does NOT transfer for free -- it was
+    derived against one model's anisotropy, and a different model at a
+    different width will sit somewhere else. The edge count is logged loudly
+    for exactly that reason: an order-of-magnitude difference between the two
+    sides means the floor is wrong for one of them, not that its neighbourhood
+    is better or worse. `graph.py probe` re-derives it per model.
+    """
+    docs = pathlib.Path(args.docs)
+    man = json.loads((docs / "vec.json").read_text(encoding="utf-8"))
+    uids, dim = man["uids"], int(man["dim"])
+    raw = np.frombuffer((docs / "vec.bin").read_bytes(), dtype=np.int8)
+    if raw.size != len(uids) * dim:
+        raise SystemExit(
+            "[graph] %s/vec.bin is %d bytes, but vec.json declares %d rows of "
+            "%d -- the manifest and the matrix disagree, so every neighbour "
+            "below would be a different paper than it claims."
+            % (docs, raw.size, len(uids), dim))
+    X = raw.reshape(len(uids), dim).astype(np.float32)
+    # identical treatment to _vectors: centre, then normalise
+    X -= X.mean(axis=0, keepdims=True)
+    X /= (np.linalg.norm(X, axis=1, keepdims=True) + 1e-9)
+
+    floor = float(args.floor if args.floor is not None else SIM_FLOOR)
+    n = len(uids)
+    log(f"[graph] {n:,} vectors, {dim}-dim from {docs} -- kNN k={K}, "
+        f"floor={floor} ({man.get('model','?')})")
+
+    width = 2 if n < 65536 else 4
+    fmt = "<HHBB" if width == 2 else "<IIBB"
+    recs = bytearray()
+    kept = 0
+    t0 = time.monotonic()
+    for i0 in range(0, n, BLOCK):
+        i1 = min(i0 + BLOCK, n)
+        S = X[i0:i1] @ X.T
+        for r in range(i1 - i0):
+            S[r, i0 + r] = -1.0
+        top = np.argpartition(-S, K, axis=1)[:, :K]
+        for r in range(i1 - i0):
+            for c in top[r]:
+                w = float(S[r, int(c)])
+                if w >= floor:
+                    recs += struct.pack(fmt, i0 + r, int(c), 0,
+                                        max(0, min(255, int(round(w * 255)))))
+                    kept += 1
+        if (i0 // BLOCK) % 5 == 0:
+            log(f"[graph] {i1:,}/{n:,} rows - {kept:,} edges - "
+                f"{time.monotonic()-t0:.0f}s")
+
+    head = b"QDG1" + struct.pack("<IIB3x", n, kept, width)
+    out = docs / "edges.bin"
+    out.write_bytes(head + bytes(recs))
+    log(f"[graph] wrote {out} - {kept:,} sim edges ({kept/max(n,1):.1f} per "
+        f"paper), {len(head)+len(recs):,} bytes")
+    log("[graph] NOTE no citation edges: those come from the DB and are "
+        "identical for both models, so they are not what a bake-off compares.")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("action",
-                    choices=("sim", "cites", "report", "export", "probe"))
+                    choices=("sim", "cites", "report", "export", "probe",
+                             "local"))
+    ap.add_argument("--docs", default="docs",
+                    help="local: directory holding vec.bin/vec.json to build "
+                         "a graph from, and to write edges.bin into")
+    ap.add_argument("--floor", type=float, default=None,
+                    help="local: override SIM_FLOOR for a model whose "
+                         "anisotropy differs")
     ap.add_argument("--limit", type=int, default=0, help="cites: cap DOIs looked up")
     args = ap.parse_args()
+    if args.action == "local":
+        # Reads vec.bin directly and writes edges.bin directly. Opening the
+        # database would be pure ceremony, and worse than that: it would make a
+        # read-only experiment look like something that touches shared state.
+        return build_local(None, args)
     con = graph_con(store.connect())
     {"sim": build_sim, "cites": build_cites, "report": report,
      "export": export, "probe": probe_floor}[args.action](con, args)
