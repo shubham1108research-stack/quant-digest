@@ -61,9 +61,32 @@ _ATOM = "{http://www.w3.org/2005/Atom}"
 UA = f"quant-digest/1.0 (research archive; mailto:{EMAIL})"
 WORKERS = 6
 MAX_MB = 60                      # skip absurd files
-HOST_DELAY = {                   # seconds between hits on the same host
+# Seconds between hits on the same host.
+#
+# THIS IS THE THROUGHPUT CAP, not WORKERS. _polite() gates every _get, metadata
+# lookups included, so six workers all resolving through OpenAlex queue behind
+# ONE slot on that host: at the 0.5s default that is 2/s however many threads
+# exist. Measured end to end: 6 workers, 2.9 papers/s.
+#
+# So the delays are per service and set from what each PUBLISHES, rather than
+# one cautious number applied to everything:
+#
+#   OpenAlex    asks for a mailto and documents ~10 req/s for the polite pool
+#   Unpaywall   100k calls/day, no per-second limit stated; 10/s is well inside
+#   Sem.Scholar the unauthenticated pool is shared globally and answers 429
+#               readily -- measured repeatedly today. It stays slow on purpose.
+#   CORE        keyed, modest published limits; left at the default
+#   arXiv       explicitly asks bulk users for >=3s. Unchanged.
+#
+# Downloads keep the default, because a repository serving a PDF is not an API
+# and has published nothing.
+HOST_DELAY = {
     "arxiv.org": 3.0,            # arXiv asks bulk users to go easy
     "export.arxiv.org": 3.1,     # arXiv API: >=3s between queries
+    "api.openalex.org": 0.1,     # polite pool, mailto supplied
+    "api.unpaywall.org": 0.1,
+    "api.semanticscholar.org": 1.0,   # shared anonymous pool; 429s are routine
+    "api.core.ac.uk": 0.5,
     "default": 0.5,
 }
 
