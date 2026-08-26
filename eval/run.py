@@ -219,7 +219,7 @@ def _rescore(cands, terms, variant):
         for c in cands:
             c["rank"] = (max(0.0, c["sim"] / 127.0)
                          + min(0.25, c["mass"] * C["GRAPH_W"]))
-    elif variant in ("current", "minmax"):
+    elif variant in ("weighted", "minmax"):
         vals = [c["sim"] for c in cands
                 if not c["via_graph"] and not c.get("via_bm25")] or [0.0]
         lo, hi = min(vals), max(vals)
@@ -265,7 +265,7 @@ def _rescore(cands, terms, variant):
 # many long result lists; this fuses two over one corpus, and the measured
 # behaviour here is that MRR climbs monotonically as K falls while hit@20
 # stays pinned -- a small K sharpens the head without costing coverage.
-VARIANTS = ("current", "legacy", "rrf", "rrf20", "rrf10", "rrf8", "rrf5",
+VARIANTS = ("rrf", "weighted", "legacy", "rrf20", "rrf10", "rrf8", "rrf5",
             "rrf3", "rrf2", "rrf1", "sim_only")
 
 
@@ -366,7 +366,7 @@ class Index:
             % (f"{self.bm25.n:,}", f"{covered:,}",
                100.0 * covered / max(len(self.uids), 1), f"{len(self.uids):,}"))
 
-    def search(self, qv, terms, variant="current"):
+    def search(self, qv, terms, variant="rrf"):
         """Candidates as the browser builds them: recall, re-rank, graph hop.
 
         The CANDIDATE SET is identical for every variant -- top ASK_RECALL by
@@ -514,7 +514,7 @@ def query_vectors(questions, model, dim):
 MISSING = 10 ** 9
 
 
-def measure(idx, golden, explain=None, variant="current"):
+def measure(idx, golden, explain=None, variant="rrf"):
     qs = [g["q"] for g in golden]
     qvecs = query_vectors(qs, idx.model, idx.dim)
     per_q = []
@@ -627,10 +627,12 @@ def main():
     ap.add_argument("--docs", default="",
                     help="measure an index in another directory (a bake-off "
                          "build), leaving docs/ untouched")
-    ap.add_argument("--variant", default="current", choices=VARIANTS)
-    ap.add_argument("--bm25", action="store_true",
-                    help="add the lexical full-text channel as a fifth fusion "
-                         "list (tools/bm25.py); needs docs/bm25.bin")
+    ap.add_argument("--variant", default="rrf", choices=VARIANTS)
+    ap.add_argument("--no-bm25", dest="bm25", action="store_false",
+                    default=True,
+                    help="measure WITHOUT the lexical full-text channel. It "
+                         "ships, so it is on by default and this is how you "
+                         "ask for the control.")
     ap.add_argument("--compare", action="store_true",
                     help="score every ranking variant on the same questions")
     args = ap.parse_args()
@@ -650,7 +652,15 @@ def main():
         log("[eval] measuring the index in %s" % DOCS)
     idx = Index()
     if args.bm25:
-        idx.load_bm25()
+        if (DOCS / "bm25.bin").exists():
+            idx.load_bm25()
+        else:
+            log("[eval] NOTE no %s/bm25.bin -- measuring WITHOUT the lexical "
+                "channel, which is not what ships. Build it with "
+                "`python tools/bm25.py build`." % DOCS)
+    else:
+        log("[eval] lexical channel OFF by request -- this is the control, "
+            "not the shipped configuration.")
 
     if args.compare:
         # Same index, same questions, same candidate set -- only the ordering

@@ -260,11 +260,11 @@ def test_variants():
           pair[0]["sim"], 40.0)
     pair = [dict(good), dict(noisy)]
     run._rescore(pair, terms, "minmax")
-    check("current: the better cosine wins instead", pair[0]["sim"], 80.0)
+    check("weighted: the better cosine wins instead", pair[0]["sim"], 80.0)
 
     # every candidate having the same similarity must not divide by zero
     flat = [mk(50.0, title="a"), mk(50.0, title="b")]
-    run._rescore(flat, ["a"], "current")
+    run._rescore(flat, ["a"], "weighted")
     check("current survives a zero-range candidate set", len(flat), 2)
 
     # rrf: ranks only, so a huge numeric gap in one list cannot swamp the rest

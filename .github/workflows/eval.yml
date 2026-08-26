@@ -29,8 +29,8 @@ on:
         description: "Record this run as the new baseline (do this deliberately)"
         type: boolean
         default: false
-      bm25:
-        description: "Add the lexical full-text channel (tools/bm25.py)"
+      no_bm25:
+        description: "Measure WITHOUT the lexical channel (the control)"
         type: boolean
         default: false
       compare:
@@ -93,17 +93,18 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python tools/prepare_deploy.py --skip-map
 
-      # prepare_deploy has already pulled docs/ft from R2, so the text is here.
-      - name: Build the lexical index
-        if: ${{ github.event.inputs.bm25 == 'true' }}
-        run: python tools/bm25.py build
+      # prepare_deploy builds this now, as a required step -- it ships. Kept as
+      # its own line only so a failure here is legible as a failure of the
+      # lexical index rather than of the whole deploy preparation.
+      - name: Confirm the lexical index
+        run: python -c "import pathlib,sys; p=pathlib.Path('docs/bm25.bin'); print('bm25.bin', f'{p.stat().st_size/1e6:.2f} MB' if p.exists() else 'MISSING'); sys.exit(0 if p.exists() else 1)"
 
       - name: Measure
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           BM25=""
-          if [ "${{ github.event.inputs.bm25 }}" = "true" ]; then BM25="--bm25"; fi
+          if [ "${{ github.event.inputs.no_bm25 }}" = "true" ]; then BM25="--no-bm25"; fi
           if [ "${{ github.event.inputs.compare }}" = "true" ]; then
             python eval/run.py --compare $BM25
           elif [ "${{ github.event.inputs.write_baseline }}" = "true" ]; then
