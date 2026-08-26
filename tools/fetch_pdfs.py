@@ -231,7 +231,7 @@ def _title_to_doi(title):
 _WP_INDEX = None      # title -> (wp, authors, year); built in main()
 
 
-def resolve(uid, url, title=None, doi=None):
+def resolve(uid, url, title=None, doi=None, skip_batched=False):
     """Return a PDF url for this paper, or None if there's no free copy.
 
     `doi` may come from the item's METADATA, which is not the same as its uid.
@@ -280,27 +280,37 @@ def resolve(uid, url, title=None, doi=None):
     except Exception:                               # noqa: BLE001
         pass
 
-    try:                                            # OpenAlex catches some extras
-        r = _get("https://api.openalex.org/works/doi:" + doi,
-                 params={"select": "locations", "mailto": EMAIL})
-        if r.ok:
-            for loc in (r.json().get("locations") or []):
-                if loc.get("pdf_url"):
-                    return loc["pdf_url"]
-    except Exception:                               # noqa: BLE001
-        pass
+    # These next two rungs ask OpenAlex and Semantic Scholar about ONE doi.
+    # When the bulk pre-pass has already put that doi to both services in a
+    # batch, asking again cannot produce a different answer -- it is the same
+    # question to the same index. Measured on the tail: after bulk, the whole
+    # remaining ladder resolved 1 paper of 277 while costing 15 minutes.
+    #
+    # Unpaywall and CORE are NOT skipped: bulk does not query them, and they
+    # index different things (author self-archived copies, and green-OA
+    # repository deposits respectively).
+    if not skip_batched:
+        try:                                        # OpenAlex catches some extras
+            r = _get("https://api.openalex.org/works/doi:" + doi,
+                     params={"select": "locations", "mailto": EMAIL})
+            if r.ok:
+                for loc in (r.json().get("locations") or []):
+                    if loc.get("pdf_url"):
+                        return loc["pdf_url"]
+        except Exception:                           # noqa: BLE001
+            pass
 
-    # Semantic Scholar indexes repository copies the DOI-based services miss.
-    # Measured: recovers ~11% of what Unpaywall gives up on.
-    try:
-        r = _get(f"https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}",
-                 params={"fields": "openAccessPdf"})
-        if r.ok:
-            oa = (r.json() or {}).get("openAccessPdf") or {}
-            if oa.get("url"):
-                return oa["url"]
-    except Exception:                               # noqa: BLE001
-        pass
+        # Semantic Scholar indexes repository copies the DOI-based services
+        # miss. Measured: recovers ~11% of what Unpaywall gives up on.
+        try:
+            r = _get(f"https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}",
+                     params={"fields": "openAccessPdf"})
+            if r.ok:
+                oa = (r.json() or {}).get("openAccessPdf") or {}
+                if oa.get("url"):
+                    return oa["url"]
+        except Exception:                           # noqa: BLE001
+            pass
 
     # CORE aggregates ~300M items from open-access repositories -- the best
     # remaining source for the green-OA copies (working papers on institutional
@@ -618,7 +628,8 @@ def main():
             except queue.Empty:
                 return
             try:
-                pdf = resolve(uid, url, title, doi)
+                pdf = resolve(uid, url, title, doi,
+                              skip_batched=not args.no_bulk)
                 if not pdf:
                     results.append((uid, "no_source", None, None, 0))
                 elif args.resolve_only:
