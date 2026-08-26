@@ -100,6 +100,7 @@ ARXIV = re.compile(r"arxiv\.org/abs/([^/?#]+)", re.I)
 NBER = re.compile(r"nber\.org/papers/w(\d+)", re.I)
 IS_PDF = re.compile(r"\.pdf(\?|$)", re.I)
 REPEC_ARXIV = re.compile(r"RePEc:arx:papers:([\d.]+)", re.I)
+ARXIV_DOI = re.compile(r"10\.48550/arxiv\.([0-9.]+)", re.I)
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS pdfs (
@@ -254,6 +255,13 @@ def resolve(uid, url, title=None, doi=None, skip_batched=False):
     if m:
         return (f"https://www.nber.org/system/files/working_papers/"
                 f"w{m.group(1)}/w{m.group(1)}.pdf")
+    # DataCite mints DOIs for arXiv papers (10.48550/arXiv.<id>), so a paper
+    # can be on arXiv while carrying a doi: uid -- the arXiv id is inside the
+    # DOI, and asking Unpaywall about a paper whose pdf url is derivable from
+    # its name is a wasted rung
+    m = ARXIV_DOI.search(f"{uid} {doi or ''}")
+    if m:
+        return f"https://arxiv.org/pdf/{m.group(1)}"
     if IS_PDF.search(u):
         return u
 
@@ -419,7 +427,7 @@ def _stage_free(rows):
     out = {}
     for uid, url, _title, doi in rows:
         u = url or ""
-        m = ARXIV.search(u)
+        m = ARXIV.search(u) or ARXIV_DOI.search(f"{uid} {doi or ''}")
         if m:
             out[uid] = f"https://arxiv.org/pdf/{m.group(1)}"
             continue
