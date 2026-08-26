@@ -154,7 +154,27 @@ def main():
                     help="write the crawled records here instead of the archive")
     ap.add_argument("--from-json", default="",
                     help="skip the crawl; ingest records from this file")
+    # Same idea as --from-json, for the case where the two machines cannot
+    # share a filesystem. The crawl only works from a residential address and
+    # the write only works where the R2 credentials are, so the records have to
+    # travel -- and they are a publisher's text, so they must not travel
+    # through the repository. gzip+base64 through a workflow input keeps them
+    # out of git entirely and off anyone's clipboard.
+    ap.add_argument("--from-b64", default="",
+                    help="ingest gzip+base64 records passed in MACRO_B64")
     args = ap.parse_args()
+
+    if args.from_b64:
+        import base64, gzip, json, os
+        blob = os.environ.get(args.from_b64) or args.from_b64
+        items = json.loads(gzip.decompress(base64.b64decode(blob)))
+        log(f"[macro] {len(items)} records decoded from a compressed payload")
+        con = store.connect()
+        fresh = store.filter_new(con, items)
+        store.save(con, fresh)
+        log(f"[macro] inserted {len(fresh)} new rows "
+            f"({len(items) - len(fresh)} already held)")
+        return 0
 
     if args.from_json:
         import json

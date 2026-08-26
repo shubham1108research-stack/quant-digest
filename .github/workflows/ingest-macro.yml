@@ -1,0 +1,65 @@
+name: Ingest Macrosynergy Payload
+
+# Files Macrosynergy records that were crawled somewhere else.
+#
+# WHY THE DATA HAS TO TRAVEL. The crawl only works from a residential address:
+# their WAF answers a GitHub runner 403 six times out of six, and a home
+# connection three times in six, which retries turn into a complete pass. The
+# WRITE only works where the R2 credentials are, which is here. Neither machine
+# can do both, so the records move between them.
+#
+# They are a publisher's own text, so they must not move through the
+# repository -- that is the mistake this project spent today undoing with
+# docs/ft. gzip+base64 through a workflow input keeps them out of git, out of
+# any commit, and off anyone's clipboard.
+#
+# Idempotent: store.filter_new drops anything already held, so re-running a
+# payload costs a minute and changes nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: "gzip+base64 of a JSON array of records"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      # Through the environment, not the command line: the payload is tens of
+      # kilobytes and argv limits differ per platform and truncate silently.
+      - name: Ingest
+        env:
+          MACRO_B64: ${{ github.event.inputs.payload }}
+        run: python tools/backfill_macrosynergy.py --from-b64 MACRO_B64
+
+      - name: Store state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push
