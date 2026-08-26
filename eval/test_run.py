@@ -295,9 +295,30 @@ def test_constants_are_live():
         check("a missing constant is fatal", True, True)
 
 
+def test_bm25_constants_agree():
+    """The scoring constants exist in three places and must be one number.
+
+    portal.py scores BM25 in the browser, tools/bm25.py scores it in Python for
+    the eval, and eval/run.py reads the recall depth. K1 and B differing by so
+    much as a rounding would make the measured ranking and the shipped ranking
+    two different systems reported under one set of numbers -- which is exactly
+    the failure js_consts exists to prevent for the other constants.
+    """
+    print("BM25 constants agree across portal.py and tools/bm25.py")
+    sys.path.insert(0, str(run.ROOT / "tools"))
+    import bm25                                             # noqa: PLC0415
+    check("K1 matches", run.C["BM25_K1"], bm25.Bm25.K1)
+    check("B matches", run.C["BM25_B"], bm25.Bm25.B)
+    check("recall depth is a positive int", run.BM25_RECALL > 0, True)
+    check("the tokenisers agree on a mixed string",
+          bm25.tokenise("The Barchart end-of-day G-10 panel"),
+          ["barchart", "end", "day", "panel"])
+
+
 if __name__ == "__main__":
     for fn in (test_terms, test_quality, test_ask_rank, test_metrics,
-               test_index, test_variants, test_constants_are_live):
+               test_index, test_variants, test_constants_are_live,
+               test_bm25_constants_agree):
         fn()
     print()
     if FAILED:

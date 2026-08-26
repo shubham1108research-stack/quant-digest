@@ -138,12 +138,20 @@ def main():
     run(["tools/graph.py", "sim"], required=True)
     run(["tools/graph.py", "export"], required=True)
 
+    # The lexical channel Ask fuses with cosine. REQUIRED for the same reason
+    # the graph is: without it retrieval silently drops to one channel and the
+    # fulltext tier falls from 0.75 to 0.38 with nothing on screen to say so.
+    # It needs docs/ft, which ftpull has already restored above -- and bm25.py
+    # refuses loudly rather than writing an empty index if it has not.
+    run(["tools/bm25.py", "build"], required=True)
+
     if not args.skip_map:
         run(["tools/map.py", "--clusters", "24"], required=False)
 
     docs = ROOT / "docs"
     print("\n[prepare] docs/ artefacts:", flush=True)
-    for name in ("vec.bin", "vec.json", "edges.bin", "map.json", "artifacts.json"):
+    for name in ("vec.bin", "vec.json", "edges.bin", "bm25.bin", "bm25.json",
+                 "map.json", "artifacts.json"):
         f = docs / name
         print(f"    {name:<12} {'%.1f MB' % (f.stat().st_size/1e6) if f.exists() else 'MISSING'}",
               flush=True)

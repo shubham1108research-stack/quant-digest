@@ -77,7 +77,8 @@ USE_BM25 = False
 # with parsed full text, so this is a large fraction of what it can return at
 # all -- the cost of a deep list here is nothing like the cost of a deep list
 # over the whole archive.
-BM25_RECALL = 200
+# Set from portal.py just below, once js_consts is defined.
+BM25_RECALL = 0
 # How far a metric may fall before --check calls it a regression. Recall over
 # 30 questions moves in steps of about 3.3 points, so a tighter bound than one
 # question's worth of movement would fail on noise instead of on changes.
@@ -107,7 +108,9 @@ def js_consts(*names):
 
 
 C = js_consts("W_SIM", "W_KW", "W_QUALITY", "ASK_RECALL", "ASK_SCAN",
-              "GRAPH_SEED", "GRAPH_EXPAND", "GRAPH_W")
+              "GRAPH_SEED", "GRAPH_EXPAND", "GRAPH_W", "RRF_K", "BM25_RECALL",
+              "BM25_K1", "BM25_B")
+BM25_RECALL = int(C["BM25_RECALL"])
 
 STOP = set((
     "the a an of and or to in on for with is are be as by at from that this what "
@@ -184,7 +187,10 @@ def ask_rank(x, terms, sim127):
 #            into a search box.
 #   sim_only the embedding alone, as the floor. If nothing beats this, the
 #            entire re-ranking stage is costing more than it earns.
-RRF_K = 60.0            # conventional; the constant matters little above ~20
+# From portal.py, not defined here. The bare "rrf" variant must measure the K
+# that actually ships, or --compare would quietly report on a constant no
+# visitor ever meets.
+RRF_K = C["RRF_K"]
 
 
 def _kw_of(it, terms):

@@ -1708,6 +1708,33 @@ const SCAN_BATCH=16;                  // papers per screening call; fanned out i
 // weights: relevance to the QUESTION dominates; the archive's own quality score
 // breaks ties so a strong paper outranks a mediocre one on equal topical fit
 const W_SIM=0.55,W_KW=0.30,W_QUALITY=0.15;
+// RANK FUSION, which replaced the weighted sum above for the FINAL ordering.
+// W_SIM/W_KW/W_QUALITY still decide which papers seed the graph hop, and the
+// eval seeds it the same way, so they are not vestigial.
+//
+// The weighted sum broke as the archive grew. scaleSims min-max rescales
+// cosine across the candidate set; in a denser corpus the top 500 are packed
+// into a tighter cosine range, so rescaling amplifies ever smaller true
+// differences while kw still uses the whole of [0,1]. The weights said
+// similarity dominates and the arithmetic increasingly said keyword overlap
+// did. RRF fuses RANKS, so the shape of the value distribution cannot touch
+// it. Measured over eval/golden.json at 20,999 rows, identical candidate set:
+//
+//     weighted sum      hit@20 0.53  MRR 0.440  fulltext 0.38  vocab 0.10
+//     RRF K=5           hit@20 0.67  MRR 0.424  fulltext 0.62  vocab 0.30
+//     RRF K=5 + lexical hit@20 0.70  MRR 0.530  fulltext 0.75  vocab 0.30
+//
+// K was swept, not inherited. The conventional 60 is tuned for fusing many
+// long lists and is wrong here: MRR climbs monotonically as K falls (0.292 at
+// 60, 0.363 at 20, 0.424 at 5) while hit@20 stays pinned. Below 3 it starts
+// trading top-10 coverage for MRR, so 5 is the point that holds both.
+const RRF_K=5;
+// How deep the lexical channel reaches. It only covers the papers with parsed
+// full text -- 2,381 of 20,999 -- so a deep list here costs nothing like a
+// deep list over the whole archive would.
+const BM25_RECALL=200;
+const BM25_K1=1.2;
+const BM25_B=0.75;
 const ASK_STOP=new Set(('the a an of and or to in on for with is are be as by at from that this what which how does do did why '
  +'when we our their its it also than then these those between across over under more most less least there here into out '
  +'about after before during any some all can could would should may might will shall must have has had been being').split(' '));
@@ -1753,25 +1780,133 @@ function askQuality(x){
 //     abstract tier 0.92 -> 1.00, MRR 0.508 -> 0.486
 // RRF at k=20 reached hit@20 0.67 but dropped MRR to 0.355; one question of
 // coverage is not worth that, and this keeps the weights tunable.
-function scaleSims(cands){
-  let lo=Infinity,hi=-Infinity;
-  cands.forEach(c=>{if(!c._viaGraph){const s=c._sim||0;if(s<lo)lo=s;if(s>hi)hi=s;}});
-  const rng=(hi-lo)||1;
-  cands.forEach(c=>{
-    // graph arrivals have no similarity to the question at all -- they are
-    // here because of who they sit next to -- so they get the floor, not a
-    // rescaled zero, which below lo would come out negative.
-    c._simN=c._viaGraph?0:Math.max(0,Math.min(1,((c._sim||0)-lo)/rng));
-  });
+// ---- the lexical channel over parsed full text (docs/bm25.bin) --------
+// WHY A SECOND INDEX. The semantic one embeds title and abstract, and an
+// abstract does not name its data vendor. "Which cross-asset futures study
+// uses Barchart end-of-day data" is answerable from the paper's body and from
+// nowhere else; cosine put that paper 71st and the re-rank finished it at
+// 33rd. Measured alone this channel takes the fulltext tier from 0.38 to 1.00
+// and moves the vocab tier not at all -- exact-term matching cannot help when
+// the question and the paper share no vocabulary. That asymmetry is the whole
+// argument for fusing the two rather than choosing between them.
+//
+// Built by tools/bm25.py; format documented there. Loaded lazily on the first
+// question, like vec.bin, and the portal works without it.
+let BM=null,bmPromise=null;
+function loadBm25(){
+  if(BM)return Promise.resolve(BM);
+  if(bmPromise)return bmPromise;
+  bmPromise=Promise.all([
+    fetch('bm25.bin').then(r=>{if(!r.ok)throw new Error('bm25.bin '+r.status);return r.arrayBuffer();}),
+    fetch('bm25.json').then(r=>{if(!r.ok)throw new Error('bm25.json '+r.status);return r.json();})
+  ]).then(([buf,meta])=>{BM=parseBm25(buf,meta);return BM;})
+    .catch(e=>{
+      // Degrade to the semantic channel alone, which is what retrieval did
+      // before this existed. A missing lexical index must not break Ask.
+      console.warn('[ask] lexical channel unavailable:',(e&&e.message)||e);
+      return null;
+    });
+  return bmPromise;
 }
+function parseBm25(buf,meta){
+  const dv=new DataView(buf),u8=new Uint8Array(buf);
+  if(String.fromCharCode(u8[0],u8[1],u8[2],u8[3])!=='QBM1')
+    throw new Error('bm25.bin has the wrong magic');
+  const n=dv.getUint32(4,true),nterms=dv.getUint32(8,true),
+        avgdl=dv.getFloat32(12,true),w=u8[16],
+        tbLen=dv.getUint32(20,true),nrec=dv.getUint32(24,true);
+  let o=28;
+  const termblob=new Uint8Array(buf,o,tbLen);o+=tbLen;
+  // .slice(), not a view: the offset arrays follow a variable-length term blob
+  // and are therefore not 4-byte aligned, which a Uint32Array over the raw
+  // buffer requires. Copying 0.9 MB once beats a DataView call per comparison.
+  const toff=new Uint32Array(buf.slice(o,o+4*(nterms+1)));o+=4*(nterms+1);
+  const poff=new Uint32Array(buf.slice(o,o+4*(nterms+1)));o+=4*(nterms+1);
+  const post=new Uint8Array(buf,o,nrec*(w+1));o+=nrec*(w+1);
+  const dlen=new Uint16Array(buf.slice(o,o+2*n));
+  return {n:n,nterms:nterms,avgdl:avgdl,w:w,termblob:termblob,
+          toff:toff,poff:poff,post:post,dlen:dlen,uids:meta.uids||[]};
+}
+// Bytewise binary search over the sorted term blob. Terms are [a-z0-9]+, so
+// byte order and string order agree, and nothing has to decode 118,404 terms
+// to find one.
+function bmFind(term){
+  const key=[];for(let i=0;i<term.length;i++)key.push(term.charCodeAt(i));
+  let lo=0,hi=BM.nterms-1;
+  while(lo<=hi){
+    const mid=(lo+hi)>>1,a=BM.toff[mid],b=BM.toff[mid+1];
+    let cmp=0;const len=Math.min(b-a,key.length);
+    for(let i=0;i<len;i++){const d=BM.termblob[a+i]-key[i];if(d){cmp=d;break;}}
+    if(!cmp)cmp=(b-a)-key.length;
+    if(!cmp)return mid;
+    if(cmp<0)lo=mid+1;else hi=mid-1;
+  }
+  return -1;
+}
+// Okapi BM25, the same arithmetic as tools/bm25.py's reader. Returns
+// [[uid,score],...] descending.
+function bmSearch(terms,limit){
+  if(!BM)return[];
+  const score=new Map(),done=new Set();
+  for(const t of terms){
+    if(done.has(t))continue;
+    done.add(t);
+    const i=bmFind(t);
+    if(i<0)continue;
+    const s=BM.poff[i],e=BM.poff[i+1],df=e-s;
+    if(!df)continue;
+    const idf=Math.log(1+(BM.n-df+0.5)/(df+0.5));
+    for(let r=s;r<e;r++){
+      const off=r*(BM.w+1);
+      const doc=BM.w===2
+        ?(BM.post[off]|(BM.post[off+1]<<8))
+        :(BM.post[off]|(BM.post[off+1]<<8)|(BM.post[off+2]<<16)|(BM.post[off+3]<<24));
+      const tf=BM.post[off+BM.w],dl=BM.dlen[doc]||1;
+      const denom=tf+BM25_K1*(1-BM25_B+BM25_B*dl/BM.avgdl);
+      score.set(doc,(score.get(doc)||0)+idf*(tf*(BM25_K1+1))/denom);
+    }
+  }
+  return [...score.entries()].sort((a,b)=>b[1]-a[1]).slice(0,limit)
+    .map(e=>[BM.uids[e[0]],e[1]]);
+}
+
+// Reciprocal Rank Fusion over five lists. Ports eval/run.py's _rescore rrf
+// branch exactly -- 0-based positions, and a list a candidate is absent from
+// contributes nothing rather than a last place. That last part matters: 89% of
+// the archive has no parsed full text, and charging those papers a last place
+// on the lexical list would punish them for a fact about our coverage.
+function _ranksBy(cands,keyfn){
+  const idx=cands.map((c,i)=>i);
+  idx.sort((a,b)=>keyfn(cands[a])-keyfn(cands[b]));
+  const out=new Array(cands.length);
+  idx.forEach((i,pos)=>{out[i]=pos;});
+  return out;
+}
+function fuseRank(cands,terms){
+  if(!cands.length)return;
+  const k=RRF_K;
+  const rs=_ranksBy(cands,c=>-(c._sim||0));
+  const rk=_ranksBy(cands,c=>-(0.6*kwHit(terms,c.title)+0.4*kwHit(terms,c.summary)));
+  const rq=_ranksBy(cands,c=>-askQuality(c));
+  const rm=_ranksBy(cands,c=>-(c._mass||0));
+  const rb=_ranksBy(cands,c=>-(c._bm25||0));
+  cands.forEach((c,i)=>{
+    c._rank=1/(k+rs[i])+1/(k+rk[i])+1/(k+rq[i])
+      +((c._mass||0)>0?1/(k+rm[i]):0)
+      +((c._bm25||0)>0?1/(k+rb[i]):0);
+  });
+  cands.sort((a,b)=>b._rank-a._rank);
+}
+// Now used ONLY to choose which papers seed the graph hop; fuseRank decides
+// the order anyone sees. eval/run.py seeds from this same function on the same
+// raw cosine, and that correspondence is what makes its numbers apply here.
 function askRank(x,terms){
-  // _simN when the caller has scaled the set, else fall back to the raw
-  // cosine. /127, not /127^2: tools/embed.py stores unit vectors scaled by
-  // 127 and the QUERY arrives as raw floats, so the dot product peaks near
-  // 127, not 16129. Dividing by the square capped sim at ~0.008 against
-  // keyword's 0.30 and made the embedding decide only which candidates got
-  // here before being ignored.
-  const sim=Math.max(0,Math.min(1,x._simN!=null?x._simN:(x._sim||0)/127));
+  // /127, not /127^2: tools/embed.py stores unit vectors scaled by 127 and the
+  // QUERY arrives as raw floats, so the dot product peaks near 127, not 16129.
+  // Dividing by the square capped sim at ~0.008 against keyword's 0.30 and
+  // made the embedding decide only which candidates got here before being
+  // ignored.
+  const sim=Math.max(0,Math.min(1,(x._sim||0)/127));
   const kw=0.6*kwHit(terms,x.title)+0.4*kwHit(terms,x.summary);
   return W_SIM*sim+W_KW*kw+W_QUALITY*askQuality(x);
 }
@@ -2123,6 +2258,11 @@ async function doAsk(q,force){
   turns.push(turn);titleChat();
   renderAsk();
   try{
+    // Started before the embed is awaited so the two round-trips overlap: the
+    // lexical index is 7.9 MB gzipped and fetching it after would add its
+    // latency to the first question rather than hiding it behind one already
+    // being paid for.
+    const lex=loadBm25();
     const er=await fetch('/api/ask',{method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({mode:'embed',q:q,model:VEC_MODEL,dim:VEC_DIM})});
     const ej=await er.json();
@@ -2136,7 +2276,7 @@ async function doAsk(q,force){
     // stage 2: re-order by question-relevance BLENDED with the archive's own
     // scores -- free, instant, and it reuses work the pipeline already did
     const terms=qTerms(q);
-    scaleSims(cands);
+    // Ordering for the GRAPH SEED only. fuseRank decides the final order.
     cands.forEach(c=>{c._rank=askRank(c,terms);});
     cands.sort((a,b)=>b._rank-a._rank);
     // Graph hop: bring in neighbours of the strongest candidates that
@@ -2151,17 +2291,34 @@ async function doAsk(q,force){
         if(known.has(row))continue;
         const uid=VEC_UIDS[row], it=ITEM_BY_UID[uid];
         if(!it)continue;
-        // _simN explicitly, not left to askRank's fallback: these arrive after
-        // scaleSims has run, and a graph paper has no similarity to the
-        // question by construction. Relying on the fallback would make the
-        // score depend on which branch happened to fire.
-        const c=Object.assign({},it,{_row:row,_sim:0,_simN:0,_viaGraph:true});
-        c._rank=askRank(c,terms)+Math.min(0.25,m*GRAPH_W);
+        // graph mass is carried, not folded into a score: in rank space an
+        // additive bonus is not comparable to 1/(k+rank), and bolting one on
+        // would make the graph either inert or overwhelming depending on K.
+        const c=Object.assign({},it,{_row:row,_sim:0,_mass:m,_viaGraph:true});
         cands.push(c);viaGraph++;
       }
-      if(viaGraph)cands.sort((a,b)=>b._rank-a._rank);
     }
-    turn.viaGraph=viaGraph;
+    await lex;      // resolves to null if it is unavailable; never rejects
+    // THE LEXICAL CHANNEL AS RECALL. Its purpose is the papers cosine never
+    // returned -- ranks 2,889 and 5,124 among the measured misses -- so adding
+    // it after the candidate list closed would be pointless. Anything it finds
+    // that cosine already had simply gets a second vote.
+    let viaLex=0;
+    if(BM){
+      const byUid=new Map();
+      cands.forEach(c=>{const u=_uid(c);if(u)byUid.set(u,c);});
+      for(const pair of bmSearch(terms,BM25_RECALL)){
+        const uid=pair[0],sc=pair[1];
+        const had=byUid.get(uid);
+        if(had){had._bm25=sc;continue;}
+        const it=ITEM_BY_UID[uid];
+        if(!it||it.unverified)continue;
+        cands.push(Object.assign({},it,{_row:-1,_sim:0,_mass:0,_bm25:sc,_viaLex:true}));
+        viaLex++;
+      }
+    }
+    fuseRank(cands,terms);
+    turn.viaGraph=viaGraph;turn.viaLex=viaLex;
     const scanSet=cands.slice(0,ASK_SCAN);
     turn.scanned=cands.length;turn.state='reading';
     renderAsk();
