@@ -138,7 +138,32 @@ def pick_papers(con, limit):
     # replaced, so comparing raw uids against stems matched NOTHING and the
     # skip list silently protected nothing. A 600-paper run re-parsed 413
     # papers it already held and added none.
-    done = {f.stem for f in OUT.glob("*.json") if f.stem != "index"}
+    on_disk = {f.stem for f in OUT.glob("*.json") if f.stem != "index"}
+
+    # RECONCILE THE TABLE AGAINST THE FILES BEFORE TRUSTING EITHER.
+    #
+    # The table says 'ok' and the passages are the actual output, so a row
+    # claiming 'ok' with no file on disk is a lie that skips the paper forever.
+    # It happens whenever the two stores diverge, and they did: a run parsed 314
+    # papers, wrote their status into state.db, pushed state.db, and pushed a
+    # docs/ft that had been built from empty -- so restoring the corpus from
+    # ft.tar.gz.prev brought back an archive predating those 314 while their
+    # 'ok' rows survived in the database.
+    #
+    # Left alone, every future run would skip them as done and they would never
+    # be parsed again. Clearing the claim costs one re-parse; keeping it costs
+    # the paper.
+    stale = [r[0] for r in con.execute(
+        "SELECT uid FROM fulltext WHERE status='ok'")
+        if _safe(r[0]) not in on_disk]
+    if stale:
+        con.executemany("UPDATE fulltext SET status='missing' WHERE uid=?",
+                        [(u,) for u in stale])
+        con.commit()
+        log(f"[ft] {len(stale):,} rows claimed 'ok' with no passage file on "
+            f"disk -- reset for re-parsing")
+
+    done = set(on_disk)
     done |= {_safe(r[0]) for r in con.execute(
         "SELECT uid FROM fulltext WHERE status IN ('ok','no_pdf')")}
     rows = con.execute(
