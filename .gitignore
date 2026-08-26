@@ -43,6 +43,18 @@ pdfs/
 docs/vec.bin
 docs/vec.json
 docs/abs/
+# The parsed full text of every paper GROBID has read -- ~70,000 characters
+# each, 2,382 of them, most from journal publishers. This repository is PUBLIC,
+# so committing it was publication rather than personal use, and docs/abs being
+# ignored while the FULL TEXT was not is the wrong way round.
+#
+# It is not merely dropped: it lives in R2 beside state.db now, pushed by
+# tools/dbsync.py ftpush and fetched by tools/prepare_deploy.py on every
+# deploy. Untracking it WITHOUT that would silently kill Ask's passage
+# retrieval, the full-text markers and every Implement button -- nothing
+# rebuilds it during a deploy, so being committed was the only reason it ever
+# reached the site.
+docs/ft/
 # same story: the paper graph and the map are derived from the vector cache
 # (tools/graph.py, tools/map.py) and are rebuilt on deploy -- 4.4 MB of new
 # blobs per run otherwise
