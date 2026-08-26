@@ -453,10 +453,68 @@ def _stage_s2(rows):
     return bulk_resolve([(u, d) for u, _, _, d in rows if d], only="s2")
 
 
+def _stage_arxiv_titles(rows, batch=25):
+    """arXiv title search, OR-ed in batches instead of one query per paper.
+
+    This rung was the worst in the ladder: arXiv asks bulk users for >=3s
+    between queries, so 883 papers meant 46 minutes of serialised waiting for a
+    rung yielding ~3%. Before the gate was tightened it was 7,600 papers and
+    6.5 hours, past the job timeout.
+
+    The arXiv API takes a boolean query, so titles OR together and one request
+    answers for many:
+
+        search_query=ti:"first paper" OR ti:"second" OR ti:"third"
+
+    Verified live -- three OR-ed titles came back in a single response, all
+    three matched. At 25 per request that is ~36 requests instead of 883:
+    under two minutes rather than forty-six, and arXiv is asked thirty-six
+    questions rather than nine hundred.
+
+    The response also carries near-misses ("Not All Attention Is All You
+    Need"), so every entry is matched back on EXACT normalised title. A loose
+    match would attach the wrong paper's full text, which is worse than none.
+    """
+    cand = [(u, t) for u, url, t, doi in rows
+            if t and len(t) > 20
+            and re.search(r"arxiv|nep-|preprint", f"{u} {url or ''} {doi or ''}", re.I)]
+    if not cand:
+        return {}
+    out = {}
+    want = {_norm_title(t): u for u, t in cand}
+    chunks = [cand[i:i + batch] for i in range(0, len(cand), batch)]
+    prog = Progress(len(chunks), "arxiv-titles", every_s=30)
+    for chunk in chunks:
+        # Quotes and backslashes are stripped rather than escaped: they would
+        # break the boolean query, and no title needs them to match.
+        q = " OR ".join('ti:"%s"' % t[:120].replace('"', " ").replace("\\", " ")
+                        for _u, t in chunk)
+        try:
+            r = _get("http://export.arxiv.org/api/query",
+                     params={"search_query": q, "max_results": batch * 4})
+            if r.ok:
+                root = ET.fromstring(r.text)
+                for e in root.findall(_ATOM + "entry"):
+                    got = (e.findtext(_ATOM + "title") or "").strip()
+                    uid = want.get(_norm_title(got))
+                    if not uid or uid in out:
+                        continue
+                    for lk in e.findall(_ATOM + "link"):
+                        if lk.get("title") == "pdf" and lk.get("href"):
+                            out[uid] = lk.get("href")
+                            break
+        except Exception:                                # noqa: BLE001
+            pass
+        prog.tick()
+    prog.done()
+    return out
+
+
 STAGES = [
     ("free-derive", _stage_free, "arXiv/NBER/RePEc/direct-pdf, no HTTP"),
     ("openalex", _stage_openalex, "batched 50/request"),
     ("s2", _stage_s2, "batched 500/request"),
+    ("arxiv-titles", _stage_arxiv_titles, "OR-batched 25/request"),
 ]
 
 
