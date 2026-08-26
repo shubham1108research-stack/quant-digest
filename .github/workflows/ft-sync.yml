@@ -1,0 +1,64 @@
+name: Full Text Sync
+
+# Move docs/ft -- the parsed passage corpus -- between the checkout and R2.
+#
+# It exists because that corpus used to live in git. It is the full text of
+# 2,382 published papers, ~70,000 characters each, and this repository is
+# public, so committing it was publication rather than personal use. It now
+# sits beside state.db in the private bucket.
+#
+# push  tar up docs/ft and store it. Run this BEFORE the files are untracked,
+#       or the next deploy has nothing to fetch.
+# pull  fetch and extract, to prove the deploy path works from a clean
+#       checkout rather than from files that happened to be on disk.
+#
+# tools/prepare_deploy.py pulls automatically on every deploy; this is for
+# doing it deliberately, and for checking the archive after a manual parse.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "push (checkout -> R2) or pull (R2 -> checkout)"
+        type: choice
+        options: [push, pull]
+        default: push
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ft-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: What is in the checkout
+        run: |
+          echo "tracked in git : $(git ls-files docs/ft | wc -l)"
+          echo "present on disk: $(ls docs/ft 2>/dev/null | wc -l)"
+
+      - name: Sync
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py ft${{ github.event.inputs.action }}
+
+      - name: What is in the bucket now
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py status

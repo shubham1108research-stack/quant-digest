@@ -21,7 +21,7 @@ on:
         default: "200"
 
 permissions:
-  contents: write
+  contents: read            # no git writes: the corpus goes to R2 now
 
 concurrency:
   # state.db is binary: concurrent writers rebase into an
@@ -85,17 +85,20 @@ jobs:
 
       # always: a long run that times out must not discard its passages.
       # A previous job lost 103 papers to a commit gated on success.
-      - name: Commit the passage corpus
+      #
+      # To R2, not to git. These are the full parsed text of published papers --
+      # ~70,000 characters each, mostly from journal publishers -- and this
+      # repository is PUBLIC, so committing them was publication rather than
+      # personal use. They now live beside state.db in the private bucket, and
+      # tools/prepare_deploy.py fetches them on every deploy.
+      - name: Store the passage corpus
         if: always()
-        run: |
-          git config user.name "digest-bot"
-          git config user.email "actions@users.noreply.github.com"
-          # docs/ft only: text files merge, state.db is binary and
-          # a concurrent writer makes the rebase unresolvable
-          git add docs/ft || true
-          git commit -m "full text: passages $(date -u +%F)" || echo "no changes"
-          git pull --rebase --autostash origin master || true
-          git push || (git pull --rebase --autostash origin master && git push)
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py ftpush
 
       # Everything under docs/ that is gitignored -- the embedding index, the
       # paper graph, the map -- is rebuilt here. A Pages deploy is a full

@@ -64,6 +64,31 @@ def main():
     # a page that will load blank.
     run(["tools/check_js.py"], required=True)
 
+    # docs/ft/ -- the parsed full text -- used to reach the site by being
+    # COMMITTED to a public repo. It now lives in R2 beside state.db, so it has
+    # to be fetched here or the deploy ships without it. Nothing else rebuilds
+    # it: fulltext.py needs GROBID and the PDFs, and pdfs/ is gitignored.
+    #
+    # required=True, and the reason is the shape of the failure rather than its
+    # likelihood. A missing docs/ft does not error anywhere -- loadFtIndex()
+    # catches, FT_SET becomes empty, and Ask stops quoting papers by section
+    # while every Implement button greys out. It looks like a portal that never
+    # had the feature. dbsync.ftpull already exits 0 when the bucket simply has
+    # no archive yet, so this only fires on a real failure.
+    run(["tools/dbsync.py", "ftpull"], required=True)
+    ft = ROOT / "docs" / "ft"
+    n_ft = len(list(ft.glob("*.json"))) if ft.exists() else 0
+    if n_ft:
+        print(f"[prepare] docs/ft: {n_ft:,} parsed papers", flush=True)
+    else:
+        # Not fatal: a first run against an empty bucket genuinely has none,
+        # and refusing to deploy the whole portal over an absent enrichment
+        # would be the wrong trade. Loud, though -- silence is what let the
+        # graph run on a retired embedder for a day.
+        print("[prepare] WARNING: docs/ft is EMPTY. Ask cannot quote passages, "
+              "and every Implement button will be greyed. If R2 should have an "
+              "archive, this deploy is shipping without it.", flush=True)
+
     sys.path.insert(0, str(ROOT))
     import portal, store                                  # noqa: E402
     con = store.connect()

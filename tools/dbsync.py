@@ -153,6 +153,142 @@ def push(args):
     return 0
 
 
+# ---------------------------------------------------------------- full text
+# docs/ft/ is the parsed full text of every paper GROBID has read -- ~70,000
+# characters each, 2,382 of them, and 1,999 from journal publishers. It used to
+# be COMMITTED, in a public repository, which is publication rather than
+# personal use whatever the intent. docs/abs/ (the abstracts) was gitignored and
+# the full text was not, which is the wrong way round.
+#
+# It cannot simply be untracked. Nothing rebuilds it during a deploy --
+# tools/fulltext.py needs GROBID and the PDFs, and pdfs/ is gitignored -- so it
+# reached the site ONLY because it was committed. Dropping it from git without
+# putting it somewhere would silently kill Ask's passage retrieval, the
+# full-text markers and the Implement button.
+#
+# So it moves here, beside state.db, in the private bucket.
+#
+# ONE TARBALL, not per-file objects: 2,382 objects means 2,382 requests to sync,
+# and fulltext.py writes each file once and never rewrites it, so a whole-
+# archive push is both simpler and cheaper. Measured, it compresses to 29% --
+# about 58 MB.
+FT_DIR = pathlib.Path("docs/ft")
+FT_KEY = "ft.tar.gz"
+FT_PREV = "ft.tar.gz.prev"
+FT_MIN_BYTES = 5_000_000
+FT_MIN_MEMBERS = 200
+
+
+def _ft_healthy(p) -> tuple[bool, str]:
+    """Is this tarball worth keeping? Same contract as _healthy for state.db.
+
+    An object store has no history, so a truncated upload replacing a good
+    archive is unrecoverable in a way a bad commit never was.
+    """
+    import tarfile                                    # noqa: PLC0415
+    if not p.exists():
+        return False, "file does not exist"
+    n = p.stat().st_size
+    if n < FT_MIN_BYTES:
+        return False, f"only {n/1e6:.1f} MB (expected >= {FT_MIN_BYTES/1e6:.0f} MB)"
+    try:
+        with tarfile.open(p, "r:gz") as tf:
+            names = tf.getnames()
+    except Exception as e:                            # noqa: BLE001
+        return False, f"unreadable tar.gz: {type(e).__name__}: {e}"
+    members = [x for x in names if x.endswith(".json")]
+    if len(members) < FT_MIN_MEMBERS:
+        return False, f"only {len(members)} passage files (expected >= {FT_MIN_MEMBERS})"
+    # index.json is what the browser fetches to learn which papers have full
+    # text at all; an archive without it leaves every Implement button greyed.
+    if not any(x.endswith("index.json") for x in names):
+        return False, "no index.json in the archive"
+    return True, f"{n/1e6:.1f} MB, {len(members):,} papers"
+
+
+def _ft_tar(dest) -> None:
+    import tarfile                                    # noqa: PLC0415
+    with tarfile.open(dest, "w:gz", compresslevel=6) as tf:
+        tf.add(FT_DIR, arcname="ft")
+
+
+def ftpull(args):
+    cfg = _cfg()
+    if not cfg:
+        log("[dbsync] R2 not configured -- using the working-copy docs/ft")
+        return 0
+    import tarfile                                    # noqa: PLC0415
+    cli = _client(cfg)
+    tmp = pathlib.Path("ft.tar.gz.part")
+    try:
+        cli.download_file(cfg["R2_BUCKET"], FT_KEY, str(tmp))
+    except Exception as e:                            # noqa: BLE001
+        if "404" in str(e) or "NoSuchKey" in str(e):
+            # Nothing in the bucket yet. Fine on a fresh setup and fine when the
+            # working copy already has the files; the caller decides whether an
+            # empty docs/ft is fatal, because only it knows if a deploy follows.
+            have = len(list(FT_DIR.glob("*.json"))) if FT_DIR.exists() else 0
+            log(f"[dbsync] no {FT_KEY} in the bucket yet "
+                f"-- working copy has {have} passage files")
+            return 0
+        log(f"[dbsync] ft download FAILED: {type(e).__name__}: {str(e)[:200]}")
+        return 1
+    ok, why = _ft_healthy(tmp)
+    if not ok:
+        tmp.unlink(missing_ok=True)
+        log(f"[dbsync] downloaded ft archive rejected ({why}) -- keeping the working copy")
+        return 1
+    # Extract over the top rather than replacing the directory: fulltext.py
+    # writes each file once, so union is the correct merge and a partial
+    # archive can never delete papers the working copy already holds.
+    with tarfile.open(tmp, "r:gz") as tf:
+        # filter="data" refuses absolute paths, "..", symlinks and device
+        # nodes. This archive is one we wrote ourselves, so the traversal risk
+        # is small -- but it arrives over the network from an object store, and
+        # "we produced it" is an assumption rather than a check. It is also the
+        # default from Python 3.14, so setting it now avoids a silent change in
+        # behaviour later.
+        tf.extractall(FT_DIR.parent, filter="data")
+    tmp.unlink(missing_ok=True)
+    log(f"[dbsync] pulled {FT_KEY} ({why})")
+    return 0
+
+
+def ftpush(args):
+    cfg = _cfg()
+    if not cfg:
+        log("[dbsync] R2 not configured -- nothing pushed")
+        return 0
+    if not FT_DIR.exists():
+        log(f"[dbsync] {FT_DIR} does not exist -- nothing to push")
+        return 1
+    tmp = pathlib.Path("ft.tar.gz.part")
+    _ft_tar(tmp)
+    ok, why = _ft_healthy(tmp)
+    if not ok:
+        tmp.unlink(missing_ok=True)
+        log(f"[dbsync] REFUSING to push ft: {why}")
+        return 1
+    cli = _client(cfg)
+    try:                                              # keep one version back
+        cli.copy_object(Bucket=cfg["R2_BUCKET"], Key=FT_PREV,
+                        CopySource={"Bucket": cfg["R2_BUCKET"], "Key": FT_KEY})
+        log(f"[dbsync] previous ft archive kept as {FT_PREV}")
+    except Exception as e:                            # noqa: BLE001
+        if not ("404" in str(e) or "NoSuchKey" in str(e)):
+            log(f"[dbsync] could not snapshot the previous ft archive: {type(e).__name__}")
+    cli.upload_file(str(tmp), cfg["R2_BUCKET"], FT_KEY)
+    head = cli.head_object(Bucket=cfg["R2_BUCKET"], Key=FT_KEY)
+    if head["ContentLength"] != tmp.stat().st_size:
+        log(f"[dbsync] ft size mismatch after upload: "
+            f"{head['ContentLength']} != {tmp.stat().st_size}")
+        tmp.unlink(missing_ok=True)
+        return 1
+    log(f"[dbsync] pushed {FT_KEY} ({why}, sha {_sha(tmp)[:12]})")
+    tmp.unlink(missing_ok=True)
+    return 0
+
+
 def status(args):
     cfg = _cfg()
     if not cfg:
@@ -164,7 +300,7 @@ def status(args):
             log(f"[dbsync] local: {_healthy(DB)[1]}")
         return 0
     cli = _client(cfg)
-    for k in (KEY, PREV):
+    for k in (KEY, PREV, FT_KEY, FT_PREV):
         try:
             h = cli.head_object(Bucket=cfg["R2_BUCKET"], Key=k)
             log(f"[dbsync] {k:<16} {h['ContentLength']/1e6:>6.1f} MB   "
@@ -190,10 +326,11 @@ def rollback(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("action", choices=("pull", "push", "status", "rollback"))
+    ap.add_argument("action", choices=("pull", "push", "status", "rollback",
+                                       "ftpull", "ftpush"))
     args = ap.parse_args()
-    return {"pull": pull, "push": push,
-            "status": status, "rollback": rollback}[args.action](args)
+    return {"pull": pull, "push": push, "status": status, "rollback": rollback,
+            "ftpull": ftpull, "ftpush": ftpush}[args.action](args)
 
 
 if __name__ == "__main__":
