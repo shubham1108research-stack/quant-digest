@@ -337,7 +337,12 @@ def main():
                 # un-burn requeued them, the download failed again, and the
                 # same 200 highest-value papers consumed every future run.
                 with res_lock:
-                    fail_hosts[urlsplit(pdf_url).netloc] += 1
+                    # host AND status: "www.nber.org x194" says who refused;
+                    # http_403 vs html_not_pdf says whether the runner's IP is
+                    # blocked or a challenge page came back 200 -- different
+                    # problems with different fixes, and the run should name
+                    # which one it hit.
+                    fail_hosts[f"{urlsplit(pdf_url).netloc}:{status}"] += 1
                 record(uid, "dl_failed")
                 return
             q_parse.put((uid, title, pdf_url, path))
@@ -345,7 +350,8 @@ def main():
             if tally["dl_failed"] <= 5:
                 log(f"[ft] {uid} download failed: {type(e).__name__}: {str(e)[:200]}")
             with res_lock:
-                fail_hosts[urlsplit(known.get(uid, "//?")).netloc] += 1
+                fail_hosts[f"{urlsplit(known.get(uid, '//?')).netloc}"
+                           f":{type(e).__name__}"] += 1
             record(uid, "dl_failed")
 
     def parse_worker():
