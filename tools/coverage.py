@@ -218,6 +218,27 @@ def main():
         pr = 100.0 * h / max(reach, 1)
         log(f"{name:<34}{h:>9,}{pl:>8.1f}%{reach:>11,}{pr:>9.1f}%  {src}")
 
+    # Rows claiming a parse with no passage file behind them. state.db and
+    # ft.tar.gz are separate objects with separate push paths, so they diverge
+    # -- and the divergence is invisible from either side alone: the paper is
+    # skipped as done forever while the count simply stops moving.
+    try:
+        claimed = list(con.execute(
+            "SELECT uid, status FROM fulltext WHERE status IN ('ok','missing')"))
+        titles = {u: t for u, t, _, _, _ in live}
+        stale = [(u, st) for u, st in claimed
+                 if _ftkey(u) not in ft and u not in ft]
+        if stale:
+            log(f"\nCLAIMED A PARSE, NO PASSAGE FILE  ({len(stale):,} rows)")
+            for u, st in stale[:15]:
+                log(f"   [{st:<7}] {u:<32} {titles.get(u, '(not in items)')[:44]}")
+            if len(stale) > 15:
+                log(f"   ...and {len(stale) - 15:,} more")
+        else:
+            log("\nfulltext table and docs/ft agree")
+    except Exception as e:                                    # noqa: BLE001
+        log(f"\nfulltext table unreadable: {type(e).__name__}")
+
     log("\nGRAPH")
     for k, v in edges.items():
         log(f"   {k:<24} {v:,}" if isinstance(v, int) else f"   {k:<24} {v}")
