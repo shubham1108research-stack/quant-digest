@@ -238,7 +238,12 @@ def _rescore(cands, terms, variant):
     cands.sort(key=lambda c: -c["rank"])
 
 
-VARIANTS = ("current", "legacy", "rrf", "rrf20", "rrf5", "sim_only")
+# K is swept rather than assumed. The conventional 60 is tuned for fusing
+# many long result lists; this fuses two over one corpus, and the measured
+# behaviour here is that MRR climbs monotonically as K falls while hit@20
+# stays pinned -- a small K sharpens the head without costing coverage.
+VARIANTS = ("current", "legacy", "rrf", "rrf20", "rrf10", "rrf8", "rrf5",
+            "rrf3", "rrf2", "rrf1", "sim_only")
 
 
 # ---------------------------------------------------------------- the index
