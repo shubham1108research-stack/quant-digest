@@ -58,6 +58,15 @@ jobs:
         run: |
           python tools/prune.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
 
+      # BEFORE tagging, not after: the matcher reads title + abstract, so a
+      # row whose abstract arrives in this step gets tagged on this run rather
+      # than the next one. 907 live rows have no abstract at all -- every one
+      # of them embeds from weaker text than it needs to.
+      - name: Backfill missing abstracts
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        continue-on-error: true
+        run: python tools/fill_abstracts.py
+
       # Free and deterministic -- no model call -- so it re-runs over the whole
       # archive in seconds after any vocabulary edit.
       - name: Tag
