@@ -59,7 +59,7 @@ on:
       action:
         description: "Which endpoint to drip"
         type: choice
-        options: [refs, match]
+        options: [refs, match, authors, discover]
         default: refs
       max_requests:
         description: "Request budget (2400 = ~2h at the public rate; 7200 is the 6h job ceiling)"
@@ -118,6 +118,20 @@ jobs:
           echo "action=$ACTION budget=$BUDGET"
           python tools/s2_harvest.py "$ACTION" --max-requests "$BUDGET" \
             ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+
+      # `authors` and `discover` write CANDIDATES to export/ rather than into
+      # state.db -- deliberately, since neither a watched author's every paper
+      # nor a search hit is a decision. Without this step those files are
+      # written on the runner and thrown away with it, which would make both
+      # actions look like they had run and produced nothing.
+      - name: Keep the candidate files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: s2-candidates
+          path: export/
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Store state.db
         if: ${{ github.event.inputs.dry_run != 'true' }}
