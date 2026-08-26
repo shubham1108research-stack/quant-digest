@@ -390,6 +390,16 @@ def cmd_cites(args):
     log(f"[repec] {len(handles)} papers resolved to a RePEc handle "
         f"(capped at CitEc's free {budget})")
 
+    # A DRY RUN MUST NOT SPEND THE BUDGET. Every other mode here honours
+    # --dry-run by not writing; this one ignored it and called CitEc anyway,
+    # so a dry run burned 450 of a 450-call daily allowance and then had its
+    # database copy discarded by the workflow's skipped push. The calls are the
+    # scarce thing, not the writes, so the check goes BEFORE the request.
+    if args.dry_run:
+        log(f"[repec] DRY RUN: would resolve {len(handles)} handles and spend "
+            f"{len(handles)} of CitEc's {budget} free calls. Nothing fetched.")
+        return 0
+
     n = 0
     for uid, h in handles:
         xml = _get(CITEC_API + h, tries=2)
