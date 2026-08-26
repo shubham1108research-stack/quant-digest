@@ -381,13 +381,12 @@ def query_vectors(questions, model, dim):
     cache = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     missing = [q for q in questions if _key(q, model, dim) not in cache]
     if missing:
-        api = os.environ.get("OPENAI_API_KEY")
-        if not api:
-            raise SystemExit(
-                "[eval] %d question(s) have no cached vector for %s@%d and "
-                "OPENAI_API_KEY is not set. Run this where the key exists (the "
-                "eval workflow) to refresh eval/qvec.json."
-                % (len(missing), model, dim))
+        # The key is checked on the OpenAI path ONLY, and further down. It used
+        # to be checked here, which meant the local-model branch below -- which
+        # never touches api.openai.com -- refused to run without a key it had
+        # no use for. That silently turned the whole embedding bake-off into a
+        # build with no measurement: the bge index was constructed, all 20,999
+        # rows of it, and then scored zero questions.
         if "/" in model:
             # A local sentence-transformers model, named org/model. The QUERY
             # must be embedded by the same model as the index or the two land
@@ -414,6 +413,13 @@ def query_vectors(questions, model, dim):
                 "embed questions with OpenAI text-embedding models. Add the "
                 "provider here, or rebuild the index -- do NOT measure across "
                 "two vector spaces." % model)
+        api = os.environ.get("OPENAI_API_KEY")
+        if not api:
+            raise SystemExit(
+                "[eval] %d question(s) have no cached vector for %s@%d and "
+                "OPENAI_API_KEY is not set. Run this where the key exists (the "
+                "eval workflow) to refresh eval/qvec.json."
+                % (len(missing), model, dim))
         import requests
         log("[eval] embedding %d new question(s) with %s@%d"
             % (len(missing), model, dim))
