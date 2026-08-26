@@ -1,0 +1,95 @@
+name: Semantic Scholar Enrichment
+
+# Bulk per-paper scalars for the graph: citations, influential citations,
+# author h-index, free PDF links, publication year and venue.
+#
+# WHY THIS REPLACED THREE SEPARATE ROUTES. Citations were coming from CitEc at
+# 450 calls a day -- sixteen runs for one field. S2's POST /paper/batch returns
+# citations, influential citations, reference counts, author h-indices, an
+# open-access PDF url, year and venue for up to 500 papers in a SINGLE request.
+# The whole archive is ~52 requests.
+#
+# THE RATE LIMIT IS ENDPOINT-SPECIFIC, which is easy to get wrong. Measured
+# unauthenticated on one machine in one minute:
+#
+#     GET  /paper/search        429   throttled across all anonymous callers
+#     GET  /paper/search/match  200, then 429 on repeat even at 3s spacing
+#     POST /paper/batch         200, no throttling observed
+#
+# A collector built on /paper/search reports "no data" for every row and looks
+# exactly like S2 not having it. S2_API_KEY raises the limits further and is
+# free to obtain; the batch path works without one.
+#
+# Set S2_API_KEY as a repository secret if you have one -- the job runs either
+# way and says which mode it used.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to run"
+        type: choice
+        options: [enrich, specter]
+        default: enrich
+      limit:
+        description: "Papers to process (0 = all outstanding)"
+        required: false
+        default: "0"
+      dry_run:
+        description: "Report what would change and write nothing"
+        type: boolean
+        default: true
+      force:
+        description: "Refresh rows that already carry citations (they go stale)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  # state.db is binary: two writers rebase into an unmergeable conflict and one
+  # run's work is silently discarded.
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  s2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Enrich
+        env:
+          # Not required. Raises the rate limit when present; the batch
+          # endpoint answers without it.
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
+          CONTACT_EMAIL: ${{ secrets.GMAIL_ADDRESS }}
+        run: |
+          if [ -n "$S2_API_KEY" ]; then echo "using S2_API_KEY"; else echo "unauthenticated (batch endpoint)"; fi
+          python tools/s2.py "${{ github.event.inputs.action }}" \
+            --limit "${{ github.event.inputs.limit }}" \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} \
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+
+      - name: Store state.db
+        if: ${{ github.event.inputs.dry_run != 'true' && github.event.inputs.action == 'enrich' }}
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push
