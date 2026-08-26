@@ -454,7 +454,19 @@ def main():
     def worker():
         while True:
             try:
-                uid, url, title = q.get_nowait()
+                # FOUR values. todo holds (uid, url, title, doi) and this
+                # unpacked three, so every worker raised ValueError the instant
+                # it started and the run finished having attempted nothing.
+                #
+                # Worse if the arity had happened to match: `doi` was never
+                # unpacked here, so resolve() read it as a free variable from
+                # the enclosing loop -- the LAST paper's doi, reused for every
+                # paper in the queue.
+                #
+                # It never surfaced because nothing ran main(). The only caller
+                # is tools/fulltext.py, which imports resolve() and download()
+                # directly and never enters this path.
+                uid, url, title, doi = q.get_nowait()
             except queue.Empty:
                 return
             try:
@@ -488,6 +500,15 @@ def main():
             "INSERT OR REPLACE INTO pdfs (uid,status,url,path,bytes) VALUES (?,?,?,?,?)",
             [(u, s, url, p, n) for u, s, url, p, n in results])
         con.commit()
+
+    # A run that attempted work and produced nothing is a failure, however
+    # tidy its summary reads. The worker crashes printed tracebacks, the
+    # process still exited 0, and CI reported success for a job that resolved
+    # 0 of 25,628 papers.
+    if todo and not results:
+        log(f"[pdf] FAILED: {len(todo):,} papers queued and NOTHING resolved "
+            f"-- every worker died. See the tracebacks above.")
+        return 1
 
     tally = collections.Counter(r[1] for r in results)
     mb = sum(r[4] for r in results) / 1e6
