@@ -42,6 +42,8 @@ import requests
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
+from urllib.parse import urlsplit
+
 import store
 from progress import Progress            # noqa: E402
 import fetch_pdfs       # noqa: E402  (reuse its resolver + polite downloader)
@@ -63,7 +65,7 @@ PARSE_WORKERS = 4
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS fulltext (
     uid      TEXT PRIMARY KEY,
-    status   TEXT,            -- ok | no_pdf | grobid_error | no_body
+    status   TEXT,            -- ok | no_pdf | dl_failed | grobid_error | no_body
     passages INTEGER,
     words    INTEGER,
     ts       TEXT DEFAULT (datetime('now'))
@@ -198,7 +200,7 @@ def pick_papers(con, limit):
 
     done = set(on_disk)
     done |= {_safe(r[0]) for r in con.execute(
-        "SELECT uid FROM fulltext WHERE status IN ('ok','no_pdf')")}
+        "SELECT uid FROM fulltext WHERE status IN ('ok','no_pdf','dl_failed')")}
     rows = con.execute(
         "SELECT uid, title, url, meta, first_seen FROM items").fetchall()
     scored = []
@@ -303,10 +305,17 @@ def main():
     results: list = []
     res_lock = threading.Lock()
 
+    fail_hosts = collections.Counter()
+
     def record(uid, status, passages=0, words=0):
         with res_lock:
             results.append((uid, status, passages, words))
             tally[status] += 1
+            # Every finished paper ticks, misses included. Ticking only in the
+            # parser made the progress line count parses while the queue
+            # drained silently: a run that failed 185 of 200 downloads read
+            # "12/200 complete" and looked interrupted rather than finished.
+            prog.tick()
 
     def fetch_worker(item):
         uid, title, url, doi = item
@@ -321,13 +330,23 @@ def main():
                 return
             status, path, _ = fetch_pdfs.download(uid, pdf_url)
             if status != "ok" or not path:
-                record(uid, "no_pdf")
+                # NOT no_pdf. A url exists and is dead -- and the difference
+                # decides what happens next run. no_pdf means "the resolver
+                # had no answer" and is cleared whenever a resolve finds one;
+                # marking a dead url no_pdf put these rows in a loop where the
+                # un-burn requeued them, the download failed again, and the
+                # same 200 highest-value papers consumed every future run.
+                with res_lock:
+                    fail_hosts[urlsplit(pdf_url).netloc] += 1
+                record(uid, "dl_failed")
                 return
             q_parse.put((uid, title, pdf_url, path))
         except Exception as e:                  # noqa: BLE001
-            if tally["grobid_error"] <= 5:
+            if tally["dl_failed"] <= 5:
                 log(f"[ft] {uid} download failed: {type(e).__name__}: {str(e)[:200]}")
-            record(uid, "grobid_error")
+            with res_lock:
+                fail_hosts[urlsplit(known.get(uid, "//?")).netloc] += 1
+            record(uid, "dl_failed")
 
     def parse_worker():
         while True:
@@ -358,8 +377,6 @@ def main():
                     if tally["grobid_error"] <= 5:
                         log(f"[ft] {uid} failed: {type(e).__name__}: {str(e)[:300]}")
                     record(uid, "grobid_error")
-                finally:
-                    prog.tick()
             finally:
                 q_parse.task_done()
 
@@ -381,6 +398,14 @@ def main():
         "INSERT OR REPLACE INTO fulltext (uid,status,passages,words) "
         "VALUES (?,?,?,?)", results)
     con.commit()
+    # The one line that says what the run DID. Without it the only findable
+    # numbers were the manifest count and five sampled tracebacks, and the
+    # question "why did 185 of 200 fail" had to be answered by re-running.
+    log("[ft] outcome: " + ", ".join(
+        f"{k} {v:,}" for k, v in sorted(tally.items(), key=lambda x: -x[1])))
+    if fail_hosts:
+        log("[ft] failing hosts: " + ", ".join(
+            f"{h} x{n}" for h, n in fail_hosts.most_common(8)))
 
     # manifest: the portal needs to know which papers have full text BEFORE
     # deciding what to fetch, and probing 8k urls to find out is not an option
