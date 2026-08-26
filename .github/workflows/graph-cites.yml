@@ -1,0 +1,87 @@
+name: Citation Graph
+
+# Build the citation edges between papers the archive holds, from OpenAlex
+# referenced_works.
+#
+# WHY IT HAS ITS OWN JOB. prepare_deploy builds `sim` and `export` on every
+# deploy but deliberately not `cites` -- those cost ~200 OpenAlex round trips
+# and were assumed to "travel with the checkout" in state.db. Nothing ever ran
+# them at scale, so the citation graph has never actually been measured, and
+# every idea that depends on it -- PageRank authority from the classics,
+# bibliographic coupling, co-citation -- rests on a density nobody has counted.
+#
+# WHY OPENALEX AND NOT SEMANTIC SCHOLAR. Measured: S2's POST /paper/batch
+# returns `referenceCount: 75` and `references: []` for the same paper -- it
+# reports the count and withholds the list. Per-paper GET /paper/{id}/references
+# works but is one request each, roughly seven hours for the archive at the
+# authenticated rate. OpenAlex returns referenced_works inline, 50 DOIs per
+# call, free and keyless. graph.py build_cites already implements exactly that.
+#
+# WHY NOT THE S2 DATASETS API. The `citations` dataset is 2.4B records in 30
+# files of 8.5GB -- 255GB, with no per-ID query, so "only my papers" still means
+# transferring all of it and discarding 99.9%. It has one genuine advantage --
+# reference lists for papers we do NOT hold, which is what makes authority flow
+# through intermediate nodes -- and that is worth revisiting only if the
+# internal graph this job measures turns out too sparse to work with.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "DOIs to resolve (0 = all)"
+        required: false
+        default: "0"
+      report_only:
+        description: "Report existing edge counts without fetching"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  cites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Report the graph as it stands
+        env:
+          CONTACT_EMAIL: ${{ secrets.GMAIL_ADDRESS }}
+        run: python tools/graph.py report
+
+      - name: Build citation edges
+        if: ${{ github.event.inputs.report_only != 'true' }}
+        env:
+          CONTACT_EMAIL: ${{ secrets.GMAIL_ADDRESS }}
+        run: python tools/graph.py cites --limit "${{ github.event.inputs.limit }}"
+
+      - name: Report again
+        if: ${{ github.event.inputs.report_only != 'true' }}
+        run: python tools/graph.py report
+
+      - name: Store state.db
+        if: ${{ github.event.inputs.report_only != 'true' }}
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push
