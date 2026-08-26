@@ -110,22 +110,46 @@ def _norm_journal(s):
     suffix. Both have to go or nothing matches -- the first attempt at this
     scored 0 of 29 for exactly that reason.
 
-    TWO MORE FORMS, and they cost 172 abstracts (19% of the gap) before anyone
-    looked. The archive does not hold one spelling per journal:
+    THE ARCHIVE DOES NOT HOLD ONE SPELLING PER JOURNAL. 489 live rows across 33
+    journals normalised to something no index could match:
 
-        "Journal of Banking &amp; Finance"      un-decoded HTML entity
-        "journal:Journal of Corporate Finance"  a source prefix
+        "Journal of Banking &amp; Finance"                    un-decoded entity
+        "journal:Journal of Corporate Finance"                a source prefix
+        "journal:Mathematical Finance,topic-sweep,topic:..."  provenance, not a
+                                                              journal name
 
     The ampersand replacement below ran BEFORE punctuation was stripped, so
-    "&amp;" became " and amp;" and left the word `amp` sitting in the middle of
-    the name -- "journal of banking and amp finance", which matches nothing.
-    The prefixed form doubled the leading word. Both look like missing data
-    downstream and neither is: the abstracts were there the whole time.
+    "&amp;" became " and amp;" and left the word `amp` in the middle of the
+    name. The prefixed form doubled its leading word. And the third is not a
+    journal at all -- the collector appends its topic tags into the same field,
+    so "Mathematical Finance" arrives with eight tags welded on.
+
+    Tag segments are dropped rather than split(",")[0]: real names carry commas
+    -- "Journal of Money, Credit and Banking" -- and truncating at the first one
+    would invent a journal called "Journal of Money".
+
+    WHAT THIS DOES AND DOES NOT FIX. It corrects the journal LABEL everywhere it
+    is read. It does NOT by itself recover abstracts: cmd_abstracts uses this
+    only to choose which RePEc series to harvest, and then matches by TITLE. A
+    journal already reachable under a clean spelling was being harvested anyway,
+    so the measured gain there was 1 row, not the 172 first claimed. The value
+    is in the label, and in journals reachable under no clean spelling at all.
     """
     s = html.unescape(s or "")
     # Source prefixes ("journal:Journal of ...") come from the collector, not
     # from the journal, and duplicate the leading word once normalised.
     s = re.sub(r"^\s*(journal|series|source)\s*:\s*", "", s, flags=re.I)
+    # ...and the collector also appends its topic tags into the same field:
+    #
+    #   "journal:Mathematical Finance,topic-sweep,topic:alternative data,..."
+    #
+    # so what looks like a journal name is a provenance string. Drop the tag
+    # segments and keep the rest. NOT a plain split(",")[0]: real names carry
+    # commas -- "Journal of Money, Credit and Banking" -- and truncating at the
+    # first one would invent a journal called "Journal of Money".
+    parts = [p for p in s.split(",")
+             if not re.match(r"^\s*(topic|topic-sweep|source|series)", p, re.I)]
+    s = ",".join(parts) if parts else s
     s = s.lower().replace("&", " and ")
     s = re.sub(r"^the\s+", "", s)
     return re.sub(r"[^a-z0-9]+", " ", s).strip()
