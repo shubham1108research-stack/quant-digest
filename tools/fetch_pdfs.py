@@ -34,6 +34,7 @@ not saved as a corrupt file).
 
 import argparse
 import collections
+import concurrent.futures
 import hashlib
 import json
 import os
@@ -45,6 +46,7 @@ import sys
 import threading
 import time
 import urllib.robotparser as robotparser
+import urllib.request
 from urllib.parse import urlsplit
 
 import requests
@@ -356,6 +358,90 @@ def resolve(uid, url, title=None, doi=None):
     return None
 
 
+def bulk_resolve(pairs):
+    """{uid: pdf_url} for as many papers as batched APIs can answer for.
+
+    Two calls cover what the ladder's rungs 5-7 do one paper at a time:
+
+      OpenAlex   filter=doi:a|b|c, 50 per request, best_oa_location first then
+                 any location carrying a pdf_url
+      S2         POST /paper/batch, 500 ids per request, openAccessPdf
+
+    Both are the same endpoints graph.py and s2.py already use, and both are
+    threaded here because the work is latency. Failures are silent by design:
+    anything not answered simply stays in the per-paper queue, so a bad batch
+    costs time and never correctness.
+    """
+    if not pairs:
+        return {}
+    out, lock = {}, threading.Lock()
+
+    oa_chunks = [pairs[i:i + 50] for i in range(0, len(pairs), 50)]
+    prog = Progress(len(oa_chunks), "bulk-openalex", every_s=20)
+
+    def oa(chunk):
+        by_doi = {d.lower(): u for u, d in chunk}
+        try:
+            r = _get("https://api.openalex.org/works",
+                     params={"filter": "doi:" + "|".join(d for _, d in chunk),
+                             "select": "doi,best_oa_location,locations",
+                             "per-page": 50, "mailto": EMAIL})
+            if not r.ok:
+                return
+            found = {}
+            for w in (r.json().get("results") or []):
+                doi = (w.get("doi") or "").replace("https://doi.org/", "").lower()
+                uid = by_doi.get(doi)
+                if not uid:
+                    continue
+                url = ((w.get("best_oa_location") or {}) or {}).get("pdf_url")
+                if not url:
+                    for loc in (w.get("locations") or []):
+                        if loc.get("pdf_url"):
+                            url = loc["pdf_url"]
+                            break
+                if url:
+                    found[uid] = url
+            with lock:
+                out.update(found)
+        except Exception:                                # noqa: BLE001
+            pass
+        finally:
+            with lock:
+                prog.tick()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+        list(ex.map(oa, oa_chunks))
+    prog.done()
+    log(f"[pdf] OpenAlex bulk: {len(out):,} of {len(pairs):,}")
+
+    rest = [(u, d) for u, d in pairs if u not in out]
+    if rest:
+        s2_chunks = [rest[i:i + 500] for i in range(0, len(rest), 500)]
+        p2 = Progress(len(s2_chunks), "bulk-s2", every_s=20)
+        for chunk in s2_chunks:
+            try:
+                body = json.dumps({"ids": ["DOI:" + d for _, d in chunk]}).encode()
+                req = urllib.request.Request(
+                    "https://api.semanticscholar.org/graph/v1/paper/batch"
+                    "?fields=openAccessPdf",
+                    data=body, headers={"User-Agent": UA,
+                                        "Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    for (uid, _d), rec in zip(chunk, json.load(resp)):
+                        url = ((rec or {}).get("openAccessPdf") or {}).get("url")
+                        if url:
+                            out[uid] = url
+            except Exception:                            # noqa: BLE001
+                pass
+            p2.tick()
+            time.sleep(1.5)
+        p2.done()
+    log(f"[pdf] bulk total: {len(out):,} of {len(pairs):,} resolved without "
+        f"touching the ladder")
+    return out
+
+
 def download(uid, pdf_url):
     """Fetch and verify. A paywall page that returns 200 with HTML is a miss,
     not a file -- check the magic bytes, never the content-type header alone."""
@@ -411,6 +497,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--resolve-only", action="store_true")
+    ap.add_argument("--no-bulk", action="store_true",
+                    help="skip the batched pre-pass and use the per-paper "
+                         "ladder for everything (slow; for comparison)")
     ap.add_argument("--retry-failed", action="store_true")
     ap.add_argument("--shuffle", action="store_true",
                     help="sample randomly (for measuring coverage)")
@@ -469,6 +558,33 @@ def main():
         todo = todo[:args.limit]
     log(f"[pdf] {len(rows)} papers archived, {sum(1 for s in done.values() if s=='ok')} "
         f"already fetched, {len(todo)} to attempt")
+
+    # BULK PRE-PASS. The ladder below asks one question per paper per rung, so
+    # 25,628 papers is up to ~200,000 individual HTTP calls, every one of them
+    # waiting on a per-host delay. Tuning that delay makes 200,000 calls
+    # slightly faster; batching removes 199,000 of them.
+    #
+    # The two rungs that find most of the PDFs both support batching, and this
+    # repo already batches both elsewhere -- graph.py queries OpenAlex 50 DOIs
+    # at a time, s2.py posts 500 ids to /paper/batch. Doing the same here first
+    # leaves the per-paper ladder to handle only what bulk could not answer.
+    #
+    #     25,628 / 50  =  513 OpenAlex calls
+    #     25,628 / 500 =   52 Semantic Scholar calls
+    #
+    # Papers resolved in bulk never enter the queue at all.
+    if not args.no_bulk:
+        pre = bulk_resolve([(u, d) for u, _, _, d in todo if d])
+        if pre:
+            hits = [(u, "resolved", pre[u], None, 0) for u in pre]
+            con.executemany(
+                "INSERT OR REPLACE INTO pdfs (uid,status,url,path,bytes) "
+                "VALUES (?,?,?,?,?)", hits)
+            con.commit()
+            before = len(todo)
+            todo = [t for t in todo if t[0] not in pre]
+            log(f"[pdf] bulk resolved {len(pre):,} of {before:,}; "
+                f"{len(todo):,} fall through to the per-paper ladder")
 
     # Percentage and ETA, and in CI also as ::notice:: annotations -- the only
     # channel readable from outside while a job is still running. Estimating
