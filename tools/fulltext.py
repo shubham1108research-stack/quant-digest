@@ -175,6 +175,27 @@ def pick_papers(con, limit):
         log(f"[ft] {len(stale):,} rows claimed 'ok' with no passage file on "
             f"disk -- reset for re-parsing")
 
+    # Availability is a FACT now, read from the pdfs table the batched
+    # resolver fills -- not a guess from url patterns. The guess queued 200
+    # highest-value papers of which 187 had no resolved url; each fell out of
+    # the pipeline in milliseconds as no_pdf, the 46-second run measured
+    # nothing, and all 187 were then excluded from every future run.
+    has_url = {r[0] for r in con.execute(
+        "SELECT uid FROM pdfs WHERE url IS NOT NULL AND url != '' "
+        "AND status IN ('ok','resolved')")}
+
+    # A no_pdf verdict is only as final as the resolve that produced it. When
+    # a later resolve finds a url for a paper marked no_pdf, the mark must
+    # yield, or the papers most worth parsing stay burned forever.
+    unburn = [r[0] for r in con.execute(
+        "SELECT uid FROM fulltext WHERE status='no_pdf'") if r[0] in has_url]
+    if unburn:
+        con.executemany("DELETE FROM fulltext WHERE uid=?",
+                        [(u,) for u in unburn])
+        con.commit()
+        log(f"[ft] {len(unburn):,} no_pdf rows now have a resolved url -- "
+            f"requeued")
+
     done = set(on_disk)
     done |= {_safe(r[0]) for r in con.execute(
         "SELECT uid FROM fulltext WHERE status IN ('ok','no_pdf')")}
@@ -196,15 +217,13 @@ def pick_papers(con, limit):
         nov = m.get("novelty_posterior") or 0
         rep = m.get("reputation") or 1.0
         watch = 0.25 if m.get("watchlist") else 0.0
-        u = url or ""
-        if uid.startswith("arxiv:") or "arxiv.org" in u or "RePEc:arx:" in u:
-            avail = 1.0
-        elif "nber.org/papers" in u:
-            avail = 0.9
-        elif uid.startswith("doi:"):
-            avail = 0.35
-        else:
-            avail = 0.2
+        # The pipeline reads its url from the pdfs table and records an
+        # instant miss for anything absent, so queueing a paper without one
+        # spends a slot on a foregone conclusion. Papers the resolver has not
+        # answered for are left for the next resolve, not for this queue.
+        if uid not in has_url:
+            continue
+        avail = 1.0
         # Curated papers are valuable BY CONSTRUCTION, not by score. The
         # classics and NBER working papers were ingested unscored, so a pure
         # quality ranking gave them zero and a run of 400 picked none of them
