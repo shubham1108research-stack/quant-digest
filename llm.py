@@ -605,10 +605,11 @@ def _rank_openrouter(batch: list[dict], log) -> dict | None:
 
 
 def _rank_openai(batch: list[dict], log) -> dict | None:
-    # OpenAI (paid) -- reliable, high-quality vote. Last in the chain so free
-    # providers carry the bulk triage; consensus (shortlist only) always
-    # includes it. No `temperature` field: the gpt-5 family rejects any value
-    # other than the default on chat/completions.
+    # OpenAI (paid) -- FIRST in the chain and the intended judge of everything.
+    # This comment used to say "last in the chain so free providers carry the
+    # bulk triage", which stopped being true when the free tiers were removed
+    # and was simply misleading afterwards. No `temperature` field: the gpt-5
+    # family rejects any value other than the default on chat/completions.
     key = os.environ.get("OPENAI_API_KEY")
     if not key:
         return None
@@ -812,6 +813,14 @@ def rank(items: list[dict], log, max_batches: int | None = None,
                 used.add(name)
             for local_i, sc in res.items():            # sub-index -> batch index
                 if 0 <= local_i < len(missing):
+                    # WHO JUDGED THIS. The free tiers were pulled because a 22B
+                    # model's verdict was indistinguishable downstream from a
+                    # frontier one's -- nothing on the item recorded which had
+                    # answered. Removing the providers treated the symptom; the
+                    # archive still could not say who scored what. Now it can,
+                    # and "OpenAI is primary" becomes checkable instead of
+                    # believed.
+                    sc["_scored_by"] = name
                     scores[missing[local_i]] = sc
         return batch, scores
 
@@ -934,6 +943,10 @@ def _apply_score(it: dict, s: dict) -> None:
     # pass" by looking at rank_score, and stamping the latter as done is how a
     # run that ranked 6,078 of 8,810 recorded all 8,810 as complete.
     it["_scored_now"] = True
+    # Survives across passes: a rescore that fails over leaves a record of the
+    # failover rather than quietly relabelling the paper as the primary's work.
+    if s.get("_scored_by"):
+        it["scored_by"] = s["_scored_by"]
     it["relevance"] = s["relevance"]
     it["relevance_category"] = s["relevance_category"]
     it["generality"] = s["generality"]
@@ -1075,14 +1088,19 @@ def consensus(items: list[dict], log, max_batches: int | None = None) -> list[di
                 log(f"[consensus] {name} failed on batch {start // b} ({_err(e)})")
                 continue
             if res:
-                votes.append(res)
+                votes.append((name, res))
                 time.sleep(config.LLM_BATCH_PAUSE)
         batches += 1
         for i, it in enumerate(batch):
-            picks = [res[i] for res in votes if i in res]
+            picks = [res[i] for _n, res in votes if i in res]
             if not picks:
                 continue                           # nobody scored it -> keep triage
             merged, agree = _merge_votes(picks)
+            # every voter, not just the winner: a consensus score is the
+            # ensemble's, and attributing it to one provider would misrepresent
+            # how it was reached.
+            merged["_scored_by"] = "+".join(
+                sorted(n for n, res in votes if i in res))
             _apply_score(it, merged)               # levels + posterior-based provisional
             if not agree:                          # didn't converge -> uncertain
                 it["contribution"]["provisional"] = True

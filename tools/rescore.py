@@ -46,7 +46,11 @@ SCORE_FIELDS = ("relevance", "relevance_category", "relevance_posterior",
                 "novelty_posterior", "antecedent_match", "rank_score",
                 "isolated_backtest_only", "no_costs_mentioned",
                 "extreme_claimed_sharpe", "weak_stat_support",
-                "topic", "summary", "sleeves", "desk_fit")
+                "topic", "summary", "sleeves", "desk_fit",
+                # WHO judged it. This is a whitelist, so a field llm.py sets
+                # and this does not name is silently dropped -- which is how
+                # provenance would have looked implemented and been absent.
+                "scored_by")
 
 
 def log(m):

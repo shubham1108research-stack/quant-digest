@@ -660,14 +660,19 @@ async function scan(question, papers, env) {
     { role: "user", content: `Question: ${question}\n\nPapers:\n\n${listing}` },
   ];
   const attempts = [];
-  if (env.OPENROUTER_API_KEY) {
-    attempts.push([OPENROUTER_URL, env.OPENROUTER_API_KEY, OPENROUTER_MODEL]);
-  }
   // Screening is the token-heavy pass -- a sentence per paper across 16 papers
-  // a call, fanned out by the browser -- and its output is one line per paper,
-  // so it gets the cheap model. This is where a bill is run up unnoticed.
+  // a call, fanned out by the browser -- and its output is one line per paper.
+  // It used to lead with OpenRouter for exactly that reason, which meant the
+  // decision of WHICH papers get read in full was routinely made by the cheap
+  // model while the expensive one only wrote about what survived. Screening is
+  // not a formatting pass: a paper dropped here is never seen again, so it is
+  // the last place to economise. OpenAI leads and gets the BULK model, which
+  // keeps this cheap without making it someone else's call.
   if (env.OPENAI_API_KEY) {
     attempts.push([OPENAI_URL, env.OPENAI_API_KEY, OPENAI_BULK_MODEL]);
+  }
+  if (env.OPENROUTER_API_KEY) {
+    attempts.push([OPENROUTER_URL, env.OPENROUTER_API_KEY, OPENROUTER_MODEL]);
   }
   for (const [url, key, model] of attempts) {
     try {
