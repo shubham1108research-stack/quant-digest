@@ -349,7 +349,21 @@ def resolve(uid, url, title=None, doi=None, skip_batched=False):
     # Measured at only ~3% for this corpus (finance/econ rarely posts there),
     # so it runs last and only on an EXACT title match -- a loose match would
     # attach the wrong paper's full text, which is worse than none.
-    if title:
+    # GATED, because this rung is the most expensive and the least productive.
+    # arXiv asks bulk users for >=3s between queries, so it serialises the
+    # whole pool at ~1.9 papers/s however many workers are running -- 2.6 hours
+    # for an 18,000-paper tail against 0.4 hours without it. And it was
+    # measured at ~3% yield on this corpus, because finance and economics
+    # rarely post to arXiv.
+    #
+    # Asking arXiv 18,000 times to find ~540 papers is not a rate-limit problem,
+    # it is a question worth not asking. A title search only helps a paper that
+    # IS on arXiv and was not linked, so it runs only where that is plausible:
+    # no DOI at all, or a source that already smells of preprints. A paper with
+    # a publisher DOI in a finance journal is not sitting on arXiv unnoticed.
+    plausible = (not doi) or bool(re.search(r"arxiv|nep-|ssrn|preprint|working",
+                                            f"{uid} {url}", re.I))
+    if title and plausible:
         try:
             r = _get("http://export.arxiv.org/api/query",
                      params={"search_query": 'ti:"' + re.sub(r'["\\\\]', " ", title[:150]) + '"',
