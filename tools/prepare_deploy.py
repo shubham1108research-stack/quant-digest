@@ -26,6 +26,7 @@ around, a missing index is not, so embed failing is the only hard error.
 """
 
 import argparse
+import os
 import pathlib
 import subprocess
 import sys
@@ -80,14 +81,31 @@ def main():
     n_ft = len(list(ft.glob("*.json"))) if ft.exists() else 0
     if n_ft:
         print(f"[prepare] docs/ft: {n_ft:,} parsed papers", flush=True)
+    elif os.environ.get("ALLOW_EMPTY_FT"):
+        print("[prepare] docs/ft is empty and ALLOW_EMPTY_FT is set -- "
+              "continuing without passages", flush=True)
     else:
-        # Not fatal: a first run against an empty bucket genuinely has none,
-        # and refusing to deploy the whole portal over an absent enrichment
-        # would be the wrong trade. Loud, though -- silence is what let the
-        # graph run on a retired embedder for a day.
-        print("[prepare] WARNING: docs/ft is EMPTY. Ask cannot quote passages, "
-              "and every Implement button will be greyed. If R2 should have an "
-              "archive, this deploy is shipping without it.", flush=True)
+        # FATAL, and it was a warning for exactly one deploy before this.
+        #
+        # That deploy shipped without the corpus. ftpull ran in a step carrying
+        # no R2 credentials, said "R2 not configured" and returned 0, so
+        # required=True never fired -- and the warning scrolled past in a green
+        # build. A portal that had full text yesterday and none today is a
+        # regression, and it is invisible in the browser: loadFtIndex catches,
+        # FT_SET goes empty, and the feature simply is not there any more.
+        #
+        # A genuinely fresh setup with an empty bucket is the only legitimate
+        # case, and it is a one-off, so it sets ALLOW_EMPTY_FT=1 and says so out
+        # loud rather than every other deploy inheriting its leniency.
+        print("[prepare] FAILED: docs/ft is EMPTY after ftpull.\n"
+              "    Ask cannot quote passages and every Implement button will be\n"
+              "    greyed -- and nothing in the browser reports it, so this\n"
+              "    would ship as a silently smaller portal.\n"
+              "    Usually the R2 credentials are missing from THIS step: the\n"
+              "    ones on the 'Fetch state.db' step do not carry over.\n"
+              "    Set ALLOW_EMPTY_FT=1 only for a first run against an empty "
+              "bucket.", flush=True)
+        sys.exit(1)
 
     sys.path.insert(0, str(ROOT))
     import portal, store                                  # noqa: E402
