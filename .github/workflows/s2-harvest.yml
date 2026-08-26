@@ -25,9 +25,17 @@ name: S2 Drip Harvest
 #   match  GET /paper/search/match -- the only route for the 3,863 title-hash
 #          rows that carry neither DOI nor arXiv id.
 #
-# Runs every 3 hours: 8 runs x 100 requests = 800 requests a day, comfortably
-# inside the quota even with the digest and other jobs sharing it. Raise
-# `max_requests` on a manual run when you want a burst.
+# BUDGET SIZING. The quota is a RATE, not a daily cap, and the pacing already
+# honours it: one request every 3 seconds IS 100 per 5 minutes. So a longer run
+# at the same spacing is exactly as compliant as a short one, and the only real
+# ceiling is the job timeout.
+#
+#     100 requests  =  5 min   -> 75 runs to clear the queue -> ~10 days
+#   1,000 requests  = 50 min   ->  8 runs                    ->  ~1 day
+#
+# Measured on the first run: 100 requests, 0 throttled, 99 papers, 1,810
+# references. So 1,000 per run at 3-hourly is 8,000 a day against a 28,800
+# ceiling, with the backoff handling the shared pool if it saturates.
 
 on:
   schedule:
@@ -41,9 +49,9 @@ on:
         options: [refs, match]
         default: refs
       max_requests:
-        description: "Request budget for this run"
+        description: "Request budget for this run (1000 = ~50 min at the public rate)"
         required: false
-        default: "100"
+        default: "1000"
       dry_run:
         description: "Report the outstanding queue and spend nothing"
         type: boolean
@@ -92,7 +100,7 @@ jobs:
           # the larger prize, so they get two slots of every three.
           if [ -z "$ACTION" ]; then
             if [ "$(( $(date -u +%H) % 3 ))" = "2" ]; then ACTION=match; else ACTION=refs; fi
-            BUDGET=100
+            BUDGET=1000
           fi
           echo "action=$ACTION budget=$BUDGET"
           python tools/s2_harvest.py "$ACTION" --max-requests "$BUDGET" \
