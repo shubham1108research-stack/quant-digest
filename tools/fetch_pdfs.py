@@ -782,7 +782,15 @@ def main():
     #     25,628 / 500 =   52 Semantic Scholar calls
     #
     # Papers resolved in bulk never enter the queue at all.
-    if not args.no_bulk:
+    # resolve_staged was written, committed, and never called: main() went
+    # straight to bulk_resolve, so the source-major stages (and the s2-before-
+    # openalex reorder that was the point of writing them) were dead code. A
+    # run dispatched as "the staged resolver" was the old two-source pre-pass
+    # under a new name, and the give-away was in the log the whole time -- not
+    # one `stage ` line in 23 minutes of output.
+    if args.resolve_only and not args.no_bulk:
+        todo = resolve_staged(con, todo)
+    elif not args.no_bulk:
         pre = bulk_resolve([(u, d) for u, _, _, d in todo if d])
         if pre:
             hits = [(u, "resolved", pre[u], None, 0) for u in pre]
@@ -891,7 +899,14 @@ def main():
     # what the later download reads -- and throwing it away makes the mode
     # a very slow way to print a percentage.
     if results:
-        log(f"[pdf] wrote {flushed:,} rows to the pdfs table")
+        # "wrote N rows" counts every paper ATTEMPTED, misses included, so a
+        # run that resolved nothing and a run that resolved everything print
+        # the same triumphant number. The yield is the only figure that says
+        # whether the next stage has anything to download.
+        got = sum(1 for r in results if len(r) > 2 and r[2])
+        log(f"[pdf] wrote {flushed:,} rows to the pdfs table -- "
+            f"{got:,} with a url ({100.0*got/max(len(results),1):.1f}%), "
+            f"{len(results)-got:,} recorded as misses")
 
     # A run that attempted work and produced nothing is a failure, however
     # tidy its summary reads. The worker crashes printed tracebacks, the
