@@ -212,6 +212,83 @@ def _ft_tar(dest) -> None:
         tf.add(FT_DIR, arcname="ft")
 
 
+PDF_DIR = pathlib.Path("pdfs")
+PDF_KEY = "pdfcache.tar.gz"
+
+
+def pdfpush(args):
+    """Upload locally-downloaded PDFs so CI can parse what it cannot fetch.
+
+    nber.org serves a residential connection 20-for-20 and refuses the GitHub
+    runner 194-for-194 -- same urls, same client, different IP. The papers are
+    free from NBER; only the fetch location is constrained. So the fetch moves
+    to where it works and the bytes ride to CI through the same private bucket
+    the corpus already lives in. The repo stays clean: pdfs/ is gitignored and
+    the bucket is not public.
+
+    A cache, not a corpus: no shrink guard, no .prev. Losing it costs
+    re-downloading, which is exactly the operation it exists to amortise.
+    """
+    cfg = _cfg()
+    if not cfg:
+        log("[dbsync] R2 not configured (set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, "
+            "R2_SECRET_ACCESS_KEY, R2_BUCKET)")
+        return 1
+    import tarfile                                    # noqa: PLC0415
+    pdfs = sorted(PDF_DIR.glob("*.pdf")) if PDF_DIR.exists() else []
+    if not pdfs:
+        log("[dbsync] pdfs/ holds no PDFs; nothing to push")
+        return 1
+    tmp = pathlib.Path("pdfcache.tar.gz.part")
+    # compresslevel=1: PDFs are already compressed streams, so higher levels
+    # buy single-digit MB for minutes of CPU on a ~2 GB archive
+    with tarfile.open(tmp, "w:gz", compresslevel=1) as tf:
+        for f in pdfs:
+            tf.add(f, arcname=f"pdfs/{f.name}")
+    cli = _client(cfg)
+    cli.upload_file(str(tmp), cfg["R2_BUCKET"], PDF_KEY)
+    head = cli.head_object(Bucket=cfg["R2_BUCKET"], Key=PDF_KEY)
+    tmp.unlink()
+    log(f"[dbsync] pushed {PDF_KEY} ({head['ContentLength']/1e6:.1f} MB, "
+        f"{len(pdfs):,} PDFs)")
+    return 0
+
+
+def pdfpull(args):
+    cfg = _cfg()
+    if not cfg:
+        log("[dbsync] R2 not configured -- using the working-copy pdfs/")
+        return 0
+    import tarfile                                    # noqa: PLC0415
+    cli = _client(cfg)
+    tmp = pathlib.Path("pdfcache.tar.gz.part")
+    try:
+        cli.download_file(cfg["R2_BUCKET"], PDF_KEY, str(tmp))
+    except Exception as e:                            # noqa: BLE001
+        if "404" in str(e) or "NoSuchKey" in str(e):
+            log("[dbsync] no PDF cache in the bucket; downloads proceed as usual")
+            return 0
+        raise
+    PDF_DIR.mkdir(exist_ok=True)
+    n = 0
+    with tarfile.open(tmp, "r:gz") as tf:
+        for m in tf.getmembers():
+            # flatten to pdfs/<name>; refuse anything trying to escape
+            name = pathlib.PurePosixPath(m.name).name
+            if not name.endswith(".pdf") or not m.isfile():
+                continue
+            dest = PDF_DIR / name
+            if dest.exists() and dest.stat().st_size == m.size:
+                continue
+            src = tf.extractfile(m)
+            dest.write_bytes(src.read())
+            n += 1
+    tmp.unlink()
+    log(f"[dbsync] pulled {PDF_KEY}: {n:,} PDFs extracted, "
+        f"{len(list(PDF_DIR.glob('*.pdf'))):,} total in pdfs/")
+    return 0
+
+
 def ftpull(args):
     cfg = _cfg()
     if not cfg:
@@ -413,13 +490,15 @@ def ftrollback(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("action", choices=("pull", "push", "status", "rollback",
-                                       "ftpull", "ftpush", "ftrollback"))
+                                       "ftpull", "ftpush", "ftrollback",
+                                       "pdfpull", "pdfpush"))
     ap.add_argument("--allow-shrink", action="store_true",
                     help="ftpush: permit an archive smaller than the live one")
     args = ap.parse_args()
     return {"pull": pull, "push": push, "status": status, "rollback": rollback,
             "ftpull": ftpull, "ftpush": ftpush,
-            "ftrollback": ftrollback}[args.action](args)
+            "ftrollback": ftrollback,
+            "pdfpull": pdfpull, "pdfpush": pdfpush}[args.action](args)
 
 
 if __name__ == "__main__":

@@ -78,6 +78,10 @@ jobs:
         run: |
           python tools/dbsync.py ftpull
           echo "docs/ft holds $(ls docs/ft 2>/dev/null | wc -l) papers before parsing"
+          # PDFs downloaded where the host will serve us (nber.org refuses
+          # this runner's IP and serves a residential one) ride in via R2.
+          # download() short-circuits on any file already on disk.
+          python tools/dbsync.py pdfpull
 
       # the container is up before the service is: GROBID loads its models for
       # the better part of a minute, so poll rather than assume

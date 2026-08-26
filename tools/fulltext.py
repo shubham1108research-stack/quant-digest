@@ -198,6 +198,20 @@ def pick_papers(con, limit):
         log(f"[ft] {len(unburn):,} no_pdf rows now have a resolved url -- "
             f"requeued")
 
+    # dl_failed is final for the RUNNER -- but the PDF cache exists precisely
+    # because some hosts refuse the runner and serve a residential connection.
+    # A dl_failed row whose PDF has since arrived on disk (dbsync pdfpull) is
+    # no longer failed in any sense that matters: the bytes are right there.
+    cached = [r[0] for r in con.execute(
+        "SELECT uid FROM fulltext WHERE status='dl_failed'")
+        if (fetch_pdfs.OUT / f"{_safe(r[0])}.pdf").exists()]
+    if cached:
+        con.executemany("DELETE FROM fulltext WHERE uid=?",
+                        [(u,) for u in cached])
+        con.commit()
+        log(f"[ft] {len(cached):,} dl_failed rows have a cached PDF on disk "
+            f"-- requeued")
+
     done = set(on_disk)
     done |= {_safe(r[0]) for r in con.execute(
         "SELECT uid FROM fulltext WHERE status IN ('ok','no_pdf','dl_failed')")}
@@ -223,7 +237,8 @@ def pick_papers(con, limit):
         # instant miss for anything absent, so queueing a paper without one
         # spends a slot on a foregone conclusion. Papers the resolver has not
         # answered for are left for the next resolve, not for this queue.
-        if uid not in has_url:
+        if uid not in has_url and not (
+                fetch_pdfs.OUT / f"{_safe(uid)}.pdf").exists():
             continue
         avail = 1.0
         # Curated papers are valuable BY CONSTRUCTION, not by score. The
@@ -326,8 +341,13 @@ def main():
             # change exists to remove -- so a missing url is a recorded miss.
             pdf_url = known.get(uid)
             if not pdf_url:
-                record(uid, "no_pdf")
-                return
+                # a cached PDF needs no url: download() returns the existing
+                # file before ever touching the network
+                if (fetch_pdfs.OUT / f"{_safe(uid)}.pdf").exists():
+                    pdf_url = "cache://local"
+                else:
+                    record(uid, "no_pdf")
+                    return
             status, path, _ = fetch_pdfs.download(uid, pdf_url)
             if status != "ok" or not path:
                 # NOT no_pdf. A url exists and is dead -- and the difference
