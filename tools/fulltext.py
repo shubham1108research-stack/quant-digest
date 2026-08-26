@@ -26,11 +26,14 @@ size once rather than a fresh blob per run.
 
 import argparse
 import collections
+import concurrent.futures
 import json
 import os
 import pathlib
+import queue
 import re
 import sys
+import threading
 import time
 import xml.etree.ElementTree as ET
 
@@ -39,7 +42,8 @@ import requests
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-import store            # noqa: E402
+import store
+from progress import Progress            # noqa: E402
 import fetch_pdfs       # noqa: E402  (reuse its resolver + polite downloader)
 
 OUT = pathlib.Path("docs/ft")
@@ -47,6 +51,14 @@ TEI = "{http://www.tei-c.org/ns/1.0}"
 GROBID = os.environ.get("GROBID_URL", "http://localhost:8070")
 WORDS_PER_PASSAGE = 220          # ~300 tokens: big enough to carry an argument
 MIN_PASSAGE_WORDS = 25           # below this it is a heading fragment, not content
+
+# Downloads are latency-bound and already paced per host, so several run at once
+# without hitting any one host harder -- the per-host delay still applies, it
+# just no longer idles the whole run. Parsers are CPU inside the GROBID
+# container on a 4-core runner, so four is the ceiling: more would queue inside
+# GROBID rather than go faster.
+DL_WORKERS = 6
+PARSE_WORKERS = 4
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS fulltext (
@@ -237,52 +249,118 @@ def main():
     todo = pick_papers(con, args.limit)
     log(f"[ft] {len(todo)} papers queued (highest-value first)")
 
+    # ---------------------------------------------------------------- pipeline
+    # This loop used to do three unrelated things per paper, serially:
+    #
+    #     resolve  ~2s   the 9-rung ladder, PER PAPER
+    #     download ~2s   bytes plus a per-host delay (arxiv.org is 3.0s)
+    #     GROBID   ~2s   CPU inside the container
+    #
+    # Measured: 400 queued, 314 parsed, 32 minutes -- 6.1s each, which is 30
+    # hours for 18,000 papers and five job timeouts. The three costs bind on
+    # three DIFFERENT resources, so each sat idle while the other two worked.
+    #
+    # Resolve is gone entirely: it is a batched pass now (fetch_pdfs
+    # resolve_staged) and its answers are in the `pdfs` table. Asking the
+    # per-paper ladder again re-asks questions already answered.
+    #
+    # Download and parse now overlap. Downloads are latency-bound with per-host
+    # pacing, so several hosts proceed at once; GROBID serves concurrent
+    # requests. A queue joins them, so a slow download does not stall the
+    # parser and a slow parse does not stall the fetchers.
+    known = {}
+    try:
+        for uid_, url_, st_ in con.execute(
+                "SELECT uid, url, status FROM pdfs WHERE url IS NOT NULL"):
+            if url_ and st_ in ("ok", "resolved"):
+                known[uid_] = url_
+    except Exception:                           # noqa: BLE001
+        pass
+    log(f"[ft] {len(known):,} urls already resolved in the pdfs table")
+
     tally = collections.Counter()
-    for i, (uid, title, url, doi) in enumerate(todo, 1):
+    prog = Progress(len(todo), "ft", every_s=30)
+    q_parse: queue.Queue = queue.Queue(maxsize=DL_WORKERS * 4)
+    results: list = []
+    res_lock = threading.Lock()
+
+    def record(uid, status, passages=0, words=0):
+        with res_lock:
+            results.append((uid, status, passages, words))
+            tally[status] += 1
+
+    def fetch_worker(item):
+        uid, title, url, doi = item
         try:
-            pdf_url = fetch_pdfs.resolve(uid, url, title, doi)
+            # The url comes from the table. Falling back to resolve() would
+            # quietly reintroduce the per-paper ladder for every row the
+            # batched pass could not answer, which is exactly the cost this
+            # change exists to remove -- so a missing url is a recorded miss.
+            pdf_url = known.get(uid)
             if not pdf_url:
-                tally["no_pdf"] += 1
-                con.execute("INSERT OR REPLACE INTO fulltext (uid,status,passages,words)"
-                            " VALUES (?,?,?,?)", (uid, "no_pdf", 0, 0))
-                continue
+                record(uid, "no_pdf")
+                return
             status, path, _ = fetch_pdfs.download(uid, pdf_url)
             if status != "ok" or not path:
-                tally["no_pdf"] += 1
-                con.execute("INSERT OR REPLACE INTO fulltext (uid,status,passages,words)"
-                            " VALUES (?,?,?,?)", (uid, "no_pdf", 0, 0))
-                continue
-            tei = grobid_tei(path, args.grobid)
-            passages = tei_passages(tei)
-            if not passages:
-                tally["no_body"] += 1
-                con.execute("INSERT OR REPLACE INTO fulltext (uid,status,passages,words)"
-                            " VALUES (?,?,?,?)", (uid, "no_body", 0, 0))
-                continue
-            words = sum(len(t.split()) for _, t in passages)
-            # The resolved PDF url is recorded HERE, in the passage file, not
-            # only in the pdfs table. That table lives in state.db, which this
-            # workflow deliberately no longer commits -- so the url a resolver
-            # worked to find (Unpaywall, Crossref, a publisher's own OA copy)
-            # was being thrown away at the end of every run. The passage file
-            # is committed, and it is the natural place for it: anything that
-            # has passages provably had a reachable PDF.
-            (OUT / f"{_safe(uid)}.json").write_text(json.dumps(
-                {"uid": uid, "title": title, "n": len(passages),
-                 "pdf": pdf_url,
-                 "p": [{"s": s, "t": t} for s, t in passages]}), encoding="utf-8")
-            con.execute("INSERT OR REPLACE INTO fulltext (uid,status,passages,words)"
-                        " VALUES (?,?,?,?)", (uid, "ok", len(passages), words))
-            tally["ok"] += 1
+                record(uid, "no_pdf")
+                return
+            q_parse.put((uid, title, pdf_url, path))
         except Exception as e:                  # noqa: BLE001
-            tally["grobid_error"] += 1
-            if tally["grobid_error"] <= 5:      # first few, so a failure is diagnosable
-                log(f"[ft] {uid} failed: {type(e).__name__}: {str(e)[:300]}")
-            con.execute("INSERT OR REPLACE INTO fulltext (uid,status,passages,words)"
-                        " VALUES (?,?,?,?)", (uid, "grobid_error", 0, 0))
-        if i % 10 == 0:
-            con.commit()
-            log(f"[ft] {i}/{len(todo)} · parsed {tally['ok']}")
+            if tally["grobid_error"] <= 5:
+                log(f"[ft] {uid} download failed: {type(e).__name__}: {str(e)[:200]}")
+            record(uid, "grobid_error")
+
+    def parse_worker():
+        while True:
+            item = q_parse.get()
+            try:
+                if item is None:
+                    return
+                uid, title, pdf_url, path = item
+                try:
+                    passages = tei_passages(grobid_tei(path, args.grobid))
+                    if not passages:
+                        record(uid, "no_body")
+                        continue
+                    words = sum(len(t.split()) for _, t in passages)
+                    # The resolved PDF url is recorded HERE, in the passage
+                    # file, not only in the pdfs table. That table lives in
+                    # state.db, which this workflow deliberately does not
+                    # commit -- so a url a resolver worked to find was being
+                    # thrown away at the end of every run. Anything with
+                    # passages provably had a reachable PDF.
+                    (OUT / f"{_safe(uid)}.json").write_text(json.dumps(
+                        {"uid": uid, "title": title, "n": len(passages),
+                         "pdf": pdf_url,
+                         "p": [{"s": sec, "t": txt} for sec, txt in passages]}),
+                        encoding="utf-8")
+                    record(uid, "ok", len(passages), words)
+                except Exception as e:          # noqa: BLE001
+                    if tally["grobid_error"] <= 5:
+                        log(f"[ft] {uid} failed: {type(e).__name__}: {str(e)[:300]}")
+                    record(uid, "grobid_error")
+                finally:
+                    prog.tick()
+            finally:
+                q_parse.task_done()
+
+    parsers = [threading.Thread(target=parse_worker, daemon=True)
+               for _ in range(PARSE_WORKERS)]
+    for t in parsers:
+        t.start()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=DL_WORKERS) as ex:
+        list(ex.map(fetch_worker, todo))
+    q_parse.join()
+    for _ in parsers:
+        q_parse.put(None)
+    prog.done()
+
+    # Written from the MAIN thread. store.connect() uses sqlite3's default
+    # check_same_thread=True, so a worker touching `con` raises and takes the
+    # pool down -- a mistake already made once in fetch_pdfs.
+    con.executemany(
+        "INSERT OR REPLACE INTO fulltext (uid,status,passages,words) "
+        "VALUES (?,?,?,?)", results)
     con.commit()
 
     # manifest: the portal needs to know which papers have full text BEFORE

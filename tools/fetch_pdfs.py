@@ -510,10 +510,20 @@ def _stage_arxiv_titles(rows, batch=25):
     return out
 
 
+# ORDER IS BY COST, and S2 comes before OpenAlex now. It did not originally,
+# because S2 was unauthenticated and answered 429 readily -- so the reliable
+# free service went first and the contended one picked up the remainder. With
+# an API key that reasoning inverts:
+#
+#     s2        17,136 / 500 =  35 requests, guaranteed 1 req/s
+#     openalex  17,136 /  50 = 343 requests
+#
+# Ten times fewer requests for the same papers, and it inherits the ~2,586
+# pdf_urls s2.py enrich has already stored rather than re-asking for them.
 STAGES = [
     ("free-derive", _stage_free, "arXiv/NBER/RePEc/direct-pdf, no HTTP"),
-    ("openalex", _stage_openalex, "batched 50/request"),
-    ("s2", _stage_s2, "batched 500/request"),
+    ("s2", _stage_s2, "batched 500/request, ~35 calls"),
+    ("openalex", _stage_openalex, "batched 50/request, ~343 calls"),
     ("arxiv-titles", _stage_arxiv_titles, "OR-batched 25/request"),
 ]
 
