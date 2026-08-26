@@ -361,8 +361,19 @@ def resolve(uid, url, title=None, doi=None, skip_batched=False):
     # IS on arXiv and was not linked, so it runs only where that is plausible:
     # no DOI at all, or a source that already smells of preprints. A paper with
     # a publisher DOI in a finance journal is not sitting on arXiv unnoticed.
-    plausible = (not doi) or bool(re.search(r"arxiv|nep-|ssrn|preprint|working",
-                                            f"{uid} {url}", re.I))
+    # "Plausibly on arXiv" is narrower than "is a working paper", and my first
+    # version of this gate confused the two. It matched `ssrn` and `working`,
+    # which let 36% of the archive through -- 1,486 rows on `ssrn` alone, and
+    # SSRN working papers are overwhelmingly NOT on arXiv. At 3.1s serialised
+    # that is ~6.5 hours on the live archive, past the job timeout, for a rung
+    # measured at 3% yield.
+    #
+    # Only genuine arXiv signals now: an arXiv identifier, or a NEP mailing
+    # list, which mirrors arXiv econ postings. A paper with no DOI qualifies
+    # only if it also carries one of those -- being unidentified is not
+    # evidence of being on arXiv.
+    plausible = bool(re.search(r"arxiv|nep-|preprint", f"{uid} {url} {doi or ''}",
+                               re.I))
     if title and plausible:
         try:
             r = _get("http://export.arxiv.org/api/query",
