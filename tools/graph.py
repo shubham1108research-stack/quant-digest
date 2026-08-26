@@ -80,6 +80,15 @@ BLOCK = 512                 # rows per similarity block; 512x11507 float32 = 23 
 MAILTO = "upadhyays1108@gmail.com"
 UA = {"User-Agent": f"quant-digest/1.0 (mailto:{MAILTO})"}
 
+_REFS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS paper_refs (
+  src TEXT NOT NULL,          -- a uid we hold
+  ref TEXT NOT NULL,          -- an OpenAlex work id it cites, held or not
+  PRIMARY KEY (src, ref)
+);
+CREATE INDEX IF NOT EXISTS paper_refs_ref ON paper_refs(ref);
+"""
+
 _CITES_SCHEMA = """
 CREATE TABLE IF NOT EXISTS cites (
     src TEXT NOT NULL, dst TEXT NOT NULL, PRIMARY KEY (src, dst)
@@ -282,7 +291,28 @@ def build_cites(con, args):
         time.sleep(0.35)
 
     con.executescript(_CITES_SCHEMA)
+    con.executescript(_REFS_SCHEMA)
     con.execute("DELETE FROM cites WHERE 1=1")
+    con.execute("DELETE FROM paper_refs WHERE 1=1")
+
+    # KEEP THE WHOLE REFERENCE LIST, not only the edges that land inside the
+    # archive. Measured on the first full run: 350,218 references seen, 29,639
+    # internal -- so 91.5% of what OpenAlex had already returned was being
+    # counted and dropped.
+    #
+    # The dropped part is the useful part. A citation edge needs BOTH papers
+    # held, which is why the internal graph is 1.4 edges per paper and too thin
+    # for authority to propagate. BIBLIOGRAPHIC COUPLING needs neither end
+    # held: two papers we have are coupled when they cite the same outside
+    # work, and that work can be anything. Same for co-citation, and for
+    # "cites a classic" -- the classic must be identifiable, not present.
+    #
+    # ~350k rows is about 14 MB. That is the whole cost of turning a sparse
+    # graph into a dense one from data already paid for.
+    ref_rows = [(uid, oa) for uid, rs in refs.items() for oa in rs]
+    con.executemany("INSERT OR IGNORE INTO paper_refs (src,ref) VALUES (?,?)",
+                    ref_rows)
+
     rows, outside = [], 0
     for uid, rs in refs.items():
         for oa in rs:
@@ -297,6 +327,22 @@ def build_cites(con, args):
     total = len(rows) + outside
     log(f"[graph] cites: {len(rows):,} internal edges "
         f"({100*len(rows)/max(1,total):.1f}% of {total:,} references seen)")
+    log(f"[graph] paper_refs: {len(ref_rows):,} reference rows kept "
+        f"across {len(refs):,} papers")
+
+    # How dense would coupling be? A shared reference is one co-citation pair;
+    # counting the pairs directly is O(n^2) in the worst case, so this reports
+    # the ingredients instead -- how many outside works are cited by more than
+    # one paper we hold, and how much pair mass they carry.
+    shared = con.execute(
+        "SELECT count(*) FROM (SELECT ref FROM paper_refs "
+        "GROUP BY ref HAVING count(DISTINCT src) > 1)").fetchone()[0]
+    pairs = con.execute(
+        "SELECT COALESCE(SUM(c*(c-1)/2),0) FROM ("
+        "  SELECT count(DISTINCT src) AS c FROM paper_refs"
+        "  GROUP BY ref HAVING c > 1)").fetchone()[0]
+    log(f"[graph] coupling: {shared:,} references are cited by MORE THAN ONE "
+        f"paper we hold, carrying {pairs:,} coupled pairs")
 
 
 def report(con, args):
