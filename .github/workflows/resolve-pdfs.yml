@@ -1,0 +1,79 @@
+name: Resolve PDFs
+
+# Find out which papers have an obtainable PDF, WITHOUT downloading any.
+#
+# WHY THIS COMES BEFORE FETCHING. Resolution is metadata lookups; downloading
+# and parsing 400 papers took over an hour. Doing the cheap half first turns
+# "how much full text can we ever have" from a guess into a number, and every
+# later decision rests on it: how much GROBID time to buy, whether author-site
+# scraping is worth reconsidering, and which papers are permanently text-less
+# and should be excluded from full-text ranking rather than looking like a gap.
+#
+# WHAT IT TOUCHES. fetch_pdfs.py --resolve-only writes one row per paper into
+# the `pdfs` table in state.db and downloads nothing. It does NOT touch
+# docs/ft, so it cannot repeat the corpus loss -- that came from a job writing
+# into a passage directory it had never restored.
+#
+# The ladder it walks, first hit wins: arXiv, RePEc->arXiv, NBER, a url that
+# already is a pdf, Unpaywall, OpenAlex, Semantic Scholar, CORE, arXiv by
+# title. Unpaywall matters most here: it indexes author self-archived copies,
+# which is the same thing scraping 53 personal sites would have chased.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Papers to resolve (0 = all outstanding)"
+        required: false
+        default: "0"
+      retry_failed:
+        description: "Re-attempt papers that previously failed"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Resolve
+        env:
+          CONTACT_EMAIL: ${{ secrets.GMAIL_ADDRESS }}
+          CORE_API_KEY: ${{ secrets.CORE_API_KEY }}
+        run: |
+          python tools/fetch_pdfs.py --resolve-only \
+            --limit "${{ github.event.inputs.limit }}" \
+            ${{ github.event.inputs.retry_failed == 'true' && '--retry-failed' || '' }}
+
+      # always: a run killed at its timeout must still store what it resolved.
+      # The lookups are the expensive part, and discarding them is how this
+      # project has lost work three times already.
+      - name: Store state.db
+        if: always()
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push
