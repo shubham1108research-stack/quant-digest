@@ -386,13 +386,26 @@ def cmd_authors(args):
             req = urllib.request.Request(
                 f"{API}/author/batch?fields=name", data=body,
                 headers=dict(_headers(), **{"Content-Type": "application/json"}))
-            try:
-                with urllib.request.urlopen(req, timeout=60) as r:
-                    for a in json.load(r):
-                        if a and a.get("authorId"):
-                            names[str(a["authorId"])] = a.get("name") or ""
-            except Exception as e:                            # noqa: BLE001
-                log(f"[harvest] author/batch chunk failed: {type(e).__name__}")
+            # RETRIED, because a chunk that fails here does not fail loudly --
+            # its ids get no name, the `nm is None` branch skips them, and the
+            # authors they belonged to vanish from the run. Measured: one 429
+            # took the roster from 39 resolved authors to 30, and the only
+            # symptom was a smaller number in a log line.
+            for attempt in range(4):
+                try:
+                    with urllib.request.urlopen(req, timeout=60) as r:
+                        for a in json.load(r):
+                            if a and a.get("authorId"):
+                                names[str(a["authorId"])] = a.get("name") or ""
+                    break
+                except Exception as e:                        # noqa: BLE001
+                    wait = 8 * (attempt + 1)
+                    log(f"[harvest] author/batch chunk {i//500 + 1} "
+                        f"{type(e).__name__}, retry in {wait}s")
+                    time.sleep(wait)
+            else:
+                log(f"[harvest] author/batch chunk {i//500 + 1} GAVE UP -- the "
+                    f"authors in it are skipped this run, not lost")
             time.sleep(PAUSE)
 
     dropped = 0
