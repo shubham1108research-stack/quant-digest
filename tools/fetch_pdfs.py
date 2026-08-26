@@ -499,17 +499,50 @@ def main():
                     _counts["done"] += 1
                     prog.tick()
 
+    def _flush(done_so_far):
+        """Persist everything resolved so far. MAIN THREAD ONLY.
+
+        store.connect() uses sqlite3's default check_same_thread=True, so a
+        worker touching `con` raises ProgrammingError and takes the pool down
+        with it. The first version of this checkpoint did exactly that. The
+        main thread owns the connection, so it does the writing; workers only
+        append to `results`, and list.append is atomic in CPython.
+        """
+        batch = results[done_so_far:]
+        if not batch:
+            return done_so_far
+        try:
+            con.executemany(
+                "INSERT OR REPLACE INTO pdfs (uid,status,url,path,bytes) "
+                "VALUES (?,?,?,?,?)", list(batch))
+            con.commit()
+        except Exception as e:                            # noqa: BLE001
+            log(f"[pdf] checkpoint failed: {type(e).__name__}")
+            return done_so_far
+        return done_so_far + len(batch)
+
     threads = [threading.Thread(target=worker, daemon=True) for _ in range(WORKERS)]
     for t in threads:
         t.start()
+    # Join by POLLING rather than blocking, so the main thread can checkpoint
+    # while the pool works. A straight join() means nothing reaches the
+    # database until every worker is finished, and these runs last hours.
+    flushed = 0
+    while any(t.is_alive() for t in threads):
+        time.sleep(5)
+        flushed = _flush(flushed)
     for t in threads:
         t.join()
+    flushed = _flush(flushed)
 
-    if not args.resolve_only:
-        con.executemany(
-            "INSERT OR REPLACE INTO pdfs (uid,status,url,path,bytes) VALUES (?,?,?,?,?)",
-            [(u, s, url, p, n) for u, s, url, p, n in results])
-        con.commit()
+    # WRITE IN BOTH MODES. This was `if not args.resolve_only`, so the mode
+    # whose ENTIRE PURPOSE is recording where each PDF lives recorded nothing:
+    # a 25,628-paper resolve ran for hours, printed a tally, and persisted
+    # zero rows. The resolved url is the whole product of that pass -- it is
+    # what the later download reads -- and throwing it away makes the mode
+    # a very slow way to print a percentage.
+    if results:
+        log(f"[pdf] wrote {flushed:,} rows to the pdfs table")
 
     # A run that attempted work and produced nothing is a failure, however
     # tidy its summary reads. The worker crashes printed tracebacks, the
