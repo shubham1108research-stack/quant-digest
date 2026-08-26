@@ -1,0 +1,108 @@
+name: S2 Drip Harvest
+
+# The Semantic Scholar endpoints that POST /paper/batch cannot serve, taken a
+# little at a time so the public quota is never the constraint.
+#
+# THE ARITHMETIC. The public limit is 100 requests per 5 minutes. That makes a
+# per-paper endpoint impossible in one job and easy across a day:
+#
+#     100 requests / 5 min  =  28,800 requests / day
+#     the archive           =  20,999 papers
+#
+# So a schedule beats a bigger job. Each run takes a bounded budget, does that
+# much, records what it learned in state.db, and stops. Progress accumulates in
+# the shared store rather than in a checkpoint file, so nothing is lost between
+# runs and nothing needs remembering.
+#
+# NEGATIVE RESULTS ARE RECORDED TOO. A paper S2 has never heard of gets an
+# `s2_miss` mark. Without it every future run would spend a request
+# rediscovering the same dead row and the drip would never reach the live ones.
+#
+# WHY TWO ACTIONS
+#   refs   GET /paper/{id}/references -- batch returns referenceCount but an
+#          EMPTY references list, measured. Targets papers OpenAlex could not
+#          supply references for, chiefly working papers.
+#   match  GET /paper/search/match -- the only route for the 3,863 title-hash
+#          rows that carry neither DOI nor arXiv id.
+#
+# Runs every 3 hours: 8 runs x 100 requests = 800 requests a day, comfortably
+# inside the quota even with the digest and other jobs sharing it. Raise
+# `max_requests` on a manual run when you want a burst.
+
+on:
+  schedule:
+    # Offset from :00 to avoid landing with the digest and deploy jobs.
+    - cron: "37 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Which endpoint to drip"
+        type: choice
+        options: [refs, match]
+        default: refs
+      max_requests:
+        description: "Request budget for this run"
+        required: false
+        default: "100"
+      dry_run:
+        description: "Report the outstanding queue and spend nothing"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  # state.db is binary: concurrent writers rebase into an unmergeable conflict
+  # and one run's work is silently discarded. cancel-in-progress stays false --
+  # a cancelled drip loses the requests it already spent.
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    # A 100-request run at one per 3s is ~5 minutes of sleeping; the cap allows
+    # a much larger manual burst without the job being killed mid-write.
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Harvest
+        env:
+          # Optional. Raises the ceiling; the drip is sized for life without it.
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
+          CONTACT_EMAIL: ${{ secrets.GMAIL_ADDRESS }}
+        run: |
+          ACTION="${{ github.event.inputs.action }}"
+          BUDGET="${{ github.event.inputs.max_requests }}"
+          # A scheduled run has no inputs, so alternate by hour: references are
+          # the larger prize, so they get two slots of every three.
+          if [ -z "$ACTION" ]; then
+            if [ "$(( $(date -u +%H) % 3 ))" = "2" ]; then ACTION=match; else ACTION=refs; fi
+            BUDGET=100
+          fi
+          echo "action=$ACTION budget=$BUDGET"
+          python tools/s2_harvest.py "$ACTION" --max-requests "$BUDGET" \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+
+      - name: Store state.db
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push

@@ -108,6 +108,16 @@ def main():
             "SELECT count(*) FROM embeddings").fetchone()[0]
     except Exception:                                         # noqa: BLE001
         pass
+    # Reference coverage is what coupling rests on, so count the papers that
+    # have NO stored reference separately from those never asked about -- the
+    # two need different fixes and look identical in a total.
+    try:
+        edges["papers with >=1 stored ref"] = con.execute(
+            "SELECT count(DISTINCT src) FROM paper_refs").fetchone()[0]
+        edges["distinct works cited"] = con.execute(
+            "SELECT count(DISTINCT ref) FROM paper_refs").fetchone()[0]
+    except Exception:                                         # noqa: BLE001
+        pass
 
     def held(pred):
         return sum(1 for r in live if pred(r[4]))
