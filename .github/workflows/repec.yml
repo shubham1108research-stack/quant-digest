@@ -1,0 +1,80 @@
+name: RePEc Enrichment
+
+# Pulls what RePEc offers that the existing sources cannot.
+#
+#   factors    journal impact factors from their published statistics file,
+#              replacing a hand-typed table
+#   abstracts  the gap OpenAlex, Semantic Scholar and Crossref cannot fill.
+#              Measured: 269 of 868 (31%) against 27 of 941 (3%) for those
+#              three combined, because they need the PUBLISHER to deposit an
+#              abstract and economics publishers largely do not
+#   pdfs       the free working-paper PDF a RePEc record links directly
+#   cites      citation counts from CitEc, bounded by CitEc's own stated free
+#              limit of 500 requests
+#
+# Not for discovery: OAI datestamps are not maintained, so incremental harvest
+# is impossible. NEP RSS already covers new papers.
+#
+# Nothing here scrapes ideas.repec.org or econpapers.repec.org -- their getdata
+# page asks explicitly that people do not. OAI-PMH, the statistics file and the
+# CitEc API only. Non-commercial use, per their terms.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Which enrichment"
+        type: choice
+        options: [abstracts, factors, pdfs, cites]
+        default: abstracts
+      dry_run:
+        description: "Report what would change and write nothing"
+        type: boolean
+        default: false
+      sets:
+        description: "pdfs only: comma-separated RePEc sets"
+        required: false
+        default: "RePEc:nbr:nberwo"
+
+permissions:
+  contents: read
+
+concurrency:
+  # Writes to state.db, so it shares the writers' lock.
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  repec:
+    runs-on: ubuntu-latest
+    # The abstracts pass streams ~38,000 OAI records across 21 journal sets.
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Enrich
+        run: |
+          python tools/repec.py "${{ github.event.inputs.mode }}" \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} \
+            ${{ github.event.inputs.mode == 'pdfs' && format('--sets "{0}"', github.event.inputs.sets) || '' }}
+
+      - name: Store state.db
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push
