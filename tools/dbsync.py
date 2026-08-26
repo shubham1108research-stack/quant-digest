@@ -240,8 +240,12 @@ def pdfpush(args):
         log("[dbsync] pdfs/ holds no PDFs; nothing to push")
         return 1
     tmp = pathlib.Path("pdfcache.tar.gz.part")
-    # compresslevel=1: PDFs are already compressed streams, so higher levels
-    # buy single-digit MB for minutes of CPU on a ~2 GB archive
+    raw = sum(f.stat().st_size for f in pdfs)
+    log(f"[dbsync] packing {len(pdfs):,} PDFs ({raw/1e9:.2f} GB). PDFs are "
+        f"already-compressed streams, so expect the archive to be about the "
+        f"same size and the upload to take a while on a home connection.")
+    # compresslevel=1 for that reason: higher levels buy single-digit MB for
+    # minutes of CPU
     with tarfile.open(tmp, "w:gz", compresslevel=1) as tf:
         for f in pdfs:
             tf.add(f, arcname=f"pdfs/{f.name}")
@@ -261,9 +265,8 @@ def pdfpull(args):
         return 0
     import tarfile                                    # noqa: PLC0415
     cli = _client(cfg)
-    tmp = pathlib.Path("pdfcache.tar.gz.part")
     try:
-        cli.download_file(cfg["R2_BUCKET"], PDF_KEY, str(tmp))
+        body = cli.get_object(Bucket=cfg["R2_BUCKET"], Key=PDF_KEY)["Body"]
     except Exception as e:                            # noqa: BLE001
         if "404" in str(e) or "NoSuchKey" in str(e):
             log("[dbsync] no PDF cache in the bucket; downloads proceed as usual")
@@ -271,8 +274,12 @@ def pdfpull(args):
         raise
     PDF_DIR.mkdir(exist_ok=True)
     n = 0
-    with tarfile.open(tmp, "r:gz") as tf:
-        for m in tf.getmembers():
+    # STREAM it: "r|gz" reads sequentially from a file-like object, so the
+    # archive never lands on disk. The cache is ~4 GB for the NBER block, and
+    # download-then-extract would peak at 8 GB against a runner that has ~14
+    # GB total with a GROBID image already on it.
+    with tarfile.open(fileobj=body, mode="r|gz") as tf:
+        for m in tf:
             # flatten to pdfs/<name>; refuse anything trying to escape
             name = pathlib.PurePosixPath(m.name).name
             if not name.endswith(".pdf") or not m.isfile():
@@ -281,9 +288,9 @@ def pdfpull(args):
             if dest.exists() and dest.stat().st_size == m.size:
                 continue
             src = tf.extractfile(m)
-            dest.write_bytes(src.read())
-            n += 1
-    tmp.unlink()
+            if src is not None:
+                dest.write_bytes(src.read())
+                n += 1
     log(f"[dbsync] pulled {PDF_KEY}: {n:,} PDFs extracted, "
         f"{len(list(PDF_DIR.glob('*.pdf'))):,} total in pdfs/")
     return 0
