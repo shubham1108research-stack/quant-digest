@@ -31,16 +31,29 @@ name: S2 Drip Harvest
 # ceiling is the job timeout.
 #
 #     100 requests  =  5 min   -> 75 runs to clear the queue -> ~10 days
-#   1,000 requests  = 50 min   ->  8 runs                    ->  ~1 day
+#   2,400 requests  =  2 hours ->  4 runs                    ->  ~1 day
+#
+# THE API IS NOT WHAT BOUNDS THE CADENCE. At 9,600 requests a day this uses a
+# third of the 28,800 ceiling. Three other things bind first:
+#
+#   state.db is 159 MB and is pulled AND pushed every run. Eight runs a day is
+#   2.5 GB of R2 transfer; four runs at double the budget is 1.3 GB for
+#   identical throughput.
+#
+#   every run holds the shared `state-db` concurrency group, which the digest
+#   and the deploy also need. Fewer, longer runs collide less.
+#
+#   a GitHub job dies at 6 hours, which at 3s pacing is ~7,200 requests. That
+#   is the true per-run ceiling, and 2,400 leaves room for the pull, the push
+#   and any backoff.
 #
 # Measured on the first run: 100 requests, 0 throttled, 99 papers, 1,810
-# references. So 1,000 per run at 3-hourly is 8,000 a day against a 28,800
-# ceiling, with the backoff handling the shared pool if it saturates.
+# references stored.
 
 on:
   schedule:
     # Offset from :00 to avoid landing with the digest and deploy jobs.
-    - cron: "37 */3 * * *"
+    - cron: "37 */6 * * *"
   workflow_dispatch:
     inputs:
       action:
@@ -49,9 +62,9 @@ on:
         options: [refs, match]
         default: refs
       max_requests:
-        description: "Request budget for this run (1000 = ~50 min at the public rate)"
+        description: "Request budget (2400 = ~2h at the public rate; 7200 is the 6h job ceiling)"
         required: false
-        default: "1000"
+        default: "2400"
       dry_run:
         description: "Report the outstanding queue and spend nothing"
         type: boolean
@@ -72,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     # A 100-request run at one per 3s is ~5 minutes of sleeping; the cap allows
     # a much larger manual burst without the job being killed mid-write.
-    timeout-minutes: 120
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -100,7 +113,7 @@ jobs:
           # the larger prize, so they get two slots of every three.
           if [ -z "$ACTION" ]; then
             if [ "$(( $(date -u +%H) % 3 ))" = "2" ]; then ACTION=match; else ACTION=refs; fi
-            BUDGET=1000
+            BUDGET=2400
           fi
           echo "action=$ACTION budget=$BUDGET"
           python tools/s2_harvest.py "$ACTION" --max-requests "$BUDGET" \
