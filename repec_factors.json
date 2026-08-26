@@ -1,0 +1,195 @@
+{
+ "_note": "RePEc's own caveat: 'this is experimental data at this point'. Non-commercial use only.",
+ "_source": "https://ideas.repec.org/top/seriesfactors10.txt",
+ "series": {
+  "Finance and Stochastics": {
+   "h_index": 20,
+   "handle": "RePEc:spr:finsto",
+   "impact": 6.685,
+   "items": 285,
+   "papers_held": 15,
+   "recursive": 0.184,
+   "repec_name": "Finance and Stochastics, Springer"
+  },
+  "Financial Analysts Journal": {
+   "h_index": 11,
+   "handle": "RePEc:taf:ufajxx",
+   "impact": 3.125,
+   "items": 304,
+   "papers_held": 26,
+   "recursive": 0.098,
+   "repec_name": "Financial Analysts Journal, Taylor & Francis Journals"
+  },
+  "Financial Management": {
+   "h_index": 24,
+   "handle": "RePEc:bla:finmgt",
+   "impact": 8.036,
+   "items": 285,
+   "papers_held": 44,
+   "recursive": 0.477,
+   "repec_name": "Financial Management, Financial Management Association International"
+  },
+  "Journal of Asset Management": {
+   "h_index": 16,
+   "handle": "RePEc:pal:assmgt",
+   "impact": 2.841,
+   "items": 434,
+   "papers_held": 32,
+   "recursive": 0.064,
+   "repec_name": "Journal of Asset Management, Palgrave Macmillan"
+  },
+  "Journal of Banking and Finance": {
+   "h_index": 60,
+   "handle": "RePEc:eee:jbfina",
+   "impact": 11.881,
+   "items": 1936,
+   "papers_held": 109,
+   "recursive": 0.648,
+   "repec_name": "Journal of Banking & Finance, Elsevier"
+  },
+  "Journal of Corporate Finance": {
+   "h_index": 74,
+   "handle": "RePEc:eee:corfin",
+   "impact": 17.482,
+   "items": 1553,
+   "papers_held": 111,
+   "recursive": 0.551,
+   "repec_name": "Journal of Corporate Finance, Elsevier"
+  },
+  "Journal of Empirical Finance": {
+   "h_index": 28,
+   "handle": "RePEc:eee:empfin",
+   "impact": 7.258,
+   "items": 704,
+   "papers_held": 41,
+   "recursive": 0.321,
+   "repec_name": "Journal of Empirical Finance, Elsevier"
+  },
+  "Journal of Finance": {
+   "h_index": 34,
+   "handle": "RePEc:bla:jfinan",
+   "impact": 33.565,
+   "items": 715,
+   "papers_held": 72,
+   "recursive": 5.589,
+   "repec_name": "Journal of Finance, American Finance Association"
+  },
+  "Journal of Financial Econometrics": {
+   "h_index": 19,
+   "handle": "RePEc:oup:jfinec",
+   "impact": 7.279,
+   "items": 298,
+   "papers_held": 17,
+   "recursive": 0.41,
+   "repec_name": "Journal of Financial Econometrics, Oxford University Press"
+  },
+  "Journal of Financial Economics": {
+   "h_index": 86,
+   "handle": "RePEc:eee:jfinec",
+   "impact": 31.409,
+   "items": 1357,
+   "papers_held": 83,
+   "recursive": 3.017,
+   "repec_name": "Journal of Financial Economics, Elsevier"
+  },
+  "Journal of Financial Intermediation": {
+   "h_index": 35,
+   "handle": "RePEc:eee:jfinin",
+   "impact": 18.06,
+   "items": 292,
+   "papers_held": 11,
+   "recursive": 2.073,
+   "repec_name": "Journal of Financial Intermediation, Elsevier"
+  },
+  "Journal of Financial Markets": {
+   "h_index": 24,
+   "handle": "RePEc:eee:finmar",
+   "impact": 6.69,
+   "items": 370,
+   "papers_held": 43,
+   "recursive": 0.361,
+   "repec_name": "Journal of Financial Markets, Elsevier"
+  },
+  "Journal of Financial Services Research": {
+   "h_index": 15,
+   "handle": "RePEc:kap:jfsres",
+   "impact": 4.573,
+   "items": 215,
+   "papers_held": 14,
+   "recursive": 0.287,
+   "repec_name": "Journal of Financial Services Research, Springer;Western Finance Association"
+  },
+  "Journal of Financial and Quantitative Analysis": {
+   "h_index": 53,
+   "handle": "RePEc:cup:jfinqa",
+   "impact": 12.881,
+   "items": 945,
+   "papers_held": 86,
+   "recursive": 1.106,
+   "repec_name": "Journal of Financial and Quantitative Analysis, Cambridge University Press"
+  },
+  "Journal of Money": {
+   "h_index": 41,
+   "handle": "RePEc:wly:jmoncb",
+   "impact": 9.829,
+   "items": 710,
+   "papers_held": 50,
+   "recursive": 1.456,
+   "repec_name": "Journal of Money, Credit and Banking, Blackwell Publishing"
+  },
+  "Mathematical Finance": {
+   "h_index": 22,
+   "handle": "RePEc:bla:mathfi",
+   "impact": 7.363,
+   "items": 331,
+   "papers_held": 31,
+   "recursive": 0.228,
+   "repec_name": "Mathematical Finance, Wiley Blackwell"
+  },
+  "Quantitative Finance": {
+   "h_index": 30,
+   "handle": "RePEc:taf:quantf",
+   "impact": 4.748,
+   "items": 1231,
+   "papers_held": 83,
+   "recursive": 0.131,
+   "repec_name": "Quantitative Finance, Taylor & Francis Journals"
+  },
+  "Review of Asset Pricing Studies": {
+   "h_index": 13,
+   "handle": "RePEc:oup:rasset",
+   "impact": 5.557,
+   "items": 132,
+   "papers_held": 10,
+   "recursive": 0.922,
+   "repec_name": "The Review of Asset Pricing Studies, Society for Financial Studies"
+  },
+  "Review of Corporate Finance Studies": {
+   "h_index": 19,
+   "handle": "RePEc:oup:rcorpf",
+   "impact": 15.79,
+   "items": 176,
+   "papers_held": 23,
+   "recursive": 1.444,
+   "repec_name": "The Review of Corporate Finance Studies, Society for Financial Studies"
+  },
+  "Review of Finance": {
+   "h_index": 43,
+   "handle": "RePEc:oup:revfin",
+   "impact": 16.924,
+   "items": 486,
+   "papers_held": 35,
+   "recursive": 1.62,
+   "repec_name": "Review of Finance, European Finance Association"
+  },
+  "Review of Financial Studies": {
+   "h_index": 85,
+   "handle": "RePEc:oup:rfinst",
+   "impact": 32.049,
+   "items": 1068,
+   "papers_held": 93,
+   "recursive": 4.364,
+   "repec_name": "The Review of Financial Studies, Society for Financial Studies"
+  }
+ }
+}

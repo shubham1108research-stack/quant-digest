@@ -1327,3 +1327,30 @@ ARTIFACT_SECTION_PRIORITY = (
 # four calls and one extraction pass is hundreds, so a per-response check
 # measures nothing.
 LLM_RUN_BUDGET_TOKENS = 2_000_000
+
+# ---- RePEc measured impact factors (optional override) ---------------
+# JOURNAL_IMPACT above is hand-typed and approximate -- the comment on it says
+# "editable". tools/repec.py factors writes repec_factors.json from RePEc's own
+# published statistics, which are computed from actual citation counts.
+#
+# The two are on DIFFERENT SCALES: RePEc's simple impact factor is citations
+# per item over ten years, not a JCR two-year figure, so Journal of Finance
+# reads 33.6 there against 7.5 here. That does not matter -- scoring.py uses
+# `value / max(values)`, a purely relative position, bounded into a reputation
+# multiplier that can only nudge by +/-15%. What DOES change is the ordering,
+# and it changes toward measured data: RePEc ranks JF above RFS above JFE,
+# where the hand table had JFE first.
+#
+# Optional by design. Absent the file, the hand table stands and nothing
+# breaks; a journal RePEc does not cover (the practitioner titles) keeps its
+# hand-set value rather than dropping to zero.
+try:
+    import json as _json, pathlib as _pathlib
+    _rf = _pathlib.Path(__file__).resolve().parent / "repec_factors.json"
+    if _rf.exists():
+        _series = (_json.loads(_rf.read_text(encoding="utf-8")) or {}).get("series") or {}
+        for _name, _v in _series.items():
+            if _v.get("impact"):
+                JOURNAL_IMPACT[_name] = float(_v["impact"])
+except Exception:                                      # noqa: BLE001
+    pass                                               # hand table stands
