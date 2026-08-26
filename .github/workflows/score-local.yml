@@ -1,0 +1,126 @@
+name: Local Scoring (export / ingest)
+
+# Scoring without an LLM API call.
+#
+# The rubric is applied by hand instead of by a paid provider. The scorer has
+# no R2 credentials and so cannot reach state.db, so the database stays put and
+# the ABSTRACTS travel: this job exports them as an artifact, the scoring
+# happens against that file, the verdicts are committed under scores/, and this
+# job writes them back through llm._apply_score -- the identical function the
+# API path uses, so posteriors and rank_score are computed by the same code
+# from the same inputs.
+#
+# WHY IT IS TWO ACTIONS AND NOT ONE. Export is read-only and safe to run at
+# any time. Ingest writes to state.db and pushes it to R2, so it is the one
+# that needs the concurrency group and a dry run first.
+#
+# CALIBRATE BEFORE YOU TRUST IT. `export_calibration` re-exports papers that
+# ALREADY have API scores, with those scores withheld. Score them blind, ingest
+# with dry_run, and compare. A second scorer is not merely noisier than the
+# first -- it is differently CALIBRATED, and a systematic half-level of
+# generosity moves every paper it touches as a block, which reads as a finding
+# about the papers rather than an artefact of who read them.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        type: choice
+        options: [export_unscored, export_calibration, ingest]
+        default: export_unscored
+      limit:
+        description: "export: papers to export (0 = all outstanding)"
+        required: false
+        default: "200"
+      scored_by:
+        description: "ingest: who judged these (stamped on every row)"
+        required: false
+        default: "claude-opus-5"
+      dry_run:
+        description: "ingest: validate and report, write nothing"
+        type: boolean
+        default: true
+      force:
+        description: "ingest: overwrite papers that already carry a score"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  # state.db is binary: two writers rebase into an unmergeable conflict and one
+  # run's work is silently discarded. Export does not write, but it shares the
+  # group so it can never read a half-written database either.
+  group: state-db
+  cancel-in-progress: false
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Export the backlog
+        if: ${{ github.event.inputs.action == 'export_unscored' }}
+        run: |
+          python tools/export_unscored.py --unscored \
+            --limit "${{ github.event.inputs.limit }}" \
+            --out export/unscored.json
+
+      - name: Export a calibration sample
+        if: ${{ github.event.inputs.action == 'export_calibration' }}
+        run: |
+          python tools/export_unscored.py \
+            --sample-scored "${{ github.event.inputs.limit }}" \
+            --out export/calibration.json
+
+      - name: Upload the export
+        if: ${{ startsWith(github.event.inputs.action, 'export') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: score-export
+          path: export/
+          retention-days: 14
+
+      # Reads scores/*.json from the checkout rather than a workflow input:
+      # dispatch inputs cap at 64KB and a batch of a few hundred verdicts
+      # passes that easily. Committing them also makes the archive's scores
+      # reviewable in git rather than arriving from nowhere.
+      - name: Ingest the verdicts
+        if: ${{ github.event.inputs.action == 'ingest' }}
+        run: |
+          shopt -s nullglob
+          files=(scores/*.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "no scores/*.json committed -- nothing to ingest"
+            exit 1
+          fi
+          echo "ingesting ${#files[@]} file(s): ${files[*]}"
+          python tools/ingest_scores.py "${files[@]}" \
+            --scored-by "${{ github.event.inputs.scored_by }}" \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} \
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+
+      - name: Store state.db
+        if: ${{ github.event.inputs.action == 'ingest' && github.event.inputs.dry_run != 'true' }}
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py push
