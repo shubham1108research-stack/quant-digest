@@ -349,8 +349,72 @@ def cmd_authors(args):
         keep = [(sid, n) for sid, n in c.most_common() if n >= 2]
         if keep:
             resolved[want] = keep
+    # VERIFY EVERY CANDIDATE ID BY NAME BEFORE SPENDING A REQUEST ON IT.
+    #
+    # The vote above credits every author id on a matching paper, so a frequent
+    # co-author clears the threshold as easily as the person meant. Measured:
+    #
+    #   watched "Andrea Frazzini"  ->  2106499    Andrea Frazzini      correct
+    #                                  102104637  Clifford S. Asness   co-author
+    #                                  31871734   L. Pedersen          co-author
+    #   watched "Bryan Kelly"      ->  2772316    S. Malamud           co-author,
+    #                                                                  and the
+    #                                                                  TOP vote
+    #
+    # Unfiltered that was 1,578 profiles across 40 authors -- 39 each, almost
+    # all of them other people. POST /author/batch returns names for hundreds of
+    # ids in one request, so the whole candidate set is checkable for the price
+    # of two, against ~1,578 requests spent fetching strangers' bibliographies.
+    def _key(n):
+        """(first initial, surname) -- S2 abbreviates given names freely.
+
+        "Lasse Heje Pedersen" and "L. Pedersen" are one person; "Bryan Kelly"
+        and "Bryan T. Kelly" are one person; "Clifford S. Asness" is not either
+        of them.
+        """
+        parts = [w for w in re.split(r"[^A-Za-z]+", (n or "").lower()) if w]
+        if not parts:
+            return ("", "")
+        return (parts[0][:1], parts[-1])
+
+    cand = sorted({sid for ids in resolved.values() for sid, _ in ids})
+    names = {}
+    if cand:
+        for i in range(0, len(cand), 500):
+            chunk = cand[i:i + 500]
+            body = json.dumps({"ids": chunk}).encode("utf-8")
+            req = urllib.request.Request(
+                f"{API}/author/batch?fields=name", data=body,
+                headers=dict(_headers(), **{"Content-Type": "application/json"}))
+            try:
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    for a in json.load(r):
+                        if a and a.get("authorId"):
+                            names[str(a["authorId"])] = a.get("name") or ""
+            except Exception as e:                            # noqa: BLE001
+                log(f"[harvest] author/batch chunk failed: {type(e).__name__}")
+            time.sleep(PAUSE)
+
+    dropped = 0
+    for want in list(resolved):
+        keep = []
+        for sid, n in resolved[want]:
+            nm = names.get(sid)
+            if nm is None:
+                continue
+            if _key(nm) == _key(seed[want]["name"]):
+                keep.append((sid, n))
+            else:
+                dropped += 1
+        if keep:
+            resolved[want] = keep
+        else:
+            del resolved[want]
+    log(f"[harvest] verified {len(cand):,} candidate profiles by name: dropped "
+        f"{dropped:,} belonging to someone else (co-authors)")
+
     log(f"[harvest] {len(seed)} watched authors; {len(resolved)} resolved to an "
-        f"S2 id through papers we hold (>=2 agreeing)")
+        f"S2 id through papers we hold (>=2 agreeing, name-verified)")
     if not resolved:
         log("[harvest] none resolved -- run `s2.py enrich` first so papers "
             "carry s2_author_ids")
