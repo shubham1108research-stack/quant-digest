@@ -52,6 +52,7 @@ import urllib.request
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import store    # noqa: E402
+from progress import Progress   # noqa: E402
 
 API = "https://api.semanticscholar.org/graph/v1"
 # 100 requests / 5 minutes = one per 3 seconds. Kept as the two numbers rather
@@ -195,6 +196,11 @@ def cmd_refs(args):
     budget = Budget(args.max_requests)
     got = collections.Counter()
     rows, marks = [], []
+    # Bounded by the BUDGET, not by the queue: the run stops when requests run
+    # out, so a percentage against len(todo) would crawl toward 4% and read as
+    # a stall. What is being consumed is requests.
+    prog = Progress(min(args.max_requests, len(todo)), "harvest-refs",
+                    every_s=120)
     for uid, sid in todo:
         if not budget:
             break
@@ -220,6 +226,7 @@ def cmd_refs(args):
         marks.append((uid, {"s2_refs": len(refs)}))
         got["fetched"] += 1
         got["refs"] += len(refs)
+        prog.tick()
         if len(marks) >= CHECKPOINT:
             _flush(con, rows, marks)
             log(f"[harvest]   checkpoint: {got['fetched']:,} papers, "
@@ -228,6 +235,7 @@ def cmd_refs(args):
         time.sleep(PAUSE)
 
     _flush(con, rows, marks)
+    prog.done()
     log(f"[harvest] spent {budget.used} requests ({budget.throttled} throttled), "
         f"stored {len(rows):,} references")
     for k, v in got.most_common():

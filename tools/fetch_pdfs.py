@@ -51,7 +51,8 @@ import requests
 import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-import store  # noqa: E402
+import store
+from progress import Progress  # noqa: E402
 
 OUT = pathlib.Path("pdfs")
 EMAIL = os.environ.get("CONTACT_EMAIL") or "upadhyays1108@gmail.com"
@@ -446,6 +447,14 @@ def main():
     log(f"[pdf] {len(rows)} papers archived, {sum(1 for s in done.values() if s=='ok')} "
         f"already fetched, {len(todo)} to attempt")
 
+    # Percentage and ETA, and in CI also as ::notice:: annotations -- the only
+    # channel readable from outside while a job is still running. Estimating
+    # this run's completion previously meant timing 300 papers and
+    # extrapolating, which was wrong by design: those 300 were in table order
+    # and resolved on the first ladder step, where the archive as a whole does
+    # not.
+    prog = Progress(len(todo), "pdf")
+
     q = queue.Queue()
     for t in todo:
         q.put(t)
@@ -482,12 +491,13 @@ def main():
                 results.append((uid, "http_error", None, None, 0))
             finally:
                 q.task_done()
+                # Progress is ticked under the lock: eight workers incrementing
+                # a shared counter is exactly the race that makes a percentage
+                # untrustworthy, and an untrustworthy percentage is worse than
+                # none because it gets planned against.
                 with _lock:
                     _counts["done"] += 1
-                    d = _counts["done"]
-                if d % 100 == 0:
-                    ok = sum(1 for r in results if r[1] == "ok")
-                    log(f"[pdf] {d}/{len(todo)} attempted, {ok} downloaded")
+                    prog.tick()
 
     threads = [threading.Thread(target=worker, daemon=True) for _ in range(WORKERS)]
     for t in threads:
@@ -505,6 +515,7 @@ def main():
     # tidy its summary reads. The worker crashes printed tracebacks, the
     # process still exited 0, and CI reported success for a job that resolved
     # 0 of 25,628 papers.
+    prog.done()
     if todo and not results:
         log(f"[pdf] FAILED: {len(todo):,} papers queued and NOTHING resolved "
             f"-- every worker died. See the tracebacks above.")
