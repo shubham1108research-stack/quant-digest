@@ -89,6 +89,7 @@ HOST_DELAY = {
     "api.unpaywall.org": 0.1,
     "api.semanticscholar.org": 1.0,   # shared anonymous pool; 429s are routine
     "api.core.ac.uk": 0.5,
+    "zenodo.org": 1.1,           # guest limit 60/min on the records API
     "default": 0.5,
 }
 
@@ -101,6 +102,7 @@ NBER = re.compile(r"nber\.org/papers/w(\d+)", re.I)
 IS_PDF = re.compile(r"\.pdf(\?|$)", re.I)
 REPEC_ARXIV = re.compile(r"RePEc:arx:papers:([\d.]+)", re.I)
 ARXIV_DOI = re.compile(r"10\.48550/arxiv\.([0-9.]+)", re.I)
+ZENODO_DOI = re.compile(r"10\.5281/zenodo\.(\d+)$", re.I)
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS pdfs (
@@ -528,10 +530,49 @@ def _stage_arxiv_titles(rows, batch=25):
 #
 # Ten times fewer requests for the same papers, and it inherits the ~2,586
 # pdf_urls s2.py enrich has already stored rather than re-asking for them.
+def _stage_zenodo(remaining):
+    """{uid: pdf_url} for papers with a Zenodo DOI, via the records API.
+
+    Zenodo is an open repository with an API built for programmatic access --
+    the one provider in the archive that is both fully free and fully
+    unclaimed by the earlier stages (OpenAlex indexes some records but misses
+    the file links for many). No bulk endpoint exists, so this is one request
+    per record; the guest rate limit is 60/minute and HOST_DELAY paces us
+    under it. Runs after the batched stages so it only sees what they left.
+    """
+    todo = []
+    for uid, url, title, doi in remaining:
+        d = (doi or "").strip() or (uid[4:] if uid.startswith("doi:") else "")
+        m = ZENODO_DOI.match(d)
+        if m:
+            todo.append((uid, m.group(1)))
+    out = {}
+    if not todo:
+        return out
+    prog = Progress(len(todo), "zenodo", every_s=30)
+    for uid, zid in todo:
+        _polite(f"https://zenodo.org/api/records/{zid}")
+        try:
+            r = _get(f"https://zenodo.org/api/records/{zid}")
+            if r.status_code == 200:
+                for f in (r.json().get("files") or []):
+                    if f.get("key", "").lower().endswith(".pdf"):
+                        link = (f.get("links") or {}).get("self")
+                        if link:
+                            out[uid] = link
+                        break
+        except Exception:                                # noqa: BLE001
+            pass
+        prog.tick()
+    prog.done()
+    return out
+
+
 STAGES = [
     ("free-derive", _stage_free, "arXiv/NBER/RePEc/direct-pdf, no HTTP"),
     ("s2", _stage_s2, "batched 500/request, ~35 calls"),
     ("openalex", _stage_openalex, "batched 50/request, ~343 calls"),
+    ("zenodo", _stage_zenodo, "records API, 1/request, paced under 60/min"),
     ("arxiv-titles", _stage_arxiv_titles, "OR-batched 25/request"),
 ]
 
@@ -718,6 +759,10 @@ def main():
                     help="skip the batched pre-pass and use the per-paper "
                          "ladder for everything (slow; for comparison)")
     ap.add_argument("--retry-failed", action="store_true")
+    ap.add_argument("--with-ladder", action="store_true",
+                    help="after the staged pass, climb the per-paper ladder "
+                         "(Unpaywall, CORE) over what remains; measured yield "
+                         "0.3%% for 31 minutes, so it is off by default")
     ap.add_argument("--shuffle", action="store_true",
                     help="sample randomly (for measuring coverage)")
     ap.add_argument("--url", help="fetch one URL and report why it did or did "
@@ -798,6 +843,23 @@ def main():
     # one `stage ` line in 23 minutes of output.
     if args.resolve_only and not args.no_bulk:
         todo = resolve_staged(con, todo)
+        if not args.with_ladder:
+            # Measured, not assumed: after the staged pass the ladder spent 31
+            # of the run's 34 minutes recovering 63 of 19,127 urls (0.3%).
+            # Its Unpaywall rung re-asks what OpenAlex already answered (same
+            # underlying data), and CORE rarely holds what both missed. Record
+            # the remainder as no_source so the yield line stays honest and
+            # the next default run does not re-ask; --with-ladder re-enables
+            # the full climb, and --retry-failed clears the verdicts.
+            if todo:
+                con.executemany(
+                    "INSERT OR REPLACE INTO pdfs (uid,status,url,path,bytes) "
+                    "VALUES (?,?,?,?,?)",
+                    [(u, "no_source", None, None, 0) for u, _, _, _ in todo])
+                con.commit()
+                log(f"[pdf] ladder skipped: {len(todo):,} unresolved papers "
+                    f"recorded as no_source (--with-ladder to climb it)")
+            todo = []
     elif not args.no_bulk:
         pre = bulk_resolve([(u, d) for u, _, _, d in todo if d])
         if pre:
