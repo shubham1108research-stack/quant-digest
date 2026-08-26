@@ -24,9 +24,10 @@ name: Embedding Bake-off
 # handicap it would never have in production. The portal always runs with the
 # graph on, so the decision should be made with it on.
 #
-# Both are still measured graph-off as well, as the controlled comparison of
-# the embeddings alone. Two numbers, two questions, neither pretending to be
-# the other.
+# There is deliberately NO graph-off control run. It would answer "is the graph
+# pulling its weight", and that is not a live question -- the graph ships in
+# every configuration under consideration, so the only comparison worth paying
+# for is the one between two portals that both have it.
 #
 # Citation edges are deliberately absent: they come from the database, are
 # identical for both models, and are therefore not what a bake-off compares.
@@ -112,18 +113,6 @@ jobs:
       - name: Measure — local model, graph on (what would ship)
         run: python eval/run.py --docs docs_local
 
-      # The embeddings alone, with the graph out of the way. This is the
-      # cleaner answer to "which embedder is better"; the pair above is the
-      # answer to "which portal would be better".
-      - name: Measure — OpenAI, graph off (control)
-        if: always()
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: python eval/run.py --no-graph
-
-      - name: Measure — local model, graph off (control)
-        if: always()
-        run: python eval/run.py --no-graph --docs docs_local
 
       - name: Keep the query-vector caches
         if: always()
