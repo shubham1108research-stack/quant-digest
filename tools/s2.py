@@ -156,8 +156,15 @@ def enrich(args):
             continue
         # Skip rows that already have everything this would write, unless
         # forced. Citations go stale, so `--force` is the refresh path.
+        #
+        # s2_author_ids is in this list deliberately. It was added AFTER the
+        # first full run, so without it every already-enriched row would be
+        # skipped forever and the field would stay empty on exactly the papers
+        # most likely to resolve a watched author. A new field has to widen the
+        # queue, not inherit the previous one's exclusions.
         if not args.force and m.get("cites") is not None and \
                 m.get("author_h") is not None and \
+                m.get("s2_author_ids") and \
                 len((m.get("abstract") or "").strip()) >= 120:
             continue
         todo.append((uid, sid, m))
