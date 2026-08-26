@@ -89,6 +89,16 @@ class Budget:
         return self.left > 0
 
 
+# How often work is written down. A 2,400-request run is two hours, and
+# committing only at the end means a cancel, a timeout or a runner dying at
+# 1h59m throws away every request it spent. Measured the hard way: cancelling a
+# drip to free the state-db lock lost the whole run.
+#
+# 100 papers is about five minutes of pacing -- small enough that almost nothing
+# is lost, large enough that the commits are not the bottleneck.
+CHECKPOINT = 100
+
+
 def _get(url, budget, tries=3):
     for attempt in range(tries):
         if not budget:
@@ -142,6 +152,17 @@ def _have_refs(con):
         return {r[0] for r in con.execute("SELECT DISTINCT src FROM paper_refs")}
     except Exception:                                         # noqa: BLE001
         return set()
+
+
+def _flush(con, rows, marks):
+    """Write down what has been fetched so far, then let the loop continue."""
+    if rows:
+        con.executemany(
+            "INSERT OR IGNORE INTO paper_refs (src,ref) VALUES (?,?)", rows)
+    for uid, patch in marks:
+        store.update_meta(con, uid, patch)
+    if rows or marks:
+        con.commit()
 
 
 def cmd_refs(args):
@@ -199,14 +220,14 @@ def cmd_refs(args):
         marks.append((uid, {"s2_refs": len(refs)}))
         got["fetched"] += 1
         got["refs"] += len(refs)
+        if len(marks) >= CHECKPOINT:
+            _flush(con, rows, marks)
+            log(f"[harvest]   checkpoint: {got['fetched']:,} papers, "
+                f"{got['refs']:,} references written")
+            rows, marks = [], []
         time.sleep(PAUSE)
 
-    if rows:
-        con.executemany(
-            "INSERT OR IGNORE INTO paper_refs (src,ref) VALUES (?,?)", rows)
-    for uid, patch in marks:
-        store.update_meta(con, uid, patch)
-    con.commit()
+    _flush(con, rows, marks)
     log(f"[harvest] spent {budget.used} requests ({budget.throttled} throttled), "
         f"stored {len(rows):,} references")
     for k, v in got.most_common():
@@ -274,6 +295,9 @@ def cmd_match(args):
             got["gained an abstract"] += 1
         store.update_meta(con, uid, patch)
         got["matched"] += 1
+        if got["matched"] % CHECKPOINT == 0:
+            con.commit()
+            log(f"[harvest]   checkpoint: {got['matched']:,} matched")
         time.sleep(PAUSE)
     con.commit()
     log(f"[harvest] spent {budget.used} requests ({budget.throttled} throttled)")
