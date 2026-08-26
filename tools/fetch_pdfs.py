@@ -382,7 +382,108 @@ def resolve(uid, url, title=None, doi=None, skip_batched=False):
     return None
 
 
-def bulk_resolve(pairs):
+# ---------------------------------------------------------------- stages
+# SOURCE-MAJOR, not paper-major. The ladder in resolve() asks every question
+# about one paper before moving to the next, which is the right shape for a
+# single lookup and the wrong one for 25,000: it interleaves nine services, so
+# nothing can be batched, nothing can be measured per source, and one slow
+# service paces the whole run.
+#
+# Staged instead. Each stage takes the papers still unresolved, does what that
+# ONE source can do -- using its own native batching -- reports what it found,
+# and hands the remainder on. Consequences that matter:
+#
+#   * the free stages run first and cost nothing. arXiv ids, NBER paths,
+#     RePEc mirrors and urls that already end in .pdf are string derivation
+#     with no HTTP at all, so whatever they cover never reaches a network call.
+#   * every stage produces a number. "OpenAlex resolved 4,102 of 18,300" is a
+#     fact about that source, which the interleaved ladder could never report.
+#   * a stage can be skipped, re-run, or reordered without touching the rest.
+def _stage_free(rows):
+    """arXiv id, NBER, RePEc->arXiv, and urls that are already PDFs.
+
+    Zero network calls -- every one of these is derivable from an identifier we
+    already hold, which is why they run before anything that costs a request.
+    """
+    out = {}
+    for uid, url, _title, doi in rows:
+        u = url or ""
+        m = ARXIV.search(u)
+        if m:
+            out[uid] = f"https://arxiv.org/pdf/{m.group(1)}"
+            continue
+        m = REPEC_ARXIV.search(u)
+        if m:
+            out[uid] = f"https://arxiv.org/pdf/{m.group(1)}"
+            continue
+        m = NBER.search(u)
+        if m:
+            out[uid] = (f"https://www.nber.org/system/files/working_papers/"
+                        f"w{m.group(1)}/w{m.group(1)}.pdf")
+            continue
+        m = (re.match(r"^doi:10\.3386/w(\d+)$", uid, re.I)
+             or re.match(r"^10\.3386/w(\d+)$", doi or "", re.I))
+        if m:
+            out[uid] = (f"https://www.nber.org/system/files/working_papers/"
+                        f"w{m.group(1)}/w{m.group(1)}.pdf")
+            continue
+        if IS_PDF.search(u):
+            out[uid] = u
+    return out
+
+
+def _stage_openalex(rows):
+    """OpenAlex, 50 DOIs per request."""
+    return bulk_resolve([(u, d) for u, _, _, d in rows if d], only="openalex")
+
+
+def _stage_s2(rows):
+    """Semantic Scholar, 500 ids per request."""
+    return bulk_resolve([(u, d) for u, _, _, d in rows if d], only="s2")
+
+
+STAGES = [
+    ("free-derive", _stage_free, "arXiv/NBER/RePEc/direct-pdf, no HTTP"),
+    ("openalex", _stage_openalex, "batched 50/request"),
+    ("s2", _stage_s2, "batched 500/request"),
+]
+
+
+def resolve_staged(con, todo, log=log):
+    """Run the batched stages in order; return what is still unresolved.
+
+    Whatever survives all stages goes to the per-paper ladder, which still owns
+    Unpaywall, CORE and the gated arXiv title search -- none of which batch.
+    """
+    remaining = list(todo)
+    resolved = {}
+    log(f"[pdf] staged resolution over {len(remaining):,} papers")
+    for name, fn, note in STAGES:
+        if not remaining:
+            break
+        before = len(remaining)
+        try:
+            found = fn(remaining) or {}
+        except Exception as e:                                # noqa: BLE001
+            log(f"[pdf] stage {name} failed ({type(e).__name__}); skipping")
+            continue
+        found = {u: v for u, v in found.items() if v}
+        resolved.update(found)
+        remaining = [t for t in remaining if t[0] not in found]
+        log(f"[pdf] stage {name:<12} resolved {len(found):>6,} of {before:>6,} "
+            f"({100.0*len(found)/max(before,1):4.1f}%)  {note}")
+        if found:
+            con.executemany(
+                "INSERT OR REPLACE INTO pdfs (uid,status,url,path,bytes) "
+                "VALUES (?,?,?,?,?)",
+                [(u, "resolved", found[u], None, 0) for u in found])
+            con.commit()
+    log(f"[pdf] staged total {len(resolved):,}; {len(remaining):,} fall through "
+        f"to the per-paper ladder (Unpaywall, CORE, arXiv-title)")
+    return remaining
+
+
+def bulk_resolve(pairs, only=None):
     """{uid: pdf_url} for as many papers as batched APIs can answer for.
 
     Two calls cover what the ladder's rungs 5-7 do one paper at a time:
@@ -400,7 +501,10 @@ def bulk_resolve(pairs):
         return {}
     out, lock = {}, threading.Lock()
 
-    oa_chunks = [pairs[i:i + 50] for i in range(0, len(pairs), 50)]
+    if only in (None, "openalex"):
+        oa_chunks = [pairs[i:i + 50] for i in range(0, len(pairs), 50)]
+    else:
+        oa_chunks = []
     prog = Progress(len(oa_chunks), "bulk-openalex", every_s=20)
 
     def oa(chunk):
@@ -440,6 +544,8 @@ def bulk_resolve(pairs):
     log(f"[pdf] OpenAlex bulk: {len(out):,} of {len(pairs):,}")
 
     rest = [(u, d) for u, d in pairs if u not in out]
+    if only == "openalex":
+        rest = []
     if rest:
         s2_chunks = [rest[i:i + 500] for i in range(0, len(rest), 500)]
         p2 = Progress(len(s2_chunks), "bulk-s2", every_s=20)
