@@ -29,18 +29,21 @@ Two edge kinds:
 
 import argparse
 import collections
+import concurrent.futures
 import json
 import pathlib
 import struct
 import sys
 import time
+import threading
 
 import numpy as np
 import requests
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-import store   # noqa: E402
+import store
+from progress import Progress   # noqa: E402
 
 # The graph lives in its OWN database, not state.db. It is derived from the
 # vector cache and rebuilds in ~12s, but 172k edges with TEXT endpoints and two
@@ -266,8 +269,21 @@ def build_cites(con, args):
     if args.limit:
         todo = todo[:args.limit]
     oa_to_uid, refs = {}, {}
-    for i in range(0, len(todo), 50):
-        chunk = todo[i:i + 50]
+    chunks = [todo[i:i + 50] for i in range(0, len(todo), 50)]
+
+    # PARALLEL, because this is I/O bound and was not. 418 sequential calls,
+    # each a network round trip plus a 0.35s sleep, is most of an hour spent
+    # waiting. requests releases the GIL while a socket is open, so threads are
+    # the right tool -- the work is latency, not computation.
+    #
+    # Six workers against OpenAlex's polite pool, which asks for a mailto and
+    # tolerates this comfortably. The per-request sleep stays: it now spaces
+    # each WORKER's calls rather than the whole run, so aggregate load is
+    # bounded by workers/delay instead of 1/delay.
+    lock = threading.Lock()
+    prog = Progress(len(chunks), "graph-cites", every_s=45)
+
+    def fetch(chunk):
         try:
             r = requests.get(
                 "https://api.openalex.org/works",
@@ -276,19 +292,32 @@ def build_cites(con, args):
                         "per-page": 50, "mailto": MAILTO},
                 headers=UA, timeout=60)
             if not r.ok:
-                continue
+                return
+            got = []
             for w in (r.json().get("results") or []):
                 doi = (w.get("doi") or "").replace("https://doi.org/", "").lower()
                 uid = by_doi.get(doi)
                 if not uid:
                     continue
-                oa_to_uid[w.get("id")] = uid
-                refs[uid] = w.get("referenced_works") or []
+                got.append((w.get("id"), uid, w.get("referenced_works") or []))
+            # Both dicts mutated under one lock. CPython dict writes are
+            # individually atomic, but "check then set" across two dicts is not,
+            # and a torn pairing here would attribute one paper's references to
+            # another -- silently, and only visible much later as a wrong edge.
+            with lock:
+                for oid, uid, rw in got:
+                    oa_to_uid[oid] = uid
+                    refs[uid] = rw
         except Exception as e:                       # noqa: BLE001
-            log(f"[graph] batch {i//50} failed: {type(e).__name__}")
-        if (i // 50) % 20 == 0:
-            log(f"[graph] {min(i+50,len(todo)):,}/{len(todo):,} DOIs resolved")
-        time.sleep(0.35)
+            log(f"[graph] a batch failed: {type(e).__name__}")
+        finally:
+            time.sleep(0.35)
+            with lock:
+                prog.tick()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+        list(ex.map(fetch, chunks))
+    prog.done()
 
     con.executescript(_CITES_SCHEMA)
     con.executescript(_REFS_SCHEMA)

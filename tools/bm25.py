@@ -58,16 +58,21 @@ Sorted terms so a reader binary-searches without building a hash map over
 
 import argparse
 import collections
+import concurrent.futures
 import glob
 import io
 import json
 import math
+import os
 import pathlib
 import re
 import struct
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+from progress import Progress   # noqa: E402
 
 DOCS = pathlib.Path("docs")
 FT = DOCS / "ft"
@@ -115,6 +120,24 @@ def tokenise(text):
             if len(t) > 2 and t not in STOP]
 
 
+def _parse_one(path):
+    """One document -> (uid, token count, term counts), or None.
+
+    Module level because a ProcessPoolExecutor target has to be picklable: a
+    closure or a nested function raises at submit time, not at import, so this
+    is the kind of thing that looks fine until it runs.
+    """
+    try:
+        d = json.load(io.open(path, encoding='utf-8'))
+    except Exception:                                            # noqa: BLE001
+        return None
+    uid = d.get("uid")
+    toks = tokenise(' '.join(p.get('t', '') for p in d.get('p', [])))
+    if not uid or not toks:
+        return None
+    return uid, len(toks), collections.Counter(toks)
+
+
 # ------------------------------------------------------------------- build
 def build(args):
     files = sorted(glob.glob(str(FT / "*.json")))
@@ -127,23 +150,34 @@ def build(args):
     uids, doclen = [], []
     tf_by_doc = []
     df = collections.Counter()
-    for i, f in enumerate(files):
-        try:
-            d = json.load(io.open(f, encoding='utf-8'))
-        except Exception as e:                                   # noqa: BLE001
-            log(f"[bm25] skipping {f}: {e}")
-            continue
-        uid = d.get("uid")
-        toks = tokenise(' '.join(p.get('t', '') for p in d.get('p', [])))
-        if not uid or not toks:
-            continue
-        counts = collections.Counter(toks)
-        uids.append(uid)
-        doclen.append(len(toks))
-        tf_by_doc.append(counts)
-        df.update(counts.keys())
-        if i and i % 500 == 0:
-            log(f"[bm25]   {i:,}/{len(files):,} -- {len(df):,} terms so far")
+
+    # PROCESSES, not threads. Tokenising 16M tokens is CPU work and the GIL
+    # makes threads useless for it -- unlike graph.py's OpenAlex fetch, which
+    # is latency and parallelises with threads. Matching the tool to the
+    # constraint matters more than parallelising everything.
+    #
+    # This runs on the DEPLOY path: prepare_deploy rebuilds bm25.bin every
+    # time, so the whole corpus is re-tokenised on every deploy. That is the
+    # reason it is worth parallelising and the reason it must stay correct --
+    # a wrong index ships silently.
+    #
+    # Order is preserved via executor.map, because doc ids are positional:
+    # postings reference a row number, and shuffling the documents would point
+    # every posting at the wrong paper.
+    workers = max(1, min(8, (os.cpu_count() or 2)))
+    prog = Progress(len(files), "bm25-parse", every_s=20)
+    log(f"[bm25] parsing with {workers} worker process(es)")
+    with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as ex:
+        for res in ex.map(_parse_one, files, chunksize=32):
+            prog.tick()
+            if res is None:
+                continue
+            uid, toks_len, counts = res
+            uids.append(uid)
+            doclen.append(toks_len)
+            tf_by_doc.append(counts)
+            df.update(counts.keys())
+    prog.done()
 
     ndocs = len(uids)
     if not ndocs:
