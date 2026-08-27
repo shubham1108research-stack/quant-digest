@@ -1,0 +1,49 @@
+name: Export URLs
+
+# One url per live paper, as a downloadable artifact. Runs against the LIVE
+# state.db in R2 -- a working copy is whatever that machine last pulled, which
+# for this repo has meant half the archive.
+#
+# Read-only: it pulls state.db and never pushes, so it does not need the
+# state-db lock that serialises the writing workflows.
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Filter (blank = all): ssrn, nber, arxiv, zenodo ..."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Export
+        run: |
+          python tools/export_urls.py --source "${{ inputs.source }}" --format txt
+          python tools/export_urls.py --source "${{ inputs.source }}" --format csv
+          python tools/export_urls.py --source "${{ inputs.source }}" --format json
+          ls -la export/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-urls
+          path: export/urls*
