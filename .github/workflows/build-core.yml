@@ -1,0 +1,82 @@
+name: Build core list
+
+# The core-paper candidate list, assembled against the LIVE archive.
+#
+# It has to run here rather than on a laptop for two reasons: the working copy
+# of state.db is whatever that machine last pulled (half the archive, and zero
+# paper_refs), and route C -- the citation snowball -- reads the 339,411
+# reference rows tools/graph.py cites wrote to the live database.
+#
+# The harvested candidate sets are regenerated in-job because export/ is
+# gitignored: it holds third-party content and this repository is public.
+# SignalDoc is one request and QuantSeeker is a few minutes; Papers With
+# Backtest is ~3,800 polite page fetches, so it is opt-in via `with_pwb` and
+# the result is kept as an artifact to be downloaded rather than committed.
+#
+# READ-ONLY. Pulls state.db, never pushes, so unlike the writing workflows it
+# does not take the state-db lock.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "How many papers to select"
+        required: false
+        default: "2000"
+      with_pwb:
+        description: "Also harvest Papers With Backtest (~65 min)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Fetch state.db
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python tools/dbsync.py pull
+
+      - name: Harvest the cheap sources
+        run: |
+          python tools/core_sources.py signaldoc
+          python tools/core_sources.py quantseeker
+
+      - name: Harvest Papers With Backtest
+        if: ${{ inputs.with_pwb == true }}
+        run: python tools/core_sources.py pwb
+
+      - name: Recover the watched-author candidates
+        # Written by s2_harvest authors, which keeps them only as an artifact.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 32970831654 -n s2-candidates -D export/ || \
+            echo "watched-author artifact unavailable (expires ~2026-09-25)"
+
+      - name: Build the list
+        run: python tools/build_core.py --target "${{ inputs.target }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-list
+          path: |
+            export/core_candidates.csv
+            export/core_candidates.json
+            export/core_signaldoc.csv
+            export/core_quantseeker.json
+            export/core_pwb.json
