@@ -104,6 +104,10 @@ def main():
     ap.add_argument("--target", type=int, default=2000)
     ap.add_argument("--min-indegree", type=int, default=2,
                     help="route C: how many seeds must cite a paper")
+    ap.add_argument("--resolve-gap", type=int, default=3000,
+                    help="resolve this many unheld high-in-degree references "
+                         "to titles via OpenAlex (needs OPENALEX_API_KEY); "
+                         "0 disables")
     args = ap.parse_args()
 
     con = store.connect()
@@ -162,54 +166,94 @@ def main():
         f"  (+{len(cand)-n0:,} new)")
 
     # --------------------------------------- C: snowball over reference lists
-    # The seeds are the papers we already trust: the curated canon and NBER's
+    # The seeds are the papers we already trust -- the curated canon and NBER's
     # own editorial selection. What THEY cite, weighted by how many of them
     # agree, is the canon by the field's judgement rather than by taste.
-    seeds = {u for u, c in cand.items()
-             if c["routes"] & {"canon", "nber"}}
-    indeg = collections.Counter()
+    #
+    # TWO TABLES, BECAUSE THEY ANSWER DIFFERENT QUESTIONS. graph.py writes
+    # both: `cites` holds edges where BOTH ends are papers we hold, already
+    # resolved to uids; `paper_refs` holds every reference including the ones
+    # we do not hold, keyed by OpenAlex work id.
+    #
+    # The first version joined paper_refs back to uids through a
+    # `meta["openalex_id"]` that NOTHING IN THIS REPO EVER WRITES, so the map
+    # was empty and route C returned 0 while reporting 17,539 unheld
+    # references -- the number was real, the zero was a bug.
+    seeds = {u for u, c in cand.items() if c["routes"] & {"canon", "nber"}}
+    log(f"[core] route C seeds      : {len(seeds):>6,} (canon + NBER)")
+
+    held_deg = collections.Counter()
+    unheld_deg = collections.Counter()
+    seed_list = list(seeds)
     try:
-        qmarks = ",".join("?" * min(len(seeds), 900))
-        seed_list = list(seeds)
+        for i in range(0, len(seed_list), 900):
+            chunk = seed_list[i:i + 900]
+            q = ",".join("?" * len(chunk))
+            for dst, n in con.execute(
+                    f"SELECT dst, COUNT(*) FROM cites WHERE src IN ({q}) "
+                    f"GROUP BY dst", chunk):
+                held_deg[dst] += n
+    except Exception as e:                                  # noqa: BLE001
+        log(f"[core]   cites unavailable ({type(e).__name__})")
+    try:
         for i in range(0, len(seed_list), 900):
             chunk = seed_list[i:i + 900]
             q = ",".join("?" * len(chunk))
             for (ref,) in con.execute(
                     f"SELECT ref FROM paper_refs WHERE src IN ({q})", chunk):
-                indeg[ref] += 1
+                unheld_deg[ref] += 1
     except Exception as e:                                  # noqa: BLE001
-        log(f"[core] route C unavailable ({type(e).__name__}) -- "
-            f"run tools/graph.py cites first")
-    if not indeg:
-        log("[core] route C snowball  :      0  -- paper_refs is empty here; "
-            "run tools/graph.py cites (339,411 rows exist on the live db)")
-    if indeg:
-        # paper_refs stores OpenAlex work ids; map back to uids where we hold
-        # the paper. A ref we do not hold is a real signal but not a candidate
-        # we can describe, so it is counted and reported, not invented.
-        oa_map = {}
-        try:
-            for uid, _t, _u, meta in con.execute(
-                    "SELECT uid, title, url, meta FROM items"):
-                m = json.loads(meta or "{}")
-                oid = m.get("openalex_id") or m.get("oa_id")
-                if oid:
-                    oa_map[oid] = uid
-        except Exception:                                   # noqa: BLE001
-            pass
-        hits = unheld = 0
-        for ref, n in indeg.items():
-            if n < args.min_indegree:
-                continue
-            uid = oa_map.get(ref)
-            if uid and uid in items:
-                add(uid, "snowball", seed_indegree=n)
-                hits += 1
-            else:
-                unheld += 1
-        log(f"[core] route C snowball   : {hits:>6,}  "
-            f"({unheld:,} highly-cited refs we do NOT hold -- the gap worth "
-            f"filling next)")
+        log(f"[core]   paper_refs unavailable ({type(e).__name__})")
+
+    hits = 0
+    for uid, n in held_deg.items():
+        if n >= args.min_indegree and uid in items:
+            add(uid, "snowball", seed_indegree=n)
+            hits += 1
+    gap = [(r, n) for r, n in unheld_deg.items() if n >= args.min_indegree]
+    gap.sort(key=lambda x: -x[1])
+    log(f"[core] route C snowball   : {hits:>6,} held; {len(gap):,} cited by "
+        f">={args.min_indegree} seeds that we do NOT hold")
+
+    # THE UNHELD SET IS THE POINT. A paper many core papers cite, that the
+    # archive does not contain, is exactly the hole a core list exists to
+    # find. They arrive as bare OpenAlex ids, so resolve the top ones to real
+    # titles -- 50 per request, which is why this needs the key.
+    if gap and args.resolve_gap:
+        import requests                                     # noqa: PLC0415
+        import oa as oa_auth                                # noqa: PLC0415
+        want = gap[:args.resolve_gap]
+        log(f"[core]   resolving the top {len(want):,} unheld references "
+            f"({(len(want)+49)//50} requests)")
+        ids = [r for r, _ in want]
+        deg = dict(want)
+        got = 0
+        for i in range(0, len(ids), 50):
+            batch = [x.rsplit("/", 1)[-1] for x in ids[i:i + 50]]
+            try:
+                rr = requests.get(
+                    "https://api.openalex.org/works",
+                    headers=oa_auth.headers({"User-Agent": "quant-digest/1.0"}),
+                    params={"filter": "openalex_id:" + "|".join(batch),
+                            "select": "id,doi,title,publication_year,"
+                                      "cited_by_count",
+                            "per-page": 50},
+                    timeout=60)
+                if not rr.ok:
+                    continue
+                for w in (rr.json().get("results") or []):
+                    doi = (w.get("doi") or "").replace("https://doi.org/", "")
+                    uid = f"doi:{doi.lower()}" if doi else f"oa:{w.get('id','').rsplit('/',1)[-1]}"
+                    add(uid, "snowball",
+                        seed_indegree=deg.get(w.get("id"), 0),
+                        ext_title=w.get("title"),
+                        ext_year=w.get("publication_year"),
+                        ext_cites=w.get("cited_by_count"))
+                    got += 1
+            except Exception as e:                          # noqa: BLE001
+                log(f"[core]   gap batch failed: {type(e).__name__}: "
+                    f"{str(e)[:90]}")
+        log(f"[core]   resolved {got:,} unheld references into candidates")
 
     # ----------------------------------------------- F/G/D: harvested sources
     pwb = {r["uid"]: r for r in _load("core_pwb.json") if r.get("uid")}

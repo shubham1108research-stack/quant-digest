@@ -56,6 +56,21 @@ jobs:
           python tools/core_sources.py signaldoc
           python tools/core_sources.py quantseeker
 
+      - name: Reuse the previous harvest
+        # ~3,800 polite page fetches. Re-running it every build is rude to a
+        # site that has given us everything we asked for, and core_sources.py
+        # resumes from the file, so a recovered artifact means only genuinely
+        # new slugs get fetched.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+        run: |
+          PREV=$(gh run list --workflow=build-core.yml --status=success                    --limit 5 --json databaseId --jq '.[].databaseId' | head -1)
+          if [ -n "$PREV" ]; then
+            gh run download "$PREV" -n core-list -D export/ &&               echo "recovered core_pwb.json from run $PREV" || true
+          fi
+          ls -la export/ 2>/dev/null || true
+
       - name: Harvest Papers With Backtest
         if: ${{ inputs.with_pwb == true }}
         run: python tools/core_sources.py pwb
