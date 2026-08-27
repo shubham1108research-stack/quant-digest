@@ -604,7 +604,13 @@ def cmd_discover(args):
         log(f"[harvest]    {k:<16} {v:,}")
     log(f"[harvest] {len(fresh):,} papers NOT already held -> {out}")
     for f in fresh[:8]:
-        log(f"[harvest]    {f['year']} c={f['cites']:<5} {f['title'][:52]}")
+        # citationCount and year are both nullable in the S2 response. The sort
+        # two lines up already defends with `or 0`; this line did not, so the
+        # first paper without a citation count would raise TypeError AFTER the
+        # JSON was written -- the file survives, the job exits non-zero, and the
+        # run looks like it failed when it had actually finished.
+        log(f"[harvest]    {f.get('year') or '????'} "
+            f"c={f.get('cites') or 0:<5} {(f.get('title') or '')[:52]}")
     log("[harvest] candidates only -- nothing ingested. Review before adding.")
     return 0
 
