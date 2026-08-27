@@ -43,7 +43,7 @@ import requests
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import store
-import oa   # noqa: E402
+import oa as oa_auth   # noqa: E402
 from progress import Progress   # noqa: E402
 
 # The graph lives in its OWN database, not state.db. It is derived from the
@@ -282,13 +282,14 @@ def build_cites(con, args):
     # each WORKER's calls rather than the whole run, so aggregate load is
     # bounded by workers/delay instead of 1/delay.
     lock = threading.Lock()
+    errs: dict[str, str] = {}
     prog = Progress(len(chunks), "graph-cites", every_s=45)
 
     def fetch(chunk):
         try:
             r = requests.get(
                 "https://api.openalex.org/works",
-                headers=oa.headers(UA),
+                headers=oa_auth.headers(UA),
                 params={"filter": "doi:" + "|".join(chunk),
                         "select": "id,doi,referenced_works",
                         "per-page": 50, "mailto": MAILTO},
@@ -311,7 +312,13 @@ def build_cites(con, args):
                     oa_to_uid[oid] = uid
                     refs[uid] = rw
         except Exception as e:                       # noqa: BLE001
-            log(f"[graph] a batch failed: {type(e).__name__}")
+            # The MESSAGE, not just the type. "a batch failed: NameError" is
+            # what a whole run reported while every batch died on a shadowed
+            # module name -- the job exited 0 with zero edges and the one word
+            # that would have identified it was thrown away here.
+            with lock:
+                errs[type(e).__name__] = str(e)[:160]
+            log(f"[graph] a batch failed: {type(e).__name__}: {str(e)[:120]}")
         finally:
             time.sleep(0.35)
             with lock:

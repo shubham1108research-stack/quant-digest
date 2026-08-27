@@ -54,7 +54,7 @@ import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 import store
-import oa   # noqa: E402
+import oa as oa_auth   # noqa: E402
 from progress import Progress  # noqa: E402
 
 OUT = pathlib.Path("pdfs")
@@ -209,7 +209,7 @@ def _get(u, headers_extra=None, **kw):
     if "openalex.org" in u:
         # OpenAlex meters by the dollar since Feb 2026 and the keyless
         # allowance is 1,000 requests/day -- this stage alone spends 346.
-        h = oa.headers(h)
+        h = oa_auth.headers(h)
     return requests.get(u, headers=h, timeout=45, **kw)
 
 

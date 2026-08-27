@@ -28,7 +28,7 @@ import requests
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import store   # noqa: E402
-import oa   # noqa: E402
+import oa as oa_auth   # noqa: E402
 
 MAILTO = "upadhyays1108@gmail.com"
 UA = {"User-Agent": f"quant-digest/1.0 (mailto:{MAILTO})"}
@@ -52,7 +52,7 @@ def deinvert(inv):
 
 def from_openalex(doi):
     r = requests.get(f"https://api.openalex.org/works/doi:{doi}",
-                     headers=oa.headers(UA), params={"mailto": MAILTO}, timeout=30)
+                     headers=oa_auth.headers(UA), params={"mailto": MAILTO}, timeout=30)
     if not r.ok:
         return None
     w = r.json()
