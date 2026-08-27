@@ -15,6 +15,7 @@ import feedparser
 import requests
 
 import config
+import oa   # noqa: E402
 
 UA = {"User-Agent": "quant-digest/1.0 (personal research tool)"}
 MAILTO = None  # set from env in main.py; appended to polite-pool APIs
@@ -598,11 +599,19 @@ def _openalex_get(url: str, params: dict, log, retries: int | None = None
         params = {**params, "mailto": MAILTO}
     last = None
     for i in range(retries if retries is not None else config.OPENALEX_MAX_RETRIES):
-        r = requests.get(url, params=params, headers=UA, timeout=30)
+        r = requests.get(url, params=params, headers=oa.headers(UA), timeout=30)
         last = r
         if r.status_code != 429:
             r.raise_for_status()
             return r
+        # A THIRD kind of 429, added Feb 2026: an exhausted dollar budget.
+        # Retrying that is pointless -- the budget resets at midnight UTC, not
+        # in three seconds -- and it is the one a keyless caller will hit.
+        if "insufficient budget" in r.text.lower():
+            log(f"[openalex] daily budget exhausted, not retrying "
+                f"({'key set' if oa.key() else 'NO KEY -- $0.10/day'}): "
+                f"{r.text[:120]}")
+            r.raise_for_status()
         if "upgrade required" in r.text.lower() or "paid plan" in r.text.lower():
             log(f"[openalex] paywalled request, not retrying: {r.text[:160]}")
             r.raise_for_status()          # raises -- caller logs & skips source

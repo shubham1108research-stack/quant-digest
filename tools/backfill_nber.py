@@ -29,6 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config    # noqa: E402
 import sources   # noqa: E402
 import store     # noqa: E402
+import oa   # noqa: E402
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    "docs", "nber.json")
@@ -71,7 +72,7 @@ def _oa_get(params: dict, log):
     for attempt in range(5):
         try:
             r = requests.get("https://api.openalex.org/works", params=params,
-                             headers=_UA, timeout=45)
+                             headers=oa.headers(_UA), timeout=45)
             if r.status_code == 429:
                 time.sleep(2 * (attempt + 1) + 1)
                 continue

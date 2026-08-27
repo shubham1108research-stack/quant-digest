@@ -35,6 +35,7 @@ import requests
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import store  # noqa: E402
+import oa   # noqa: E402
 
 MAILTO = "upadhyays1108@gmail.com"
 UA = {"User-Agent": f"quant-digest/1.0 (mailto:{MAILTO})"}
@@ -80,7 +81,7 @@ def via_openalex(title, authors, year):
     """Scan EVERY title-matching record for an open copy, not just the best
     match -- the best match is the journal version, which is the closed one."""
     try:
-        r = requests.get("https://api.openalex.org/works",
+        r = requests.get("https://api.openalex.org/works", headers=oa.headers(),
                          params={"filter": "title.search:" + title[:180],
                                  "select": "title,publication_year,authorships,"
                                            "locations,open_access,type",

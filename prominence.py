@@ -12,6 +12,7 @@ import time
 import requests
 
 import config
+import oa   # noqa: E402
 
 MAILTO = None  # set from main (mirrors sources.MAILTO)
 _UA = {"User-Agent": "quant-digest/1.0 (personal research tool)"}
@@ -38,7 +39,7 @@ def annotate(items: list[dict], log) -> list[dict]:
             params["mailto"] = MAILTO
         try:
             r = requests.get("https://api.openalex.org/authors",
-                             params=params, headers=_UA, timeout=60)
+                             params=params, headers=oa.headers(_UA), timeout=60)
             r.raise_for_status()
         except Exception as e:                     # noqa: BLE001
             log(f"[prominence] author batch failed: {type(e).__name__}: {e}")

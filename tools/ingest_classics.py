@@ -37,6 +37,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import canon   # noqa: E402
 import store   # noqa: E402
+import oa   # noqa: E402
 
 MAILTO = "upadhyays1108@gmail.com"
 UA = {"User-Agent": f"quant-digest/1.0 (mailto:{MAILTO})"}
@@ -118,7 +119,7 @@ def lookup(title, year):
         return None                # circuit open: OpenAlex is refusing this IP
     for attempt in range(2):       # bulk loop -- fail fast, never grind
         try:
-            r = requests.get("https://api.openalex.org/works",
+            r = requests.get("https://api.openalex.org/works", headers=oa.headers(),
                              params={"filter": "title.search:" + title[:180],
                                      "select": "id,doi,title,publication_year,"
                                                "authorships,abstract_inverted_index,"

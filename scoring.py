@@ -56,6 +56,7 @@ import requests
 
 import abstracts
 import config
+import oa   # noqa: E402
 import llm
 
 _OA_UA = {"User-Agent": "quant-digest/1.0 (personal research tool)"}
@@ -86,7 +87,7 @@ def _openalex_cites(items: list[dict], log=print) -> None:
         for attempt in range(4):
             try:
                 r = requests.get("https://api.openalex.org/works", params=params,
-                                 headers=_OA_UA, timeout=45)
+                                 headers=oa.headers(_OA_UA), timeout=45)
                 if r.status_code == 429:
                     time.sleep(2 * (attempt + 1) + 1)
                     continue

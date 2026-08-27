@@ -43,6 +43,7 @@ import requests
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 import store
+import oa   # noqa: E402
 from progress import Progress   # noqa: E402
 
 # The graph lives in its OWN database, not state.db. It is derived from the
@@ -287,6 +288,7 @@ def build_cites(con, args):
         try:
             r = requests.get(
                 "https://api.openalex.org/works",
+                headers=oa.headers(UA),
                 params={"filter": "doi:" + "|".join(chunk),
                         "select": "id,doi,referenced_works",
                         "per-page": 50, "mailto": MAILTO},

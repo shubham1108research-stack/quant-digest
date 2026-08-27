@@ -29,6 +29,7 @@ import time
 from collections import Counter
 
 import requests
+import oa   # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -49,7 +50,8 @@ def _get(url, params):
         params = {**params, "mailto": _MAILTO}
     for attempt in range(4):
         try:
-            r = requests.get(url, params=params, headers=_UA, timeout=45)
+            r = requests.get(url, params=params,
+                             headers=oa.headers(_UA), timeout=45)
             if r.status_code == 429:
                 time.sleep(3 * (attempt + 1))
                 continue
