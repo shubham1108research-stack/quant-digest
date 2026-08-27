@@ -81,12 +81,12 @@ def via_openalex(title, authors, year):
     """Scan EVERY title-matching record for an open copy, not just the best
     match -- the best match is the journal version, which is the closed one."""
     try:
-        r = requests.get("https://api.openalex.org/works", headers=oa.headers(),
+        r = requests.get("https://api.openalex.org/works", headers=oa.headers(UA),
                          params={"filter": "title.search:" + title[:180],
                                  "select": "title,publication_year,authorships,"
                                            "locations,open_access,type",
                                  "per-page": 25, "mailto": MAILTO},
-                         headers=UA, timeout=45)
+                          timeout=45)
         if not r.ok:
             return None
         want = surnames(authors)

@@ -119,13 +119,13 @@ def lookup(title, year):
         return None                # circuit open: OpenAlex is refusing this IP
     for attempt in range(2):       # bulk loop -- fail fast, never grind
         try:
-            r = requests.get("https://api.openalex.org/works", headers=oa.headers(),
+            r = requests.get("https://api.openalex.org/works", headers=oa.headers(UA),
                              params={"filter": "title.search:" + title[:180],
                                      "select": "id,doi,title,publication_year,"
                                                "authorships,abstract_inverted_index,"
                                                "primary_location,cited_by_count",
                                      "per-page": 5, "mailto": MAILTO},
-                             headers=UA, timeout=45)
+                              timeout=45)
         except Exception as e:                    # noqa: BLE001
             log(f"   ! network {type(e).__name__}; retrying")
             time.sleep(5 * (attempt + 1))

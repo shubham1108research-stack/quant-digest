@@ -292,7 +292,7 @@ def build_cites(con, args):
                 params={"filter": "doi:" + "|".join(chunk),
                         "select": "id,doi,referenced_works",
                         "per-page": 50, "mailto": MAILTO},
-                headers=UA, timeout=60)
+                timeout=60)
             if not r.ok:
                 return
             got = []
