@@ -85,3 +85,18 @@ pdfs/manual/
 # deploy time like vec.bin and edges.bin.
 docs/bm25.bin
 docs/bm25.json
+
+# Harvested candidate sets (tools/core_sources.py, author_sites.py,
+# s2_harvest.py, export_urls.py). Two reasons, both sufficient:
+#
+#   1. This is THIRD-PARTY CONTENT in a PUBLIC repo -- Papers With Backtest's
+#      strategy metrics, a Substack's post bodies, Chen-Zimmermann's signal
+#      documentation. Harvesting it for our own review is one thing;
+#      republishing it from a public repository is another.
+#   2. It is regenerable by re-running the tool, so committing it adds blobs
+#      for no benefit -- the same argument that keeps docs/vec.bin and
+#      docs/ft/ out of git.
+#
+# `git add -A` would otherwise sweep the whole directory in, which is exactly
+# how principal_portfolios.pdf ended up sitting untracked in the repo root.
+export/
