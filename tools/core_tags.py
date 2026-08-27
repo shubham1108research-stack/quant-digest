@@ -65,13 +65,13 @@ TAXONOMY: dict[str, list[str]] = {
         "long-term reversal", "carry trade", "roll yield", "convenience yield",
         "quality factor", "profitability factor", "investment factor",
         "size effect", "low beta", "betting against beta",
-        "idiosyncratic volatility", "seasonality returns",
+        "idiosyncratic volatility", "seasonality",
         "post-earnings announcement drift", "accruals anomaly",
         "analyst revisions", "short interest", "style premia",
         "defensive equity",
     ],
     "B_asset_classes": [
-        "equity returns", "interest rates", "credit spreads",
+        "equity premium", "interest rates", "credit spreads",
         "foreign exchange", "commodity futures", "gold", "crude oil",
         "natural gas markets", "agricultural commodities", "cryptocurrency",
         "decentralized finance", "stablecoins", "inflation-linked bonds",
@@ -122,19 +122,19 @@ TAXONOMY: dict[str, list[str]] = {
         "systemic risk", "market turmoil", "crisis alpha",
     ],
     "G_machine_learning": [
-        "machine learning finance", "deep learning finance",
-        "neural networks forecasting", "transformer models",
-        "large language models finance", "reinforcement learning trading",
-        "random forest prediction", "gradient boosting",
+        "machine learning", "deep learning",
+        "neural networks", "transformer models",
+        "large language models", "reinforcement learning",
+        "random forest", "gradient boosting",
         "LASSO regression", "ridge regression", "elastic net",
-        "regularization high-dimensional", "dimension reduction",
+        "regularization", "dimension reduction",
         "principal component analysis", "autoencoder",
-        "graph neural networks", "network analysis finance",
-        "natural language processing finance", "textual analysis",
-        "sentiment analysis returns", "feature selection",
-        "model interpretability", "cross-validation time series",
+        "graph neural networks", "financial networks",
+        "natural language processing", "textual analysis",
+        "sentiment analysis", "feature selection",
+        "model interpretability", "cross-validation",
         "walk-forward analysis", "synthetic data generation",
-        "generative models finance", "transfer learning",
+        "generative adversarial network", "transfer learning",
     ],
     "H_econometrics": [
         "financial econometrics", "return forecasting", "GARCH",
@@ -158,7 +158,7 @@ TAXONOMY: dict[str, list[str]] = {
     ],
     "J_research_integrity": [
         "backtest overfitting", "multiple testing", "p-hacking",
-        "data snooping", "replication crisis finance", "factor zoo",
+        "data snooping", "replication crisis", "factor zoo",
         "out-of-sample performance", "publication bias",
         "false discovery rate", "deflated Sharpe ratio",
     ],
@@ -182,32 +182,43 @@ TAXONOMY: dict[str, list[str]] = {
         "asset allocation", "strategic asset allocation",
         "tactical asset allocation", "global tactical asset allocation",
         "dynamic asset allocation", "multi-asset portfolio", "market timing",
-        "valuation based market timing", "cyclically adjusted price earnings",
-        "sixty forty portfolio", "stock bond correlation",
+        "return predictability", "cyclically adjusted price earnings",
+        "balanced portfolio", "stock bond correlation",
         "risk-on risk-off", "glide path", "liability-driven investment",
         "endowment model", "overlay strategy", "long-run asset returns",
         "time diversification", "sequence of returns risk",
         "rebalancing premium", "asset class momentum",
-        "cross-asset momentum", "cross-asset carry",
+        "cross-asset momentum", "currency carry",
         "value and momentum everywhere", "lead-lag effect",
         "volatility spillover",
     ],
     "N_risk_premia": [
-        "risk premia", "alternative risk premia", "risk premium harvesting",
-        "risk premia timing", "equity risk premium", "bond risk premium",
+        "risk premia", "alternative risk premia", "risk premium",
+        "time-varying risk premia", "equity risk premium", "bond risk premium",
         "credit risk premium", "currency risk premium",
         "commodity risk premium", "illiquidity premium",
         "volatility risk premium", "smart beta", "alternative beta",
         "factor investing", "multifactor portfolio", "factor momentum",
         "factor crowding", "factor rotation", "alpha decay",
         "strategy decay", "hedge fund replication",
-        "managed futures replication",
+        "managed futures",
     ],
 }
 
 
 def log(m):
     print(m, flush=True)
+
+
+def _total(r):
+    """The probed result count as an int, whatever type it arrived as."""
+    v = r.get("total")
+    if v is None or v == "":
+        return None
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return None
 
 
 def _headers():
@@ -218,17 +229,33 @@ def _headers():
     return h
 
 
-def probe(term):
-    """(total results, top-5 titles) for one term, or (None, []) on failure."""
-    try:
-        r = requests.get(f"{API}/paper/search/bulk", headers=_headers(), params={
-            "query": f'"{term}"' if " " in term else term,
-            "fields": "title,year,citationCount",
-            "fieldsOfStudy": "Economics,Business",
-            "sort": "citationCount:desc"}, timeout=40)
-    except Exception:                                      # noqa: BLE001
-        return None, []
-    if r.status_code != 200:
+def probe(term, tries=4):
+    """(total results, top-5 titles) for one term, or (None, []) on failure.
+
+    RETRIES, because the first validation pass lost 25 terms in contiguous runs
+    -- seven straight in derivatives, seven in machine learning -- and those
+    included "market microstructure" and "option pricing", which are obviously
+    not rare. A run of adjacent failures is rate limiting, not a verdict on the
+    vocabulary, and recording it as `total=NULL` would have quietly dropped
+    real topics from the sweep.
+    """
+    r = None
+    for attempt in range(tries):
+        try:
+            r = requests.get(f"{API}/paper/search/bulk", headers=_headers(),
+                             params={
+                "query": f'"{term}"' if " " in term else term,
+                "fields": "title,year,citationCount",
+                "fieldsOfStudy": "Economics,Business",
+                "sort": "citationCount:desc"}, timeout=40)
+        except Exception:                                  # noqa: BLE001
+            r = None
+        if r is not None and r.status_code == 200:
+            break
+        if r is not None and r.status_code not in (429, 500, 502, 503, 504):
+            return None, []
+        time.sleep(PAUSE * (2 ** attempt))
+    if r is None or r.status_code != 200:
         return None, []
     j = r.json() or {}
     data = (j.get("data") or [])[:5]
@@ -244,38 +271,77 @@ def main():
     ap.add_argument("--validate", action="store_true",
                     help="probe every term on S2 and record what came back")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--only-missing", action="store_true",
+                    help="keep rows that already validated; re-probe the rest")
     ap.add_argument("--out", default=str(OUT))
     args = ap.parse_args()
 
     rows = [{"family": fam, "term": t}
             for fam, terms in TAXONOMY.items() for t in terms]
+    if args.only_missing and pathlib.Path(args.out).exists():
+        # Carry forward what already validated cleanly; re-probe only blanks
+        # and terms whose text changed. A full re-run costs 26 minutes to
+        # re-learn what the CSV already knows.
+        prev = {r["term"]: r for r in csv.DictReader(
+            io.open(args.out, encoding="utf-8"))}
+        keep, todo = [], []
+        for r in rows:
+            old_row = prev.get(r["term"])
+            if old_row and (old_row.get("total") or "") != "":
+                r.update({k: old_row.get(k, "")
+                          for k in ("total", "keep", "pages", "top5")})
+                keep.append(r)
+            else:
+                todo.append(r)
+        log(f"[tags] {len(keep)} already validated; re-probing {len(todo)}")
+        rows = keep + todo
+        rows_to_probe = todo
+    else:
+        rows_to_probe = rows
     if args.limit:
         rows = rows[:args.limit]
+        rows_to_probe = [r for r in rows_to_probe if r in rows]
     log(f"[tags] {len(rows)} terms across {len(TAXONOMY)} families")
 
     if args.validate:
         log(f"[tags] validating at {PAUSE}s/request "
             f"({'key set' if os.environ.get('S2_API_KEY') else 'NO KEY -- slow'})")
-        prog = Progress(len(rows), "tags", every_s=30)
-        for r in rows:
+        prog = Progress(len(rows_to_probe), "tags", every_s=30)
+        for r in rows_to_probe:
             total, top = probe(r["term"])
             r["total"] = "" if total is None else total
             r["top5"] = " ;; ".join(top)
-            r["keep"] = "" if total is None else int(total >= MIN_RESULTS)
+            # A thin term is not a useless one -- it is a CHEAP one. "deflated
+            # Sharpe ratio" returns 10 results and one of them is the Lopez de
+            # Prado paper the research-integrity family exists to find; "crisis
+            # alpha" returns 17 and is a core CTA concept. One request collects
+            # all of them. So the count decides how many PAGES to spend, not
+            # whether to ask at all, and only a term with zero results is cut.
+            r["keep"] = "" if total is None else int(total > 0)
+            r["pages"] = "" if total is None else (
+                1 if total < 100 else (3 if total < 1000 else 5))
             prog.tick()
             time.sleep(PAUSE)
         prog.done()
-        kept = sum(1 for r in rows if r.get("keep") == 1)
-        failed = sum(1 for r in rows if r.get("total") == "")
-        log(f"[tags] {kept}/{len(rows)} terms cleared >= {MIN_RESULTS} results; "
-            f"{len(rows)-kept-failed} too thin; {failed} probe failures")
-        thin = [r for r in rows if r.get("keep") == 0]
-        for r in sorted(thin, key=lambda x: x["total"])[:15]:
-            log(f"[tags]   thin  {r['total']:>5}  {r['family']:<24} {r['term']}")
+        # Carried-forward rows come back from the CSV as STRINGS, freshly
+        # probed ones are ints, so `keep == 1` counted only the fresh ones and
+        # reported 40/299 cleared when the file actually held 283. Normalise
+        # before counting rather than trusting either type.
+        kept = sum(1 for r in rows if _total(r) is not None and _total(r) >= MIN_RESULTS)
+        thin = [r for r in rows if _total(r) is not None and 0 < _total(r) < MIN_RESULTS]
+        dead = [r for r in rows if _total(r) == 0]
+        failed = sum(1 for r in rows if _total(r) is None)
+        log(f"[tags] {kept}/{len(rows)} deep (>= {MIN_RESULTS}); {len(thin)} thin "
+            f"(1 page each); {len(dead)} dead; {failed} probe failures")
+        for r in sorted(thin, key=lambda x: _total(x)):
+            log(f"[tags]   thin  {_total(r):>5}  {r['family']:<24} {r['term']}")
+        for r in dead:
+            log(f"[tags]   DEAD  {'0':>5}  {r['family']:<24} {r['term']}")
 
     dest = pathlib.Path(args.out)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    cols = ["family", "term"] + (["total", "keep", "top5"] if args.validate else [])
+    cols = ["family", "term"] + (
+        ["total", "keep", "pages", "top5"] if args.validate else [])
     with io.open(dest, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=cols)
         w.writeheader()
