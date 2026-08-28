@@ -160,7 +160,32 @@ def main():
                     help="resolve this many unheld high-in-degree references "
                          "to titles via OpenAlex (needs OPENALEX_API_KEY); "
                          "0 disables")
+    ap.add_argument("--from-pool", default="",
+                    help="select from an existing compiled+cleaned pool CSV "
+                         "(clean_core.py's output) instead of re-assembling "
+                         "the routes. The cleaning verdicts in that file are "
+                         "the point: re-running the routes would resurrect "
+                         "every removed stray.")
     args = ap.parse_args()
+
+    if args.from_pool:
+        pool = _load_pool(args.from_pool)
+        if not pool:
+            log(f"[core] pool {args.from_pool} empty or unreadable")
+            return 2
+        log(f"[core] pool: {len(pool):,} cleaned candidates "
+            f"from {args.from_pool}")
+        if args.target == 0:
+            # COMPILE mode over the cleaned pool: rank, do not reduce. The
+            # whole pool IS the deliverable; selection stays a later decision.
+            picked = sorted(pool, key=lambda r: (-r["seed_indegree"],
+                                                 -r["score"]))
+            for i, r in enumerate(picked, 1):
+                r["rank"] = i
+        else:
+            picked = _select(pool, args.target, args.floor_frac)
+        _write(picked, pool, None)
+        return 0
 
     con = store.connect()
 
@@ -522,15 +547,51 @@ def main():
     # So centrality takes the majority of the list, and the quota becomes a
     # FLOOR that guarantees no sleeve is empty rather than a cap that
     # guarantees they are equal.
-    floor = max(1, int(args.target * args.floor_frac / len(SLEEVES)))
+    if args.target == 0:
+        # COMPILE mode: no reduction. Every deduplicated candidate goes out
+        # with its evidence columns, ranked but not cut -- selection is a
+        # decision, and --target 0 leaves it with the reviewer.
+        picked = rows
+        picked.sort(key=lambda r: (-r["seed_indegree"], -r["score"]))
+        for i, r in enumerate(picked, 1):
+            r["rank"] = i
+        _write(picked, cand, taxonomy)
+        return 0
+
+    picked = _select(rows, args.target, args.floor_frac)
+    _write(picked, cand, taxonomy)
+    return 0
+
+
+def _select(rows, target, floor_frac):
+    """Centrality first, coverage second. Shared by the full route-assembly
+    path and --from-pool, so there is exactly ONE notion of selection."""
+    rows = sorted(rows, key=lambda r: -r["score"])
+    floor = max(1, int(target * floor_frac / len(SLEEVES)))
     picked, seen, bysleeve = [], set(), collections.Counter()
 
-    central = [r for r in rows if r["seed_indegree"] > 0]
+    # GUARANTEES BEFORE SCORE. Two classes of candidate are core by
+    # construction, not by metric: the curated canon, and papers three or more
+    # independent routes converged on. The canon needs this because its ingest
+    # carried no citation metadata -- Fama-French 1993 sat in the pool at
+    # score 0.6 with an empty cites column and a title-hash uid the citation
+    # graph cannot attach to, so a score-only cut dropped the single most
+    # canonical paper on the list. Score cannot be the gatekeeper for the
+    # rows whose metadata is thinnest.
+    for r in rows:
+        if ("canon" in (r.get("found_by") or "")) or r.get("n_routes", 0) >= 3:
+            picked.append(r); seen.add(r["uid"]); bysleeve[r["sleeve"]] += 1
+    log(f"[core] guaranteed         : {len(picked):,} "
+        f"(curated canon + found by >=3 routes)")
+
+    central = [r for r in rows
+               if r["seed_indegree"] > 0 and r["uid"] not in seen]
     central.sort(key=lambda r: (-r["seed_indegree"], -r["score"]))
-    n_central = int(args.target * (1 - args.floor_frac))
-    for r in central[:n_central]:
+    n_central = int(target * (1 - floor_frac))
+    already = sum(1 for r in picked if r["seed_indegree"] > 0)
+    for r in central[:max(0, n_central - already)]:
         picked.append(r); seen.add(r["uid"]); bysleeve[r["sleeve"]] += 1
-    log(f"[core] centrality picks   : {len(picked):,} "
+    log(f"[core] + centrality picks : {len(picked):,} "
         f"(cited by >=1 seed; top by in-degree)")
 
     for sl in SLEEVES:                   # floor: nobody starves
@@ -544,14 +605,43 @@ def main():
     log(f"[core] after sleeve floor : {len(picked):,} (floor {floor}/sleeve)")
 
     for r in rows:                       # remainder by score
-        if len(picked) >= args.target:
+        if len(picked) >= target:
             break
         if r["uid"] not in seen:
             picked.append(r); seen.add(r["uid"])
     picked.sort(key=lambda r: (-r["seed_indegree"], -r["score"]))
     for i, r in enumerate(picked, 1):
         r["rank"] = i
+    return picked
 
+
+def _load_pool(path):
+    """Read clean_core.py's pool CSV back into selection-ready rows."""
+    p = pathlib.Path(path)
+    if not p.exists():
+        return []
+    rows = []
+    with io.open(p, encoding="utf-8", newline="") as fh:
+        for r in csv.DictReader(fh):
+            try:
+                r["score"] = float(r.get("score") or 0)
+                r["seed_indegree"] = int(float(r.get("seed_indegree") or 0))
+                r["n_routes"] = int(float(r.get("n_routes") or 0))
+                r["held"] = int(float(r.get("held") or 0))
+            except ValueError:
+                continue
+            if r.get("cites") not in (None, ""):
+                try:
+                    r["cites"] = int(float(r["cites"]))
+                except ValueError:
+                    r["cites"] = ""
+            r["sleeve"] = r.get("sleeve") or "other"
+            rows.append(r)
+    return rows
+
+
+def _write(picked, cand, taxonomy):
+    import collections
     OUT.mkdir(parents=True, exist_ok=True)
     cols = ["rank", "title", "year", "doi", "cites", "cites_per_year",
             "seed_indegree", "n_routes", "found_by", "sleeve", "family",
@@ -563,8 +653,49 @@ def main():
         w = csv.DictWriter(fh, fieldnames=cols)
         w.writeheader()
         w.writerows({k: r.get(k, "") for k in cols} for r in picked)
+    # Indented JSON is for reading a short list by eye. At pool scale it is
+    # a few hundred MB of whitespace, so it goes out compact instead.
     (OUT / "core_candidates.json").write_text(
-        json.dumps(picked, indent=1, ensure_ascii=False), encoding="utf-8")
+        json.dumps(picked, indent=None if len(picked) > 20000 else 1,
+                   ensure_ascii=False, separators=(",", ":")
+                   if len(picked) > 20000 else None),
+        encoding="utf-8")
+
+    # ------------------------------------------------ the human review file
+    # The CSV is for sorting; this is for READING. Grouped by sleeve with the
+    # evidence inline, so the review pass the plan requires -- spot-read the
+    # top 100 before anything downstream is built -- does not require a
+    # spreadsheet.
+    md = ["# Core candidates -- review copy",
+          f"\n{len(picked):,} papers selected from {len(cand):,} candidates. "
+          f"Columns carry the evidence; a paper found by several independent "
+          f"routes is core because they agree, not because anyone asserted it.",
+          ""]
+    bysl = {}
+    for r in picked:
+        bysl.setdefault(r["sleeve"], []).append(r)
+    for sl in sorted(bysl, key=lambda k: -len(bysl[k])):
+        grp = bysl[sl]
+        md.append(f"\n## {sl} ({len(grp)})\n")
+        for r in grp[:40]:
+            ev = []
+            if int(r.get("seed_indegree") or 0):
+                ev.append(f"cited by {r['seed_indegree']} seeds")
+            if r.get("cites"):
+                ev.append(f"{r['cites']:,} cites" if isinstance(r["cites"], int)
+                          else f"{r['cites']} cites")
+            if r.get("sharpe") not in ("", None):
+                ev.append(f"Sharpe {round(float(r['sharpe']), 2)}")
+            if r.get("replication"):
+                ev.append(f"replication {r['replication']}")
+            if int(r.get("n_routes") or 0) >= 2:
+                ev.append(f"{r['n_routes']} routes: {r['found_by']}")
+            md.append(f"- **{(r.get('title') or '(untitled)')[:110]}** "
+                      f"({r.get('year') or '?'}) -- {'; '.join(ev) or 'floor pick'}")
+        if len(grp) > 40:
+            md.append(f"- *... and {len(grp)-40} more (see the CSV)*")
+    (OUT / "core_review.md").write_text("\n".join(md), encoding="utf-8")
+    log(f"[core] review copy -> {OUT}/core_review.md")
 
     log(f"\n[core] {len(cand):,} candidates -> {len(picked):,} selected")
     log(f"[core] by sleeve: {dict(collections.Counter(r['sleeve'] for r in picked).most_common())}")
@@ -572,7 +703,6 @@ def main():
     multi = [r for r in picked if r["n_routes"] >= 3]
     log(f"[core] {len(multi):,} found by 3+ independent routes -- the strongest core")
     log(f"[core] written to {OUT}/core_candidates.csv -- nothing ingested")
-    return 0
 
 
 if __name__ == "__main__":

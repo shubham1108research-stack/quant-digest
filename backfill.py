@@ -323,14 +323,22 @@ def main() -> None:
     # Load-then-merge. monthly.promote_seminal writes a fourth key,
     # "modern", into this same file; rebuilding the dict from scratch deleted
     # it, and nothing can reconstruct those entries. 134 were at risk.
+    # `docs` must exist BEFORE the read: the first version assigned it five
+    # lines below, so the read raised UnboundLocalError on every run and the
+    # bare except turned that into existing = {} -- the merge this comment
+    # promises never happened.
+    docs = pathlib.Path("docs")
+    docs.mkdir(exist_ok=True)
     try:
         existing = json.loads((docs / "classics.json").read_text(encoding="utf-8"))
-    except Exception:                                   # noqa: BLE001
+    except FileNotFoundError:
+        existing = {}
+    except Exception as e:                              # noqa: BLE001
+        log(f"  classics.json unreadable ({type(e).__name__}: {e}); "
+            f"treating as empty -- 'modern' entries may be lost this run")
         existing = {}
     data = {**(existing if isinstance(existing, dict) else {}),
             "overall": overall, "journals": journals, "topics": topics}
-    docs = pathlib.Path("docs")
-    docs.mkdir(exist_ok=True)
     (docs / "classics.json").write_text(json.dumps(data, default=str),
                                         encoding="utf-8")
     total = len(overall) + sum(len(v) for v in journals.values())

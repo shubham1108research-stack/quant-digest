@@ -770,6 +770,12 @@ def main():
                          "0.3%% for 31 minutes, so it is off by default")
     ap.add_argument("--shuffle", action="store_true",
                     help="sample randomly (for measuring coverage)")
+    ap.add_argument("--classics-only", action="store_true",
+                    help="restrict the run to curated classics. They were "
+                         "ingested after the big resolve runs, so all 309 sat "
+                         "with NO pdfs row at all -- never resolved, therefore "
+                         "invisible to the full-text queue's availability "
+                         "gate no matter how large their curated boost.")
     ap.add_argument("--url", help="fetch one URL and report why it did or did "
                                   "not work; touches neither the DB nor state")
     args = ap.parse_args()
@@ -813,10 +819,12 @@ def main():
         if st and not args.retry_failed:
             continue
         try:
-            doi = (json.loads(meta) or {}).get("doi") or ""
+            m = json.loads(meta) or {}
         except Exception:                            # noqa: BLE001
-            doi = ""
-        todo.append((uid, url, title, doi))
+            m = {}
+        if args.classics_only and not m.get("classic"):
+            continue
+        todo.append((uid, url, title, m.get("doi") or ""))
     if args.shuffle:
         import random
         random.seed(3)

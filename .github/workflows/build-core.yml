@@ -20,9 +20,9 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: "How many papers to select"
+        description: "Papers to select; 0 = compile the whole cleaned pool"
         required: false
-        default: "2000"
+        default: "0"
       with_pwb:
         description: "Also harvest Papers With Backtest (~65 min)"
         type: boolean
@@ -94,7 +94,53 @@ jobs:
             echo "watched-author artifact unavailable (expires ~2026-09-25)"
 
       - name: Build the list
-        run: python tools/build_core.py --target "${{ inputs.target }}"
+        # OPENALEX_API_KEY IS NOT OPTIONAL HERE. Route C resolves the unheld
+        # high-in-degree references -- papers many core papers cite that the
+        # archive does not hold -- 50 per request through OpenAlex, and those
+        # are the highest-centrality candidates the whole exercise produces.
+        # Without the key the keyless $0.10/day budget is exhausted by other
+        # callers and the stage returns almost nothing: measured locally, 47
+        # resolved against the ~2,225 this recovers. The failure is silent --
+        # route C simply reports a smaller number -- which is exactly how it
+        # went unnoticed until the route contributions were tallied.
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+        run: |
+          python -c "import oa; oa.status()"
+          python tools/build_core.py --target 0
+
+      - name: Clean the strays, then select
+        # The cleaner ran only on a laptop until now, so a CI build produced an
+        # UNCLEANED list and quietly discarded 1,394 hand judgements. It reads
+        # data/core_judgments.json (committed, unlike export/) so those verdicts
+        # outrank the keyword gate here exactly as they do locally.
+        run: |
+          python tools/clean_core.py
+          cp export/core_candidates.csv export/core_pool.csv
+          python tools/build_core.py --from-pool export/core_pool.csv \
+            --target "${{ inputs.target }}"
+
+      - name: Route tally
+        # The audit, in the job that produced the numbers. Part 7.6's bar is
+        # "all seven routes non-zero"; route C is the one to read.
+        run: |
+          python - <<'PY'
+          import csv, collections
+          rows = list(csv.DictReader(open('export/core_candidates.csv',
+                                          encoding='utf-8', newline='')))
+          n = collections.Counter()
+          for r in rows:
+              for x in (r.get('found_by') or '').split('+'):
+                  if x:
+                      n[x] += 1
+          print(f"rows: {len(rows):,}")
+          for k, v in n.most_common():
+              print(f"  {k:<12} {v:>8,}")
+          seeded = [r for r in rows if int(float(r.get('seed_indegree') or 0)) > 0]
+          print(f"seed_indegree>0: {len(seeded):,}")
+          print("sleeves:", dict(collections.Counter(
+              r.get('sleeve') for r in rows).most_common()))
+          PY
 
       - uses: actions/upload-artifact@v4
         with:
@@ -102,6 +148,11 @@ jobs:
           path: |
             export/core_candidates.csv
             export/core_candidates.json
+            export/core_pool.csv
+            export/core_strays.csv
+            export/core_review.md
+            export/core_tags.csv
+            export/core_sweep.json
             export/core_signaldoc.csv
             export/core_quantseeker.json
             export/core_pwb.json

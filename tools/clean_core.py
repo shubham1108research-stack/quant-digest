@@ -35,6 +35,7 @@ reason, so the cut is reviewable and reversible.
 
 import csv
 import io
+import json
 import pathlib
 import re
 import sys
@@ -42,6 +43,19 @@ import sys
 OUT = pathlib.Path("export")
 CAND = OUT / "core_candidates.csv"
 STRAYS = OUT / "core_strays.csv"
+
+# The hand judgements are OUR work product, not harvested content, so unlike
+# everything else under export/ they are COMMITTED -- data/ is tracked and
+# export/ is gitignored. That distinction is load-bearing: CI checks out the
+# repo and regenerates export/ from scratch, so a judgements file living only
+# in export/ would simply not exist there, and 1,394 hand verdicts would be
+# silently re-decided by the keyword gate on every cloud rebuild.
+# The file holds identifiers (DOIs, arXiv ids) and no third-party text, which
+# is why committing it does not reopen the public-repo problem export/ exists
+# to solve.
+JUDGED = pathlib.Path("data") / "core_judgments.json"
+if not JUDGED.exists():
+    JUDGED = OUT / "core_judgments.json"
 
 CURATED = {"canon", "nber", "snowball", "pwb", "quantseeker", "authors",
            "signaldoc"}
@@ -145,6 +159,23 @@ def main():
     fin_terms = _fin_terms()
     print(f"[clean] keep-vocabulary: {len(fin_terms)} terms "
           f"(FIN + taxonomy + finance stems)")
+
+    # HAND JUDGEMENTS OUTRANK THE VOCABULARY. Every stray above the selection
+    # cut was read and judged by hand; those verdicts are the most expensive
+    # evidence in this pipeline and a keyword rule must never silently
+    # overturn them. Keyed by uid, because _judge_strays.json is regenerated
+    # by every rebuild and its row positions do not survive one.
+    rescued = set()
+    if JUDGED.exists():
+        try:
+            j = json.loads(JUDGED.read_text(encoding="utf-8"))
+            rescued = set(j.get("rescue_uids") or [])
+            print(f"[clean] {len(rescued):,} hand-rescued uids loaded from "
+                  f"{JUDGED.name} -- these are kept regardless of vocabulary")
+        except Exception as e:                              # noqa: BLE001
+            print(f"[clean] {JUDGED.name} unreadable ({type(e).__name__}); "
+                  f"proceeding WITHOUT the hand judgements")
+
     kept, strays = [], []
     for r in rows:
         routes = set((r.get("found_by") or "").split("+"))
@@ -154,6 +185,10 @@ def main():
                      or routes & CURATED)
         if protected:
             r["clean"] = "protected"
+            kept.append(r)
+            continue
+        if r.get("uid") in rescued:
+            r["clean"] = "rescued"
             kept.append(r)
             continue
         t = norm(r.get("title"))
