@@ -66,35 +66,54 @@ SLEEVES = ["trend_cta", "carry", "fx", "rates_credit", "commodities",
 # Papers With Backtest tags each paper with the asset class it trades. That is
 # not the same axis as a desk sleeve, but for the six that map cleanly it is a
 # real label from an external source rather than a guess.
-# The same high-precision phrase seeds tools/propagate.py uses, so discovery
-# and labelling cannot drift into two different notions of a sleeve.
-_PHRASE = {
-    "carry": ["convenience yield", "forward premium", "roll yield",
-              "backwardation", "carry trade", "uncovered interest",
-              "term premium", "currency carry", "carry strategy",
-              "interest rate differential", "contango"],
-    "trend_cta": ["time series momentum", "time-series momentum",
-                  "trend following", "trend-following", "managed futures",
-                  "moving average rule", "crisis alpha", "cta"],
-    "vol_options": ["variance risk premium", "implied volatility",
-                    "volatility surface", "option implied", "option-implied",
-                    "vix", "variance swap", "volatility risk premium"],
-    "commodities": ["theory of storage", "hedging pressure", "futures curve",
-                    "commodity futures", "commodity return"],
-    "microstructure": ["order flow", "limit order book", "market impact",
-                       "bid ask spread", "bid-ask spread", "price impact",
-                       "high frequency trading", "market maker"],
-    "fx": ["exchange rate", "currency", "foreign exchange", "dollar factor"],
-    "rates_credit": ["yield curve", "term structure of interest",
-                     "credit spread", "sovereign debt", "bond risk premium",
-                     "default risk"],
-    "macro_regime": ["business cycle", "monetary policy", "recession",
-                     "inflation", "regime switching", "macroeconomic"],
-    "cross_asset": ["asset allocation", "risk parity", "multi-asset",
-                    "across asset classes", "cross-asset", "stock bond"],
-    "equity_xs": ["cross-section of expected", "cross section of stock",
-                  "anomaly", "equity factor", "characteristics and expected"],
+# ONE VOCABULARY. Discovery searches the 299-term taxonomy in
+# export/core_tags.csv; labelling reads THE SAME FILE. The first version
+# hand-wrote a private _PHRASE dict here instead, which is exactly the
+# "two different notions of the subject" drift the taxonomy exists to prevent
+# -- and the way the audit found it is that this file had zero references to
+# core_tags.csv while claiming to be taxonomy-driven.
+TAGS_CSV = OUT / "core_tags.csv"
+
+# Sleeve for a candidate that only the taxonomy describes. Tag-level overrides
+# first (a term like "carry trade" names its sleeve outright), then a family
+# default. This maps the taxonomy ONTO sleeves; it does not replace it.
+TAG_SLEEVE = {
+    "carry trade": "carry", "currency carry": "carry", "roll yield": "carry",
+    "convenience yield": "carry", "backwardation": "carry",
+    "time-series momentum": "trend_cta", "managed futures": "trend_cta",
+    "trend following": "trend_cta", "crisis alpha": "trend_cta",
+    "commodity futures": "commodities", "crude oil": "commodities",
+    "gold": "commodities", "natural gas markets": "commodities",
+    "agricultural commodities": "commodities",
+    "theory of storage": "commodities",
+    "foreign exchange": "fx", "covered interest parity": "fx",
+    "cross-currency basis": "fx", "dollar exchange rate": "fx",
+    "interest rates": "rates_credit", "credit spreads": "rates_credit",
+    "yield curve": "rates_credit", "term premium": "rates_credit",
+    "sovereign debt": "rates_credit",
+    "inflation-linked bonds": "rates_credit",
 }
+FAMILY_SLEEVE = {
+    "A_style_premia": "equity_xs", "B_asset_classes": "other",
+    "C_systematic_macro": "macro_regime", "D_vol_derivatives": "vol_options",
+    "E_portfolio_construction": "cross_asset",
+    "F_risk_management": "cross_asset",
+    "G_machine_learning": "other", "H_econometrics": "other",
+    "I_microstructure": "microstructure", "J_research_integrity": "other",
+    "K_institutions": "other", "L_behavioural_esg": "equity_xs",
+    "M_asset_allocation": "cross_asset", "N_risk_premia": "equity_xs",
+}
+
+
+def _load_taxonomy():
+    """[(term, family)] longest-first, for title matching."""
+    if not TAGS_CSV.exists():
+        return []
+    rows = list(csv.DictReader(io.open(TAGS_CSV, encoding="utf-8")))
+    terms = [(r["term"].lower(), r["family"]) for r in rows if r.get("term")]
+    terms.sort(key=lambda t: -len(t[0]))
+    return terms
+
 
 _MARKET_SLEEVE = {
     "Equities": "equity_xs",
@@ -289,6 +308,17 @@ def main():
         log(f"[core]   resolved {got:,} unheld references into candidates")
 
     # ----------------------------------------------- F/G/D: harvested sources
+    # ------------------------------------------------------ A: the tag sweep
+    sweep = _load("core_sweep.json")
+    for r in sweep:
+        if r.get("uid"):
+            add(r["uid"], "sweep", family=r.get("family"), tag=r.get("tag"),
+                ext_title=r.get("title"), ext_year=r.get("year"),
+                ext_cites=r.get("cites"))
+    log(f"[core] route A sweep      : "
+        f"{sum(1 for c in cand.values() if 'sweep' in c['routes']):>6,}"
+        f"  ({len(sweep):,} harvested)")
+
     pwb = {r["uid"]: r for r in _load("core_pwb.json") if r.get("uid")}
     for uid, r in pwb.items():
         if True:
@@ -300,18 +330,53 @@ def main():
     log(f"[core] route F pwb        : {sum(1 for c in cand.values() if 'pwb' in c['routes']):>6,}"
         f"  ({len(pwb):,} harvested, {len(pwb)-sum(1 for u in pwb if u in items):,} not in the archive)")
 
+    # SignalDoc names papers by AUTHOR and YEAR, not by title --
+    # `LongDescription` is a description of the signal ("Abnormal Accruals"),
+    # which is why title-matching found 0 of 331. Join on the first author
+    # surname plus year (tolerance 1: CZ dates the journal version), falling
+    # back to a title-substring check to break ties.
+    surname_ix: dict[str, list] = {}
+    for uid_, rec_ in items.items():
+        m_ = rec_["meta"]
+        yr = m_.get("pub_year") or (m_.get("date") or "")[:4]
+        try:
+            yr = int(yr)
+        except (TypeError, ValueError):
+            continue
+        for chunk in re.split(r"[,;&]| and ", m_.get("authors") or ""):
+            parts = [w for w in chunk.strip().split() if len(w) > 2]
+            if parts:
+                surname_ix.setdefault(parts[-1].lower(), []).append(
+                    (yr, uid_, _norm(rec_["title"])))
+
     sig = _load("core_signaldoc.json")
     sig_hits = 0
     for r in sig:
-        key = _norm(r.get("title_desc") or "")[:70]
-        uid = by_title.get(key) or f"sig:{r.get('acronym')}"
+        first = re.split(r"[,;&]| and ", r.get("authors") or "")[0].strip()
+        surname = (first.split()[-1] if first.split() else "").lower()
+        try:
+            want = int(r.get("year") or 0)
+        except (TypeError, ValueError):
+            want = 0
+        uid = None
+        best = None
+        for yr, uid_, tnorm in surname_ix.get(surname, []):
+            if want and abs(yr - want) > 1:
+                continue
+            score_ = (abs(yr - want),
+                      0 if _norm(r.get("title_desc") or "")[:20] in tnorm else 1)
+            if best is None or score_ < best[0]:
+                best = (score_, uid_)
+        if best:
+            uid = best[1]
+        uid = uid or f"sig:{r.get('acronym')}"
         add(uid, "signaldoc", replication=r.get("replication"),
             predictability=r.get("predictability"),
             ext_title=r.get("title_desc"), ext_year=r.get("year"),
             author=r.get("authors"))
         sig_hits += 1 if uid in items else 0
-    log(f"[core] route G signaldoc  : {sig_hits:>6,}  ({len(sig):,} predictors, "
-        f"matched on title)")
+    log(f"[core] route G signaldoc  : {sig_hits:>6,} matched to held papers "
+        f"({len(sig):,} predictors; unmatched enter as sig: rows)")
 
     for r in _load("core_quantseeker.json"):
         if r.get("uid"):
@@ -328,6 +393,9 @@ def main():
                 ext_year=r.get("year"))
     log(f"[core] route D authors    : {sum(1 for c in cand.values() if 'authors' in c['routes']):>6,}"
         f"  ({len(auth):,} candidates, most not yet in the archive)")
+
+    taxonomy = _load_taxonomy()
+    log(f"[core] taxonomy: {len(taxonomy)} terms loaded for labelling")
 
     # ------------------------------------------------------------ deduplicate
     # A paper reaches this pool under every identifier it has ever carried.
@@ -384,25 +452,27 @@ def main():
             year = None
         age = max(1, 2026 - year) if year else None
         cpy = (cites / age) if (isinstance(cites, int) and age) else None
-        sleeve = (m.get("sleeves_prop") or m.get("sleeves") or [])
-        sleeve = sleeve[0] if isinstance(sleeve, list) and sleeve else ""
-        if not sleeve:
-            # An unheld paper has no label, so read its TITLE against the
-            # high-precision vocabulary propagate.py already uses. Without this
-            # `carry` held ONE paper of 2,000 -- not because the pool lacked
-            # carry research but because nothing had labelled it.
+        # family/tag come from the taxonomy: either the term that FOUND the
+        # paper (route A), or the longest taxonomy term its title contains.
+        # One vocabulary for discovery and labelling.
+        family, tag = c.get("family", ""), c.get("tag", "")
+        if not tag:
             t = _norm(items[uid]["title"] if uid in items else
                       (c.get("ext_title") or ""))
-            for sl, phrases in _PHRASE.items():
-                if any(ph in t for ph in phrases):
-                    sleeve = sl
+            for term, fam in taxonomy:
+                if term in t:
+                    family, tag = fam, term
                     break
+        # sleeve: the archive label if held; else the tag's own sleeve; else
+        # the family default. `markets` stays its OWN column -- PWB's asset
+        # class is additional evidence, never a substitute for the taxonomy.
+        sleeve = (m.get("sleeves_prop") or m.get("sleeves") or [])
+        sleeve = sleeve[0] if isinstance(sleeve, list) and sleeve else ""
+        if not sleeve and tag:
+            sleeve = TAG_SLEEVE.get(tag, "")
+        if not sleeve and family:
+            sleeve = FAMILY_SLEEVE.get(family, "")
         if not sleeve:
-            # An UNHELD candidate has no sleeve label, and defaulting it to
-            # "other" put 1,121 of 2,000 selections there -- which defeats the
-            # per-sleeve quota that exists to stop equity research crowding out
-            # a macro desk. PWB ships an asset-class tag per paper; using it is
-            # better than a shrug, and it is external rather than inferred.
             sleeve = _MARKET_SLEEVE.get(
                 (c.get("markets") or "").split(",")[0].strip(), "")
         sleeve = sleeve or "other"
@@ -429,6 +499,7 @@ def main():
             "n_routes": len(c["routes"]),
             "found_by": "+".join(sorted(c["routes"])),
             "sleeve": sleeve,
+            "family": family, "tag": tag,
             "sharpe": c.get("sharpe", ""),
             "backtest_period": c.get("backtest_period", ""),
             "publication_date": c.get("publication_date", ""),
@@ -483,7 +554,8 @@ def main():
 
     OUT.mkdir(parents=True, exist_ok=True)
     cols = ["rank", "title", "year", "doi", "cites", "cites_per_year",
-            "seed_indegree", "n_routes", "found_by", "sleeve", "sharpe",
+            "seed_indegree", "n_routes", "found_by", "sleeve", "family",
+            "tag", "sharpe",
             "backtest_period", "publication_date", "replication",
             "predictability", "markets", "held", "score", "uid"]
     with io.open(OUT / "core_candidates.csv", "w", newline="",

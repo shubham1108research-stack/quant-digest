@@ -52,9 +52,19 @@ jobs:
         run: python tools/dbsync.py pull
 
       - name: Harvest the cheap sources
+        env:
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
         run: |
+          python tools/core_tags.py
           python tools/core_sources.py signaldoc
           python tools/core_sources.py quantseeker
+
+      - name: Run the tag sweep (route A)
+        # 299 terms, up to 3 pages each; ~20 min with the key. The sweep IS
+        # route A -- skipping it is how carry ended up with 1 paper of 2,000.
+        env:
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
+        run: python tools/core_sources.py sweep
 
       - name: Reuse the previous harvest
         # ~3,800 polite page fetches. Re-running it every build is rude to a

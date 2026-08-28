@@ -46,6 +46,9 @@ SCOUT" that then got scored -- and finding is cheap while deciding is not.
 
 import argparse
 import csv
+import urllib.parse
+import os
+import collections
 import io
 import json
 import pathlib
@@ -343,18 +346,113 @@ def cmd_quantseeker(args):
     return 0
 
 
+# ------------------------------------------------------------------- sweep
+S2_BULK = "https://api.semanticscholar.org/graph/v1/paper/search/bulk"
+TAGS_CSV = OUT / "core_tags.csv"
+
+
+def cmd_sweep(args):
+    """Route A: search the validated 299-term taxonomy, all years.
+
+    THE ROUTE THAT WAS NEVER RUN, and its absence is why `carry` held one paper
+    of two thousand. Nothing else in the pipeline looks for carry research by
+    name: Papers With Backtest tags by asset class and has no carry concept,
+    NBER has no carry topic (carry is a practitioner sleeve, not an academic
+    one), and the archive's own labels reach 111 papers of 11,764. Measured on
+    the bulk endpoint, `"carry trade"` alone returns 951 papers.
+
+    /paper/search/bulk returns up to 1,000 rows in ONE request and only issues
+    a continuation token beyond that -- so s2_harvest's `[:per_term]` slice,
+    not the paging, was what capped the old discover at ten rows per term.
+    """
+    if not TAGS_CSV.exists():
+        log(f"[sweep] {TAGS_CSV} missing -- run tools/core_tags.py first")
+        return 1
+    terms = []
+    for r in csv.DictReader(io.open(TAGS_CSV, encoding="utf-8")):
+        tot = (r.get("total") or "").strip()
+        if tot.isdigit() and int(tot) == 0:
+            continue                       # validated as returning nothing
+        terms.append((r["family"], r["term"]))
+    if args.limit:
+        terms = terms[:args.limit]
+    key = os.environ.get("S2_API_KEY", "").strip()
+    pause = 1.1 if key else 3.2
+    log(f"[sweep] {len(terms)} terms, {'key set' if key else 'NO KEY -- slow'}, "
+        f"~{len(terms) * pause / 60:.0f} min")
+
+    hdr = {"User-Agent": "quant-digest/1.0"}
+    if key:
+        hdr["x-api-key"] = key
+    seen, out = set(), []
+    prog = Progress(len(terms), "sweep", every_s=30)
+    for family, term in terms:
+        q = urllib.parse.quote(f'"{term}"' if " " in term else term)
+        url = (f"{S2_BULK}?query={q}&fields=title,year,externalIds,"
+               f"citationCount,abstract&fieldsOfStudy=Economics,Business"
+               f"&sort=citationCount:desc")
+        token, pages = None, 0
+        while pages < args.max_pages:
+            u = url + (f"&token={token}" if token else "")
+            body = _get(u, tries=3, timeout=60)
+            if not body:
+                break
+            try:
+                d = json.loads(body.decode("utf-8", "replace"))
+            except Exception:                              # noqa: BLE001
+                break
+            for x in (d.get("data") or []):
+                ext = x.get("externalIds") or {}
+                doi = (ext.get("DOI") or "").lower()
+                arx = ext.get("ArXiv")
+                uid = (f"doi:{doi}" if doi else
+                       f"arxiv:{arx}" if arx else None)
+                if not uid or uid in seen:
+                    continue
+                seen.add(uid)
+                out.append({
+                    "uid": uid, "title": x.get("title") or "",
+                    "year": x.get("year"),
+                    "cites": x.get("citationCount") or 0,
+                    "family": family, "tag": term,
+                    "has_abstract": bool((x.get("abstract") or "").strip()),
+                    "found_by": "sweep",
+                })
+            token = d.get("token")
+            pages += 1
+            if not token:
+                break
+            time.sleep(pause)
+        prog.tick()
+        time.sleep(pause)
+    prog.done()
+
+    out.sort(key=lambda r: -(r["cites"] or 0))
+    OUT.mkdir(parents=True, exist_ok=True)
+    (OUT / "core_sweep.json").write_text(
+        json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
+    fam = collections.Counter(r["family"] for r in out)
+    log(f"[sweep] {len(out):,} unique papers across {len(terms)} terms")
+    for k, v in sorted(fam.items()):
+        log(f"[sweep]   {v:>6,}  {k}")
+    log(f"[sweep] written to {OUT}/core_sweep.json -- candidates only")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="action", required=True)
-    for name in ("signaldoc", "pwb", "quantseeker"):
+    for name in ("signaldoc", "pwb", "quantseeker", "sweep"):
         p = sub.add_parser(name)
         p.add_argument("--limit", type=int, default=0)
+        if name == "sweep":
+            p.add_argument("--max-pages", type=int, default=3)
         if name == "pwb":
             p.add_argument("--restart", action="store_true",
                            help="ignore the existing file and refetch all")
     args = ap.parse_args()
     return {"signaldoc": cmd_signaldoc, "pwb": cmd_pwb,
-            "quantseeker": cmd_quantseeker}[args.action](args)
+            "quantseeker": cmd_quantseeker, "sweep": cmd_sweep}[args.action](args)
 
 
 if __name__ == "__main__":
