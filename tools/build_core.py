@@ -505,7 +505,6 @@ def main():
 
     # ----------------------------------------------------------------- score
     rows = []
-    author_sleeved = 0
     for uid, c in cand.items():
         m = items[uid]["meta"] if uid in items else {}
         cites = m.get("cites") if m.get("cites") is not None else c.get("ext_cites")
@@ -539,17 +538,17 @@ def main():
         if not sleeve:
             sleeve = _MARKET_SLEEVE.get(
                 (c.get("markets") or "").split(",")[0].strip(), "")
-        # LAST RESORT: the roster author's own sleeve. Only where every other
-        # signal returned nothing or "other", because an author's desk is a
-        # PRIOR and not a label -- Kelly writes ML asset pricing and also
-        # things this desk does not trade, which is why this never overrides a
-        # taxonomy answer. It fires where the alternative is "other", which is
-        # not an answer either: route D harvested 237 trend_cta and 83 carry
-        # papers by attribution and every one of them landed in "other",
-        # leaving those sleeves at 293 and 918 while `other` grew by 7,889.
-        if sleeve in ("", "other") and c.get("author_sleeve"):
-            sleeve = c["author_sleeve"]
-            author_sleeved += 1
+        # NO AUTHOR-SLEEVE FALLBACK. One sleeve per author cannot describe an
+        # author: measured on the roster harvest, papers whose sleeve the
+        # taxonomy CAN determine disagree with their author's roster sleeve
+        # 50% of the time, and every author sampled spanned several sleeves
+        # (median 4). Verdelhan is rostered `fx` and writes papers the
+        # taxonomy places in equity_xs, macro_regime, carry and microstructure.
+        # Applying a coin-flip prior to precisely the rows no other signal can
+        # label would have made the thin sleeves look fixed while filling them
+        # with mislabelled papers -- the sleeve counts would move and mean
+        # less. `author` stays a column; it is evidence for a reader, not a
+        # label for a classifier.
         sleeve = sleeve or "other"
 
         # log-scaled citations, age-normalised velocity, plus route agreement.
@@ -585,9 +584,6 @@ def main():
             "score": round(s_cites + s_vel + s_seed + s_route + s_pract + s_repl, 3),
         })
 
-    if author_sleeved:
-        log(f"[core] {author_sleeved:,} rows took their sleeve from the roster "
-            f"author (last resort, where the answer was otherwise 'other')")
     rows.sort(key=lambda r: -r["score"])
 
     # ------------------------------------- centrality first, coverage second
