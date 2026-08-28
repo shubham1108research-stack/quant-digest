@@ -189,4 +189,5 @@ jobs:
             export/core_sweep.json
             export/core_signaldoc.csv
             export/core_quantseeker.json
+            export/core_roster_papers.json
             export/core_pwb.json
