@@ -132,7 +132,7 @@ jobs:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
         run: |
           python -c "import oa; oa.preflight()"
-          python tools/build_core.py --target 0
+          python tools/build_core.py --target 0 --resolve-gap 20000
 
       - name: Clean the strays, then select
         # The cleaner ran only on a laptop until now, so a CI build produced an
