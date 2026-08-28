@@ -90,6 +90,27 @@ jobs:
           python tools/core_sources.py signaldoc
           python tools/core_sources.py quantseeker
 
+      - name: Verify the ambiguous roster identities
+        # 75 of 175 roster members are blocked behind needs_review, which is
+        # 12,141 author-paper slots never fetched -- Andrew Ang, Ben Bernanke,
+        # Allan Timmermann, Brad Barber among them. The flag fires when a
+        # second profile has h >= 10, a popularity test that knows nothing
+        # about subject: on "Bryan Kelly" the orthopaedic surgeon has h=78 and
+        # the economist h=18, so h-index points AT the wrong person.
+        #
+        # This settles it by what each candidate PUBLISHES -- the share of
+        # their papers in Economics or Business. Validated against the 100
+        # already-settled people: 91.7% agreement.
+        #
+        # REPORT ONLY. It writes core_roster_verified.json for review and does
+        # not touch data/core_roster.csv, because needs_review is the contract
+        # that kept a surgeon's bibliography out of the corpus and a script
+        # should not overwrite a human decision.
+        env:
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
+        continue-on-error: true
+        run: python tools/core_roster_verify.py --resolve
+
       - name: Harvest the practitioner roster (route D)
         # The roster was built, approved, and never read: s2_harvest seeds from
         # config.WATCHLIST_SEED and reaches 30 people, while core_roster.csv
@@ -190,4 +211,5 @@ jobs:
             export/core_signaldoc.csv
             export/core_quantseeker.json
             export/core_roster_papers.json
+            export/core_roster_verified.json
             export/core_pwb.json
