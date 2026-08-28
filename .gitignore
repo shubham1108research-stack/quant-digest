@@ -100,3 +100,19 @@ docs/bm25.json
 # `git add -A` would otherwise sweep the whole directory in, which is exactly
 # how principal_portfolios.pdf ended up sitting untracked in the repo root.
 export/
+
+# Hand-collected practitioner article HTML (Alpha Architect, Macrosynergy).
+# 2,963 files, 33 MB of SOMEONE ELSE'S ARTICLES, and this repository is public
+# -- the same reason docs/ft/ and export/ are ignored. They are an input to
+# term mining (tools/core_expand.py, Part 11.4), not a deliverable, and
+# `git add -A` would otherwise publish another firm's whole research archive.
+docs/html/
+
+# SPECTER vectors cached from Semantic Scholar (tools/core_specter.py).
+# 12,086 x 768 floats, regenerable from the API, and third-party derived data.
+export/*.npy
+
+# The SSRN downloader repo that was evaluated and DECLINED -- it defeats a
+# Cloudflare bot check by disguising automation. Kept locally as evidence of
+# what was rejected; must never be vendored into this repo.
+ssrn-pdf-downloader-main/
