@@ -420,9 +420,22 @@ def main():
     log(f"[core] route G signaldoc  : {sig_hits:>6,} matched to held papers "
         f"({len(sig):,} predictors; unmatched enter as sig: rows)")
 
+    # THE PAPER'S TITLE, NEVER THE POST'S. `post` is the newsletter issue that
+    # mentioned it -- 1,665 papers across 10 issue titles -- and feeding that
+    # to a title-keyed dedup merged 1,406 distinct papers into their issue.
+    # When S2 could not resolve a title the field stays EMPTY on purpose: the
+    # dedup key falls back to the uid, so an unresolved paper keeps its own
+    # identity instead of joining a pile under someone else's headline.
+    qs_untitled = 0
     for r in _load("core_quantseeker.json"):
         if r.get("uid"):
-            add(r["uid"], "quantseeker", ext_title=r.get("post"))
+            if not r.get("title"):
+                qs_untitled += 1
+            add(r["uid"], "quantseeker", ext_title=r.get("title") or "",
+                ext_year=r.get("year"), ext_cites=r.get("cites"))
+    if qs_untitled:
+        log(f"[core]   {qs_untitled:,} quantseeker rows have no resolved "
+            f"title -- keyed by uid, not merged")
     log(f"[core] route D quantseeker: {sum(1 for c in cand.values() if 'quantseeker' in c['routes']):>6,}")
 
     auth = _load("watched_author_papers.json")

@@ -96,6 +96,74 @@ def _get(url, tries=3, timeout=40):
     return None
 
 
+S2_BATCH = "https://api.semanticscholar.org/graph/v1/paper/batch"
+
+
+def _s2_titles(records, log=log):
+    """Fill in each record's REAL paper title from Semantic Scholar.
+
+    WHY THIS IS NOT COSMETIC. A harvest that carries the post title instead of
+    the paper title is not merely untidy -- build_core deduplicates on the
+    normalised title, so 1,665 QuantSeeker papers sharing 10 post titles
+    ("Weekly Recap" 1,000+ times) collapsed into each other and 1,406 of them
+    disappeared. Distinct papers merging under a shared non-title is the same
+    defect as one paper splitting across four identifiers, pointed the other
+    way, and it is invisible in the harvest itself.
+
+    S2 takes SSRN and arXiv ids directly -- DOI:10.2139/ssrn.<id> and
+    ARXIV:<id> -- 500 per POST, so 1,665 papers cost four requests. Measured
+    coverage on a mixed sample: 15 of 18, SSRN included.
+    """
+    import requests                                        # noqa: PLC0415
+
+    def s2id(r):
+        if r.get("kind") == "ssrn":
+            return f"DOI:10.2139/ssrn.{r['value']}"
+        if r.get("kind") == "arxiv":
+            return f"ARXIV:{r['value']}"
+        return f"DOI:{r['value']}"
+
+    key = os.environ.get("S2_API_KEY", "").strip()
+    hdr = {"User-Agent": UA}
+    if key:
+        hdr["x-api-key"] = key
+    got = 0
+    for i in range(0, len(records), 500):
+        chunk = records[i:i + 500]
+        ids = [s2id(r) for r in chunk]
+        body = None
+        for attempt in range(4):
+            try:
+                rr = requests.post(
+                    S2_BATCH, headers=hdr,
+                    params={"fields": "title,year,citationCount"},
+                    json={"ids": ids}, timeout=90)
+            except Exception as e:                          # noqa: BLE001
+                log(f"[quantseeker]   title batch error: {type(e).__name__}")
+                break
+            if rr.status_code == 429:
+                time.sleep(4 * (attempt + 1))
+                continue
+            if not rr.ok:
+                log(f"[quantseeker]   title batch HTTP {rr.status_code}: "
+                    f"{rr.text[:120]}")
+                break
+            body = rr.json()
+            break
+        if not body:
+            continue
+        for rec, hit in zip(chunk, body):
+            if hit and hit.get("title"):
+                rec["title"] = hit["title"]
+                rec["year"] = hit.get("year")
+                rec["cites"] = hit.get("citationCount")
+                got += 1
+        time.sleep(PAUSE)
+    log(f"[quantseeker] resolved {got:,} of {len(records):,} real titles "
+        f"via Semantic Scholar ({(len(records)+499)//500} requests)")
+    return got
+
+
 # --------------------------------------------------------------- signaldoc
 def cmd_signaldoc(args):
     """Chen-Zimmermann predictors: source paper + replication grade."""
@@ -334,6 +402,8 @@ def cmd_quantseeker(args):
             continue
         seen.add(r["uid"])
         uniq.append(r)
+
+    _s2_titles(uniq)
 
     (OUT / "core_quantseeker.json").write_text(
         json.dumps(uniq, indent=1, ensure_ascii=False), encoding="utf-8")
