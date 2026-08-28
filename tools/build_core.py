@@ -74,25 +74,14 @@ SLEEVES = ["trend_cta", "carry", "fx", "rates_credit", "commodities",
 # core_tags.csv while claiming to be taxonomy-driven.
 TAGS_CSV = OUT / "core_tags.csv"
 
-# Sleeve for a candidate that only the taxonomy describes. Tag-level overrides
-# first (a term like "carry trade" names its sleeve outright), then a family
-# default. This maps the taxonomy ONTO sleeves; it does not replace it.
-TAG_SLEEVE = {
-    "carry trade": "carry", "currency carry": "carry", "roll yield": "carry",
-    "convenience yield": "carry", "backwardation": "carry",
-    "time-series momentum": "trend_cta", "managed futures": "trend_cta",
-    "trend following": "trend_cta", "crisis alpha": "trend_cta",
-    "commodity futures": "commodities", "crude oil": "commodities",
-    "gold": "commodities", "natural gas markets": "commodities",
-    "agricultural commodities": "commodities",
-    "theory of storage": "commodities",
-    "foreign exchange": "fx", "covered interest parity": "fx",
-    "cross-currency basis": "fx", "dollar exchange rate": "fx",
-    "interest rates": "rates_credit", "credit spreads": "rates_credit",
-    "yield curve": "rates_credit", "term premium": "rates_credit",
-    "sovereign debt": "rates_credit",
-    "inflation-linked bonds": "rates_credit",
-}
+# THE TERM-LEVEL SLEEVE NOW TRAVELS WITH THE TERM. It used to be a dict here
+# keyed by term string -- a foreign key into core_tags.csv with nothing
+# enforcing it, and three of its 25 keys named terms that file never contained.
+# It lives in core_tags.py beside the vocabulary now, arrives as a column, and
+# core_tags._check_sleeve_keys() refuses to write a sleeve for a term that does
+# not exist. A mapping that cannot be reached is worse than a missing one:
+# "Two Centuries of Trend Following" carried no tag at all for the whole life
+# of the taxonomy.
 FAMILY_SLEEVE = {
     "A_style_premia": "equity_xs", "B_asset_classes": "other",
     "C_systematic_macro": "macro_regime", "D_vol_derivatives": "vol_options",
@@ -106,11 +95,16 @@ FAMILY_SLEEVE = {
 
 
 def _load_taxonomy():
-    """[(term, family)] longest-first, for title matching."""
+    """[(term, family, sleeve)] longest-first, for title matching.
+
+    `sleeve` is blank for most terms, meaning "take the family default". It is
+    read from the same row as the term, so the two can never disagree.
+    """
     if not TAGS_CSV.exists():
         return []
     rows = list(csv.DictReader(io.open(TAGS_CSV, encoding="utf-8")))
-    terms = [(r["term"].lower(), r["family"]) for r in rows if r.get("term")]
+    terms = [(r["term"].lower(), r["family"], (r.get("sleeve") or "").strip())
+             for r in rows if r.get("term")]
     terms.sort(key=lambda t: -len(t[0]))
     return terms
 
@@ -458,7 +452,11 @@ def main():
         f"  ({len(auth):,} candidates, most not yet in the archive)")
 
     taxonomy = _load_taxonomy()
-    log(f"[core] taxonomy: {len(taxonomy)} terms loaded for labelling")
+    # term -> sleeve, for candidates whose tag came from route A rather than
+    # from matching the title here. Same file, same rows, one lookup.
+    _TERM_SLEEVE = {t: sl for t, _f, sl in taxonomy if sl}
+    log(f"[core] taxonomy: {len(taxonomy)} terms loaded for labelling; "
+        f"{len(_TERM_SLEEVE)} carry an explicit sleeve")
 
     # ------------------------------------------------------------ deduplicate
     # A paper reaches this pool under every identifier it has ever carried.
@@ -519,20 +517,24 @@ def main():
         # paper (route A), or the longest taxonomy term its title contains.
         # One vocabulary for discovery and labelling.
         family, tag = c.get("family", ""), c.get("tag", "")
+        tag_sleeve = ""
         if not tag:
             t = _norm(items[uid]["title"] if uid in items else
                       (c.get("ext_title") or ""))
-            for term, fam in taxonomy:
+            for term, fam, sl in taxonomy:
                 if term in t:
-                    family, tag = fam, term
+                    family, tag, tag_sleeve = fam, term, sl
                     break
-        # sleeve: the archive label if held; else the tag's own sleeve; else
-        # the family default. `markets` stays its OWN column -- PWB's asset
-        # class is additional evidence, never a substitute for the taxonomy.
+        else:
+            tag_sleeve = _TERM_SLEEVE.get(tag, "")
+        # sleeve: the archive label if held; else the term's own sleeve (read
+        # from core_tags.csv, same row as the term); else the family default.
+        # `markets` stays its OWN column -- PWB's asset class is additional
+        # evidence, never a substitute for the taxonomy.
         sleeve = (m.get("sleeves_prop") or m.get("sleeves") or [])
         sleeve = sleeve[0] if isinstance(sleeve, list) and sleeve else ""
-        if not sleeve and tag:
-            sleeve = TAG_SLEEVE.get(tag, "")
+        if not sleeve and tag_sleeve:
+            sleeve = tag_sleeve
         if not sleeve and family:
             sleeve = FAMILY_SLEEVE.get(family, "")
         if not sleeve:

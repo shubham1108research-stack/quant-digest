@@ -54,6 +54,39 @@ OUT = pathlib.Path("export/core_tags.csv")
 PAUSE = 1.1 if os.environ.get("S2_API_KEY") else 3.2
 MIN_RESULTS = 20           # below this a term is not worth five pages
 
+# ----------------------------------------------------------------------- sleeve
+# WHICH TERMS NAME A DESK SLEEVE OUTRIGHT. A family maps to a sleeve by default
+# (see build_core.FAMILY_SLEEVE), but some individual terms are more specific
+# than their family: "carry trade" sits in A_style_premia, whose default is
+# equity_xs, while the paper belongs to the carry book.
+#
+# THIS LIVES HERE, NEXT TO THE TERMS, ON PURPOSE. It used to be a dict in
+# build_core.py keyed by term STRING -- a foreign key into this file with
+# nothing enforcing it. Three of its 25 keys ("trend following", "theory of
+# storage", "backwardation") were never terms here at all, so route A never
+# searched them and the labeller could never assign them: a sleeve mapping that
+# was dead in both directions and silent about it. The commit that introduced
+# that dict is the same one that deleted an earlier private term list and is
+# titled "one vocabulary".
+#
+# Keyed off TAXONOMY below, so a sleeve can only ever be attached to a term
+# that actually exists. _check_sleeve_keys() fails loudly if that stops holding.
+TERM_SLEEVE: dict[str, str] = {
+    "carry trade": "carry", "currency carry": "carry", "roll yield": "carry",
+    "convenience yield": "carry",
+    "time-series momentum": "trend_cta", "managed futures": "trend_cta",
+    "crisis alpha": "trend_cta",
+    "commodity futures": "commodities", "crude oil": "commodities",
+    "gold": "commodities", "natural gas markets": "commodities",
+    "agricultural commodities": "commodities",
+    "foreign exchange": "fx", "covered interest parity": "fx",
+    "cross-currency basis": "fx", "dollar exchange rate": "fx",
+    "interest rates": "rates_credit", "credit spreads": "rates_credit",
+    "yield curve": "rates_credit", "term premium": "rates_credit",
+    "sovereign debt": "rates_credit",
+    "inflation-linked bonds": "rates_credit",
+}
+
 # --------------------------------------------------------------------- families
 # 14 families. The family is kept on every row because selection uses per-family
 # quotas: a global top-N returns equity cross-section and asset pricing and
@@ -266,6 +299,24 @@ def probe(term, tries=4):
         for d in data]
 
 
+def _check_sleeve_keys():
+    """Every TERM_SLEEVE key must be a real term. Fail loudly, not silently.
+
+    This is the assertion whose absence caused the bug: a term-keyed mapping in
+    another file drifted from the vocabulary and nothing noticed for the life
+    of the taxonomy.
+    """
+    terms = {t for ts in TAXONOMY.values() for t in ts}
+    orphans = sorted(set(TERM_SLEEVE) - terms)
+    if orphans:
+        raise SystemExit(
+            "[tags] TERM_SLEEVE names terms that are not in TAXONOMY: "
+            + ", ".join(orphans)
+            + "\n       Add the term to a family, or drop the sleeve mapping. "
+              "A sleeve on a term nobody searches for cannot ever apply.")
+    return len(TERM_SLEEVE)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--validate", action="store_true",
@@ -276,8 +327,11 @@ def main():
     ap.add_argument("--out", default=str(OUT))
     args = ap.parse_args()
 
-    rows = [{"family": fam, "term": t}
+    n_sleeve = _check_sleeve_keys()
+    rows = [{"family": fam, "term": t, "sleeve": TERM_SLEEVE.get(t, "")}
             for fam, terms in TAXONOMY.items() for t in terms]
+    log(f"[tags] {n_sleeve} terms carry an explicit sleeve; the rest take "
+        f"their family's default")
     if args.only_missing and pathlib.Path(args.out).exists():
         # Carry forward what already validated cleanly; re-probe only blanks
         # and terms whose text changed. A full re-run costs 26 minutes to
@@ -340,7 +394,7 @@ def main():
 
     dest = pathlib.Path(args.out)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    cols = ["family", "term"] + (
+    cols = ["family", "term", "sleeve"] + (
         ["total", "keep", "pages", "top5"] if args.validate else [])
     with io.open(dest, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=cols)
