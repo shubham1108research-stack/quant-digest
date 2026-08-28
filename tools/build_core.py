@@ -66,6 +66,36 @@ SLEEVES = ["trend_cta", "carry", "fx", "rates_credit", "commodities",
 # Papers With Backtest tags each paper with the asset class it trades. That is
 # not the same axis as a desk sleeve, but for the six that map cleanly it is a
 # real label from an external source rather than a guess.
+# The same high-precision phrase seeds tools/propagate.py uses, so discovery
+# and labelling cannot drift into two different notions of a sleeve.
+_PHRASE = {
+    "carry": ["convenience yield", "forward premium", "roll yield",
+              "backwardation", "carry trade", "uncovered interest",
+              "term premium", "currency carry", "carry strategy",
+              "interest rate differential", "contango"],
+    "trend_cta": ["time series momentum", "time-series momentum",
+                  "trend following", "trend-following", "managed futures",
+                  "moving average rule", "crisis alpha", "cta"],
+    "vol_options": ["variance risk premium", "implied volatility",
+                    "volatility surface", "option implied", "option-implied",
+                    "vix", "variance swap", "volatility risk premium"],
+    "commodities": ["theory of storage", "hedging pressure", "futures curve",
+                    "commodity futures", "commodity return"],
+    "microstructure": ["order flow", "limit order book", "market impact",
+                       "bid ask spread", "bid-ask spread", "price impact",
+                       "high frequency trading", "market maker"],
+    "fx": ["exchange rate", "currency", "foreign exchange", "dollar factor"],
+    "rates_credit": ["yield curve", "term structure of interest",
+                     "credit spread", "sovereign debt", "bond risk premium",
+                     "default risk"],
+    "macro_regime": ["business cycle", "monetary policy", "recession",
+                     "inflation", "regime switching", "macroeconomic"],
+    "cross_asset": ["asset allocation", "risk parity", "multi-asset",
+                    "across asset classes", "cross-asset", "stock bond"],
+    "equity_xs": ["cross-section of expected", "cross section of stock",
+                  "anomaly", "equity factor", "characteristics and expected"],
+}
+
 _MARKET_SLEEVE = {
     "Equities": "equity_xs",
     "Bonds": "rates_credit",
@@ -104,6 +134,9 @@ def main():
     ap.add_argument("--target", type=int, default=2000)
     ap.add_argument("--min-indegree", type=int, default=2,
                     help="route C: how many seeds must cite a paper")
+    ap.add_argument("--floor-frac", type=float, default=0.35,
+                    help="share of the list reserved for per-sleeve coverage; "
+                         "the rest goes to graph centrality")
     ap.add_argument("--resolve-gap", type=int, default=3000,
                     help="resolve this many unheld high-in-degree references "
                          "to titles via OpenAlex (needs OPENALEX_API_KEY); "
@@ -296,6 +329,49 @@ def main():
     log(f"[core] route D authors    : {sum(1 for c in cand.values() if 'authors' in c['routes']):>6,}"
         f"  ({len(auth):,} candidates, most not yet in the archive)")
 
+    # ------------------------------------------------------------ deduplicate
+    # A paper reaches this pool under every identifier it has ever carried.
+    # "Value and Momentum Everywhere" arrived FOUR times -- three SSRN preprint
+    # ids from Papers With Backtest and the published JF doi from the author
+    # harvest -- so its evidence split four ways and not one fragment scored
+    # high enough to be selected. A bread-and-butter paper fell out of the core
+    # list because it was too well documented.
+    #
+    # Merge on the normalised title, keep the richest identifier (a published
+    # DOI beats a preprint id beats a bare OpenAlex id), and UNION the routes,
+    # because route agreement is the signal this list is built on.
+    def _rank_uid(u):
+        if u.startswith("doi:10.2139"):      # SSRN preprint
+            return 1
+        if u.startswith("doi:"):             # published DOI
+            return 3
+        if u.startswith("arxiv:"):
+            return 2
+        return 0                             # oa:, sig:, title hash
+
+    merged: dict[str, dict] = {}
+    for uid, c in cand.items():
+        title = ((items[uid]["title"] if uid in items else "")
+                 or c.get("ext_title") or c.get("pwb_title") or "")
+        key = _norm(title)[:70] or uid
+        prev = merged.get(key)
+        if prev is None:
+            merged[key] = c
+            continue
+        prev["routes"] |= c["routes"]
+        prev["seed_indegree"] = max(prev.get("seed_indegree", 0),
+                                    c.get("seed_indegree", 0))
+        for k, v in c.items():
+            if k not in ("routes", "seed_indegree") and v not in (None, "", [])                     and not prev.get(k):
+                prev[k] = v
+        if _rank_uid(c["uid"]) > _rank_uid(prev["uid"]):
+            prev["uid"] = c["uid"]
+            prev["held"] = c.get("held", prev.get("held"))
+    dropped = len(cand) - len(merged)
+    log(f"[core] deduplicated {len(cand):,} -> {len(merged):,} "
+        f"({dropped:,} were the same paper under another identifier)")
+    cand = {c["uid"]: c for c in merged.values()}
+
     # ----------------------------------------------------------------- score
     rows = []
     for uid, c in cand.items():
@@ -310,6 +386,17 @@ def main():
         cpy = (cites / age) if (isinstance(cites, int) and age) else None
         sleeve = (m.get("sleeves_prop") or m.get("sleeves") or [])
         sleeve = sleeve[0] if isinstance(sleeve, list) and sleeve else ""
+        if not sleeve:
+            # An unheld paper has no label, so read its TITLE against the
+            # high-precision vocabulary propagate.py already uses. Without this
+            # `carry` held ONE paper of 2,000 -- not because the pool lacked
+            # carry research but because nothing had labelled it.
+            t = _norm(items[uid]["title"] if uid in items else
+                      (c.get("ext_title") or ""))
+            for sl, phrases in _PHRASE.items():
+                if any(ph in t for ph in phrases):
+                    sleeve = sl
+                    break
         if not sleeve:
             # An UNHELD candidate has no sleeve label, and defaulting it to
             # "other" put 1,121 of 2,000 selections there -- which defeats the
@@ -354,18 +441,43 @@ def main():
 
     rows.sort(key=lambda r: -r["score"])
 
-    # ------------------------------------------------- quotas, then the tail
-    per = max(1, args.target // len(SLEEVES))
+    # ------------------------------------- centrality first, coverage second
+    # THIS IS A GRAPH CORE, NOT A BALANCED READING LIST. What makes a paper
+    # core is that the literature we already trust points AT it -- that is what
+    # a hub is, and seed_indegree measures it directly. An equal-quota split
+    # got this backwards: it forced in 181 microstructure papers to fill a
+    # bucket while pushing out papers hundreds of core papers cite.
+    #
+    # So centrality takes the majority of the list, and the quota becomes a
+    # FLOOR that guarantees no sleeve is empty rather than a cap that
+    # guarantees they are equal.
+    floor = max(1, int(args.target * args.floor_frac / len(SLEEVES)))
     picked, seen, bysleeve = [], set(), collections.Counter()
-    for r in rows:
-        if bysleeve[r["sleeve"]] < per:
-            picked.append(r); seen.add(r["uid"]); bysleeve[r["sleeve"]] += 1
-    for r in rows:                       # fill the remainder by pure score
+
+    central = [r for r in rows if r["seed_indegree"] > 0]
+    central.sort(key=lambda r: (-r["seed_indegree"], -r["score"]))
+    n_central = int(args.target * (1 - args.floor_frac))
+    for r in central[:n_central]:
+        picked.append(r); seen.add(r["uid"]); bysleeve[r["sleeve"]] += 1
+    log(f"[core] centrality picks   : {len(picked):,} "
+        f"(cited by >=1 seed; top by in-degree)")
+
+    for sl in SLEEVES:                   # floor: nobody starves
+        if bysleeve[sl] >= floor:
+            continue
+        for r in rows:
+            if bysleeve[sl] >= floor:
+                break
+            if r["sleeve"] == sl and r["uid"] not in seen:
+                picked.append(r); seen.add(r["uid"]); bysleeve[sl] += 1
+    log(f"[core] after sleeve floor : {len(picked):,} (floor {floor}/sleeve)")
+
+    for r in rows:                       # remainder by score
         if len(picked) >= args.target:
             break
         if r["uid"] not in seen:
             picked.append(r); seen.add(r["uid"])
-    picked.sort(key=lambda r: -r["score"])
+    picked.sort(key=lambda r: (-r["seed_indegree"], -r["score"]))
     for i, r in enumerate(picked, 1):
         r["rank"] = i
 
