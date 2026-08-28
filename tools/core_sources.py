@@ -416,6 +416,134 @@ def cmd_quantseeker(args):
     return 0
 
 
+# ------------------------------------------------------------------ roster
+# The roster is an APPROVED artifact, so it is committed under data/ rather
+# than regenerated. export/ is gitignored, so a roster living only there does
+# not exist in CI at all -- and re-running core_roster.py to recreate it would
+# re-resolve every name against S2, quietly replacing the list that was
+# reviewed and approved with whatever /author/search returns today. Same
+# reasoning as data/core_judgments.json: our work product is committed, the
+# third-party harvest is not.
+ROSTER = pathlib.Path("data") / "core_roster.csv"
+if not ROSTER.exists():
+    ROSTER = OUT / "core_roster.csv"
+S2_AUTHOR_PAPERS = "https://api.semanticscholar.org/graph/v1/author/{aid}/papers"
+
+
+def cmd_roster(args):
+    """The approved practitioner roster's publication history (route D).
+
+    THE ROSTER WAS BUILT AND THEN NEVER READ. `s2_harvest.py cmd_authors`
+    seeds from `config.WATCHLIST_SEED` and resolves ids through papers the
+    archive already holds, so it reached 30 people and 1,218 papers. The
+    roster is 175 people, every one already carrying a resolved S2 author id
+    -- and it is the reason Roncalli on risk parity, Ang on factor investing
+    and Campbell-Viceira on strategic allocation appear only as uncorroborated
+    single-route rows, if at all.
+
+    NEEDS_REVIEW IS A HARD GATE, NOT A HINT. core_roster.py states the
+    contract in its own docstring: nothing downstream may consume `s2_id`
+    while the flag is set, because /author/search on "Bryan Kelly" returns an
+    orthopaedic surgeon with h=78 rather than the economist with h=18, and 75
+    of the 175 have a second plausible profile. Importing the wrong person's
+    bibliography would poison every author-anchored feature with no error
+    anywhere, so the flagged rows are SKIPPED and counted, never guessed at.
+    """
+    import requests                                        # noqa: PLC0415
+    if not ROSTER.exists():
+        log(f"[roster] {ROSTER} missing -- run tools/core_roster.py first")
+        return 1
+    people = list(csv.DictReader(io.open(ROSTER, encoding="utf-8")))
+    usable, flagged, unresolved = [], 0, 0
+    for p in people:
+        if p.get("needs_review") == "1":
+            flagged += 1
+        elif p.get("s2_status") == "ok" and (p.get("s2_id") or "").strip():
+            usable.append(p)
+        else:
+            unresolved += 1
+    log(f"[roster] {len(people)} people: {len(usable)} harvestable, "
+        f"{flagged} skipped as needs_review (ambiguous S2 profile), "
+        f"{unresolved} unresolved")
+    if args.limit:
+        usable = usable[:args.limit]
+        log(f"[roster] --limit {args.limit}: harvesting {len(usable)}")
+
+    key = os.environ.get("S2_API_KEY", "").strip()
+    hdr = {"User-Agent": UA}
+    if key:
+        hdr["x-api-key"] = key
+    pause = 1.1 if key else 3.2
+
+    out, seen = [], set()
+    prog = Progress(len(usable), "roster", every_s=30)
+    for p in usable:
+        aid = p["s2_id"].strip()
+        offset, kept = 0, 0
+        while offset < 1000:                 # nobody indexed here exceeds it
+            body = None
+            for attempt in range(4):
+                try:
+                    rr = requests.get(
+                        S2_AUTHOR_PAPERS.format(aid=aid), headers=hdr,
+                        params={"fields": "title,year,citationCount,"
+                                          "externalIds",
+                                "limit": 100, "offset": offset}, timeout=60)
+                except Exception as e:                     # noqa: BLE001
+                    log(f"[roster]   {p['name']}: {type(e).__name__}")
+                    break
+                if rr.status_code == 429:
+                    time.sleep(4 * (attempt + 1))
+                    continue
+                if not rr.ok:
+                    log(f"[roster]   {p['name']}: HTTP {rr.status_code} "
+                        f"{rr.text[:90]}")
+                    break
+                body = rr.json()
+                break
+            if not body:
+                break
+            data = body.get("data") or []
+            for w in data:
+                ext = w.get("externalIds") or {}
+                doi = (ext.get("DOI") or "").lower()
+                arx = ext.get("ArXiv") or ""
+                # A DOI is preferred, but an arXiv id is a real identifier and
+                # build_core makes uids from both. Dropping DOI-less papers
+                # would silently lose the working-paper end of the literature,
+                # which for this roster is much of the interesting work.
+                if not doi and not arx:
+                    continue
+                k = f"doi:{doi}" if doi else f"arxiv:{arx}"
+                if k in seen:
+                    continue
+                seen.add(k)
+                out.append({"doi": doi, "arxiv": arx,
+                            "title": w.get("title") or "",
+                            "year": w.get("year") or "",
+                            "cites": w.get("citationCount") or 0,
+                            "author": p["name"], "s2_author": aid,
+                            "sleeve": p.get("sleeve") or ""})
+                kept += 1
+            if len(data) < 100:
+                break
+            offset += 100
+            time.sleep(pause)
+        prog.tick()
+        time.sleep(pause)
+    prog.done()
+
+    (OUT / "core_roster_papers.json").write_text(
+        json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
+    by_sleeve = collections.Counter(r["sleeve"] for r in out)
+    log(f"[roster] {len(out):,} unique papers from {len(usable)} people "
+        f"({sum(1 for r in out if r['doi']):,} with a DOI, "
+        f"{sum(1 for r in out if not r['doi']):,} arXiv-only)")
+    log(f"[roster] by sleeve: {dict(by_sleeve.most_common())}")
+    log(f"[roster] written to {OUT}/core_roster_papers.json -- candidates only")
+    return 0
+
+
 # ------------------------------------------------------------------- sweep
 S2_BULK = "https://api.semanticscholar.org/graph/v1/paper/search/bulk"
 TAGS_CSV = OUT / "core_tags.csv"
@@ -512,7 +640,7 @@ def cmd_sweep(args):
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="action", required=True)
-    for name in ("signaldoc", "pwb", "quantseeker", "sweep"):
+    for name in ("signaldoc", "pwb", "quantseeker", "sweep", "roster"):
         p = sub.add_parser(name)
         p.add_argument("--limit", type=int, default=0)
         if name == "sweep":
@@ -522,7 +650,8 @@ def main():
                            help="ignore the existing file and refetch all")
     args = ap.parse_args()
     return {"signaldoc": cmd_signaldoc, "pwb": cmd_pwb,
-            "quantseeker": cmd_quantseeker, "sweep": cmd_sweep}[args.action](args)
+            "quantseeker": cmd_quantseeker, "sweep": cmd_sweep,
+            "roster": cmd_roster}[args.action](args)
 
 
 if __name__ == "__main__":

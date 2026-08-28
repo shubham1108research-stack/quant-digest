@@ -90,6 +90,15 @@ jobs:
           python tools/core_sources.py signaldoc
           python tools/core_sources.py quantseeker
 
+      - name: Harvest the practitioner roster (route D)
+        # The roster was built, approved, and never read: s2_harvest seeds from
+        # config.WATCHLIST_SEED and reaches 30 people, while core_roster.csv
+        # holds 175 with resolved S2 ids. Rows flagged needs_review are skipped
+        # by the harvester, per that file's own contract.
+        env:
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
+        run: python tools/core_sources.py roster
+
       - name: Run the tag sweep (route A)
         # 299 terms, up to 3 pages each; ~20 min with the key. The sweep IS
         # route A -- skipping it is how carry ended up with 1 paper of 2,000.

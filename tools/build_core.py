@@ -438,10 +438,18 @@ def main():
             f"title -- keyed by uid, not merged")
     log(f"[core] route D quantseeker: {sum(1 for c in cand.values() if 'quantseeker' in c['routes']):>6,}")
 
-    auth = _load("watched_author_papers.json")
+    # TWO FILES, ONE ROUTE. watched_author_papers.json comes from
+    # s2_harvest's held-paper resolution and reaches 30 people;
+    # core_roster_papers.json comes from the 175-person roster this plan
+    # approved, which carries its own resolved S2 ids and therefore reaches
+    # practitioners the archive holds nothing by. Roncalli, Ang and
+    # Campbell-Viceira are in the second file and in neither of the others.
+    auth = _load("watched_author_papers.json") + _load("core_roster_papers.json")
     for r in auth:
         doi = (r.get("doi") or "").lower()
-        uid = by_doi.get(doi) or (f"doi:{doi}" if doi else None)
+        arx = (r.get("arxiv") or "").strip()
+        uid = (by_doi.get(doi) or (f"doi:{doi}" if doi else None)
+               or (f"arxiv:{arx}" if arx else None))
         if uid:
             add(uid, "authors", author=r.get("author"),
                 ext_title=r.get("title"), ext_cites=r.get("cites"),
