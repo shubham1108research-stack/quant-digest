@@ -28,6 +28,11 @@ on:
         type: boolean
         required: false
         default: false
+      skip_sweep:
+        description: "Reuse the recovered core_sweep.json instead of re-running route A (~20 min). Diagnostics only."
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -51,6 +56,32 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python tools/dbsync.py pull
 
+      - name: Reuse the previous harvest
+        # RUNS BEFORE THE HARVESTS, AND INTO ITS OWN DIRECTORY. Both matter.
+        # It used to run after them and unpack straight into export/, where
+        # `gh run download` aborts the WHOLE archive the moment one member
+        # already exists -- "error extracting core_signaldoc.csv: file exists"
+        # -- so core_pwb.json never arrived and route F reported 0 of 3,745
+        # papers in a job that exited green. Unpacking somewhere else and
+        # copying only what we mean to reuse cannot collide with a fresh
+        # harvest, and running first lets the sweep be skipped when its
+        # 20-minute output was already recovered.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+        run: |
+          mkdir -p export _prev
+          PREV=$(gh run list --workflow=build-core.yml --status=success \
+                   --limit 5 --json databaseId --jq '.[].databaseId' | head -1)
+          if [ -n "$PREV" ]; then
+            gh run download "$PREV" -n core-list -D _prev/ || true
+            for f in core_pwb.json core_sweep.json; do
+              [ -f "_prev/$f" ] && cp "_prev/$f" "export/$f" \
+                && echo "recovered $f from run $PREV"
+            done
+          fi
+          ls -la export/ 2>/dev/null || true
+
       - name: Harvest the cheap sources
         env:
           S2_API_KEY: ${{ secrets.S2_API_KEY }}
@@ -62,24 +93,18 @@ jobs:
       - name: Run the tag sweep (route A)
         # 299 terms, up to 3 pages each; ~20 min with the key. The sweep IS
         # route A -- skipping it is how carry ended up with 1 paper of 2,000.
+        # skip_sweep exists for diagnostic re-runs only, and refuses to skip
+        # unless a recovered core_sweep.json is actually on disk: a silently
+        # absent route A is the exact failure this workflow was written to
+        # stop happening again.
         env:
           S2_API_KEY: ${{ secrets.S2_API_KEY }}
-        run: python tools/core_sources.py sweep
-
-      - name: Reuse the previous harvest
-        # ~3,800 polite page fetches. Re-running it every build is rude to a
-        # site that has given us everything we asked for, and core_sources.py
-        # resumes from the file, so a recovered artifact means only genuinely
-        # new slugs get fetched.
-        env:
-          GH_TOKEN: ${{ github.token }}
-        continue-on-error: true
         run: |
-          PREV=$(gh run list --workflow=build-core.yml --status=success                    --limit 5 --json databaseId --jq '.[].databaseId' | head -1)
-          if [ -n "$PREV" ]; then
-            gh run download "$PREV" -n core-list -D export/ &&               echo "recovered core_pwb.json from run $PREV" || true
+          if [ "${{ inputs.skip_sweep }}" = "true" ] && [ -s export/core_sweep.json ]; then
+            echo "sweep SKIPPED -- reusing recovered core_sweep.json ($(wc -c < export/core_sweep.json) bytes)"
+          else
+            python tools/core_sources.py sweep
           fi
-          ls -la export/ 2>/dev/null || true
 
       - name: Harvest Papers With Backtest
         if: ${{ inputs.with_pwb == true }}
@@ -106,7 +131,7 @@ jobs:
         env:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
         run: |
-          python -c "import oa; oa.status()"
+          python -c "import oa; oa.preflight()"
           python tools/build_core.py --target 0
 
       - name: Clean the strays, then select

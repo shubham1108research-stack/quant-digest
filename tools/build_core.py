@@ -302,11 +302,20 @@ def main():
         want = gap[:args.resolve_gap]
         log(f"[core]   resolving the top {len(want):,} unheld references "
             f"({(len(want)+49)//50} requests)")
+        oa_auth.preflight(log)
         ids = [r for r, _ in want]
         deg = dict(want)
         got = 0
+        # A ROUTE THAT RETURNS ZERO MUST SAY WHY. This loop used to `continue`
+        # on any non-2xx, so sixty consecutive 401s -- a rejected API key --
+        # were indistinguishable from OpenAlex genuinely not knowing these
+        # works, and the job logged "resolved 0" and exited green.
+        fails = collections.Counter()
+        first_error = ""
         for i in range(0, len(ids), 50):
             batch = [x.rsplit("/", 1)[-1] for x in ids[i:i + 50]]
+            if i == 0:
+                log(f"[core]   sample ids: {', '.join(batch[:3])}")
             try:
                 rr = requests.get(
                     "https://api.openalex.org/works",
@@ -317,6 +326,9 @@ def main():
                             "per-page": 50},
                     timeout=60)
                 if not rr.ok:
+                    fails[rr.status_code] += 1
+                    if not first_error:
+                        first_error = rr.text[:200].replace("\n", " ")
                     continue
                 for w in (rr.json().get("results") or []):
                     doi = (w.get("doi") or "").replace("https://doi.org/", "")
@@ -328,8 +340,13 @@ def main():
                         ext_cites=w.get("cited_by_count"))
                     got += 1
             except Exception as e:                          # noqa: BLE001
-                log(f"[core]   gap batch failed: {type(e).__name__}: "
-                    f"{str(e)[:90]}")
+                fails[type(e).__name__] += 1
+                if not first_error:
+                    first_error = str(e)[:200]
+        if fails:
+            log(f"[core]   !! {sum(fails.values())} of "
+                f"{(len(ids)+49)//50} batches FAILED: {dict(fails)}")
+            log(f"[core]   !! first error: {first_error}")
         log(f"[core]   resolved {got:,} unheld references into candidates")
 
     # ----------------------------------------------- F/G/D: harvested sources
