@@ -1,0 +1,382 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Get Rich Quick Trading Strategies (and why they don’t work)</title>
+<!-- source: https://robotwealth.com/get-rich-quick-trading-strategies-and-why-they-dont-work/ -->
+<h1>Get Rich Quick Trading Strategies (and why they don’t work)</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-23044 post type-post status-publish format-standard hentry category-r category-think-like-a-trader category-trading-strategies category-zorro tag-martingale pmpro-has-access" id="post-23044">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 13, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Get Rich Quick Trading Strategies (and why they don’t work)</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Get Rich Quick Trading Strategies (and why they don’t work)" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Every aspiring millionaire who comes to the markets armed with some programming ability has implemented a systematic Get Rich Quick (GRQ) trading strategy.
+
+Of course, they don’t work.
+
+Deep down even the greenest of newbies knows this. Yet, still, we are compelled to give them a try, just once, just for fun (or so we tell ourselves).
+
+In this series, we’ll explore three of the Get Rich Quick trading strategies that tempted me back in the early years of my market adventures. In particular, we’ll have a look at <em>why</em> they don’t work…and what we might do instead.
+
+<h2>The Martingale</h2>
+<em>Martingale</em> refers not to a trading strategy, but to a betting scheme whereby the bettor doubles the stake following each losing bet until a winner occurs.
+
+As is frequently the case in GRQ strategies, naïve traders mistake such a betting scheme for an edge.
+
+If you have an edge, you have a positive expectancy because the odds are tilted in your favour. Casinos have edges simply by the design of their games, such as the roulette wheel paying out 35:1 on a correct guess that has a probability of only 1 in 36.
+
+Betting strategies don’t fundamentally change these odds – how could they?
+
+I think this is probably the most misunderstood point that tricks people into thinking Martingale is a good idea: <strong><em>a losing streak does not increase the odds of the next bet being a winner.</em></strong>
+
+The Martingale as a Get Rich Quick <em>(from now on, “GRQ”)</em> trading strategy also has a fundamental constraint: no one can go on increasing their bankroll infinitely. Eventually, you come up against the hard limit imposed by your bank account or your broker’s willingness to extend you margin.
+
+That means that <strong><em>with Martingale betting, you’re guaranteed to lose</em></strong> because the winning and losing streaks of a trading strategy – like a game of chance in a casino – are random.
+
+Said differently… even if you do have an edge, you’re eventually going to have a losing streak that puts you out of business if you use Martingale sizing.
+
+<h2>Let’s Do Some Simulation</h2>
+
+Here’s some <a href="https://www.zorro-trader.com/">Zorro Lite-C</a> code for simulating a random trading strategy with Martingale position sizing and an account that started with $10,000:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c">function run()
+{
+    setf(PlotMode, PL_FINE);
+    StartDate = 2010;
+    Capital = 10000;
+    BarPeriod = 1440;
+    
+    if(Equity - MarginVal &lt; Capital)         
+        Lots = 0;
+    
+    // random trading strategy 
+    Stop = TakeProfit = ATR(100);
+    Lots = pow(2, LossStreakTotal);  // Martingale position sizing
+    
+    if(NumOpenTotal == 0) {
+        if(random() &lt; 0)
+            enterShort();
+        else 
+            enterLong();
+    }
+    set(PLOTNOW);
+}</pre>
+
+When it holds no position, it enters long or short randomly using the minimum position size possible, sticks in a stop and take profit limit, and then doubles down on the next trade if the previous one was a loser.
+
+If I run this a few times over any financial market, I get equity curves that look like this:
+
+<img alt="" class="size-full wp-image-23092 aligncenter perfmatters-lazy" data-sizes="(max-width: 654px) 100vw, 654px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21162026/MartingaleSizingPunish2-1.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21162026/MartingaleSizingPunish2-1.png 654w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162026/MartingaleSizingPunish2-1-600x334.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162026/MartingaleSizingPunish2-1-300x167.png 300w" decoding="async" height="364" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='654'%20height='364'%20viewBox='0%200%20654%20364'%3E%3C/svg%3E" width="654"/>
+
+And this…
+
+<img alt="" class="size-full wp-image-23094 aligncenter perfmatters-lazy" data-sizes="(max-width: 654px) 100vw, 654px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21162025/MartingaleSizingPunish-1.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21162025/MartingaleSizingPunish-1.png 654w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162025/MartingaleSizingPunish-1-600x334.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162025/MartingaleSizingPunish-1-300x167.png 300w" decoding="async" height="364" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='654'%20height='364'%20viewBox='0%200%20654%20364'%3E%3C/svg%3E" width="654"/>
+
+Occasionally, I get one that looks like this:
+
+<img alt="" class="size-full wp-image-23096 aligncenter perfmatters-lazy" data-sizes="(max-width: 654px) 100vw, 654px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21162024/MartingaleSizingNotPunish2.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21162024/MartingaleSizingNotPunish2.png 654w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162024/MartingaleSizingNotPunish2-600x334.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162024/MartingaleSizingNotPunish2-300x167.png 300w" decoding="async" height="364" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='654'%20height='364'%20viewBox='0%200%20654%20364'%3E%3C/svg%3E" width="654"/>
+
+That last one is an example of where the sequence of winning and losing trades <em>didn’t</em> blow up our trading account over the simulation period.
+
+<blockquote><em>How often does that happen?</em></blockquote>
+
+We can get some empirical insight by simulating our strategy a few thousand times and plotting a histogram of the results. Zorro makes that quite easy. This code runs that same simulation 5,000 times and spits out a histogram of account ending balances:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c">void plotHistogram(string Name,var Val,var Step,var Weight,int Color)
+{
+    var Bucket = floor(Val/Step);
+    plotBar(Name, Bucket, Step*Bucket, Weight, SUM+BARS+LBL2, Color);   
+}
+
+function run()
+{
+    setf(PlotMode, PL_FINE);
+    StartDate = 2010;
+    Capital = 10000;
+    BarPeriod = 1440;
+    NumTotalCycles = 5000;
+    
+    if(Equity - MarginVal &lt; Capital)         
+        Lots = 0;
+    
+    // random trading strategy 
+    Stop = TakeProfit = ATR(100);
+    Lots = pow(2, LossStreakTotal);  // Martingale position sizing
+    
+    if(NumOpenTotal == 0) {
+        if(random() &lt; 0)
+            enterShort();
+        else 
+            enterLong();
+    }
+    set(PLOTNOW);
+    if(is(EXITRUN)) 
+    {
+        var finalValue = max(0, Equity);
+        plotHistogram("Account Equity", finalValue, 500, 1, RED);   
+    }
+}</pre>
+
+Here’s the result.
+
+<img alt="" class="size-full wp-image-23049 aligncenter perfmatters-lazy" data-sizes="(max-width: 771px) 100vw, 771px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21162031/MartingaleSizing10kCapital.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21162031/MartingaleSizing10kCapital.png 771w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162031/MartingaleSizing10kCapital-600x281.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162031/MartingaleSizing10kCapital-300x140.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162031/MartingaleSizing10kCapital-768x360.png 768w" decoding="async" height="361" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='771'%20height='361'%20viewBox='0%200%20771%20361'%3E%3C/svg%3E" width="771"/>
+
+This is a histogram of our terminal account equity at the end of the simulation.
+
+We lost our shirts in about 80% of the simulations… <em>Complete Capital Destruction.</em>
+
+In  20% of the simulations, we ended up with (slightly) more money than we started with if we Martingale this strategy for ten years <em>(ignoring real-world constraints and frictions, like transaction costs).</em>
+
+Of course, that 20% of favourable simulations doesn’t mean the strategy has an edge. It simply means that the sequence of winning and losing trades that played out just happened to be favourable a few times. Given a long enough time horizon, that 20% of simulations that made money will go to 0%.
+
+<h3>Effect of Increasing Trading Frequency</h3>
+
+Although we don’t have an unlimited amount of data over which to demonstrate this, we can do something analogous by increasing the frequency of our trades. Whatever edge we have will be more closely born out in the simulation if we can get more trades. We can do that by simply decreasing the bar period to say 60 minutes, so now the strategy gets the opportunity to trade every hour.
+
+<em><strong>Give it a try – you’ll find that almost certainly, all the simulations will go bust.</strong></em>
+<h3>Effect of Increasing Starting Capital</h3>
+
+Finally, a well-capitalised trader might be tempted to simply increase their bankroll – that is, give themselves more room for tolerating longer losing streaks and bigger positions.
+
+Let’s see how a starting capital of $100,000 plays out over 5,000 simulations of our original daily-frequency strategy:
+
+<img alt="" class="size-full wp-image-23054 aligncenter perfmatters-lazy" data-sizes="(max-width: 786px) 100vw, 786px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21162028/MartingaleSizing100kCapital_HFT.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21162028/MartingaleSizing100kCapital_HFT.png 786w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162028/MartingaleSizing100kCapital_HFT-600x269.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162028/MartingaleSizing100kCapital_HFT-300x135.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162028/MartingaleSizing100kCapital_HFT-768x345.png 768w" decoding="async" height="353" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='786'%20height='353'%20viewBox='0%200%20786%20353'%3E%3C/svg%3E" width="786"/>
+
+Indeed, as expected we see fewer blow-ups over this ten year period. But no sensible trader would mistake that for an edge – we know that over a long enough time horizon those finishing balances are all going to zero.
+
+<h2>Probability of Going Bust with Martingale position sizing</h2>
+
+Let’s think about this in terms of probability.
+
+No matter your initial position size, if you continue to double it with every loss, there’s some loss streak, \( N \), that sends you bust. That loss streak depends only on the size of your initial stake. For simplicity, let’s measure that initial stake as a percentage of account equity.
+
+Switching over to R, here’s a function for calculating that loss streak:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">blow_up_loss_streak &lt;- function(initial_size = 0.01) {
+  # loss streak required to lose starting capital
+  
+  loss_pct &lt;- cumsum(initial_size*2^(c(0:50)))
+  return(which(loss_pct &gt; 1)[1])
+}</pre>
+
+If we start by betting 1% of our bankroll and commence a losing streak, our cumulative losses after each trade are 1%, 3%, 7%, 15%, 31%, 63%, 127% – so by the 7th trade we’ve blown up.
+
+The probability of this loss streak occurring is a function of the strategy’s win rate:   \( P(streak) = (1 - w)^N \) where \( P(streak) \) is the probability of having a losing streak of sufficient length to blow up the account, \( w \) is the strategy’s win rate, and \( N \) is the length of the losing streak.
+
+The probability of that <em>not</em> happening in \( n \) trades is \( (1 - P(streak))^n \), from which we can find \( n_{50} \), the number of trades we’d need to take to have a 50% of chance of blowing up: \( n_{50} = \frac{log(0.5)}{log(1 - P(streak))} \).
+
+Here’s some R code for determining \( n_{50} \) given an initial bet size and a strategy win rate:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">n_50 &lt;- function(win_rate, initial_size) {
+  
+  # loss streak to blow up
+  streak &lt;- blow_up_loss_streak(initial_size)
+  
+  # probability of streak of losses given win rate
+  P_blow_up &lt;- (1 - win_rate)^streak
+  
+  # number of trades for whcih probability of blowing up exceeds 50%
+  n &lt;- log(0.5)/log(1 - P_blow_up)   
+  
+  return(n)
+}</pre>
+
+And here’s some code for plotting the relationship between initial stake, win rate and \( n_{50} \):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(tidyverse)
+
+win_rates &lt;- seq(0.5, 0.65, by = 0.02)
+initial_sizes &lt;- c(0.0025, 0.005, 0.01)
+
+df &lt;- data.frame(
+  win_rate = rep(win_rates, length(initial_sizes)), 
+  initial_size = (
+    map(initial_sizes, ~rep(., length(win_rates))) %&gt;% 
+    unlist()
+  )
+) 
+df &lt;- df%&gt;%
+  mutate(n_50 = map2_dbl(df$win_rate, df$initial_size, .f = n_50)) 
+
+df %&gt;%
+  ggplot(aes(x = win_rate, y = n_50, colour = as.factor(initial_size))) +
+    geom_line() +
+    labs(
+      x = "Win Rate",
+      y = "n 50",
+      title = "Martingale Position Sizing",
+      subtitle = "Number of trades for 50% probability of blowing up",
+      colour = "Initial size"
+    ) +
+  theme_bw()</pre>
+
+Here’s the resulting plot:
+
+<img alt="" class="size-full wp-image-23051 aligncenter perfmatters-lazy" data-sizes="(max-width: 751px) 100vw, 751px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21162029/Rplot.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21162029/Rplot.png 751w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162029/Rplot-600x321.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162029/Rplot-300x161.png 300w" decoding="async" height="402" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='751'%20height='402'%20viewBox='0%200%20751%20402'%3E%3C/svg%3E" width="751"/>
+<h2>Conclusion</h2>
+
+Martingale is not a trading strategy – it’s a bet sizing technique that relies on infinite capital, which of course no one possesses. In the real world, it’s mathematically guaranteed to blow up your trading account.
+
+If you had a real edge, you’d be foolish to trade it using the Martingale approach, since you’re essentially <em><strong>removing</strong> </em>your edge and guaranteeing eventual failure. You will run out of bankroll eventually, even if you <em><strong>do</strong></em> have an edge.
+
+<strong><em>So what’s the solution?</em></strong>
+
+To state the obvious, have an edge and trade it at a sensible size! Or at least give yourself the best chance of trading with an edge. At a high level, that looks like this:
+
+<ul>
+<li>Trade the risk premia</li>
+<li>Trade the carry</li>
+<li>Look for inefficiencies that you can exploit with your trading costs and setup</li>
+<li>Size sensibly, and embrace the fact that not all your positions will be winners</li>
+</ul>
+
+We’ll walk you through the practicalities of this in our upcoming Bootcamp:
+
+<div class="convertful-36233"></div>
+<div></div>
+<h2></h2>
+<h2>Want all the Code?</h2>
+
+Get it from our <a href="https://github.com/Robot-Wealth/r-quant-recipes/tree/master/research-examples/get-rich-quick">github repository</a><a> here.</a>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>martingale</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-133234 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai tag-data-mining tag-llms pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/for-the-love-of-the-game/"><img alt="For The Love of The Game" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="133235" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-80x69.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-480x413.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game.png 893w" decoding="async" height="660" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='660'%20viewBox='0%200%20768%20660'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-132449 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/to-trend-or-not-to-trend-wrong-question/"><img alt="To Trend or Not To Trend? (Wrong question)" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="132450" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-131547 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/brave-new-backtest/"><img alt="Brave New Backtest" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="131550" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-150x150.jpeg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-80x80.jpeg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-480x480.jpeg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-960x960.jpeg 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst.jpeg 1024w" decoding="async" height="768" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='768'%20viewBox='0%200%20768%20768'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">1 thought on “Get Rich Quick Trading Strategies (and why they don’t work)”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-14542">
+<div class="comment-body">
+				Pingback: Weekly Roundup 22 May - Doubling Down in Losing Trades Like a Drunken Hedge Fund Manager - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/get-rich-quick-trading-strategies-and-why-they-dont-work/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

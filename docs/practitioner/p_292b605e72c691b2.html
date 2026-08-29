@@ -1,0 +1,203 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Bond. Treasury Bond</title>
+<!-- source: https://robotwealth.com/bond-treasury-bond/ -->
+<h1>Bond. Treasury Bond</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-6119 post type-post status-publish format-standard hentry category-backtesting tag-treasury-bonds pmpro-has-access" id="post-6119">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">June 21, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Bond. Treasury Bond</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Bond. Treasury Bond" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><img alt="" class="alignnone size-full wp-image-6120 perfmatters-lazy" data-sizes="(max-width: 236px) 100vw, 236px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/06/21170045/bond.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/06/21170045/bond.jpg 236w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170045/bond-220x300.jpg 220w" decoding="async" height="322" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='236'%20height='322'%20viewBox='0%200%20236%20322'%3E%3C/svg%3E" width="236"/>
+
+The Federal Reserve publishes the yield-to-maturity of US Treasury bonds. However, the actual returns earned by investors are not publicly available. Nor are they readily and intuitively discerned from historical yields, since <em>“a bond’s return equals its yield only if its yield stays constant and if all coupons (cash payments) are reinvested at that same yield”</em> (Tuckman and Angel, 2013, p.95).
+
+Recently, Laurens Swinkels of Erasmus University in the Netherlands estimated such a return series using publicly available data for US government bonds with 10-year maturity. The working paper accompanying the data is not yet available, but he has generously published his data in an Excel spreadsheet, including formulas for the return estimation process. You can find the data <a href="https://eur.figshare.com/articles/Data_Treasury_Bond_Return_Data_Starting_in_1962/8152748" rel="noopener noreferrer" target="_blank">here</a>.
+
+One nice result of this data is that it enables the construction of a proxy for a bond price series, which can be thought of as representing a constant exposure to 10-year treasuries, and thus facilitate <em>ex-post </em>analysis of various timing models.
+
+This idea of a constant exposure is much like an allocation to the ETF IEF or the ZN futures contract in that it is essentially a dynamic trading strategy to maintain a roughly constant time to maturity. However, IEF has only been around since 2002. ZN first traded back in 1982. Swinkels’ data set on the other hand goes back all the way to 1962, so offers the opportunity to explore bonds trading strategies over more than 65 years.
+
+<h2>Background: what’s a treasury?</h2>
+
+A treasury is a debt obligation issued by the US government to finance its spending. US Treasury securities are among the most liquid securities in the world and are perceived as one of the safest investments globally. In practical terms, this means that the demand for treasuries increases when something happens to scare investors. You can see this playing out for example in the recent price action of the TLT ETF, which holds long-duration treasuries:
+
+<img alt="" class="alignnone size-large wp-image-6121 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/06/21170043/TLT-1024x427.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/06/21170043/TLT-1024x427.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170043/TLT-600x250.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170043/TLT-300x125.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170043/TLT-768x320.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170043/TLT-1000x417.png 1000w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170043/TLT.png 1567w" decoding="async" height="427" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='427'%20viewBox='0%200%201024%20427'%3E%3C/svg%3E" width="1024"/>
+
+Treasury bonds (also known as <em>notes</em>) entitle the holder to regular interest payments until <em>maturity</em>, at which time the principal, or the amount loaned in exchange for the bond, is returned. Treasury <em>bills, on the other hand,</em> have short maturities (one year or less) and only pay out at maturity.
+
+The idea of “buying a single bond” is easy to understand. The coupons are just priced on a fixed rate and are never going to change. Say you buy a 10 year bond. It turns into a 9 year bond, then an 8 year, a 7 year, and eventually a 1 year, paying you a fixed amount at known intervals along the way. Then it matures and your principal is returned. Therefore, if you hold your bond to maturity you know exactly what yield you are going to get on the original capital you paid for it.
+
+Maintaining an “exposure” to bonds is more nuanced. Conceptually, the value of the exposure’s cash flows changes based on current rate conditions and time to maturity of the actual securities held. And rate conditions can change differently at different points on the curve at the same time. This all gets quite complex – hence the value of Swinkels’ data set.
+
+<h2>Returns to US treasury exposure since 1962</h2>
+
+First, here’s the cumulative return from holding a constant exposure to bonds since 1962 (Column F from Swinkels’ data):
+
+<img alt="cumulative us treasury bond return" class="alignnone size-full wp-image-6138 perfmatters-lazy" data-sizes="(max-width: 1008px) 100vw, 1008px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/06/21170042/Cumulative-Treasury-Return.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/06/21170042/Cumulative-Treasury-Return.png 1008w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170042/Cumulative-Treasury-Return-600x257.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170042/Cumulative-Treasury-Return-300x129.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170042/Cumulative-Treasury-Return-768x329.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170042/Cumulative-Treasury-Return-1000x429.png 1000w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1008'%20height='432'%20viewBox='0%200%201008%20432'%3E%3C/svg%3E" width="1008"/>
+
+That’s a total return of about 4,400%.
+
+Of course, one needs to take care interpreting this figure. This is the return you would have achieved if you could have maintained a constant time-to-maturity, re-invested all of your profits, and done so cost-free. So it’s not overly useful for estimating an investor’s actual returns, but it is useful for getting some insight into how US Treasuries, as an asset class, have performed over this time scale, particularly for comparison with other assets.
+
+<div>
+<h2>Returns to US treasury timing models</h2>
+Before we get started exploring timing models, it bears stating that in this analysis, we’re not so much interested in actual returns, as there will necessarily be many assumptions baked into the analysis (like those mentioned above). But we are <em>really </em>interested in whether timing models can beat a benchmark under the same assumptions.
+
+I’m not holding out a lot hope that we can do better than buy and hold, as bonds have done so well for so long. The reality of trying to time a bond exposure is that whenever you are “out” of bonds you are giving up exposure to the yield – that is, you forgo interest payments, which probably account for the majority of the total returns (although I haven’t verified this). In line with our Robot Wealth mantra to ‘trade humble’ I very much doubt the ability of any simple timing model to overcome this hurdle.
+
+But you never know. In part 2 of this series, we’ll look at various factors in an attempt to outperform a buy and hold bond exposure. We’ll start by looking at the usual momentum and value factors, but if you have any ideas you’d like us to take a look at, let us know in the comments.
+
+</div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>treasury bonds</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-89281 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-factors category-quant-trading category-r category-trading-strategies tag-crypto tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-simple-effective-way-to-manage-turnover-and-not-get-killed-by-costs/"><img alt="A Simple, Effective Way to Manage Turnover and Not Get Killed by Costs" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="89282" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-32069 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-fx category-r category-time-series-modelling category-trading-strategies category-zorro tag-acr tag-arima tag-autoregressive-model tag-fx tag-mean-reversion tag-pacf tag-time-series pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/trading-fx-using-autoregressive-models/"><img alt="Trading FX using Autoregressive Models" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="32151" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-300x157.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-300x157.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-600x314.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-1024x536.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-768x402.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-1000x523.png 1000w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models.png 1200w" decoding="async" height="157" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='157'%20viewBox='0%200%20300%20157'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-23728 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-fx category-quant-trading category-zorro tag-algorithmic-trading tag-backtesting tag-fx tag-trading-strategies tag-zorro pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/exploiting-the-non-farm-payrolls-drift/"><img alt="Exploiting The Non-Farm Payrolls Drift" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="23903" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161854/non-farm-payrolls-300x169.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161854/non-farm-payrolls-300x169.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161854/non-farm-payrolls.jpg 512w" decoding="async" height="169" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='169'%20viewBox='0%200%20300%20169'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">2 thoughts on “Bond. Treasury Bond”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-5167">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 06/21/2019 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-minshengw odd alt thread-odd thread-alt depth-1" id="comment-7433">
+<article class="comment-body" id="div-comment-7433" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>A very good post about Bonds. . I think the most common factors are momentum, value and volatility. Looking forward to part 2 with these factors.</p>
+<span class="reply"><a aria-label="Reply to Minsheng Wu" class="comment-reply-link" data-belowelement="div-comment-7433" data-commentid="7433" data-postid="6119" data-replyto="Reply to Minsheng Wu" data-respondelement="respond" href="#comment-7433" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/bond-treasury-bond/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

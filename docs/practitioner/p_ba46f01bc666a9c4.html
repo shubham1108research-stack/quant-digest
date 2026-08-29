@@ -1,0 +1,546 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>A Quant’s Approach to Drawdown: The Cold Blood Index</title>
+<!-- source: https://robotwealth.com/a-quants-approach-to-drawdown-the-cold-blood-index/ -->
+<h1>A Quant’s Approach to Drawdown: The Cold Blood Index</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-10404 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-think-like-a-trader category-zorro tag-cold-blood-index tag-drawdown tag-zorro pmpro-has-access" id="post-10404">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">September 3, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">A Quant’s Approach to Drawdown: The Cold Blood Index</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="A Quant’s Approach to Drawdown: The Cold Blood Index" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In <a href="https://robotwealth.com/a-quants-approach-to-drawdown/" rel="noopener noreferrer" target="_blank">part 1</a> of this series, we talked about how a market-savvy systematic trader would approach a period of drawdown in a trading strategy.
+
+Specifically, they’d:
+
+<ul>
+<li>do the best job possible of designing and building their trading strategy to be robust to a range of future market conditions</li>
+<li>chill out and let the strategy do its thing, understanding that drawdowns are business-as-usual</li>
+<li>go and look for other opportunities to trade.</li>
+</ul>
+<em>Of course, at some point, you have to retire strategies. Alpha doesn’t persist forever.</em>
+
+In our own trading, we don’t systematise this decision process. We weigh up the evidence and make discretionary judgements. All things being equal we tend to allow things a lot of space to work out.
+
+However, in this post, we review a systematic approach which can aid this decision making…
+
+In particular, we concentrate on the following question: <em>“</em><span class="c-message__body" data-qa="message-text" dir="auto"><em>what is the difference between the empirical distributions of live and backtested returns?”</em> </span>
+
+Let’s dive in and explore <em>The Cold Blood Index!</em>
+<h2 class="p3">What is Drawdown in Trading?</h2>
+
+Drawdown is just a fancy word for the fall from a peak in your equity curve to the next low point. Traders usually quote it as a percentage, and it tells you how much of your capital has been eroded before things recover.
+
+Why does it matter? Because drawdowns are inevitable. They’re the tax we all pay for pursuing returns in noisy, efficient markets. The deeper or longer the drawdown, the harder it is on both your capital and your psychology.
+
+Every strategy, no matter how well researched, will go through periods of drawdown. The real question isn’t if they happen, but whether what you’re experiencing is still “normal” or if your strategy has actually broken down.
+
+That’s exactly the problem the Cold Blood Index is designed to help with.
+
+<h2 class="p3">Becoming Cold-Blooded….</h2>
+
+Johan Lotter, the brains behind the <a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro development platform</a>, proposed an empirical approach to the problem of reconciling backtest returns with live returns.
+
+Put simply, his approach compares a drawdown experienced in live trading to the backtested equity curve, and he called this approach the <strong>Cold Blood Index (CBI)</strong>.
+
+Apart from sounding like something you’d use to rank your favourite reptiles, we’re going to break down the CBI and find out what it can tell you about your drawdowns in live trading — especially when panic alarms are busy going off in your lizard brain.
+
+<img alt="" class="aligncenter wp-image-9429 size-medium perfmatters-lazy" data-sizes="(max-width: 280px) 100vw, 280px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/08/21165452/reptile-280x300.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/08/21165452/reptile-280x300.jpg 280w, https://media.robotwealth.com/wp-content/uploads/2019/08/21165452/reptile-600x643.jpg 600w, https://media.robotwealth.com/wp-content/uploads/2019/08/21165452/reptile-560x600.jpg 560w, https://media.robotwealth.com/wp-content/uploads/2019/08/21165452/reptile.jpg 640w" decoding="async" height="300" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='280'%20height='300'%20viewBox='0%200%20280%20300'%3E%3C/svg%3E" width="280"/>
+
+You can see Johan’s <a href="https://www.financial-hacker.com/the-cold-blood-index/" rel="noopener noreferrer" target="_blank"><span class="s2">blog post</span></a> from 2015 for the original article.
+
+<em>Let’s break it down….</em>
+<h2>The Cold Blood Index Explained</h2>
+
+Paying homage to its creator, we’ll utilise Zorro to illustrate the CBI in action.
+
+<em>Don’t worry if any of these details are hard to grasp. Follow the bigger picture and revisit the finer nuances later.</em>
+
+Say you have been trading a strategy live for (t) days and are in a drawdown of length (l) and depth (D).
+
+You want to know how this compares with the backtest. Most people will want to use this to decide whether their strategy is ‘broken’, but remember that <em>backtests are far from a 100% accurate representation of future performance. </em>So be careful how you use this thing.
+
+The CBI is an estimate of the probability of experiencing the current drawdown if the strategy <em>hasn’t</em> deviated from its backtest.
+
+<ul>
+<li>A high CBI indicates that the current drawdown is <em>not</em> unexpected, meaning the strategy probably hasn’t deviated from its backtest.</li>
+<li>A low CBI indicates that the system that produced the backtest is very unlikely to have produced the current drawdown – meaning the live strategy <em>has</em> deviated from the backtest.</li>
+</ul>
+
+Our <em>null hypothesis</em> (default stance) is that the live strategy’s current drawdown could have been produced by the backtested strategy.
+
+The CBI is the <em>p</em>-value used to evaluate the statistical test of our null hypothesis.
+
+<strong>More simply,</strong> <strong>the CBI is the probability that the current drawdown would be equal to (or more extreme than) its observed value if the strategy hadn’t deviated</strong>.
+
+Typically, we don’t have access to the entire population of data points, but only a sample or subset of the total population. So, statistical hypothesis testing is a process that tests claims about the population we DO have, on the basis of evidence gleaned from the sample.
+
+Since we don’t have the full population we can never be <em>totally sure</em> of any conclusion we draw (just like virtually all things in trading), but we CAN accept or reject the claims on the basis of the strength of the evidence.
+
+The strength of the evidence is encapsulated in the <strong><em>p</em>-value. </strong>But we also need a statistical test for calculating it.
+
+<strong>In this case, our statistical test is empirical in nature – it is derived directly from the backtest equity curve. </strong>
+
+Deriving an empirical statistical test involves calculating the distribution of the phenomenon we are testing – in this case, the depth of drawdowns of length (l) within a live trading period (t) – from the sample data (our backtest).
+
+Then, we compare the phenomenon’s observed value ((D), the depth of our current drawdown of length (l)) with the distribution obtained from the sample data, deriving the <em>p</em>-value directly from the observed value’s position on the sample distribution.
+
+<h2>Example: Underwater from Day One</h2>
+
+Naturally, let’s start with the <em>worst-case scenario.</em>
+
+Take the simple case where our trading time, (t) is the same as the length of our current drawdown, (l).
+
+To calculate the empirical distribution, we simply take a window of length (l) and place it at the first period in the backtest balance curve.
+
+That is, the window initially covers the backtest balance curve from the first bar to bar (l).
+
+Then, we simply calculate the difference in balance across the window, (G), and record it. Then, we slide the window by one period at a time until we reach the end of the balance curve, calculating the change in balance across each window as we go.
+
+At the completion of this process, we have a total of (M) values for balance changes across windows of length (l) ((M) is equal to the length of the backtest minus (l) plus one). Of these (M) values, (N) will show a greater drawdown than our current drawdown, (D). Then, the CBI, here denoted (P), is simply [P = \frac{N}{M}]
+
+Here’s the code for calculating the CBI and plotting the empirical distribution from the backtest, for this special case where the strategy is underwater from the first day of live trading:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Cold Blood Index - Special Case">/* Cold Blood Index
+
+Special case of drawdown length equal to trade time
+That is, strategy underwater since inception
+
+*/
+
+int TradeDays = 60; // Days since live start and in drawdown
+var DrawDown = 20;   // Current drawdown depth in account currency
+
+string BalanceFile = "Log\\simple_portfolio.dbl";
+
+void Histogram(string Name,var Value,var Step,int Color)
+/* plots a histogram given a value and bin width */
+{
+  var Bucket = floor(Value/Step);
+  plotBar(Name,Bucket,Step*Bucket,1,SUM+BARS+LBL2,Color);
+}
+
+
+void main()
+{
+    var HistStep = 10; //bin width of histogram
+    plotBar("Live Drawdown",DrawDown/HistStep,DrawDown,80,BARS|LBL2,BLACK); //mark current drawdown in histogram
+    
+    // import balance curve
+    int CurveLength = file_length(BalanceFile)/sizeof(var);
+    var *Balances = file_content(BalanceFile);
+    
+    // get number of samples
+    int M = CurveLength - TradeDays + 1;
+    
+    // sliding window calculations
+    var GMin=0, N=0; //define N as a var to prevent integer truncation in calculation of P
+    int i;
+    for(i=0; i&lt;M; i++)
+    {
+        var G = Balances[i+TradeDays-1] - Balances[i];
+        if(G &lt;= -DrawDown) N += 1.;
+        if(G &lt; GMin) GMin = G;
+        Histogram("G", G, HistStep, RED); 
+    }
+    
+    var P = N/M;
+
+    printf("\nTest period: %i days",CurveLength);
+    printf("\nWorst test drawdown: %.f",-GMin);
+    printf("\nSamples: %i\nSamples worse than observed: %i",M,(int)N);
+    printf("\nCold Blood Index: %.1f%%",100*P);
+}</pre>
+
+To use this script, you first need to save the profit and loss time series data from a backtest (also, the backtest will need to use the same money management approach as used in live trading).
+
+Do that by setting Zorro’s <span class="lang:c decode:true crayon-inline">LOGFILE</span>  and <span class="lang:c decode:true crayon-inline">BALANCE</span>  parameters, which automatically save the backtest’s balance curve in Zorro’s log file.
+
+Having saved the balance curves, in the CBI script above, make sure the string <span class="lang:c decode:true crayon-inline">BalanceFile</span>  is set correctly (line 11).
+
+Here’s an example. Say we had been trading our strategy live and we were concerned about the performance of the <em>EUR/USD: rsi</em> component. It’s been trading for 60 days now, and that component is showing a drawdown of $20.
+
+Plugging those values into the script above and loading that component’s backtested balance curve gives the following histogram:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/CBI_EUR_RSI.png"><img alt="" class="aligncenter wp-image-3101 size-full perfmatters-lazy" data-src="https://robotwealthstg.wpengine.com/wp-content/uploads/2017/08/CBI_EUR_RSI.png" decoding="async" height="513" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='495'%20height='513'%20viewBox='0%200%20495%20513'%3E%3C/svg%3E" width="495"/></a>
+
+The script also outputs to the Zorro GUI window some pertinent information. Firstly, that of 1,727 sample windows, 73 were worse than our observed drawdown. CBI is then calculated as (73/1,727 = 0.04), which may exceed some individuals’ threshold confidence level of 0.05 (remember a smaller CBI provides stronger evidence of a “broken” strategy). But this is somewhat arbitrary.
+
+We can also run the CBI script with various values of <span class="lang:c decode:true crayon-inline">TradeDays</span>  and <span class="lang:c decode:true crayon-inline">DrawDown</span> to get an idea of what sort of drawdown would induce changes in the p-value.
+
+<h2>And when a profitable strategy starts to sink?</h2>
+
+The implementation of CBI above is for the special case where the strategy has been experiencing a drawdown since the first day of live trading.
+
+Of course, this (hopefully) won’t always be the case!
+
+<strong>For drawdowns that come after some new equity high, calculation of the empirical distribution is <em>a little tricker. </em></strong>
+
+Why?
+
+Because we now have to consider the total trading time (t) as well as the drawdown time (l).
+
+Reproducing this distribution of drawdowns faithfully would require traversing the balance curve using nested windows: an outer window of length (t) and an inner window of length (l) traversing the outer window, period by period, at every step of the outer window’s journey across the curve.
+
+That is, for a backtest of length (y), we now have ((y-t+1)*(t-l+1)) windows to evaluate.
+
+Rather than perform that cumbersome operation, we can apply the same single rolling window process that was used in the simple case, combined with some combinatorial probability to arrive at a formula for CBI, which we denote (P), in terms of the previously defined parameters (M, N, T):
+
+[P = 1 – \frac{(M – N)!(M – T)!}{M!(M – N – T)!}]
+
+The obvious problem with this equation is that it potentially requires evaluation of factorials on the order of ((10^3)!), which is approximately (10^{2500}), far exceeding the maximum range of <span class="lang:c decode:true crayon-inline">var</span> type variables.
+
+To get around that inconvenience, we can take advantage of the relationships [ln(1000 * 999 * 998 * … * 1) = ln(1000) + ln(999) + ln(998) + … + ln(1)] and [e^{ln(x)} = x] to rewrite our combinatorial equation thus:
+
+[P = 1 – e^{x}] where [x = ln(\frac{(M – N)!(M – T)!}{M!(M – N – T)!}] [= ln((M – N)!) + ln((M – T)!) – ln(M!) – ln((M – N – T)!)]
+
+Now we can deal with those factorials using a function that recursively sums the logarithms of their constituent integers, which is much more tractable.
+
+Here’s a script that verifies the equivalence of the two approaches for small integers, as well as its output:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="logsum test">var logsum(int n)
+{
+    if(n &lt;= 1) return 0;
+    else return log(n)+logsum(n-1);
+}
+
+int factorial(int n)
+{
+  if (n &lt;= 1) return 1; 
+   
+  if (n &gt;= 10)
+  {
+        printf("%d is too big", n);
+        return 0;
+  }
+  
+  return n*factorial(n-1);
+}
+
+void main()
+{
+    int M = 5;
+    int N = 3;
+    
+    printf("\nEvaluate x = (%d-%d)!/%d!using\nfactorial and log transforms", M, N, M);
+    printf("\nBy evaluating factorials directly,\nx = %f", (var)factorial(M-N)/factorial(M));
+    printf("\nBy evaluating sum of logs,\nx = %f", exp(logsum(M-N) - logsum(M)));
+    
+}
+
+/* OUTPUT:
+
+Evaluate x = (5-3)!/5!using
+factorial and log transforms
+
+By evaluating factorials directly,
+x = 0.016667
+
+By evaluating sum of logs,
+x = 0.016667
+*/</pre>
+
+Here’s the script for the general case of the CBI (courtesy Johan Lotter):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="General CBI">/* Cold Blood Index 
+
+General case of the CBI where DrawDownDays != TradeDays
+
+*/
+
+int TradeDays = 100; // Days since live start
+int DrawDownDays = 60; // Length of drawdown
+var DrawDown = 20;   // Current drawdown depth in account currency
+
+string BalanceFile = "Log\\simple_portfolio.dbl";
+
+var logsum(int n)
+{
+    if(n &lt;= 1) return 0;
+    else return log(n)+logsum(n-1);
+}
+
+void main()
+{   
+    // import balance curve
+    int CurveLength = file_length(BalanceFile)/sizeof(var);
+    var *Balances = file_content(BalanceFile);
+    
+    // calculate parameters and check sufficient length
+    int M = CurveLength - DrawDownDays + 1;
+    int T = TradeDays - DrawDownDays + 1;
+    
+    if(T &lt; 1 || M &lt;= T) {
+        printf("Not enough samples!");
+        return;
+    }
+    
+    // sliding window calculations
+    var GMin=0, N=0; //define N as a var to prevent integer truncation in calculation of P
+    int i = 0;
+    for(; i &lt; M; i++)
+    {
+        var G = Balances[i+DrawDownDays-1] - Balances[i];
+        if(G &lt;= -DrawDown) N += 1.;
+        if(G &lt; GMin) GMin = G;
+    }  
+
+    var P;
+    if(TradeDays &gt; DrawDownDays)
+        P = 1. - exp(logsum(M-N)+logsum(M-T)-logsum(M)-logsum(M-N-T));
+    else
+        P = N/M;
+
+    printf("\nTest period: %i days",CurveLength);
+    printf("\nWorst test drawdown: %.f",-GMin);
+    printf("\nM: %i  N: %i  T: %i",M,(int)N,T);
+    printf("\nCold Blood Index: %.1f%%",100*P);
+}</pre>
+
+Using the same drawdown length and depth as in the simple case, but now having traded for a total of 100 days, our new CBI value is 83%, which provides<em> no evidence</em> to suggest that the component has deteriorated.
+
+<h2>The Resampled Cold Blood Index</h2>
+
+For comparing drawdowns in live trading to those in a backtest, the CBI is useful. <strong>But we can do better by incorporating statistical resampling techniques.</strong>
+
+Drawdown is a function of the <em>sequence</em> of winning and losing trades. However, a backtest represents just one realization of the numerous possible winning and losing sequences that could arise from a trading system with certain returns characteristics.
+
+As such, the CBI presented above considers just one of many possible returns sequences that could arise from a given trading system.
+
+So, we can make the CBI more robust by incorporating the algorithm into a Monte Carlo routine, such that many unique balance curves are created by randomly sampling the backtested trade results, and running the CBI algorithm separately on each curve.
+
+The code for this Resampled Cold Blood Index is shown below, including calculation of the 5th, 50th and 95th percentiles of the resampled CBI values.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Resampled CBI">/* Resampled Cold Blood Index 
+
+General case of the Resampled CBI where DrawDownDays != TradeDays
+
+*/
+
+int TradeDays = 100; // Days since live start
+int DrawDownDays = 60; // Length of drawdown
+var DrawDown = 20;   // Current drawdown depth in account currency
+
+string BalanceFile = "Log\\simple_portfolio.dbl";
+
+var logsum(int n)
+{
+    if(n &lt;= 1) return 0;
+    else return log(n)+logsum(n-1);
+}
+
+
+void main()
+{
+    int CurveLength = file_length(BalanceFile)/sizeof(var);
+    printf("\nCurve Length: %d", CurveLength);
+    var *Balances = file_content(BalanceFile);
+    
+    var P_array[5000];
+    int k;
+    for (k=0; k&lt;5000; k++)
+    {
+        var randomBalances[2000];
+        randomize(BOOTSTRAP, randomBalances, Balances, CurveLength);
+
+        int M = CurveLength - DrawDownDays + 1;
+        int T = TradeDays - DrawDownDays + 1;
+        
+        if(T &lt; 1 || M &lt;= T) {
+            printf("Not enough samples!");
+            return;
+        }
+        
+        var GMin=0., N=0.;
+        int i=0;
+        for(; i &lt; M; i++)
+        {
+            var G = randomBalances[i+DrawDownDays-1] - randomBalances[i];
+            if(G &lt;= -DrawDown) N += 1.;
+            if(G &lt; GMin) GMin = G;
+        } 
+
+        var P;
+        if(TradeDays &gt; DrawDownDays)
+        P = 1. - exp(logsum(M-N)+logsum(M-T)-logsum(M)-logsum(M-N-T));
+        else
+        P = N/M;
+                
+//      printf("\nTest period: %i days",CurveLength);
+//      printf("\nWorst test drawdown: %.f",-GMin);
+//      printf("\nM: %i N: %i T: %i",M,(int)N,T);
+//      printf("\nCold Blood Index: %.1f%%",100*P);
+        
+        P_array[k] = P;
+    }
+
+    var fifth_perc = Percentile(P_array, k, 5);
+    var med = Percentile(P_array, k, 50);
+    var ninetyfifth_perc = Percentile(P_array, k, 95);
+    printf("\n5th percentile CBI: %.1f%%",100*fifth_perc);
+    printf("\nMedian CBI: %.1f%%",100*med);
+    printf("\n95th percentile CBI: %.1f%%",100*ninetyfifth_perc);
+
+}</pre>
+
+Using the same drawdown length, drawdown depth and trade time as we evaluated in the single-balance curve example, we now find that our median resampled CBI is around 98%.
+
+It turns out that the value obtained by only evaluating the backtest balance curve was closer to the 5th percentile (that is, the lower limit) of resampled values.
+
+While this is not significant in this example (regardless of the method used, it is clear that the component has not deteriorated) this could represent valuable information if things were more extreme.
+
+<p data-settings=" minimize scroll-mouseover" id="crayon-59802cce86897368422170">The usefulness of the resampled CBI declines for increasing backtest length, but it is easily implemented, comes at little additional compute time (thanks in part to Lite-C’s blistering speed), and provides additional insight into strategy deterioration by considering the random nature of individual trade results.</p>
+<p data-settings=" minimize scroll-mouseover">Note however that this method would break down in the case of a strategy that exhibited significant serially correlated returns, since resampling the backtest balance curve would destroy those relationships.</p>
+<h2 class="p1">Could we use this to automate our decision to retire strategies?</h2>
+
+As interesting as this approach is, probably not….
+
+In nearly all cases <strong>this is giving the right answer to the wrong question:</strong>
+<blockquote><em>“Should I pull out of this strategy bdcause its live performance looks different to the backtest?”</em></blockquote>
+
+To labour the points we made in the <a href="https://robotwealth.com/a-quants-approach-to-drawdown/" rel="noopener noreferrer" target="_blank">first post</a> in this series, experienced traders know that it’s a bad idea to set performance expectations based on a backtest. Manageable deviations from that backtest performance usually won’t trigger any alarm bells that inspire interference with the strategy.
+
+Instead, we make tea and look for other trades.
+
+To succeed in trading you have to realise and accept the randomness and efficiency of the markets — part of which means sitting through rather uncomfortable drawdowns which won’t show up in R&amp;D. Being disappointed by live performance vs your exciting backtest is very much the norm…. you just have to take it on the chin and trust the soundness of your development process. The markets are too efficient and chaotic to care about meeting our expectations.
+
+<p style="padding-left: 40px;"><em>We call this “Embracing the Mayhem”.</em></p>
+<em>Embracing the Mayhem </em>is just one of the 7 Trading Fundamentals we teach inside our <a href="https://robotwealth.com/trade-like-a-quant-bootcamp/" rel="noopener noreferrer" target="_blank">Bootcamps</a>. These Fundamentals show the approach we use to trade successfully with Robot Wealth, which is normally only learned after years of expensive trial, error and frustration.
+
+<strong>But you can skip all that — you can get access to a bunch of these Fundamental videos for free by entering your email below:</strong>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>cold blood index</span>, <span>drawdown</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/a-quants-approach-to-drawdown-the-cold-blood-index/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

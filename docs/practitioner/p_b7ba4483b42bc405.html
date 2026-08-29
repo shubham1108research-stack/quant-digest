@@ -1,0 +1,238 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How Does Volatility Shares’ 2X UVIX Work?</title>
+<!-- source: https://www.sixfigureinvesting.com/2022/02/how-does-volatility-shares-2x-uvix-work/ -->
+<h1>How Does Volatility Shares’ 2X UVIX Work?</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a> <div class="top-bar top-bar-align-left">
+<div class="inside-top-bar grid-container grid-parent">
+ </div>
+</div>
+<!-- Begin ComScore data collection -->
+<!-- Begin comScore Tag -->
+
+
+<!-- End comScore Tag -->
+
+
+<div class="site grid-container container hfeed grid-parent" id="page">
+<div class="site-content" id="content">
+<div class="content-area grid-parent mobile-grid-100 grid-75 tablet-grid-75" id="primary">
+<main class="site-main" id="main">
+<article class="post-17374 post type-post status-publish format-standard hentry category-all category-etf category-volatility tag-longvol tag-svix tag-uvix tag-uvix-etf tag-uvix-vs-uvxy tag-volatilityshares tag-what-is-uvix" id="post-17374" itemscope="" itemtype="https://schema.org/CreativeWork">
+<div class="inside-article">
+
+<div class="entry-content" itemprop="text">
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="wp-block-paragraph">This post will discuss how UVIX works, including how it trades, how its value is established, what it tracks, backtest simulations, tax treatment, termination risk, and how it is likely to perform.</p><!-- Ezoic - wp_under_page_title - under_page_title --><div data-inserter-version="2" id="ezoic-pub-ad-placeholder-701"></div><!-- End Ezoic - wp_under_page_title - under_page_title -->
+</blockquote>
+<p class="wp-block-paragraph">VolatiltyShares’ <a href="https://www.volatilityshares.com/uvix/">2X Long VIX Futures ETF</a> (ticker: UVIX) started trading on March 30<sup>th</sup>, 2022.  After a gap of three and a half years, volatility traders regained access to a nationally traded, 2X leveraged short-term volatility Exchange Traded Fund (ETF). UVIX’s latest prospectus is available on Velocity Share’s <a href="https://www.volatilityshares.com/" title="">website</a>. </p>
+<p class="wp-block-paragraph"><em>Before we get into the specifics of how UVIX works, I’m disclosing that I hold a small, minority share in Volatility Shares LLC, the issuer of UVIX. Volatility Shares has also issued BITX, ZIVB, ETHU, and SVIX ETFs. I do not hold management, executive, or operational roles in Volatility Shares LLC, nor do I give recommendations or investment advice to their clients.  My analysis of these funds and their associated indexes is my own, is not investment advice, and is based on publicly-available information.</em><br/></p><!-- Ezoic - wp_under_first_paragraph - under_first_paragraph --><div data-inserter-version="2" id="ezoic-pub-ad-placeholder-709"></div><!-- End Ezoic - wp_under_first_paragraph - under_first_paragraph -->
+<p class="wp-block-paragraph"><strong>What’s Different about UVIX?<br/></strong><br/>Besides leverage levels, a major difference between UVIX and the only other leveraged short term volatility fund listed on the New York Stock Exchange, ProShares’ 1.5X UVXY, is that UVIX relies on the Cboe’s new Long VIX Futures Index (ticker: LONGVOL).  All other short term volatility Exchange Traded Products (ETPs) use the legacy SPVXSP/SPVXSTR indexes.  LONGVOL differs from these indexes, using a time-weighted average of the underlying VIX futures’ last price and their Trade-at Settlement (TAS) order spread, to calculate its end-of-day closing value.</p>
+<p class="wp-block-paragraph">The use of the LONGVOL index makes UVIX less sensitive to the sometimes-treacherous end-of-day dynamics of the VIX futures market.  For details on the LONGVOL index and how it would have performed compared to the other short-term volatility, see “<a href="https://www.sixfigureinvesting.com/2022/01/how-do-the-shortvol-and-longvol-indexes-work/">Why We Need the New SHORTVOL &amp; LONGVOL indexes</a>.”  UVIX is complemented by the new SVIX, a -1X leveraged Exchange Traded Fund, which seeks to match the daily percentage moves of the SHORTVOL index.  For more information on it see “<a href="https://www.sixfigureinvesting.com/2022/02/how-does-volatility-shares-svix-work/" title="How Does SVIX Work?">How Does SVIX Work?</a>“</p>
+<p class="wp-block-paragraph">UVIX/SVIX also differ from other volatility funds in that they limit their futures trade volume to be no more than 10% of the overall VIX futures market volume in any 15-minute period. To my knowledge, this is an unprecedented operational constraint for an Exchange Traded Product.  The net effect of this volume constraint is to structurally prioritize the smooth functioning of the VIX futures market over the precise tracking of UVIX/SVIX share prices to their underlying indexes.  I believe this constraint will not only benefit the VIX futures market, but UVIX/SVIX shareholders as well. <br/></p><!-- Ezoic - wp_under_second_paragraph - under_second_paragraph --><div data-inserter-version="2" id="ezoic-pub-ad-placeholder-710"></div><!-- End Ezoic - wp_under_second_paragraph - under_second_paragraph -->
+<p class="wp-block-paragraph"><strong>How does UVIX trade?</strong></p>
+<ul class="wp-block-list">
+<li>UVIX trades like a stock.  It can be bought, sold, or sold short whenever the market is open, as well as during pre-market and after-market periods.</li>
+<li>UVIX  has a full set of options available now, including weekly expirations 5 weeks out, and January/Jun expirations for 2023 and 2024. Unlike most options, options on volatility ETPs, <a href="https://cdn.cboe.com/resources/product_update/2022/Change-to-Daily-Closing-Time-for-Options-on-Certain-Exchange-Traded-Products_UVIX_SVIX.pdf">including UVIX</a>, continue trading for 15 minutes after the NYSE close.  Strikes are currently available at dollar increments from $5 to $35.  Bid/ask spreads will likely be wide while volumes build.  Unless it is a very liquid option market, like SPY, I use limit orders with option trades with starting prices around the midpoint between bid and ask prices.  I usually get fills at the midpoint, or after I’ve sweetened the deal a few dollars in the market makers’ direction.</li>
+<li>UVIX’s shares can be split or reverse split—and UVIX reverse splits will probably happen fairly often due to the long-term decay characteristics of long volatility ETPs.  TVIX, a 2X leveraged volatility ETP that was listed from 2010 through 2020, <a href="https://www.sixfigureinvesting.com/2013/08/tvix-reverse-split/">reverse split 7 times</a> (on average every 16 months) during its ten-year history.</li>
+<li>UVIX will likely be tradable in most IRAs/Roth IRAs, although your broker will require you to read and electronically sign a document that describes the various risks of holding these products.  Shorting of any security is <a href="about:blank">not allowed</a> in an IRA.<br/></li>
+</ul>
+<p class="wp-block-paragraph"><strong>How is UVIX’s price established?</strong></p>
+<ul class="wp-block-list">
+<li>The bid and ask prices of UVIX will normally be close to its Indicative Value (IV) price. The IV price is the per-share value of the fund’s underlying assets minus fees and operational costs.  During periods of heavy selling/demand, the bid/ask prices might shift away from the IV price.  If that happens during regular market hours, market makers and wholesalers called “Authorized Participants” (APs) will likely intervene by buying or selling shares of UVIX.  If UVIX is trading enough below its IV price, they’ll buy large blocks of UVIX, which will tend to drive the price up.  If it’s trading high, they’ll sell UVIX shares.  The APs have an agreement with Volatility Shares, that allows them to do these restorative maneuvers at a profit, with very low risk, so they are highly motivated to keep UVIX’s tracking in good shape.  For more on these behind-the-scenes arbitrage processes, see <a href="https://www.sixfigureinvesting.com/2022/07/arbitrage-in-etf-etn-share-closed-creation-redemptions/">Why Arbitrage is Essential For Exchange Traded Products</a>.</li>
+<li>UVIX’s annual fee is 1.65% and Volatility Shares estimates 1.13% per year in additional costs related to fixed and operational expenses.</li>
+<li>UVIX seeks investment results before fees and other expenses that correspond to the twice the daily percentage moves of the LONGVOL index.  For example, if LONGVOL goes up 10% in one day, then the goal of UVIX’s management is for the fund to go up 20% that day.  There is no commitment to follow the multiday performance of LONGVOL and UVIX almost surely will not follow 2X the LONGVOL index over the long run.  I offer a <a href="https://www.sixfigureinvesting.com/product/velocity-shares-1x-svix-2x-uvix-etfs-backtest-free/">free spreadsheet</a> with simulated close values for SVIX and UVIX since December 2005.</li>
+<li>The LONGVOL index is maintained by the Cboe and is published during market hours. LONGVOL’s open/high/low close values for the previous three months can be found on the <a href="https://www.cboe.com/us/indices/dashboard/SHORTVOL/#shortvol-performance">CBOE Index Dashboard</a>.  Historic close values back to the index’s starting point on December 20<sup>th</sup>, 2005 are available <a href="https://www.sixfigureinvesting.com/product/longvol-shortvol-indexes/">here</a>.  Yahoo Finance publishes the current ^LONGVOL value, but as of 29-Mar-2022, there’s no historic data.  The Net Asset Value/Indicative Value (NAV/IV) values for UVIX are published by <a href="https://www.tradingview.com/symbols/USI-UVIX.IV/">Trading View</a> and the <a href="https://www.cboe.com/us/indices/dashboard/UVIXIV/">Cboe</a>. </li>
+</ul>
+<p class="wp-block-paragraph"><strong>What Will Be the Likely Performance of UVIX? </strong></p>
+<ul class="wp-block-list">
+<li>Since VIX futures have been trading since 2004, there is an extensive data set available for simulating historic LONGVOL values.  Using LONGVOL values calculated back to 2005, the chart below simulates UVIX’s—using its March 30<sup>th</sup> ,2022 inception price of $15 as an anchor point. </li>
+</ul>
+<figure class="wp-block-image size-large is-resized"><img alt="" class="wp-image-17629" decoding="async" height="403" sizes="(max-width: 560px) 100vw, 560px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/Sim-UVIX-price-15-inception-03-28-212556-560x403.png" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/Sim-UVIX-price-15-inception-03-28-212556-560x403.png 560w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/Sim-UVIX-price-15-inception-03-28-212556-300x216.png 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/Sim-UVIX-price-15-inception-03-28-212556-768x552.png 768w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/Sim-UVIX-price-15-inception-03-28-212556-600x431.png 600w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/Sim-UVIX-price-15-inception-03-28-212556.png 925w" style="width:897px;height:646px" width="560"/></figure>
+<ul class="wp-block-list">
+<li>The numbers on the vertical axis have a lot of zeros associated with them!  Using a $15 inception price on March 29<sup>th</sup>  2022, we back-calculate a starting price for December 20<sup>th</sup>, 2005 of 2.4 trillion dollars (yes trillion with a “t”).  Obviously, UVIX would never have traded at that price.  If it had started trading in 2005, its initial share price would have been some reasonable value like $15, and then UVIX would have been reverse split each time its share value dropped below a certain value, say $5.  See the <a href="https://www.sixfigureinvesting.com/2014/01/uvxy-reverse-split/">UVXY Reverse Split History</a> for a real-life example of how this plays out.</li>
+<li>The chart above suggests that it’s very likely that UVIX’s long-term price will be headed towards zero, with occasional interruptions when markets panic.  There are two reasons for this long-term decline:
+<ol class="wp-block-list" start="1" style="list-style-type:1">
+<li>The term structure of the VIX futures held by UVIX is in contango around 80% of the time.  When the term structure is in contango, the futures are higher in price the longer they have until expiration.  When in contango, the VIX futures held by UVIX will typically decrease in value over time.</li>
+<li>To position UVIX to move 2X the daily percentage moves of LONGVOL, the fund’s managers must shift asset allocations at the end of each trading day.  Long term, these shifts result in something called “Volatility Drag.” On average, this loss mechanism will reduce UVIX’s value by around 3% per month.</li>
+</ol>
+</li>
+<li>Losses due to contango and volatility drag are discussed in more detail in “<a href="https://www.sixfigureinvesting.com/2022/01/how-do-the-shortvol-and-longvol-indexes-work/">Why We Need the New LONGVOL &amp; SHORTVOL indexes</a>.” On average, UVIX’s simulated price declined 80% per year, or 12.5% per month from December 2005 through March 2022. UVIX is not a good “Buy &amp; Hold” investment.</li>
+<li>Using a logarithmic scale for price on the chart below, we get better visibility into how a portfolio of UVIX shares would have fared since 2005 compared to the actual/simulated prices of its closest competitors.  The 2X leveraged UVXY traded from November 2010 through February 2018, and 1.5X leveraged UVXY started trading in February 2018.</li>
+</ul>
+<figure class="wp-block-image size-large is-resized"><img alt="" class="wp-image-17631" decoding="async" height="466" sizes="(max-width: 560px) 100vw, 560px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/log-porfolio-UVIX-2x-UVXY-1.5X-UVXY-2022-03-28-213552-560x466.png" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/log-porfolio-UVIX-2x-UVXY-1.5X-UVXY-2022-03-28-213552-560x466.png 560w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/log-porfolio-UVIX-2x-UVXY-1.5X-UVXY-2022-03-28-213552-300x249.png 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/log-porfolio-UVIX-2x-UVXY-1.5X-UVXY-2022-03-28-213552-768x639.png 768w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/log-porfolio-UVIX-2x-UVXY-1.5X-UVXY-2022-03-28-213552-600x499.png 600w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/log-porfolio-UVIX-2x-UVXY-1.5X-UVXY-2022-03-28-213552.png 801w" style="width:895px;height:745px" width="560"/></figure>
+<ul class="wp-block-list">
+<li>UVIX and 2X UVXY had approximately the same drops, with a small edge to UVIX, See “<a href="https://www.sixfigureinvesting.com/2022/01/how-do-the-shortvol-and-longvol-indexes-work/">Why We Need the SHORTVOL and LONGVOL indexes</a>” for details.  The 1.5X UVXY dropped considerably less with an ending portfolio value of 0.0003 cents.  Its lower, 1.5X leverage, has the effect of reducing its average long-term decay rate to “only” 66% per year, 9.6% per month.</li>
+<li>However, 2X leverage does pay off in the short term when the market panics.  The chart below shows the simulated performance of  $10K portfolios of UVIX vs 1.5X UVXY starting on January 2<sup>nd</sup>, 2020, a few weeks before the Covid crash.<br/><br/></li>
+</ul>
+<figure class="wp-block-image size-large is-resized"><img alt="" class="wp-image-17627" decoding="async" height="445" loading="lazy" sizes="auto, (max-width: 560px) 100vw, 560px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/UVIX-vs-UVXY-2020-2022-03-28-210801-1-560x445.png" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/UVIX-vs-UVXY-2020-2022-03-28-210801-1-560x445.png 560w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/UVIX-vs-UVXY-2020-2022-03-28-210801-1-300x238.png 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/UVIX-vs-UVXY-2020-2022-03-28-210801-1-768x610.png 768w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/UVIX-vs-UVXY-2020-2022-03-28-210801-1-600x477.png 600w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/UVIX-vs-UVXY-2020-2022-03-28-210801-1.png 837w" style="width:895px;height:711px" width="560"/></figure>
+<p class="wp-block-paragraph">During the first weeks of the 2020 Covid Crash, the simulated portfolio holding UVIX significantly outperformed the portfolio holding the 1.5X leveraged UVXY.</p>
+<p class="wp-block-paragraph" id="create-to-lend"><br/><strong>Why Non-Institutional Traders Might Hold a Long Position in UVIX?</strong></p>
+<ul class="wp-block-list">
+<li>UVIX has no resemblance to a blue-chip stock that you buy and park in your portfolio, nor in my opinion, is it a good choice for a long-term “tail hedge”; it just decays too fast.</li>
+<li>A non-institutional investor might buy UVIX, or adopt a bullish strategy with its options if available, during a market crash.  Volatility is perhaps the only investible asset that reliably goes up when the market crashes.</li>
+<li>During strong market downturns, volatility will often trend up, increasing almost every day.  During that trending period, UVIX will likely outperform its 2X leverage goal.  For example, from 14-Feb-2020 through the absolute peak of volatility on 18-Mar-2020, the LONGVOL index went from 234.01 to 1229.40, a 5.25X move.  During that same period, the simulated UVIX portfolio above didn’t go up twice the amount (10.5X) as you might expect, but rather went up 20X, from $8376 to $167458.  The reason for this outperformance is that when volatility is trending up, UVIX asset rebalancing does not cause volatility drag, but instead has a compounding effect that results in the fund’s performance exceeding its stated leverage.  This effect is discussed in <a href="https://www.sixfigureinvesting.com/2012/10/a-hat-trick-for-inverse-leveraged-volatility-funds/">When Leveraged Funds Outperform</a>.</li>
+<li>Dramatic performance during market crashes is a key feature of leveraged long volatility ETFs, but there are significant cautions and caveats:
+<ul class="wp-block-list">
+<li>It’s notoriously difficult to predict when market crashes will occur.  Billions have been lost holding long volatility ETFs in anticipation of a crash that doesn’t come as soon as expected.  Crashes are inevitable, but they often arrive after the relentless decay processes have eroded long volatility holdings to the point where even a crash can’t restore the position to profitability. </li>
+<li>There have only been a handful of crashes ( late 2008, Oct 2011, Dec 2018, Mar 2020) in the last 20 years that have been severe enough to significantly boost the prices of the short term leveraged volatility ETPs.</li>
+<li>Volatility climbs rapidly when panic spreads through markets, but once the fear in equity markets starts to fade, volatility usually collapses quickly, giving up much of its gains in a few days.  A week after its 18-March-2020 peak, the simulated UVIX portfolio above had decayed to $77K, a drop of 53%.  A long volatility trader’s timing has to be very good on both position entry and exit to be successful.<br/></li>
+</ul>
+</li>
+</ul>
+<p class="wp-block-paragraph"><strong>Is  Shorting UVIX the Perfect Trade? </strong></p>
+<ul class="wp-block-list">
+<li>Because of the dramatic long-term decay that’s likely with UVIX, it’s an attractive candidate to short.  However, because of the popularity of this trade, the borrow costs associated with shorting UVIX will likely be high.  More worrisome, a short position in UVIX exposes the investor to volatility spikes, which could turn even a modest UVIX short position into a nightmare of margin calls and losses that can easily exceed the amount initially invested.  In my opinion, unless it’s a very small position, shorting UVIX without a robust plan for exiting when volatility starts to pick up, or without a hedging strategy to limit losses (e.g., long OTM UVIX calls) is a bad idea.  For more on this see “<a href="https://www.sixfigureinvesting.com/2016/10/is-shorting-uvxy-tvix-vxx-the-perfect-trade">Is Shorting UVIX &amp; UVXY the Perfect Trade?</a>” and “<a href="https://www.sixfigureinvesting.com/2014/03/short-selling-securities-selling-short/">Ten Questions About Short Selling</a>.” One advantage of UVIX’s companion fund, the -1X leveraged SVIX, is that while it also tends to increase when UVIX decreases, the investor’s worst-case loss with SVIX is limited to the amount that’s been invested.<br/></li>
+</ul>
+<p class="wp-block-paragraph" id="create_to_lend"><strong>Why Institutional Traders Might Hold Long Positions in UVIX</strong></p>
+<ul class="wp-block-list" id="create_to_lend">
+<li>Despite the hazards mentioned above, it’s been common for 2X Volatility ETPs to gather hundreds of millions in assets.  Why are these institutions tolerating losses that average more than 8 to 10% per month?  Perhaps they’re just committed to these positions as a tail hedge for their portfolios, but another possibility is that institutions are holding shares as part of a “Create to Lend” strategy.</li>
+<li>A Create to Lend strategy buys shares of the long ETP and precisely hedges them with short VIX futures, such that any price moves by the ETP are canceled out by short positions in the VIX futures.  This sounds like the financial equivalent of running in place, but the institution can then generate profits by loaning out its long ETP shares to traders that want to short the ETP.  The ongoing fees paid by the borrower for the shares can add up to an attractive, low-risk profit.</li>
+<li>Option market makers often use shares of the underlying security to hedge their portfolio of options.  Market makers are not in the business of predicting the future, they tend to hedge out directional risk in their overall portfolio.  When option market makers sell more calls than they have in inventory, they become net short calls—a risky situation if the underlying security starts to move up.  To offset this exposure, they can buy an appropriate number of ETP shares as an offsetting hedge.  For example, if a call’s strike price is close to where the ETP is trading, then an effective hedge would be to hold around 50 shares of the vol ETP for every call the market maker is short.<br/></li>
+</ul>
+<p class="wp-block-paragraph"><strong>Can UVIX Terminate?</strong></p>
+<ul class="wp-block-list">
+<li>UVIX does not have percentage decline triggers as VelocityShares’ TVIX did, but it can terminate, as can any Exchange-Traded Product.  In the <a href="https://www.sec.gov/edgar/search/#/ciks=0001793497&amp;entityName=VS%2520Trust%2520(SVIX)%2520(CIK%25200001793497)">Prospectus </a>(on approximately page 86) it says:</li>
+</ul>
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="wp-block-paragraph"><strong>Termination Events</strong></p>
+<p class="wp-block-paragraph">The Trust, or, as the case may be, the Funds, may be dissolved at any time and for any reason by the Sponsor with written notice to the shareholders</p><!-- Ezoic - wp_mid_content - mid_content --><div data-inserter-version="2" id="ezoic-pub-ad-placeholder-711"></div><!-- End Ezoic - wp_mid_content - mid_content -->
+</blockquote>
+<ul class="wp-block-list">
+<li>The prospectus does guarantee that UVIX will not go below zero in value, so it is almost certain it would terminate if LONGVOL declined more than 50% in a day.  A volatility collapse of this magnitude could conceivably occur in the aftermath of a big volatility spike, or if a big market scare turned out to be baseless.  The three largest drops in UVIX’s simulated past are 33%, 32%, and 30% on 23-March-20, 15-Jun-2006, and  19-Mar-20 respectively. </li>
+<li>Because UVIX rebalances assets each day, the multi-day performance is unimportant from a termination standpoint.  For example, if UVIX went down 40% three days in a row it would experience a severe drawdown, minus 78.4% to be exact, but not the 120% sum of the losses.  Unless its intra-day losses approach 100% UVIX, would not be forced to terminate.<br/></li>
+</ul>
+<p class="wp-block-paragraph"><strong>What is UVIX’s Tax Treatment?</strong></p>
+<ul class="wp-block-list">
+<li>Because UVIX takes positions in VIX futures, the IRS views its shareholders as partners that need to file K-1 forms for taxable accounts at tax time.  This adds some complexity to tax reporting, but it also has some potential benefits, for example, gains may qualify for treatment as <a href="https://support.taxslayer.com/hc/en-us/articles/360017749751-What-are-Contracts-and-Straddles">1256 contracts</a>, where gain/loss are split 60% long-term and 40% short term regardless of how long the shares are held. </li>
+<li>Be aware that brokers sometimes incorrectly report information on K-1 type ETPs via the 1099 form method.</li>
+<li>Proshares’ UVXY &amp; SVXY volatility ETFs require a similar K-1 tax style treatment.  Their <a href="https://www.proshares.com/faqs/volatility-commodity-currency-proshares-taxation-faqs//">FAQ on taxes</a> gives additional information on K-1 tax reporting.</li>
+<li>I am not a tax advisor, but my understanding is that UVIX held in non-taxable accounts such as IRAs will not require tax reporting.<br/></li>
+</ul>
+<p class="wp-block-paragraph"><strong>How Good is UVIX’s Liquidity?</strong></p>
+<ul class="wp-block-list">
+<li>With bid/ask spreads of a cents or two, and average daily volumes in the millions, UVIX is showing very good liquidity.  As I discuss in <a href="https://www.sixfigureinvesting.com/2015/08/determining-liquidity-of-low-volume-etf-etn/">Evaluating the Liquidity of Low Volume Exchange Traded Funds</a>, the key liquidity source for ETPs is the liquidity of the underlying security, which in UVIX’s case are the very liquid first- and second-month VIX futures.<br/></li>
+</ul>
+<p class="wp-block-paragraph"><strong>Conclusions</strong></p>
+<ul class="wp-block-list">
+<li>UVIX is a product intended for sophisticated investors and should not be viewed as a “buy and hold” investment.  It is almost certain that UVIX’s long-term value will decay on average around 80% per year or 12.5% every month.</li>
+<li>UVIX’s likely long-term decay characteristic makes it an attractive short candidate, but the inevitable volatility run-ups that come along will spike up UVIX’s value.  Successful investors will need to proactively manage their positions during volatility spikes, otherwise, a short position could lead to large losses.</li>
+<li>UVIX’s reliance on the LONGVOL index, along with its structural limits on market volume participation, will likely reduce its vulnerability to liquidity disruptions such as the <a href="https://www.sixfigureinvesting.com/2019/02/what-caused-the-february-5th-2018-volatility-spike-xiv-termination/">5-Feb-2018 volatility event</a> that caused XIV’s shutdown and caused ProShares to reduce UVXY’s leverage from 2X to 1.5X.</li>
+<li>In my opinion, UVIX is best held when the VIX Futures’ term structure is in backwardation, and its investors have a plan to exit their position if an expected downturn does not materialize, or when a volatility spike has run its course and volatility is starting to revert to more normal levels.</li>
+</ul>
+<p class="wp-block-paragraph"><br/><strong>For more information </strong></p>
+<ul class="wp-block-list">
+<li><a href="about:blank">The Cost of Contango</a></li>
+<li><a href="about:blank">How Does VXX Work?</a></li>
+<li><a href="https://www.sixfigureinvesting.com/2015/03/how-does-uvxy-work/">How Does 1.5X UVXY Work?</a></li>
+<li><a href="https://www.sixfigureinvesting.com/2022/02/how-does-volatility-shares-svix-work/">How Does Volatility Shares’ SVIX Work? </a><br/><br/></li>
+</ul>
+</div>
+
+<br/>
+First posted on  <time class="entry-date-published" datetime="2022-02-14T16:15:40-07:00" itemprop="datePublished">February 14, 2022</time> <br/>
+<br/>
+<!-- [related_posts_by_tax  taxonomies="post_tag" ]  -->
+</div>
+</article>
+<div class="comments-area">
+<h3>
+<a class="smooth-scroll" href="#respond">Click <u>here</u> to leave a comment</a>
+</h3><div id="comments">
+<h2 class="comments-title">6 thoughts on “How Does Volatility Shares’ 2X UVIX Work?”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-104793">
+<article class="comment-body" id="div-comment-104793" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I’m very late to the game, just having discovered the world of SVIX/UVIX options in 2024, but please accept my thanks for the clear, concise treatment here. I feel like I understand most of these concepts much better now, and these options have treated me *very* well this year.</p>
+<p>One question – how exactly would the limiter of the volume play out, if it were to be reached? Would option sales suddenly be halted, or how would that work? And how would the investor know if the limit were reached? – Jim</p>
+<span class="reply"><a aria-label="Reply to Jim H." class="comment-reply-link" data-belowelement="div-comment-104793" data-commentid="104793" data-postid="17374" data-replyto="Reply to Jim H." data-respondelement="respond" href="#comment-104793" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-vance3h-2 bypostauthor odd alt depth-2" id="comment-104801">
+<article class="comment-body" id="div-comment-104801" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Jim.  Regarding volume limitations, this aspect of the Volatility Shares ETFs has not been tested yet to my knowledge, it would almost certainly only happen on a crazy day on the market. My understanding is that the volume is totaled over all the VS ETPs, so both  SVIX + UVIX needs would be in play.  My guess is that the indicated (not required by the way) rebalancing would be spread out over time, likely stretching into the aftermarket.  Likely the exact percentage tracking of the EFT vs the SHORTVOL/LONGVOL indexes would be off by some amount, but likely not much.  Regarding options on SVIX/UVIX,  after 4PM the spreads would likely really widen out, and that might start 15 minutes before close when VS starts its rebalancing.  I don’t see any halts or disruptions unless things really blow up (like 5-Feb-2018), otherwise there is just increased uncertainty as to what SVIX and UVIX’S nav prices are.  It would be tough to get good fills in that sort of end of day chaos.  — Vance</p>
+<span class="reply"><a aria-label="Reply to Vance Harwood" class="comment-reply-link" data-belowelement="div-comment-104801" data-commentid="104801" data-postid="17374" data-replyto="Reply to Vance Harwood" data-respondelement="respond" href="#comment-104801" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-88851">
+<article class="comment-body" id="div-comment-88851" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>thanks a lot for the amazing post. I have a question about the borrowing cost for shorting the stock. if the shoring cost is high is it better to buy a put instead or the put price already consider the borrowing cost? thanks in advance</p>
+<span class="reply"><a aria-label="Reply to Simon" class="comment-reply-link" data-belowelement="div-comment-88851" data-commentid="88851" data-postid="17374" data-replyto="Reply to Simon" data-respondelement="respond" href="#comment-88851" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-vance3h-2 bypostauthor odd alt depth-2" id="comment-88968">
+<article class="comment-body" id="div-comment-88968" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Simon,   The market makers for the options are very sharp.  They will set options prices such that there is no edge between equivalent strategies, they will factor in interest rates, borrowing cost etc.  Buying puts vs shorting a stock are really fairly different strategies because the risk profile if the market moves against you is quite different,  if you’re short a stock you can lose way more than your initial investment, but buying a put your worst case loss is just the price of the put.  Because of this disparity puts for things like UVIX are quite expensive.  This risk of shorting can be mitigated by buying OTM calls, sometimes that appears to be a cost effective way to limit losses.    Best Regards,  Vance</p>
+<span class="reply"><a aria-label="Reply to Vance Harwood" class="comment-reply-link" data-belowelement="div-comment-88968" data-commentid="88968" data-postid="17374" data-replyto="Reply to Vance Harwood" data-respondelement="respond" href="#comment-88968" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-45389">
+<article class="comment-body" id="div-comment-45389" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Excellent post as usual Vance.  Thanks for spelling out each key point in very clear and concise language.</p>
+<p>I love the operational component to this new ETF – no more than 10% of the volume as you spelled out.  It will be fascinating to see if any other ETFs adopt this strategy, as the whole “end of day at one precise value” valuation has always seems like a natural point to be “gamed” by those with both deep knowledge of market structure (and deep pockets).</p>
+<p>I realize that you start to go out on a limb as you can’t offer tax advice, but at some point a purely “hypothetical” way of completing taxes with the schedule k and a typical brokerage statement would be great to see – it’s an area that can still be a bit unclear to all of us in the US.  Perhaps enough people lose money on volatility products that you just don’t see that much clarity on it… 🙂   My suspicion is that a post focusing on that would generate a lot of traffic!</p>
+<p>Lee</p>
+<p>PS. With the whole “situation” at Barclays, timing of this offering was arguably almost perfect.  Any serious volatility trader/hedger should, in my opinion, be avoiding Barclay products, especially ETN’s, after the fiasco with VXX – who’s to say there won’t be something else that comes up where they effectively pull the rug out from under people with effectively no notice?  My opinion…</p>
+<span class="reply"><a aria-label="Reply to Lee" class="comment-reply-link" data-belowelement="div-comment-45389" data-commentid="45389" data-postid="17374" data-replyto="Reply to Lee" data-respondelement="respond" href="#comment-45389" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-vance3h-2 bypostauthor odd alt depth-2" id="comment-45393">
+<article class="comment-body" id="div-comment-45393" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Lee,  If SVIX/UVIX significantly drains assets from Proshares’ SVXY &amp; UVXY I could see them tweaking their indexes to add some sort of volume restriction.  The restriction might affect tracking, but on days when it matters things will likely be crazy enough that no one cares.   </p>
+<p>Regarding K-1s, since there are so many different kinds of partnerships, K-1s cover a vast number of different tax issues.  With regards to their treatment of ETF holdings, I think there are some pretty non-intuitive aspects.  For example, I think K-1s don’t track your particular trade, but rather the performance of the fund during the months that you hold a position.  My strategy has been to mostly use these funds within IRAs so I don’t have to deal with it.  On taxable accounts, my experience is that you just transfer the k-1 data into the tax forms, so not difficult, but obscure. </p>
+<p>The VXX/OIL situation has been interesting.  It points out that tracking issuance is another downside of ETN.  I’ve been surprised that there hasn’t been a mass migration of assets to VIXY.  Maybe it’s just because the longs are happy and the shorts don’t want to take losses just to see the premium evaporate after they bail out.    — Vance</p>
+<span class="reply"><a aria-label="Reply to Vance Harwood" class="comment-reply-link" data-belowelement="div-comment-45393" data-commentid="45393" data-postid="17374" data-replyto="Reply to Vance Harwood" data-respondelement="respond" href="#comment-45393" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/2022/02/how-does-volatility-shares-2x-uvix-work/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+<div class="widget-area sidebar is-right-sidebar grid-25 tablet-grid-25 grid-parent" id="right-sidebar">
+<div class="inside-right-sidebar">
+<!-- Ezoic - wp_sidebar - sidebar --><div data-inserter-version="-1" id="ezoic-pub-ad-placeholder-703"></div><!-- End Ezoic - wp_sidebar - sidebar --><!-- Ezoic - wp_sidebar_middle_1 - sidebar_middle --><div data-inserter-version="-1" id="ezoic-pub-ad-placeholder-704"></div><!-- End Ezoic - wp_sidebar_middle_1 - sidebar_middle --><!-- Ezoic - wp_sidebar_bottom - sidebar_bottom --><div data-inserter-version="-1" id="ezoic-pub-ad-placeholder-707"></div><!-- End Ezoic - wp_sidebar_bottom - sidebar_bottom --> </div>
+</div>
+</div>
+</div>
+<div class="site-footer grid-container grid-parent footer-bar-active footer-bar-align-center">
+
+<!-- Quantcast Tag -->
+
+
+<!-- End Quantcast tag --></div>
+
+<!-- Ezoic - wp_bottom_of_page - bottom_of_page --><div data-inserter-version="-1" id="ezoic-pub-ad-placeholder-702"></div><!-- End Ezoic - wp_bottom_of_page - bottom_of_page -->
+
+
+
+
+
+
+
+
+
+
+
+

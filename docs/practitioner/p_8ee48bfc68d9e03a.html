@@ -1,0 +1,310 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>The Financial Hacker’s Cold Blood Index</title>
+<!-- source: https://robotwealth.com/the-financial-hackers-cold-blood-index/ -->
+<h1>The Financial Hacker’s Cold Blood Index</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-882 post type-post status-publish format-standard hentry category-backtesting category-fx category-quant-trading category-think-like-a-trader category-tools-of-the-trade category-zorro tag-algorithmic-trading tag-forex tag-quantitative-analysis tag-quantitative-trading pmpro-has-access" id="post-882">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">October 30, 2015</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">The Financial Hacker’s Cold Blood Index</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="The Financial Hacker’s Cold Blood Index" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">This post builds on work done by jcl over at his blog, <a href="https://www.financial-hacker.com/" rel="noopener noreferrer" target="_blank">The Financial Hacker</a>. He proposes the<a href="https://www.financial-hacker.com/the-cold-blood-index/" rel="noopener noreferrer" target="_blank"> Cold Blood Index</a> as a means of objectively deciding whether to continue trading a system through a drawdown.
+I was recently looking for a solution like this and actually settled on a modification of jcl’s second example, where an allowance is made for the drawdown to grow with time. The modification I made was to use the confidence intervals for the maximum drawdown calculated by Zorro’s Monte Carlo engine rather than the maximum drawdown of the backtest. The limitation is that the confidence intervals for the maximum drawdown <em>length</em> are unknown – only those for the maximum drawdown <em>depth</em> are known. I used the maximum drawdown length calculated for the backtest and considered where the backtest drawdown depth lay in relation to the confidence intervals calculated via Monte Carlo to get a feel for whether it was a reasonable value.
+Below is a chart of the minimum profit for a strategy I recently took live plotted out to the end of 2015, created using the method described above. Using the 50th percentile maximum drawdown shows that my strategy could still be underwater at the end of the year and still be well within its profit expectation. If I use the 90th percentile maximum drawdown to pull out of this strategy (that is, I want to be 90% sure that my strategy has failed), the chart shows that I should expect even less of my strategy.
+<a href="https://robotwealth.com/wp-content/uploads/2015/10/example-of-DD-percentiles.png"><img alt="example of DD percentiles" class="aligncenter wp-image-885 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/10/example-of-DD-percentiles.png" decoding="async" height="359" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='613'%20height='359'%20viewBox='0%200%20613%20359'%3E%3C/svg%3E" width="613"/></a> One of the very useful aspects of this sort of analysis is that it serves to temper the expectation associated with taking a strategy live. Personally, I know that after all the research and development that goes into developing a strategy, it is all too easy to let oneself think that the money will just roll in as soon as you go live. This approach brings the developer back to reality in terms of profit expectations, but it will also provide the confidence to continue trading while you should. In short, it brings objectivity to the forefront, which of course is a cornerstone of any statistical or quantitative approach to the markets.
+I like jcl’s Cold Blood Index a lot. In a nutshell, it describes the similarity of a current drawdown to the backtest drawdown profile by examining multiple windows of the backtest balance curve, with each window equal in length to the length of the drawdown of interest (probably the current drawdown if trading live, but this approach is also useful for considering hypothetical drawdowns prior to going live).
+The Cold Blood Index is more meaningful than the approach I used, but it does suffer from a similar drawback – being a function of the balance curve in the backtest. If you accept that the balance curve obtained in the backtest is one possible outcome amongst an infinite number of possibilities due to the random nature of individual trade results, then the result obtained with the Cold Blood Index is likewise one possible outcome amongst many.
+(As an aside, this condition can be validated by examining the autocorrelation of the backtest returns series with various lags using either Zorro, R or some other statistical tool. Nearly every strategy I’ve experimented with, and definitely the ones that I’ve taken live, have all shown statistically insignificant return autocorrelations).
+The Cold Blood Index could be improved by incorporating the algorithm into a Monte Carlo routine that creates many unique balance curves by randomly sampling the backtested trade results, and running it separately on each curve. I was fortunate enough to receive advice from jcl on how to accomplish this using Zorro, and my implementation is reproduced below. Most of the code is jcl’s, I have simply added the loop in which the balance curve is shuffled before being subject to jcl’s Cold Blood Index algorithm. I also added code to store the Cold Blood Index value generated in each loop iteration in an array and to calculate the 5th and 95th percentile values.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="">int TradeDays = 12;    // t, Days since live start
+int DrawDownDays = 12; // l, Days since you're in drawdown
+var DrawDown = 55;    // D, Current drawdown depth in $
+string BalanceFile = "Log\\balancecurve.txt"; // stored double array
+var logsum(int n)
+{
+    if(n &lt;= 1) return 0;
+    return log(n)+logsum(n-1);
+}
+void main()
+{
+    int CurveLength = file_length(BalanceFile)/sizeof(var);
+    var *Balances = file_content(BalanceFile);
+    var P_array[5000];
+    //  var curve = Balances;
+    int k = 0;
+    for (; k &lt; 4000; k++)
+    {
+        var randomBalances[3000];
+        randomize(BOOTSTRAP, randomBalances, Balances, CurveLength);
+        int M = CurveLength - DrawDownDays + 1;
+        int T = TradeDays - DrawDownDays + 1;
+        if(T &lt; 1 || M &lt;= T) {
+            printf("Not enough samples!");
+            return;
+        }
+        var GMin=0., N=0.;
+        int i=0;
+        for(; i &lt; M; i++)
+        {
+            var G = randomBalances[i+DrawDownDays-1] - randomBalances[i];
+            if(G &lt;= -DrawDown) N += 1.;
+            if(G &lt; GMin) GMin = G;
+        }
+        var P;
+        if(TradeDays &gt; DrawDownDays)
+        P = 1. - exp(logsum(M-N)+logsum(M-T)-logsum(M)-logsum(M-N-T));
+        else
+        P = N/M;
+        printf("\nTest period: %i days",CurveLength);
+        printf("\nWorst test drawdown: %.f",-GMin);
+        printf("\nM: %i N: %i T: %i",M,(int)N,T);
+        printf("\nCold Blood Index: %.1f%%",100*P);
+        P_array[k] = P;
+    }
+    var fifth_perc = Percentile(P_array, k, 5);
+    var ninetyfifth_perc = Percentile(P_array, k, 95);
+    printf("\n5th percentile CBI: %.1f%%",100*fifth_perc);
+    printf("\n95th percentile CBI: %.1f%%",100*ninetyfifth_perc);
+}</pre>
+
+To compare methods for pulling out of a strategy, I looked at the results obtained from my original method (Method 1), the Cold Blood Index calculated from the backtest balance curve (one-sample Cold Blood) and the 5th percentile Cold Blood Index calculated from 4,000 randomly sampled balance curves (resampled Cold Blood). These results are for a drawdown of 55 days duration that started immediately upon strategy initiation (these results are for a real strategy that I am currently trading live. 55 days equates to a trading time that extends to the end of the year from the date that I initiated it. I am curious to investigate what sort of drawdown I should endure at the end of the year).
+
+<table style="height: 270px;" width="503">
+<tbody>
+<tr>
+<td width="90">Drawdown($)</td>
+<td width="63">Method 1 %ile</td>
+<td width="62">One-sample Cold Blood</td>
+<td width="82">5th%ile Resampled
+Cold Blood</td>
+</tr>
+<tr>
+<td>-60.18</td>
+<td>50</td>
+<td>6.8</td>
+<td>5</td>
+</tr>
+<tr>
+<td>-68.79</td>
+<td>60</td>
+<td>5.5</td>
+<td>4</td>
+</tr>
+<tr>
+<td>-76.28</td>
+<td>70</td>
+<td>4.9</td>
+<td>3.5</td>
+</tr>
+<tr>
+<td>-92.00</td>
+<td>80</td>
+<td>3</td>
+<td>2.3</td>
+</tr>
+<tr>
+<td>-111.85</td>
+<td>90</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>-202.08</td>
+<td>100</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+
+The results are interesting. The additional accuracy provided by resampling the balance curve appears to be worthwhile. For example, if my drawdown was $60, I would pull out based on this method (assume that I pull out once the 5th percentile of the Cold Blood Index hits 5% or less.). Using the one-sample Cold Blood Index, I would stay in until my drawdown was more than $78. Using method 1, I may choose to stay in until almost $112 was lost.
+The capital allocated to this strategy was only $500, so the resampled Cold Blood Index saved me 3% of my capital over the one-sample Cold Blood Index and over 10% of my capital over the method I was originally using.
+
+<h2><strong>Conclusions</strong></h2>
+<ol>
+<li>If we are committed to a quantitative approach to trading, an objective measure of strategy performance is required in order to decide whether to pull out or continue through a drawdown.</li>
+<li>The Cold Blood Index is a significant improvement over existing techniques such as modelling acceptable drawdown as a function of backtest performance measures.</li>
+<li>The resampled Cold Blood Index provides additional accuracy by considering the random nature of individual trade results and empirically estimating its true value from a large number of samples. This method would break down in the case of serially correlated returns, but otherwise has the potential to preserve more of the trader’s capital than other methods.</li>
+</ol>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>algorithmic trading</span>, <span>forex</span>, <span>quantitative analysis</span>, <span>quantitative trading</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">5 thoughts on “The Financial Hacker’s Cold Blood Index”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-432">
+<article class="comment-body" id="div-comment-432" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>awesome work!<br/>
+I was wondering it the cold blood Index could be used as well in the backtest somehow. I mean, some part of the data is used for backtesting and the last part of it is used as “live trading” . In that way the cold blood Index would check the balance curve of the backtest until that point that we consider the backtest as live trading.<br/>
+The point would be reduce the DD. It could be used as equity curve trading. It is just an idea, not sure if this make sense at all since the CBI is trying to tell us if the strategy is working in real trading. And in this case it would be used to improve the strategy</p>
+<span class="reply"><a aria-label="Reply to mariano" class="comment-reply-link" data-belowelement="div-comment-432" data-commentid="432" data-postid="882" data-replyto="Reply to mariano" data-respondelement="respond" href="#comment-432" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-434">
+<article class="comment-body" id="div-comment-434" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Mariano, thanks for reading!<br/>
+I think you could use the CBI in your backtest. The application that springs to mind is to apply it to your out of sample test and compare the results with the in-sample test. Ideally you would see some level of stability in the CBI across the training and test sets if your model wasn’t over-fit. Some level of degradation is probably unavoidable, but a model that is neither under-fit nor over-fit would show comparable results. Of course, degradation could also be a result of the strategy simply expiring during your out of sample test. Either way, it would be a sign that the strategy wasn’t quite ready to go live.<br/>
+Of course there are numerous other performance metrics to compare across the training and test set results, but I see no reason why the CBI shouldn’t be added to the mix. The additional insight gained would  be valuable.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-434" data-commentid="434" data-postid="882" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-434" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3" id="comment-435">
+<article class="comment-body" id="div-comment-435" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I see it more clear now. Thanks for the nice explanation and congratulations for the blog!<br/>
+I´ll look forward to read more of your researchs.</p>
+<span class="reply"><a aria-label="Reply to mariano" class="comment-reply-link" data-belowelement="div-comment-435" data-commentid="435" data-postid="882" data-replyto="Reply to mariano" data-respondelement="respond" href="#comment-435" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-433">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 11/01/2015 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-436">
+<div class="comment-body">
+				Pingback: Best Links of the Week | Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/the-financial-hackers-cold-blood-index/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

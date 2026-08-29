@@ -1,0 +1,328 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Unsupervised candlestick classification for fun and profit – part 1</title>
+<!-- source: https://robotwealth.com/unsupervised-candlestick-classification-for-fun-and-profit-part-1/ -->
+<h1>Unsupervised candlestick classification for fun and profit – part 1</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-902 post type-post status-publish format-standard hentry category-fx category-k-means-clustering category-machine-learning category-quant-trading category-r tag-candlestick-patterns tag-k-means tag-machine-learning pmpro-has-access" id="post-902">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">November 10, 2015</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Unsupervised candlestick classification for fun and profit – part 1</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Unsupervised candlestick classification for fun and profit – part 1" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Candlestick patterns were used to trade the rice market in Japan back in the 1800’s. Steve Nison popularised the idea in the western world and claims that the technique, which is based on the premise that the appearance of certain patterns portend the future direction of the market, is applicable to modern financial markets. Today, he has a fancy website where he sells trading courses. Strange that he doesn’t keep this hugely profitable system to himself and make tons of money.
+Since you’re reading a blog about quantitative trading, its unlikely that I need to convince you that patterns like “two crows” and “dark cloud cover” are not statistically significant predictors of the future (but I’d be happy to do a post about this if there is any interest – let me know in the comments). If only profitable trading were that easy!
+So if these well-known patterns don’t have predictive power, are there any patterns that do? And if so, how could they be discovered? Unsupervised machine learning techniques offer one such potential solution. An unsupervised learner is simply one that makes no attempt to relate the data it learns about to some target or prediction; rather it focuses on describing and summarizing the data in new and (hopefully) interesting ways. Contrast this with a supervised learner, which aims to find relationships amongst the data that allow prediction of some target variable. Linear regression is a supervised learner.
+I am going to attempt an exploration of price data using k-means clustering, which is an unsupervised learning algorithm capable of finding natural groupings (clusters) within a data set. Since k-means does this without any prior notion of what the clusters should look like, it can be very useful when knowledge discovery, as opposed to prediction is desired.
+k-means attempts to group observations into clusters that are similar to each other, but different from the members of other clusters. The algorithm measures similarity by converting predictor values to co-ordinates in a z-dimensional space (where z is equal to the number of predictors in the data set) and minimizing the distance between observations within each cluster and maximizing the distances between observations in different clusters. Euclidian distance is normally used, but other measures of distance find certain fields of application.
+The algorithm  incorporates an element of randomness. It starts with an initial guess of cluster assignments and then iteratively modifies the assignments and assesses improvements in homogeneity before finally settling on a locally optimum solution. This means that slightly different results may be obtained depending on the initial guess of cluster assignments. Excessive changes and instability resulting from minor changes to the initial conditions may indicate that the data does not naturally cluster, or that the value of k should be modified.
+The algorithm is flexible, efficient and simple. The drawback is that clusters formed using k-means can be without intrinsic meaning. For example, the algorithm can help one decide which group a particular observation belongs to, but it is up to the practitioner to find a way to action this intelligence.
+
+<h2>Analysis</h2>
+
+That background aside, lets dive into some analysis. For this particular investigation, my tool of choice is R. I’m going to use the <span class="lang:default decode:true crayon-inline">kmeans </span> algorithm from the <span class="lang:default decode:true crayon-inline">cluster </span> package. I’ll use the <span class="lang:default decode:true crayon-inline">quantmod </span> and <span class="lang:default decode:true crayon-inline">fpc </span> packages to handle time series data and to assist with plotting.
+The first part of the analysis is to prepare the data, bring it into the R environment and perform some exploratory analysis. I’ll use daily high, low and close prices for  GBP/JPY. Since forex is a 24 hour market, I’ll arbitrarily set the close time to 5:00 pm EST. I’ll plot the closing prices between July 2014 and July 2015 as candlesticks using the <span class="lang:default decode:true crayon-inline">quantmod </span> package. The following code reads in the price history data from a CSV file I created and plots the candles:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="read in data and plot">library(fpc)
+library(cluster)
+library(quantmod)
+data &lt;- read.csv("GBP_JPY.csv", stringsAsFactors = F)
+colnames(data) &lt;- c("Date", "GBP_JPY.Open", "GBP_JPY.High", "GBP_JPY.Low", "GBP_JPY.Close") # quantmod requires these names
+data$Date &lt;- as.POSIXct(data$Date, format = "%d/%m/%Y")
+data &lt;- as.xts(data[, -1], order.by = data[, 1])
+data &lt;- data[1684:nrow(data)-15, 1:4]
+chart_Series(data)</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2015/11/GBPJPY-July-2014-July-2015.png"><img alt="GBPJPY July 2014 - July 2015" class="alignleft size-full wp-image-905 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/11/GBPJPY-July-2014-July-2015.png" decoding="async" height="600" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1400'%20height='600'%20viewBox='0%200%201400%20600'%3E%3C/svg%3E" width="1400"/></a>
+Next, consider the information contained within candlesticks that could be interesting to explore. The distance between the high, low and close to the open springs immediately to mind. There’s also the upper and lower “wicks” (distance from the low to the open and from the high to the close for an up candle), the “body” (the distance between the high and low) and the range (the distance between the high and the low). Since these data can all be expressed in terms of the distance between the high, low, close and the open, I don’t think they will add additional predictive information to the model and will only add to processing time (I haven’t verified this, but it may be worth checking). There are also the relationships amongst the previous and current candle’s high, low, open and close. For stocks, volume may add another dimension, but this is less applicable to forex. It would also be interesting to add other data, such as a trend indicator or a time-based indicactor (for intra-day candlesticks). Be careful if analysing data from three or more candles: do you want the algorithm to relate the data contained within the third candle to the data contained in the first candle as well as the second? Or do you only want to consider adjacent candles? <a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro’s</a> pattern analyser provides a simple implementation to easily manage this issue, but isn’t quite as flexible and “unspervised” as this implementation in R.
+For now, I’ll just look at the relationships between the high, low and close and the open. Normalizing the data may improve the performance of the algorithm, but I’ll leave that out for now. The following code creates the data that will be fed to the k-means algorithm:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># create HLC relative to O
+data$HO &lt;- data[,2]-data[,1]
+data$LO &lt;- data[,3]-data[,1]
+data$CO &lt;- data[,4]-data[,1]</pre>
+
+Next, the clustering algorithm itself. This is a vanilla implementation using the <span class="lang:default decode:true crayon-inline">cluster </span> package. The <span class="lang:default decode:true crayon-inline">fpc </span> package contains more options. Note that I set the random number seed so that the results are reproducible. Recall that the k-means algorithm begins its search for the optimum clusters with a random assignment, and that different initial guesses can result in different results. I experimented with different values for k, but settled on eight, as this value results in some visually appealing splits, as well as placing enough candles in each cluster to make some meaningful analysis of the results:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># # K-Means Clustering with clusters based on HO, LO, CO
+class_factors &lt;- data[, 5:7] # using H/O, L/O, C/O
+set.seed(123)
+fit &lt;- kmeans(class_factors, 6)
+m &lt;- fit$cluster # vector of the cluster assigned to each candle</pre>
+
+And here are the clusters for this particular run of the k-means algorithm with k = 6, and the code for generating them:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">### which canldes were classifed into each cluster?
+cluster &lt;- as.xts(m)
+index(cluster) &lt;- index(data) # coerce index of cluster series to match data's index
+new_data &lt;- merge.xts(data, cluster)
+chart_Series(xts(coredata(new_data)[order(new_data$cluster),],type="candlesticks", order.by = index(new_data),  theme = chartTheme('black',up.col='green',dn.col='red')))
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2015/11/clusters.png"><img alt="clusters" class="alignleft size-full wp-image-906 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/11/clusters.png" decoding="async" height="600" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1400'%20height='600'%20viewBox='0%200%201400%20600'%3E%3C/svg%3E" width="1400"/></a>This is all well and good and we have learned a little about our price data – namely that its candlestick representations can be naturally grouped into the clusters shown. However, as I touched on above, this is the easy part. Is there any actionable intelligence resulting from this analysis that can lead to a profitable trading strategy? This will be the subject of my next post.
+See also this article: <a href="https://intelligenttradingtech.blogspot.com/2010/06/quantitative-candlestick-pattern.html" rel="noopener noreferrer" target="_blank">https://intelligenttradingtech.blogspot.com/2010/06/quantitative-candlestick-pattern.html</a>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>candlestick patterns</span>, <span>k-means</span>, <span>Machine Learning</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">18 thoughts on “Unsupervised candlestick classification for fun and profit – part 1”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1" id="comment-438">
+<article class="comment-body" id="div-comment-438" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Ilya,<br/>
+Thanks for reading and being gracious enough to save your commentary. As I mentioned in the article, I intend to investigate methods of actioning the intelligence gleaned from the k-means implementation in the next post. Of course, the conclusion may well be that nothing useful enough to trade arose from the analysis. Or maybe something interesting will turn up. Who knows?<br/>
+If you have anything helpful to contribute – suggestions, criticisms, whatever – please comment. I’m always willing and eager to learn from those more knowledgeable than I.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-438" data-commentid="438" data-postid="902" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-438" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-439">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 11/09/2015 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-440">
+<article class="comment-body" id="div-comment-440" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Interesting work,<br/>
+A lot of people will outright discourage using machine learning because they have not found success with it. I am in the other camp. I know for a fact that  it works and always like to see other people taking a crack a it.<br/>
+I recall seeing a paper where the author would come up with state transition probabilities based on which cluster tended to follow other clusters. They then used it in a HMM to make it a profitable strategy. The results were fairly interesting. I can’t recall what paper it was for the life of me but  I thought the rough intuition might give you an interesting avenue of inquiry for future posts.<br/>
+Regarding the previous comment, you know which cluster you are in as soon as the bar completes which is no later than any other strategy based on bar data. After that it is a simple matter of calculating your features and finding which cluster center is the closest in feature space to your latest bar.</p>
+<span class="reply"><a aria-label="Reply to QF" class="comment-reply-link" data-belowelement="div-comment-440" data-commentid="440" data-postid="902" data-replyto="Reply to QF" data-respondelement="respond" href="#comment-440" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-441">
+<article class="comment-body" id="div-comment-441" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>QF, thanks for commenting!<br/>
+I’ve noticed that it is common for traders who try it to dismiss machine learning due to problems related to over-fitting. But to me, that is a failure of the model development process, not a failure of the particular algorithm being used or of machine learning in general. I’ve also had more than one person tell me that they gave up on it because they want something they can just feed data to and get ‘the’ answer!<br/>
+I actually was going to investigate patterns of which clusters followed each other in my next post, but I hadn’t considered modelling the state transition probabilities in a HMM. I’ll see if I can locate that paper you referred to. Sounds really interesting.<br/>
+Good call regarding the previous comment too. Once the bar completes, the time required to figure out the bar’s cluster is merely a function of the complexity of your feature space and your computer’s processing power!<br/>
+RM</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-441" data-commentid="441" data-postid="902" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-441" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even depth-2 parent" id="comment-442">
+<article class="comment-body" id="div-comment-442" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>You are thinking of Intelligent Trading Tech’s blog post:<br/>
+<a href="https://intelligenttradingtech.blogspot.com/2010/06/quantitative-candlestick-pattern.html" rel="nofollow ugc">https://intelligenttradingtech.blogspot.com/2010/06/quantitative-candlestick-pattern.html</a><br/>
+Your approach is markedly similar.</p>
+<span class="reply"><a aria-label="Reply to Kyle Benton" class="comment-reply-link" data-belowelement="div-comment-442" data-commentid="442" data-postid="902" data-replyto="Reply to Kyle Benton" data-respondelement="respond" href="#comment-442" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-444">
+<article class="comment-body" id="div-comment-444" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Kyle, thanks for posting that link. I’ve added it to the main text as a reference.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-444" data-commentid="444" data-postid="902" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-444" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-445">
+<article class="comment-body" id="div-comment-445" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Yes , but there is an actual paper. I remembered this one but the one I am referring to had a much more detailed treatment. Still a good reference though. Had that one bookmarked for sure.</p>
+<span class="reply"><a aria-label="Reply to QF" class="comment-reply-link" data-belowelement="div-comment-445" data-commentid="445" data-postid="902" data-replyto="Reply to QF" data-respondelement="respond" href="#comment-445" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-443">
+<article class="comment-body" id="div-comment-443" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello Robot Wealth – not sure any other way to contact you, so I’m using your comments section. Would you mind emailing me at the enclosed email address? Thanks!</p>
+<span class="reply"><a aria-label="Reply to Mike at Quantocracy" class="comment-reply-link" data-belowelement="div-comment-443" data-commentid="443" data-postid="902" data-replyto="Reply to Mike at Quantocracy" data-respondelement="respond" href="#comment-443" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-446">
+<div class="comment-body">
+				Pingback: Unsupervised candlestick classification for fun and profit – part 2 | Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-447">
+<div class="comment-body">
+				Pingback: Best Links of the Week | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-448">
+<article class="comment-body" id="div-comment-448" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Really nice post!<br/>
+Just a wonder:<br/>
+If it make sense to analyze which cluster follows the current cluster. The question which comes to my mind is: Can then both clusters be considered a cluster as well? Like a “Second Order Cluster”</p>
+<span class="reply"><a aria-label="Reply to mariano" class="comment-reply-link" data-belowelement="div-comment-448" data-commentid="448" data-postid="902" data-replyto="Reply to mariano" data-respondelement="respond" href="#comment-448" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-449">
+<article class="comment-body" id="div-comment-449" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Mariano, thanks for commenting. You could certainly create clusters out of more than one candle. In fact, you could feed whatever information you liked to the clustering algorithm. I wrote about this briefly in the ‘Conclusions and future research directions’ section in part 2 of this series. If you are interested, you can take the code I included in that post and modify it to include other data – I would be very interested to hear about the results.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-449" data-commentid="449" data-postid="902" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-449" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-450">
+<div class="comment-body">
+				Pingback: Random portfolios: correlation clustering | Predictive Alpha 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-452">
+<div class="comment-body">
+				Pingback: Build Better Strategies! Part 4: Machine Learning – The Financial Hacker 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-454">
+<div class="comment-body">
+				Pingback: Build Better Strategies! Part 4: Machine Learning | Trade Signal Machine Hub 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-455">
+<div class="comment-body">
+				Pingback: Recommended Reading | Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-2618">
+<div class="comment-body">
+				Pingback: K-Means: Clasificación y agrupamiento con Minería de datos [Introducción] 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-10091">
+<div class="comment-body">
+				Pingback: A framework for trading system development based on k-means clustering - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/unsupervised-candlestick-classification-for-fun-and-profit-part-1/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

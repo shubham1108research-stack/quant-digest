@@ -1,0 +1,417 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Efficiently Simulating Geometric Brownian Motion in R</title>
+<!-- source: https://robotwealth.com/efficiently-simulating-geometric-brownian-motion-in-r/ -->
+<h1>Efficiently Simulating Geometric Brownian Motion in R</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-22309 post type-post status-publish format-standard hentry category-options category-quant-trading category-r tag-simulation pmpro-has-access" id="post-22309">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">April 26, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Efficiently Simulating Geometric Brownian Motion in R</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Efficiently Simulating Geometric Brownian Motion in R" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">For simulating stock prices, Geometric Brownian Motion (GBM) is the <em>de-facto</em> go-to model.
+
+It has some nice properties which are generally consistent with stock prices, such as being log-normally distributed (and hence bounded to the downside by zero), and that expected returns don’t depend on the magnitude of price.
+
+Of course, GBM is just a model and no model is a perfect representation of reality. In particular, GBM uses constant volatility, which is clearly at odds with reality. It also doesn’t account for jumps, such as those caused by news.
+
+In spite of those limitations, GBM is a useful starting point for modeling the behaviour of stock prices. In particular, it’s great for building intuition about various finance concepts – notably, options pricing.
+
+Normally when we’re modeling stock prices, our use case requires running a large number of simulations in order to generate a distribution of possible outcomes.
+
+Since such a use-case requires running a GBM simulator numerous times, it can pay to think about optimising code for speed. A small amount of forethought can save a ton of time down the track.
+
+Of course, you want to avoid the temptation to optimise early lest you spend more time optimising code than what you gain in time saved by the optimisation itself.
+
+But R lends itself to some simple out-of-the-box optimisations that provide great speed-up for little invested time.
+
+In this post, I’ll demonstrate two approaches to simulating price paths using GBM:
+
+<ul>
+<li>Using <code>for</code> loops to iterate over the number of price paths and the number of time-steps in each</li>
+<li>Vectorisation, where we operate on an entire vector or matrix at once</li>
+</ul>
+<h2>Loop-based GBM simulation</h2>
+
+Here’s some code for running a GBM simulation in a nested <code>for</code> loop:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="GBM - for loop">gbm_loop &lt;- function(nsim = 100, t = 25, mu = 0, sigma = 0.1, S0 = 100, dt = 1./365) {
+  gbm &lt;- matrix(ncol = nsim, nrow = t)
+  for (simu in 1:nsim) {
+    gbm[1, simu] &lt;- S0
+    for (day in 2:t) {
+      epsilon &lt;- rnorm(1)
+      dt = 1 / 365
+      gbm[day, simu] &lt;- gbm[(day-1), simu] * exp((mu - sigma * sigma / 2) * dt + sigma * epsilon * sqrt(dt))
+    }
+  }
+
+  return(gbm)
+}
+</pre>
+
+If I run it say, 50 times for 100 time-steps, with annaulised volatility of 10%, drift of 0 and a starting price of 100, I get price paths that look like this:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Loop and plot">library(tidyverse)
+
+nsim &lt;- 50
+t &lt;- 100
+mu &lt;- 0
+sigma &lt;- 0.1
+S0 &lt;- 100
+
+gbm &lt;- gbm_loop(nsim, t, mu, sigma, S0)
+
+gbm_df &lt;- as.data.frame(gbm) %&gt;%
+  mutate(ix = 1:nrow(gbm)) %&gt;%
+  pivot_longer(-ix, names_to = 'sim', values_to = 'price')
+
+gbm_df %&gt;%
+  ggplot(aes(x=ix, y=price, color=sim)) +
+  geom_line() +
+  theme(legend.position = 'none')
+</pre>
+<img alt="plot of chunk loop_sim" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162155/loop_sim-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk loop_sim"/>
+
+This looks like a reasonable representation of a random price process described by the parameters specified above. And that loop actually ran pretty quickly.
+
+Let’s see how fast this thing runs if we ask it for 50,000 simulations:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Time taken for 50,000 simulations">start &lt;- Sys.time()
+gbm &lt;- gbm_loop(nsim = 50000, t, mu, sigma, S0)
+Sys.time() - start
+</pre>
+<pre>## Time difference of 9.983079 secs
+</pre>
+
+About ten seconds. Not the end of the world, but one could imagine this quickly becoming tedious.
+
+<h2>Vectorised approach to GBM simulation</h2>
+
+Many operations in R are vectorised – which means that operations can occur in parallel under the hood, or at least can run much faster using tight loops written in C and hidden from the user.
+
+The classic example of vectorisation in action is elementwise addition of two vectors. The for-loop version of such an operation looks like this:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Loop-based elementwise addition">x &lt;- c(1:10)
+y &lt;- c(10:1)
+
+z &lt;- numeric(length(x))
+for(i in c(1:length(x))) {
+  z[i] &lt;- x[i] + y[i]
+}
+
+z
+</pre>
+<pre>##  [1] 11 11 11 11 11 11 11 11 11 11
+</pre>
+
+That’s quite a lot of code….
+
+With vectorisation, we can simply do:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Vectorised addition">z &lt;- x + y
+z
+</pre>
+<pre>##  [1] 11 11 11 11 11 11 11 11 11 11
+</pre>
+
+Lots of operations in R are vectorised – in fact, R was designed with this in mind.
+
+Let’s vectorise an operation in our GBM simulator to demonstrate.
+
+Instead of generating a new random number for each simulation for each day as we did in the loop version, we’ll generate a matrix of all the random numbers we’ll need for the entire simulation, at the outset. That’s the matrix <code>epsilon</code> in the code below.
+
+Then, we can transform that matrix in a <em>single operation</em> to <code>nsim * t</code> realisations of a GBM with our desired parameters.
+
+As a final step, we add an initial price given by <code>S0</code> to the first element of each simulation, then we take the cumulative product through time to get our price paths.
+
+Here’s the code:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Vectorised GBM">gbm_vec &lt;- function(nsim = 100, t = 25, mu = 0, sigma = 0.1, S0 = 100, dt = 1./365) {
+
+  # matrix of random draws - one for each day for each simulation
+  epsilon &lt;- matrix(rnorm((t-1)*nsim), ncol = nsim, nrow = t-1)  
+
+  # get GBM and convert to price paths
+  gbm &lt;- exp((mu - sigma * sigma / 2) * dt + sigma * epsilon * sqrt(dt))
+  gbm &lt;- apply(rbind(rep(S0, nsim), gbm), 2, cumprod)
+
+  return(gbm)
+}
+</pre>
+
+If I run it 50 times, I get price paths that look like this:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Simulate and plot">nsim &lt;- 50
+t &lt;- 100
+mu &lt;- 0
+sigma &lt;- 0.1
+S0 &lt;- 100
+
+gbm &lt;- gbm_vec(nsim, t, mu, sigma, S0)
+
+gbm_df &lt;- as.data.frame(gbm) %&gt;%
+  mutate(ix = 1:nrow(gbm)) %&gt;%
+  pivot_longer(-ix, names_to = 'sim', values_to = 'price')
+
+gbm_df %&gt;%
+  ggplot(aes(x=ix, y=price, color=sim)) +
+  geom_line() +
+  theme(legend.position = 'none')
+</pre>
+<img alt="plot of chunk vec_sim" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162154/vec_sim-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk vec_sim"/>
+
+All good so far.
+
+Let’s ask it for 50,000 simulated price paths and see if we get a speed-up over our loop version:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Timing vectorised simulation">start &lt;- Sys.time()
+gbm &lt;- gbm_vec(nsim = 50000, t, mu, sigma, S0)
+Sys.time() - start
+</pre>
+<pre>## Time difference of 0.894985 secs
+</pre>
+
+Nice! That’s the best part of an order of magnitude speed-up.
+
+<h2>What could a GBM simulator be used for?</h2>
+
+We could use it to estimate the distribution of prices at some point in the future, given our model assumptions:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Terminal price distribution">data.frame(price = gbm[t, ]) %&gt;%
+  ggplot(aes(x = price)) +
+  geom_histogram(aes(y = ..density..), binwidth = 0.1) +
+    geom_density() + 
+    ggtitle('terminal price distribution')
+</pre>
+<img alt="plot of chunk terminal_prices_distribution" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162153/terminal_prices_distribution-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk terminal_prices_distribution"/>
+
+And from there, estimate the <em>probability-weighted payoff curve</em> for an option on the stock being simulated, say a <strong>call option</strong> struck at 105 (again, given our model assumptions, and ignoring forward interest rates and dividends):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Probability weighted payoff of an option">D &lt;- gbm[t, ] %&gt;%
+    density()
+
+strike = 105
+
+profile &lt;- tibble(
+  price = D$x, 
+  value = case_when(price &lt;= strike ~ 0, TRUE ~ price - strike)
+)
+
+# dataframe of payoffs and probabilities 
+prob_wieghted_payoff_profile &lt;- profile %&gt;%
+    mutate(density = D$y/sum(D$y)) 
+
+prob_wieghted_payoff_profile %&gt;%
+    ggplot(aes(x = price, y = value*density)) +
+    geom_line() +
+    xlab('price') +
+    ylab('probability-weighted payoff')
+</pre>
+<img alt="plot of chunk theoretical_payoff_plot" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162152/theoretical_payoff_plot-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk theoretical_payoff_plot"/>
+And finally, we can get the expected value of our option by summing the area under the probability-weighted payoff curve:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Option expected value">expected_value &lt;- prob_wieghted_payoff_profile %&gt;%
+  summarise(ev = sum(density * value))
+
+expected_value
+</pre>
+<pre class="">## # A tibble: 1 x 1
+##      ev
+##   
+## 1 0.510
+</pre>
+<h2>Conclusion</h2>
+
+A Geometric Brownian Motion simulator is one of the first tools you reach for when you start modeling stock prices.
+
+In particular, it’s a useful tool for building intuition about concepts such as <em><strong>options pricing</strong></em>.
+
+Leveraging R’s vectorisation tools, we can run tens of thousands of simulations in no time at all.
+
+<div class="convertful-36233"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>simulation</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">9 thoughts on “Efficiently Simulating Geometric Brownian Motion in R”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-14179">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 04/26/2020 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-14403">
+<article class="comment-body" id="div-comment-14403" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Nice</p>
+<span class="reply"><a aria-label="Reply to Sajid naveed" class="comment-reply-link" data-belowelement="div-comment-14403" data-commentid="14403" data-postid="22309" data-replyto="Reply to Sajid naveed" data-respondelement="respond" href="#comment-14403" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-18465">
+<article class="comment-body" id="div-comment-18465" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very helpful; many thanks.</p>
+<span class="reply"><a aria-label="Reply to Erdoğan Cevher" class="comment-reply-link" data-belowelement="div-comment-18465" data-commentid="18465" data-postid="22309" data-replyto="Reply to Erdoğan Cevher" data-respondelement="respond" href="#comment-18465" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-marco-marconi odd alt thread-odd thread-alt depth-1 parent" id="comment-35531">
+<article class="comment-body" id="div-comment-35531" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks, the gbm_vec returns a matrix that has t+1 rows instead of t, I think it should have a t-1 in creating the epsilon</p>
+<span class="reply"><a aria-label="Reply to Marco" class="comment-reply-link" data-belowelement="div-comment-35531" data-commentid="35531" data-postid="22309" data-replyto="Reply to Marco" data-respondelement="respond" href="#comment-35531" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-35873">
+<article class="comment-body" id="div-comment-35873" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Good call Marco</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-35873" data-commentid="35873" data-postid="22309" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-35873" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-35877">
+<div class="comment-body">
+				Pingback: How Much Damage Can I Do Turbo-Punting Shitcoins? - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-35878">
+<div class="comment-body">
+				Pingback: How Much Damage Can I Do Turbo-Punting Shitcoins? | GPTTradeAssist.com 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/efficiently-simulating-geometric-brownian-motion-in-r/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

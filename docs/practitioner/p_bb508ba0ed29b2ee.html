@@ -1,0 +1,345 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Deep Learning for Trading Part 4: Fighting Overfitting with Dropout and Regularization</title>
+<!-- source: https://robotwealth.com/deep-learning-trading-fighting-overfitting-dropout-regularization/ -->
+<h1>Deep Learning for Trading Part 4: Fighting Overfitting with Dropout and Regularization</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-4040 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-deep-learning category-fx category-keras category-neural-networks category-r tag-deep-learning tag-dropout tag-keras tag-overfitting tag-regularization pmpro-has-access" id="post-4040">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">February 6, 2018</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Deep Learning for Trading Part 4: Fighting Overfitting with Dropout and Regularization</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Deep Learning for Trading Part 4: Fighting Overfitting with Dropout and Regularization" class="ipa-media gb-media-81e19d89" decoding="async" src=""/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><blockquote><em>Deep Learning for Trading Part 4: Fighting Overfitting</em> is the fourth in a multi-part series in which we<strong> </strong><strong>explore and compare various deep learning tools and techniques for market forecasting using Keras and TensorFlow</strong>.
+In <a href="https://robotwealth.com/deep-learning-trading-part-1/" rel="noopener noreferrer" target="_blank">Deep Learning for Trading Part 1</a>, we introduced Keras and discussed some of the major obstacles to using deep learning techniques in trading systems, including a warning about attempting to extract meaningful signals from historical market data. If you haven’t read that article, it is highly recommended that you do so before proceeding, as the context it provides is important.
+<a href="https://robotwealth.com/deep-learning-trading-tensorflow-keras-gpu/" rel="noopener noreferrer" target="_blank">Part 2</a> provides a walk-through of setting up <strong>Keras and Tensorflow for R</strong> using either the default <strong>CPU-based configuration</strong>, or the more complex and involved (but well worth it) <strong>GPU-based configuration </strong>under the Windows environment<strong>.</strong>
+<a href="https://robotwealth.com/deep-learning-trading-feed-forward-networks/" rel="noopener noreferrer" target="_blank">Part 3</a> is an <strong>introduction to the model building, training and evaluation process in Keras</strong>. We train a simple feed forward network to predict the direction of a foreign exchange market over a time horizon of one hour and assess its performance.</blockquote>
+<span style="color: #ffffff;">.</span>In the last post, we trained a densely connected feed-forward neural network to forecast the direction of the EUR/USD exchange rate over a time horizon of one hour. We landed on a model that predicted slightly better than random on out of sample data. We also saw in our <a href="https://robotwealth.com/deep-learning-trading-feed-forward-networks/#learning_plot" rel="noopener noreferrer" target="_blank">learning plots</a> that our network exhibited overfitting pretty badly at around 40 epochs. In this post, I’m going to demonstrate some tools to help fight overfitting and push your models further.
+
+<em>Let’s get started!</em>
+<h2>Regularization</h2>
+Regularization is a commonly used technique to mitigate overfitting of machine learning models, and it can also be applied to deep learning. Regularization essentially constrains the complexity of a network by penalizing larger weights during the training process. That is, by adding a term to the loss function that grows as the weights increase.
+Keras implements two common types of regularization: <strong> </strong>
+<ul>
+<li>L1, where the additional cost is proportional to the <strong>absolute value</strong> of the weight coefficients</li>
+<li>L2, where the additional cost is proportional to the <strong>square </strong>of the weight coefficients</li>
+</ul>
+These are incredibly easy to implement in Keras: simply pass <span class="lang:c highlight:0 decode:true crayon-inline">regularizer_l2(regularization_factor)</span>  or <span class="lang:c highlight:0 decode:true crayon-inline">regularizer_l2(regularization_factor)</span>  to the <span class="lang:c highlight:0 decode:true crayon-inline">kernal_regularizer</span>  argument in a Keras layer instance (details on how to do this below), where <span class="lang:c highlight:0 decode:true crayon-inline">regularization_factor * abs(weight_coefficient)</span>  or<span class="lang:c highlight:0 decode:true crayon-inline"> regularization_factor * weight_coefficient^2</span>  is added to the total loss, depending on the type of regularization chosen.
+Note that in Keras speak, <span class="lang:c highlight:0 decode:true crayon-inline">‘kernel’</span>  refers to the weights matrix created by a layer. Regularization can also be applied to the bias terms via the argument <span class="lang:c highlight:0 decode:true crayon-inline">bias_regularizer</span>  and the output of a layer by <span class="lang:c highlight:0 decode:true crayon-inline">activity_regularizer</span> .
+<h3>Getting smarter with our learning rate</h3>
+When we add regularization to a network, we might find that we need to train it for more epochs in order to reach convergence. This implies that the network might benefit from a higher learning rate during early stages of model training.<span class="inline-footnote" style="" title="Learning rate is the parameter that controls the magnitude of the weight adjustments after each batch of training data, and you’ll find it implemented as a parameter in Keras’ optimizers.">1<span class="footnoteContent" style="display:none;">Learning rate is the parameter that controls the magnitude of the weight adjustments after each batch of training data, and you’ll find it implemented as a parameter in Keras’ optimizers.</span></span>
+However, we also know that sometimes a network can benefit from a smaller learning rate at later stages of the training process. Think of it like the model’s loss being stuck halfway down the global minimum, bouncing from one side of the loss surface to the other with each weight update. By reducing the learning rate, we can make the subsequent weight updates less dramatic, which enables the loss to ‘fall’ further down towards the true global minimum.
+By using another Keras <a href="https://robotwealth.com/deep-learning-trading-feed-forward-networks/#callback" rel="noopener noreferrer" target="_blank">callback</a>, we can automatically adjust our learning rate downwards when training reaches a plateau:
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Reduce learning reate callback">reduce_lr &lt;- callback_reduce_lr_on_plateau(monitor = "val_acc", factor = 0.9,
+                                           patience = 10, verbose = 1, mode = "auto",
+                                           epsilon = 0.005, min_lr = 0.00001)</pre>
+This tells Keras to reduce the learning rate by a factor of 0.9 whenever validation accuracy doesn’t improve for <span class="lang:c highlight:0 decode:true crayon-inline">patience</span>  epochs. Also note the <span class="lang:c highlight:0 decode:true crayon-inline">epsilon</span>  parameter, which controls the threshold for measuring the new optimum. Setting this to a higher value results in fewer changes to the learning rate. This parameter should be on a scale that is relevant to the metric being tracked, validation accuracy in this case.
+<h3>Putting it together</h3>
+Here’s the code for an L2 regularized feed forward network with both <span class="lang:c highlight:0 decode:true crayon-inline">reduce_lr_on_plateau</span> and <span class="lang:c highlight:0 decode:true crayon-inline">model_checkpoint</span> callbacks (data import and processing is the same as in <a href="https://robotwealth.com/deep-learning-trading-feed-forward-networks/#data" rel="noopener noreferrer" target="_blank">Deep Learning for Trading: Part 3</a>):
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="L2-regularized feedforward network">###### FFN with weight regularization #####
+model.reg &lt;- keras_model_sequential()
+model.reg %&gt;%
+  layer_dense(units = 150, kernel_regularizer = regularizer_l2(0.001), activation = 'relu', input_shape = ncol(X_train)) %&gt;%
+  layer_dense(units = 150, kernel_regularizer = regularizer_l2(0.001), activation = 'relu') %&gt;%
+  layer_dense(units = 150, kernel_regularizer = regularizer_l2(0.001), activation = 'relu') %&gt;%
+  layer_dense(units = 1, activation = 'sigmoid')
+summary(model.reg)
+model.reg %&gt;% compile(
+  loss = 'binary_crossentropy',
+  optimizer = optimizer_rmsprop(lr=0.001),
+  metrics = c('accuracy')
+)
+filepath &lt;- "C:/Users/Kris/Research/DeepLearningForTrading/model_reg.hdf5" # set up your own filepath
+checkpoint &lt;- callback_model_checkpoint(filepath = filepath, monitor = "val_acc", verbose = 1,
+                                        save_best_only = TRUE,
+                                        save_weights_only = FALSE, mode = "auto")
+reduce_lr &lt;- callback_reduce_lr_on_plateau(monitor = "val_acc", factor = 0.9,
+                                           patience = 20, verbose = 1, mode = "auto",
+                                           epsilon = 0.005, min_lr = 0.00001)
+history.reg &lt;- model.reg %&gt;% fit(
+  X_train, Y_train,
+  epochs = 100, batch_size = nrow(X_train),
+  validation_data = list(X_val, Y_val), shuffle = TRUE,
+  callbacks = list(checkpoint, reduce_lr)
+)
+# plot training loss and accuracy
+plot(history.reg)
+max(history.reg$metrics$val_acc)
+# load and evaluate best model
+rm(model.reg)
+model.reg &lt;- keras:::keras$models$load_model(filepath)
+model.reg %&gt;% evaluate(X_test, Y_test)
+</pre>
+Plotting the training curves now gives us three plots – loss, accuracy and learning rate:
+<a href="https://robotwealth.com/wp-content/uploads/2018/02/Training_L2.png"><img alt="plotting the training curve gives us three plots - overfitting" class="aligncenter wp-image-4042 size-full" decoding="async" fetchpriority="high" height="750" src="https://robotwealth.com/wp-content/uploads/2018/02/Training_L2.png" width="600"/></a>
+This particular training process resulted in an out of sample accuracy of 53.4%, slightly better than our original unregularized model. You can experiment with more or less regularization, as well as applying regularization to the bias terms and layer outputs.
+<h2>Dropout</h2>
+Dropout is another commonly used tool to fight overfitting. Whereas regularization is used throughout the machine learning ecosystem, dropout is specific to neural networks. Dropout is the random zeroing (“dropping out”) of some proportion of a layer’s outputs during training. The theory is that this helps prevents pairs or groups of nodes from learning random relationships that just happen to reduce the network loss on the training set (that is, result in overfitting).
+
+Hinton and his colleagues, the discoverers of dropout, showed that it is generally superior to other forms of regularization and improves model performance on a variety of tasks. <a href="https://www.cs.toronto.edu/~hinton/absps/JMLRdropout.pdf" rel="noopener noreferrer" target="_blank">Read the original paper here</a>.<span class="inline-footnote" style="" title="As an aside, note the publication date of that paper: June 2014. That’s only about 3.5 years ago, yet dropout is already almost universally adopted throughout deep learning practice. This is a testament to just how quickly this field is evolving, and how closely integrated research and application really are.">2<span class="footnoteContent" style="display:none;">As an aside, note the publication date of that paper: June 2014. That’s only about 3.5 years ago, yet dropout is already almost universally adopted throughout deep learning practice. This is a testament to just how quickly this field is evolving, and how closely integrated research and application really are.</span></span>
+Dropout is implemented in Keras as its own layer, <span class="lang:c highlight:0 decode:true crayon-inline">layer_dropout(),</span> which applies dropout on its <em>inputs</em> (that is, on the <em>outputs</em> of the previous layer in the stack). We need to supply the fraction of outputs to drop out, which we pass via the <span class="lang:c highlight:0 decode:true crayon-inline">rate</span>  parameter. In practice, dropout rates between 0.2 and 0.5 are common, but the optimal values for a particular problem and network configuration need to be determined through appropriate cross validation.
+At the risk of getting ahead of ourselves, when applying dropout to recurrent architectures (which we’ll explore in a future post), we need to apply the same pattern of dropout at every timestep, otherwise dropout tends to hinder performance rather than enhance it.<span class="inline-footnote" style="" title="If that statement makes no sense to you, ignore it for now. It will become clear when we get to recurrent networks in a future post. I wanted to include it here in case any readers start experimenting with recurrent networks before I get around to writing about them.">3<span class="footnoteContent" style="display:none;">If that statement makes no sense to you, ignore it for now. It will become clear when we get to recurrent networks in a future post. I wanted to include it here in case any readers start experimenting with recurrent networks before I get around to writing about them.</span></span>
+Here’s an example of how we build a feed-forward network with dropout in Keras:
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Dropout regularized feed forward network">###### FFN with dropout #####
+model.drop &lt;- keras_model_sequential()
+model.drop %&gt;%
+  layer_dense(units = 150, activation = 'relu', input_shape = ncol(X_train)) %&gt;%
+  layer_dropout(rate = 0.3) %&gt;%
+  layer_dense(units = 150, activation = 'relu') %&gt;%
+  layer_dropout(rate = 0.3) %&gt;%
+  layer_dense(units = 150, activation = 'relu') %&gt;%
+  layer_dropout(rate = 0.3) %&gt;%
+  layer_dense(units = 1, activation = 'sigmoid')
+summary(model.drop)
+model.drop %&gt;% compile(
+  loss = 'binary_crossentropy',
+  optimizer = optimizer_rmsprop(lr=0.001),
+  metrics = c('accuracy')
+)
+filepath &lt;- "C:/Users/Kris/Research/DeepLearningForTrading/model_drop.hdf5" # set up your own filepath
+checkpoint &lt;- callback_model_checkpoint(filepath = filepath, monitor = "val_acc", verbose = 1,
+                                        save_best_only = TRUE,
+                                        save_weights_only = FALSE, mode = "auto")
+reduce_lr &lt;- callback_reduce_lr_on_plateau(monitor = "val_acc", factor = 0.9,
+                                           patience = 20, verbose = 1, mode = "auto",
+                                           epsilon = 0.005, min_lr = 0.00001)
+history.drop &lt;- model.drop %&gt;% fit(
+  X_train, Y_train,
+  epochs = 150, batch_size = nrow(X_train),
+  validation_data = list(X_val, Y_val), shuffle = TRUE,
+  callbacks = list(checkpoint, reduce_lr)
+)
+# plot training loss and accuracy
+plot(history.drop)
+max(history.drop$metrics$val_acc)
+# load and evaluate best model
+rm(model.drop)
+model.drop &lt;- keras:::keras$models$load_model(filepath)
+model.drop %&gt;% evaluate(X_test, Y_test)</pre>
+Training the model using the same procedure as we used in the L2-regularized model above, including the reduce learning rate callback, we get the following training curves:
+<a href="https://robotwealth.com/wp-content/uploads/2018/02/Dropout_training.png"><img alt="overfitting training curves" class="aligncenter wp-image-4047 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/02/Dropout_training.png" decoding="async" height="750" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='750'%20viewBox='0%200%20600%20750'%3E%3C/svg%3E" width="600"/></a>One of the reasons dropout is so useful is that it enables the training of larger networks by reducing the likelihood of overfitting. Here’s the training curves for a similar model but this time eight layers deep:
+<a href="https://robotwealth.com/wp-content/uploads/2018/02/wider_training.png"><img alt="overfitting training model 8 layers deep" class="aligncenter wp-image-4048 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/02/wider_training.png" decoding="async" height="750" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='750'%20viewBox='0%200%20600%20750'%3E%3C/svg%3E" width="600"/></a>
+Notice that overfitting isn’t significantly worse than the shallower model. Also notice that it didn’t really learn any new, independent relationships from the data – this is evidenced by the failure to beat the previous model’s validation accuracy. Perhaps 53% is the upper out of sample accuracy limit for this data set and this approach to modeling it.
+With dropout, you can also afford to use a larger learning rate, which means it is a good idea to make use of the <span class="lang:c highlight:0 decode:true crayon-inline">reduce_lr_on_plateau</span>  callback and kick off training with a higher learning rate, which can always be decayed as learning stalls.
+Finally, one important consideration when using dropout is constraining the size of the network weights, particularly when a large learning rate is used early in training. In the Hinton <em>et. al.</em> paper linked above, constraining the weights was shown to improve performance in the presence of dropout.
+Keras makes that easy thanks to the <span class="lang:c highlight:0 decode:true crayon-inline">kernel_constraint</span>  parameter of <span class="lang:c highlight:0 decode:true crayon-inline">layer_dense()</span> :
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Feed forward net with weight constraints and dropout">max_weight_constraint &lt;- 5
+model.drop &lt;- keras_model_sequential()
+model.drop %&gt;%
+  layer_dense(units = 150, activation = 'relu', kernel_constraint = constraint_maxnorm(max_value = max_weight_constraint), input_shape = ncol(X_train)) %&gt;%
+  layer_dropout(rate = 0.3) %&gt;%
+  layer_dense(units = 150, activation = 'relu', kernel_constraint = constraint_maxnorm(max_value = max_weight_constraint)) %&gt;%
+  layer_dropout(rate = 0.3) %&gt;%
+  layer_dense(units = 150, activation = 'relu', kernel_constraint = constraint_maxnorm(max_value = max_weight_constraint)) %&gt;%
+  layer_dropout(rate = 0.3) %&gt;%
+  layer_dense(units = 1, activation = 'sigmoid')</pre>
+This model provided an ever-so-slight bump in validation accuracy:
+<a href="https://robotwealth.com/wp-content/uploads/2018/02/weight_constrained_dropout.png"><img alt="a bump in validation accuracy" class="aligncenter wp-image-4049 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/02/weight_constrained_dropout.png" decoding="async" height="750" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='750'%20viewBox='0%200%20600%20750'%3E%3C/svg%3E" width="600"/></a>And quite a stunning test-set equity curve:
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Equity curve code"># get predictions on test set and plot simple, frictionless PnL
+preds &lt;- model.drop %&gt;% predict_proba(X_test)
+threshold &lt;- 0.5
+trades &lt;- ifelse(preds &gt;= threshold, Y_test_raw, ifelse(preds &lt;= 1-threshold, -Y_test_raw, 0))
+plot(cumsum(trades), type='l')
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2018/02/Dropout_03_weights_constrained.png"><img alt="a good test set equity curve" class="aligncenter wp-image-4050 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/02/Dropout_03_weights_constrained.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/></a>
+Interestingly, every experiment I performed in writing this post resulted in a positive out of sample equity curve. The results were all slightly different, even when using the same model setup, which reflects the non-deterministic nature of the training process (two identical networks trained on the same data can result in different weights, depending on the initial, pre-training weights of each network). Some equity curves were better than others, but they were all positive.
+Here are some examples:
+<h5>With L2-weight regularization and no dropout:</h5>
+<a href="https://robotwealth.com/wp-content/uploads/2018/02/L2_only.png"><img alt="L2 weight distribution regularisation with no dropout" class="aligncenter wp-image-4051 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/02/L2_only.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/></a>
+<h5>With a dropout rate of 0.2 applied at each layer, no regularization, and no weight constraints:</h5>
+<a href="https://robotwealth.com/wp-content/uploads/2018/02/Dropout_02_02.png"><img alt="with a dropout rate of 0.2 over each layer " class="aligncenter wp-image-4052 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/02/Dropout_02_02.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/></a>
+Of course, as mentioned in the last post, the edge of these models disappears when we apply retail spreads and broker commissions, but the frictionless equity curves demonstrate that deep learning, even using a simple feed-forward architecture, can extract predictive information from historical price action, at least for this particular data set, and that tools like regularization and dropout can make a difference to the quality of the model’s predictions.
+<div>
+<h2>What’s next?</h2>
+Before we get into advanced model architectures, in the next unit I’ll show you:
+<ol>
+<li>One of the more cutting edge architectures to get the most out of a densely connected feed forward network.</li>
+<li>How to interrogate and visualize the training process in real-time.</li>
+</ol>
+</div>
+<h2>Conclusions</h2>
+This post demonstrated how to fight overfitting with regularization and dropout using Keras’ sequential model paradigm. While we further refined our previously identified slim edge in predicting the EUR/USD exchange rate’s direction, in practical terms, traders with access to retail spreads and commission will want to consider longer holding times to generate more profit per trade, or will need a more performant model to make money with this approach.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>Deep learning</span>, <span>Dropout</span>, <span>Keras</span>, <span>Overfitting</span>, <span>Regularization</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-98042 post type-post status-publish format-standard hentry category-options category-quant-trading category-r category-think-like-a-trader tag-options tag-simulation pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-95276 post type-post status-publish format-standard has-post-thumbnail hentry category-data-analysis category-r tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/revisiting-overnight-vs-intraday-equity-returns/"><img alt="Revisiting Overnight vs Intraday Equity Returns" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="95278" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-92479 post type-post status-publish format-standard has-post-thumbnail hentry category-data category-r category-time-series-modelling tag-quantitative-analysis tag-r tag-tidyverse pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-simple-trick-for-dealing-with-overlapping-data/"><img alt="A Simple Trick for Dealing with Overlapping Data" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="92480" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-300x171.webp" data-srcset="https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-300x171.webp 300w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-1024x585.webp 1024w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-768x439.webp 768w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-1536x878.webp 1536w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">9 thoughts on “Deep Learning for Trading Part 4: Fighting Overfitting with Dropout and Regularization”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-826">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 02/06/2018 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-827">
+<article class="comment-body" id="div-comment-827" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great post and much appreciated.. do you happen to have the actual original data you used before it was processed with the data gen regularization algo?<br/>
+thx, bl</p>
+<span class="reply"><a aria-label="Reply to Brian" class="comment-reply-link" data-belowelement="div-comment-827" data-commentid="827" data-postid="4040" data-replyto="Reply to Brian" data-respondelement="respond" href="#comment-827" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-828">
+<article class="comment-body" id="div-comment-828" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Brian, I do have that data, however it is in Zorro’s binary .bar file format. Do you use Zorro? If not, I can always convert it to CSV and upload it?</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-828" data-commentid="828" data-postid="4040" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-828" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-829">
+<article class="comment-body" id="div-comment-829" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I don’t have Zorro, i can download it from them if that is easier. i was looking at the C file you used to generate the scaler on the data, if its not too much trouble CSV would be a little easier for me otherwise i can just pick up Zorro.<br/>
+thx for that,<br/>
+brian</p>
+<span class="reply"><a aria-label="Reply to brian" class="comment-reply-link" data-belowelement="div-comment-829" data-commentid="829" data-postid="4040" data-replyto="Reply to brian" data-respondelement="respond" href="#comment-829" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-830">
+<article class="comment-body" id="div-comment-830" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Brian,<br/>
+Sorry for the slow response, but I’ve uploaded the raw EUR/USD data (as CSV) used in this post to the download archive linked above. It’s hourly data covering the period 2010-01-01 to 2017-12-01 from FXCM.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-830" data-commentid="830" data-postid="4040" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-830" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/deep-learning-trading-fighting-overfitting-dropout-regularization/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

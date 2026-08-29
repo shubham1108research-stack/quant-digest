@@ -1,0 +1,254 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Valuation Timing with Excel</title>
+<!-- source: https://robotwealth.com/valuation-timing-with-excel/ -->
+<h1>Valuation Timing with Excel</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-104190 post type-post status-publish format-standard has-post-thumbnail hentry category-data-analysis category-think-like-a-trader tag-data-analysis tag-excel tag-valuation pmpro-has-access" id="post-104190">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/jameshodges/">Robot James</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">November 22, 2024</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Valuation Timing with Excel</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Valuation Timing with Excel" class="ipa-media gb-media-81e19d89" data-media-id="104212" decoding="async" fetchpriority="high" height="702" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2024/11/22124057/excel_for_data_analysis-e1732239673160-1024x702.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22124057/excel_for_data_analysis-e1732239673160-1024x702.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/11/22124057/excel_for_data_analysis-e1732239673160-300x206.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/11/22124057/excel_for_data_analysis-e1732239673160-768x527.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/11/22124057/excel_for_data_analysis-e1732239673160.webp 1493w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">Data analysis plays a central role in making sense of financial markets. But how can you verify the conclusions others draw, or better yet, uncover your own insights? </p>
+<p class="wp-block-paragraph">Microsoft Excel remains one of the most powerful and accessible tools for financial data analysis, allowing anyone—from beginners to seasoned analysts—to explore data, test hypotheses, and make informed decisions. </p>
+<p class="wp-block-paragraph">Here’s an example of <strong>using Excel to analyse financial data</strong>, test conclusions, and uncover the hidden stories within the numbers.</p>
+<p class="wp-block-paragraph">Let’s get to it. </p>
+<p class="wp-block-paragraph">You may have seen a lot of charts like this recently:</p>
+<figure class="wp-block-image size-full"><img alt="" class="wp-image-104191 perfmatters-lazy" data-sizes="(max-width: 955px) 100vw, 955px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22084805/image-4.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22084805/image-4.png 955w, https://media.robotwealth.com/wp-content/uploads/2024/11/22084805/image-4-300x252.png 300w, https://media.robotwealth.com/wp-content/uploads/2024/11/22084805/image-4-768x646.png 768w" decoding="async" height="803" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='955'%20height='803'%20viewBox='0%200%20955%20803'%3E%3C/svg%3E" width="955"/></figure>
+<p class="wp-block-paragraph">That chart shows a proxy of S&amp;P 500 “valuation” on the x-axis and the subsequent total returns of an S&amp;P 500 investment on the y-axis.</p>
+<p class="wp-block-paragraph">The conclusions people tend to draw from this chart are:</p>
+<ul class="wp-block-list">
+<li>there is an obvious and strong relationship between valuation and expected future returns <em>(cheap = good, expensive = bad)</em></li>
+<li>valuation estimates are currently historically high; therefore, expected returns of the S&amp;P 500 are historically low.</li>
+</ul>
+<p class="wp-block-paragraph">We should always be wary of drawing strong conclusions from stuff people share on the internet or in sell-side research.</p>
+<p class="wp-block-paragraph">There are a few reasons to be sceptical of the strong conclusions people tend to make on seeing this:</p>
+<ul class="wp-block-list">
+<li>the chart might just be wrong (people screw up financial data analysis all the time)</li>
+<li>10 years is a really long time horizon </li>
+<li>all of the 10-year total returns are actually positive</li>
+<li>why are there so many points? How may 10 year periods has the index even existed for?!</li>
+</ul>
+<p class="wp-block-paragraph">The good news is that, with a few simple skills, we don’t have to believe what randos on the internet say. </p>
+<p class="wp-block-paragraph">Even if we can’t write code, we can use <strong>Microsoft Excel </strong>and free online tools to investigate these things ourselves. We’re currently working on a new course to teach you how to do this.</p>
+<p class="wp-block-paragraph">In this particular case, it turns out Prof Robert Schiller from the Yale department of economics makes all the data we need to do this analysis available here: <a href="https://shillerdata.com/">https://shillerdata.com/</a></p>
+<p class="wp-block-paragraph">The data looks like this:</p>
+<figure class="gb-block-image gb-block-image-baf789a2"><img class="gb-image gb-image-baf789a2 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22090727/image-5-1024x449.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22090727/image-5-1024x449.png 1024w, https://media.robotwealth.com/wp-content/uploads/2024/11/22090727/image-5-300x131.png 300w, https://media.robotwealth.com/wp-content/uploads/2024/11/22090727/image-5-768x336.png 768w, https://media.robotwealth.com/wp-content/uploads/2024/11/22090727/image-5-1536x673.png 1536w, https://media.robotwealth.com/wp-content/uploads/2024/11/22090727/image-5.png 1911w" decoding="async" height="449" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='449'%20viewBox='0%200%201024%20449'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">One initial obvious observation is that the data goes back to 1871! The S&amp;P 500 index officially began in 1957, so the first part of this dataset will be reconstructed from other available data. You can read the docs if you’re interested in how he did this. <em>(I’m not particularly interested. I’m happy just knowing not to trust that data)</em></p>
+<p class="wp-block-paragraph">To recreate the chart above, we just need observations of:</p>
+<ul class="wp-block-list">
+<li>an S&amp;P500 valuation metric <em>(to plot on the x-axis)</em></li>
+<li>the total returns of the index over the subsequent 10-year period <em>(to plot on the y-axis)</em></li>
+</ul>
+<p class="wp-block-paragraph">We’re going to use the Cyclically Adjusted Price Earnings Ratio for our valuation metric. (Because that’s what we have in the dataset, and every way we estimate valuation will look roughly the same.)<em> </em></p>
+<p class="wp-block-paragraph">And we’re going to use the 10-year Annualized Real (after inflation) return as our return measurement.</p>
+<figure class="gb-block-image gb-block-image-9cbb8054"><img class="gb-image gb-image-9cbb8054 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22092621/image-6-1024x446.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22092621/image-6-1024x446.png 1024w, https://media.robotwealth.com/wp-content/uploads/2024/11/22092621/image-6-300x131.png 300w, https://media.robotwealth.com/wp-content/uploads/2024/11/22092621/image-6-768x335.png 768w, https://media.robotwealth.com/wp-content/uploads/2024/11/22092621/image-6-1536x669.png 1536w, https://media.robotwealth.com/wp-content/uploads/2024/11/22092621/image-6.png 1910w" decoding="async" height="446" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='446'%20viewBox='0%200%201024%20446'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">We can select those columns in Excel and insert a scatterplot. It looks like this:</p>
+<figure class="gb-block-image gb-block-image-619fc31d"><img class="gb-image gb-image-619fc31d perfmatters-lazy" data-sizes="(max-width: 488px) 100vw, 488px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22092717/image-7.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22092717/image-7.png 488w, https://media.robotwealth.com/wp-content/uploads/2024/11/22092717/image-7-300x175.png 300w" decoding="async" height="284" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='488'%20height='284'%20viewBox='0%200%20488%20284'%3E%3C/svg%3E" width="488"/></figure>
+<p class="wp-block-paragraph">It looks similar to the chart we were trying to recreate. </p>
+<p class="wp-block-paragraph">Ours goes negative on the y-axis because we’re plotting real (after inflation) total returns, whereas i assume the original chart is just plotting total returns of the index.</p>
+<p class="wp-block-paragraph">Now we can start to pull this apart if we want. And Excel is pretty good for this kind of exploratory analysis.</p>
+<p class="wp-block-paragraph">The first thing we can address is that many observations are basically the same.</p>
+<p class="wp-block-paragraph">Each of those points is a monthly observation of the valuation proxy (x-axis), and S&amp;P500 returns ten years following that observation (y-axis).</p>
+<p class="wp-block-paragraph">Ten years is 120 months. So, subsequent observations in our data will have 119 months in common.</p>
+<figure class="gb-block-image gb-block-image-754ba685"><img class="gb-image gb-image-754ba685 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22101900/image-8-1024x518.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22101900/image-8-1024x518.png 1024w, https://media.robotwealth.com/wp-content/uploads/2024/11/22101900/image-8-300x152.png 300w, https://media.robotwealth.com/wp-content/uploads/2024/11/22101900/image-8-768x388.png 768w, https://media.robotwealth.com/wp-content/uploads/2024/11/22101900/image-8.png 1098w" decoding="async" height="518" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='518'%20viewBox='0%200%201024%20518'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">Our dataset has 1726 monthly data points, but <strong>most of them are basically the same thing. </strong></p>
+<p class="wp-block-paragraph">We can instead restrict our observations to unique non-overlapping ones like this:</p>
+<figure class="gb-block-image gb-block-image-29bf13fc"><img class="gb-image gb-image-29bf13fc perfmatters-lazy" data-sizes="(max-width: 960px) 100vw, 960px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22102608/image-9.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22102608/image-9.png 960w, https://media.robotwealth.com/wp-content/uploads/2024/11/22102608/image-9-300x60.png 300w, https://media.robotwealth.com/wp-content/uploads/2024/11/22102608/image-9-768x153.png 768w" decoding="async" height="191" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='960'%20height='191'%20viewBox='0%200%20960%20191'%3E%3C/svg%3E" width="960"/></figure>
+<p class="wp-block-paragraph">This requires reducing our data down to only the unique data points. That’s not hard, but it involves a little bit of work. So first we can do something similar and easier by reducing the length of our return window. </p>
+<p class="wp-block-paragraph">Our observations are monthly, so if we plot next month’s returns vs CAPE, then all our observations are unique. That’s gonna look a lot noisier<em> (because anything will happen in a month), </em>but we might still expect to see an effect if one exists.</p>
+<p class="wp-block-paragraph">Essentially, we are doing this:</p>
+<figure class="gb-block-image gb-block-image-6f86ba72"><img class="gb-image gb-image-6f86ba72 perfmatters-lazy" data-sizes="(max-width: 516px) 100vw, 516px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22104300/image-13.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22104300/image-13.png 516w, https://media.robotwealth.com/wp-content/uploads/2024/11/22104300/image-13-300x112.png 300w" decoding="async" height="193" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='516'%20height='193'%20viewBox='0%200%20516%20193'%3E%3C/svg%3E" width="516"/></figure>
+<p class="wp-block-paragraph">To do this, we need to calculate next month’s excess real returns in the table our data lives in and plot it against CAPE, as before.</p>
+<figure class="gb-block-image gb-block-image-9e27d593"><img class="gb-image gb-image-9e27d593 perfmatters-lazy" data-sizes="(max-width: 489px) 100vw, 489px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22104758/image-15.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22104758/image-15.png 489w, https://media.robotwealth.com/wp-content/uploads/2024/11/22104758/image-15-300x253.png 300w" decoding="async" height="413" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='489'%20height='413'%20viewBox='0%200%20489%20413'%3E%3C/svg%3E" width="489"/></figure>
+<p class="wp-block-paragraph">Unsurprisingly, that looks like a big blob. <em>(Anything with monthly returns on the y-axis will look like a big blob.)</em> </p>
+<p class="wp-block-paragraph">But there is a weak negative linear relationship there. </p>
+<p class="wp-block-paragraph">Now we’ve done the easy thing, we can collect more evidence by looking at the slightly harder thing. We can look at longer non-overlapping periods. Let’s keep with the 10-year forward window and look at decades.</p>
+<figure class="gb-block-image gb-block-image-134d87d5"><img class="gb-image gb-image-134d87d5 perfmatters-lazy" data-sizes="(max-width: 960px) 100vw, 960px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22102608/image-9.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22102608/image-9.png 960w, https://media.robotwealth.com/wp-content/uploads/2024/11/22102608/image-9-300x60.png 300w, https://media.robotwealth.com/wp-content/uploads/2024/11/22102608/image-9-768x153.png 768w" decoding="async" height="191" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='960'%20height='191'%20viewBox='0%200%20960%20191'%3E%3C/svg%3E" width="960"/></figure>
+<p class="wp-block-paragraph">To do this, we can use the Excel data model to pull our data from the Shiller website and then manipulate and filter it.</p>
+<p class="wp-block-paragraph"><span style="box-sizing: border-box; margin: 0px; padding: 0px;">We pull the data from <a href="https://img1.wsimg.com/blobby/go/e5e77e0b-59d1-44d9-ab25-4763ac982e53/downloads/2fb6ea8f-2c13-4e80-b854-14e14caa8ee8/ie_data.xls?ver=1728067886069" rel="noopener" target="_blank">here</a></span> and use the Excel data model to clean and format the columns correctly.</p>
+<p class="wp-block-paragraph">This will populate a table in Excel with the Schiller dataset that we can manipulate. </p>
+<p class="wp-block-paragraph">When the dataset is refreshed, we can refresh our spreadsheet, and it will pull and process the latest data for us.</p>
+<figure class="gb-block-image gb-block-image-c7d3f294"><img class="gb-image gb-image-c7d3f294 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22102942/image-10-1024x618.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22102942/image-10-1024x618.png 1024w, https://media.robotwealth.com/wp-content/uploads/2024/11/22102942/image-10-300x181.png 300w, https://media.robotwealth.com/wp-content/uploads/2024/11/22102942/image-10-768x464.png 768w, https://media.robotwealth.com/wp-content/uploads/2024/11/22102942/image-10-1536x928.png 1536w, https://media.robotwealth.com/wp-content/uploads/2024/11/22102942/image-10.png 1856w" decoding="async" height="618" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='618'%20viewBox='0%200%201024%20618'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">Now, we can pull that data into a different data model, add the decade to each observation, and filter the data so we only get the first observation each decade.</p>
+<p class="wp-block-paragraph">Now we have unique observations. </p>
+<figure class="gb-block-image gb-block-image-03cf82c7"><img class="gb-image gb-image-03cf82c7 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22103205/image-11-1024x616.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22103205/image-11-1024x616.png 1024w, https://media.robotwealth.com/wp-content/uploads/2024/11/22103205/image-11-300x180.png 300w, https://media.robotwealth.com/wp-content/uploads/2024/11/22103205/image-11-768x462.png 768w, https://media.robotwealth.com/wp-content/uploads/2024/11/22103205/image-11-1536x923.png 1536w, https://media.robotwealth.com/wp-content/uploads/2024/11/22103205/image-11.png 1860w" decoding="async" height="616" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='616'%20viewBox='0%200%201024%20616'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">The problem is that we now only have 15 observations! Ten years is a long time, and we simply don’t have that many unique non-overlapping ten-year periods.</p>
+<p class="wp-block-paragraph">And we certainly don’t have many unique non-overlapping ten-year periods that are similar to the current market structure and competitive environment.</p>
+<p class="wp-block-paragraph">But we never have enough data, and we have to do our best. So, let’s recreate that chart with our 15 non-overlapping 10-year observations.</p>
+<figure class="gb-block-image gb-block-image-e071e61a"><img class="gb-image gb-image-e071e61a perfmatters-lazy" data-sizes="(max-width: 478px) 100vw, 478px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22103407/image-12.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22103407/image-12.png 478w, https://media.robotwealth.com/wp-content/uploads/2024/11/22103407/image-12-300x178.png 300w" decoding="async" height="284" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='478'%20height='284'%20viewBox='0%200%20478%20284'%3E%3C/svg%3E" width="478"/></figure>
+<p class="wp-block-paragraph">We’d be a lot less sure about the effect, looking at this scatterplot. But it does still go down and to the left!</p>
+<p class="wp-block-paragraph">We can do the same thing with annual return observations.<em> (We get 10 times as many points doing this.)</em></p>
+<figure class="gb-block-image gb-block-image-e9fdd21a"><img class="gb-image gb-image-e9fdd21a perfmatters-lazy" data-sizes="(max-width: 526px) 100vw, 526px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22105120/image-16.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22105120/image-16.png 526w, https://media.robotwealth.com/wp-content/uploads/2024/11/22105120/image-16-300x222.png 300w" decoding="async" height="389" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='526'%20height='389'%20viewBox='0%200%20526%20389'%3E%3C/svg%3E" width="526"/></figure>
+<p class="wp-block-paragraph">We keep seeing evidence of a weak predictive effect that makes sense. </p>
+<p class="wp-block-paragraph">It’s nowhere near as strong as the original scatterplot suggested – but we’d probably bet on it being a thing. </p>
+<p class="wp-block-paragraph">Now, whenever we see an effect, we should ask what other than our pet theory might be causing that effect to appear. In particular a lot has changed over that time period. The market looks nothing like what it did in 1900 today.</p>
+<p class="wp-block-paragraph">And, indeed, if we plot a time series of our valuation metric, it looks kinda drifty.</p>
+<figure class="gb-block-image gb-block-image-a20886c3"><img class="gb-image gb-image-a20886c3 perfmatters-lazy" data-sizes="(max-width: 472px) 100vw, 472px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22105536/image-17.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22105536/image-17.png 472w, https://media.robotwealth.com/wp-content/uploads/2024/11/22105536/image-17-300x182.png 300w" decoding="async" height="287" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='472'%20height='287'%20viewBox='0%200%20472%20287'%3E%3C/svg%3E" width="472"/></figure>
+<p class="wp-block-paragraph"><em>(Excuse the ugly x-axis. I’m lazy.)</em></p>
+<p class="wp-block-paragraph">It’s not really reasonable, I don’t think, to assume that CAPE 20 would “mean” the same thing in 2024 as it did in 1900.</p>
+<p class="wp-block-paragraph">One cheap and dirty way we can make that metric a bit less drifty and more comparable over time is to standardize it by its values over a recent rolling window.</p>
+<p class="wp-block-paragraph">For example, here I’ve standardized it as a 10yr rolling score. (Not necessarily cos I think that’s the right thing to do – I just want to make a point).</p>
+<figure class="gb-block-image gb-block-image-0c49235f"><img class="gb-image gb-image-0c49235f perfmatters-lazy" data-sizes="(max-width: 484px) 100vw, 484px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22110346/image-18.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22110346/image-18.png 484w, https://media.robotwealth.com/wp-content/uploads/2024/11/22110346/image-18-300x177.png 300w" decoding="async" height="285" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='484'%20height='285'%20viewBox='0%200%20484%20285'%3E%3C/svg%3E" width="484"/></figure>
+<p class="wp-block-paragraph">Now it looks a lot more stationary. It stays in the same range. It doesn’t drift off. This is unsurprising cos we forced it to look like that.</p>
+<p class="wp-block-paragraph">Now, we can plot our next year’s returns vs this standardized zscore.</p>
+<p class="wp-block-paragraph">If we still see an effect when we do this, it would make us more confident in the valuation effect. If we don’t, it won’t destroy our confidence because we’ve made some pretty arbitrary and dubious scaling choices here. </p>
+<figure class="gb-block-image gb-block-image-5448a356"><img class="gb-image gb-image-5448a356 perfmatters-lazy" data-sizes="(max-width: 478px) 100vw, 478px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/22110706/image-19.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/22110706/image-19.png 478w, https://media.robotwealth.com/wp-content/uploads/2024/11/22110706/image-19-300x179.png 300w" decoding="async" height="285" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='478'%20height='285'%20viewBox='0%200%20478%20285'%3E%3C/svg%3E" width="478"/></figure>
+<p class="wp-block-paragraph">Indeed, at least with this scaling choice, we don’t see the effect we are looking for. </p>
+<p class="wp-block-paragraph">That’s ok. That’s the nature of work like this. We’re just exploring, trying to break things. We try to look at things from as many different angles as we can and see how much of the limited evidence lines up.</p>
+<p class="wp-block-paragraph">Excel is great for this kind of work because it’s very tactile and hands-on. We can filter our data to explore what these scatterplots look like for different periods in our dataset. We’re just trying to collect as many views as we can, weighing them up.</p>
+<p class="wp-block-paragraph"><em><strong>What do I think?</strong></em></p>
+<p class="wp-block-paragraph">I think the evidence (and economic sense) supports the idea that high valuations are correlated with lower expected returns. But it’s nowhere near as clear-cut as the initial scatterplot suggests. We simply don’t have enough data, and the market is constantly changing underneath us, making it hard for us to draw strong inferences.</p>
+<p class="wp-block-paragraph">Would you sit out of stock index investments based on this? I wouldn’t.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>data analysis</span>, <span>excel</span>, <span>valuation</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-133234 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai tag-data-mining tag-llms pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/for-the-love-of-the-game/"><img alt="For The Love of The Game" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="133235" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-80x69.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-480x413.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game.png 893w" decoding="async" height="660" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='660'%20viewBox='0%200%20768%20660'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-132449 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/to-trend-or-not-to-trend-wrong-question/"><img alt="To Trend or Not To Trend? (Wrong question)" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="132450" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-131547 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/brave-new-backtest/"><img alt="Brave New Backtest" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="131550" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-150x150.jpeg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-80x80.jpeg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-480x480.jpeg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-960x960.jpeg 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst.jpeg 1024w" decoding="async" height="768" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='768'%20viewBox='0%200%20768%20768'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">5 thoughts on “Valuation Timing with Excel”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-41412">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 11/24/2024 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-42279">
+<div class="comment-body">
+				Pingback: Moontower #253 - Party at the Moontower 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-42281">
+<div class="comment-body">
+				Pingback: Inoculate yourself against "persuasive" charts - Party at the Moontower 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/valuation-timing-with-excel/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

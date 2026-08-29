@@ -1,0 +1,215 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Moneyball: Finding Undervalued Pairs Using Unconventional Metrics</title>
+<!-- source: https://robotwealth.com/moneyball-finding-undervalued-pairs-using-unconventional-metrics/ -->
+<h1>Moneyball: Finding Undervalued Pairs Using Unconventional Metrics</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-130276 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb pmpro-has-access" id="post-130276">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">February 20, 2026</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Moneyball: Finding Undervalued Pairs Using Unconventional Metrics</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Moneyball: Finding Undervalued Pairs Using Unconventional Metrics" class="ipa-media gb-media-81e19d89" data-media-id="130277" decoding="async" fetchpriority="high" height="964" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-1280x964.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-1280x964.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-80x60.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-480x361.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-960x723.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features.webp 1456w" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph"><strong>Previously</strong>: <a href="https://robotwealth.com/a-tale-of-two-prices/">​A Tale of Two Prices (the core idea of stat arb)​</a></p>
+<p class="wp-block-paragraph">Last time we established that stat arb is really about betting on divergence/convergence behaviour continuing. Two things that have historically moved together come apart, and you bet on them coming back together.</p>
+<p class="wp-block-paragraph">Remember the forced flows example, some fund or whatever having to sell regardless of price? That sort of temporary dislocation creates opportunities.</p>
+<p class="wp-block-paragraph">Conceptually simple. But the question is: how do you find pairs that actually do this reliably?</p>
+<p class="wp-block-paragraph">This is where I went wrong for a long time. I spent way too long in the early days getting hung up on the wrong things.</p>
+<p class="wp-block-paragraph">—</p>
+<p class="wp-block-paragraph">If you’ve read anything about pairs trading, you’ve probably come across discussions of Kalman filters, Ornstein-Uhlenbeck models, optimal hedge ratios.</p>
+<p class="wp-block-paragraph">I got really hung up on that stuff when I first started. I thought the algorithm details were the important part.</p>
+<p class="wp-block-paragraph">They’re not.</p>
+<p class="wp-block-paragraph">At the end of the day, all of that stuff is a minor implementation detail. Really, 80 to 90 per cent of the whole pairs trading game is just finding stuff that tends to drift apart and come back together.</p>
+<p class="wp-block-paragraph">Unsexy, but true.</p>
+<p class="wp-block-paragraph">If you can find two things that reliably diverge and converge, my six-year-old could trade them and make money. Seriously. The trading logic is the easy part. Long the cheap one, short the expensive one, wait for convergence. Done.</p>
+<p class="wp-block-paragraph">Of course, nothing is that simple. The hard part is finding those things in the first place. And then managing them with all the trade-offs, constraints and limitations that you inevitably run up against (that’s coming in article 3, by the way).<br/><br/>—</p>
+<p class="wp-block-paragraph">Let me start with what doesn’t work as well as you’d hope: cointegration testing.</p>
+<p class="wp-block-paragraph">Cointegration is one of those things that sounds perfect for pairs trading. It’s a statistical property that says two time series tend to move together over time, even if they wander individually. Exactly what we want, right?</p>
+<p class="wp-block-paragraph">The problem is practical, not theoretical.</p>
+<p class="wp-block-paragraph">If you try to measure a cointegration coefficient over a rolling window, you’ll find it’s incredibly unstable. The relationship looks solid and sensible when you look at the full sample. But in real time, the coefficient swings around wildly. It changes sign. It breaks down completely for long stretches.<br/><br/><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!HqhV!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fe06ea00f-3a34-4833-a4aa-d0442ba08fdd_800x500.png" decoding="async" height="auto" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='auto'%20viewBox='0%200%20800%20auto'%3E%3C/svg%3E" width="800"/><br/>Same story with correlation, by the way. High historical correlation doesn’t tell you much about whether the spread will mean-revert going forward.</p>
+<p class="wp-block-paragraph">The fundamental problem with these statistical tests is that they’re measuring the wrong thing. They’re measuring statistical properties of the relationship, not the thing we actually care about: does this spread tend to diverge and converge in a tradeable way?</p>
+<p class="wp-block-paragraph">—<br/></p>
+<p class="wp-block-paragraph">So what should you look for instead?</p>
+<p class="wp-block-paragraph">The answer is to measure the thing you actually care about as directly as possible.<br/>You care about two things:</p>
+<ul class="wp-block-list">
+<li><strong>Do these things stay close together?</strong> If they tend to drift apart permanently, you don’t have a tradable pair.</li>
+<li><strong>When they do come apart, do they come back together?</strong> This is the mean reversion behaviour you’re trying to capture.</li>
+</ul>
+<p class="wp-block-paragraph">Rather than trying to infer these properties from statistical tests, you can measure them directly.</p>
+<p class="wp-block-paragraph">There are various ways to do this.</p>
+<p class="wp-block-paragraph">One approach is to look at what we might call the “distance” between two normalised price series over a period. If the distance is consistently low, the pair stays close together. That’s good.<br/><br/><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!Dhpv!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3f1c4481-80fd-432f-aa15-97912f7f87ff_2068x1391.png" decoding="async" height="auto" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='auto'%20viewBox='0%200%20800%20auto'%3E%3C/svg%3E" width="800"/></p>
+<p class="wp-block-paragraph">Another approach is to look at a kind of simulated frictionless return from trading mean reversion on the spread. If this historical return is high, the pair has exhibited strong mean reversion. Also good.<br/><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!9j6M!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F001c78af-68e4-4645-8f39-859b848dfcb2_2538x1203.png" decoding="async" height="auto" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='auto'%20viewBox='0%200%20800%20auto'%3E%3C/svg%3E" width="800"/><br/>Neither of these on their own is perfect. But when you combine them, you start to filter out a decent chunk of the noise.</p>
+<p class="wp-block-paragraph">For example, a pair like this will score a high total return on the mean reversion metric (makes a high return due to one convergence event), but score poorly on the distance feature (prices drifted rather than stayed close together):<br/><br/><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!mIqs!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F5ad682ec-a398-4e9e-bba6-1eadeb62bbee_3163x2380.png" decoding="async" height="auto" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='auto'%20viewBox='0%200%20800%20auto'%3E%3C/svg%3E" width="800"/><br/>A pair that scores well on both metrics, that stays close together, and has strong mean reversion, that’s the kind of pair you want.</p>
+<p class="wp-block-paragraph">And <em><strong>critically</strong></em>, these metrics tend to persist. Pairs that scored well in one period tend to score well in the next period, too. That persistence is the whole basis for using them as selection criteria.</p>
+<p class="wp-block-paragraph">Without persistence, we’d just be fitting to a past with no insight as to whether it should repeat.</p>
+<p class="wp-block-paragraph"><em>Related point: Never assume persistence… always go look in the data and see if it actually exists.</em></p>
+<p class="wp-block-paragraph">—</p>
+<p class="wp-block-paragraph">Another ingredient: don’t bother with pairs that don’t make sense.</p>
+<p class="wp-block-paragraph">Similar industry or sector is a good baseline. Two oil stocks are exposed to similar underlying factors. Two tech companies, two banks, two retailers. They have similar risk exposures.</p>
+<p class="wp-block-paragraph">When one temporarily gets pushed out of line relative to the other, and it’s not for fundamental reasons, you’d expect them to converge. They’re exposed to the same stuff.</p>
+<p class="wp-block-paragraph">If you try to pair random stocks together just because they look statistically related, you’re asking for trouble. Spurious correlations break down. Pairs with no fundamental connection can diverge permanently when something changes for one of them.</p>
+<p class="wp-block-paragraph">So the process looks something like this:</p>
+<ul class="wp-block-list">
+<li>Start with pairs that make structural sense (same industry)</li>
+<li>Filter for pairs that have stayed close together historically</li>
+<li>Filter for pairs that have shown strong mean reversion</li>
+<li>Rank by some combination of those metrics</li>
+<li>Take the top N</li>
+</ul>
+<p class="wp-block-paragraph">That’s really the skeleton of it.</p>
+<p class="wp-block-paragraph">—</p>
+<p class="wp-block-paragraph">The most important thing I can tell you about universe selection is this: focus on finding pairs whose natural divergence and convergence <em>makes sense</em>.</p>
+<p class="wp-block-paragraph">Don’t focus on finding pairs that pass some statistical test. Don’t focus on proving that a relationship is “statistically significant.” Don’t get lost in the academic weeds.</p>
+<p class="wp-block-paragraph">Instead, look as directly as possible at the thing you care about. Does this spread drift apart and come back together? Measure that. Use metrics that capture that behaviour. Then test whether pairs that score well on those metrics continue to score well going forward.</p>
+<p class="wp-block-paragraph">If they do, you’ve got something. If they don’t, the metric isn’t useful, no matter how statistically sophisticated it is.</p>
+<p class="wp-block-paragraph">—</p>
+<p class="wp-block-paragraph">Now, there’s a catch (there’s always a catch).</p>
+<p class="wp-block-paragraph">Even when you’ve got a really good selection process, even when you’ve identified hundreds of pairs that look genuinely good, you still have to trade them.</p>
+<p class="wp-block-paragraph">And that’s where the traditional pairs trading approach hits some painful walls. Capital constraints. Transaction costs. The fact that you can only practically trade maybe 10-20 pairs at a time, depending on your setup.</p>
+<p class="wp-block-paragraph">Your selection pipeline might identify a couple of hundred great pairs. But if you can only trade 10 of them, what happens to the rest? All that signal, all that information, essentially gets thrown away.</p>
+<p class="wp-block-paragraph">That makes me sad.</p>
+<p class="wp-block-paragraph">This is the limitation of traditional pairs trading for the indie trader. And it’s something that’s been frustrating me for a long time… ever since I left the prop world, now that I think about it.</p>
+<p class="wp-block-paragraph">Next time, we’ll dig into exactly what those limitations look like in practice, and why they matter more than you might think. Then, I’ll show you how I get around them.<br/></p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>pairs trading</span>, <span>stat-arb</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130666 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/"><img alt="The Winter of our Pairs Trading Discontent: Problems, limitations, frustrations" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130667" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130275 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-tale-of-two-prices/"><img alt="A Tale of Two Prices" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="120744" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-1024x538.jpg 1024w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-768x403.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04.jpg 1200w" decoding="async" height="158" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='158'%20viewBox='0%200%20300%20158'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-108888 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading category-think-like-a-trader category-trading-strategies tag-faln tag-hyg tag-risk-premia pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-hidden-gems-of-high-yield-bonds-fallen-angels/"><img alt="The Hidden Gems of High Yield Bonds: Fallen Angels" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="108911" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/02/21202133/fallen_angels-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/02/21202133/fallen_angels-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/02/21202133/fallen_angels-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/02/21202133/fallen_angels-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/02/21202133/fallen_angels-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2025/02/21202133/fallen_angels.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">1 thought on “Moneyball: Finding Undervalued Pairs Using Unconventional Metrics”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-57574">
+<div class="comment-body">
+				Pingback: Recent Quant Links from Quantocracy as of 02/20/2026 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/moneyball-finding-undervalued-pairs-using-unconventional-metrics/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

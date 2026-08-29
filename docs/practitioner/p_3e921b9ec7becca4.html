@@ -1,0 +1,230 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Pricing a Sports Bet like an Option</title>
+<!-- source: https://robotwealth.com/pricing-a-sports-bet-like-an-option/ -->
+<h1>Pricing a Sports Bet like an Option</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-97665 post type-post status-publish format-standard has-post-thumbnail hentry category-options category-quant-trading category-think-like-a-trader tag-options tag-sports-betting pmpro-has-access" id="post-97665">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">July 24, 2024</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Pricing a Sports Bet like an Option</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Pricing a Sports Bet like an Option" class="ipa-media gb-media-81e19d89" data-media-id="97673" decoding="async" fetchpriority="high" height="585" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2024/07/24174926/sports_betting-1024x585.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2024/07/24174926/sports_betting-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/07/24174926/sports_betting-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/07/24174926/sports_betting-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/07/24174926/sports_betting-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/07/24174926/sports_betting.webp 1792w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph"><em>This post assumes basic knowledge of <a href="https://robotwealth.com/options-are-just-options-why-are-they-valuable/" rel="noreferrer noopener" target="_blank">Options </a>and <a href="https://robotwealth.com/trading-101-understanding-the-expected-value-of-uncertain-bets/">Mathematical Expectation</a>. </em></p>
+<p class="wp-block-paragraph">Most of the features that you observe about options are simply due to the fact that they are expiring bets. And the features we observe in option pricing are observed in any other expiring bet.</p>
+<p class="wp-block-paragraph">The complicated maths and terminology that surround options can make it appear like they are very complicated instruments. This can intimidate beginners – and I notice that, instead of trying to understand at a fundamental level what an option is and why it has the price it does, many beginners will instead try to build their intuition by seeking to understand the way the various “Greeks” move instead.</p>
+<p class="wp-block-paragraph">This isn’t very helpful. And it leads to all kinds of nonsense like <em>“I want to maximise theta whilst minimising delta and gamma.” </em></p>
+<h2 class="wp-block-heading">Options are Simpler than You Probably Think</h2>
+<p class="wp-block-paragraph">The good news is that options are much simpler than you probably think they are. </p>
+<p class="wp-block-paragraph">Their value is simply the probability-weighted sum of their payoffs. You should have this in mind at all times.</p>
+<p class="wp-block-paragraph">And when you do, you find that most of the obvious features of options described by the Greeks are <strong><em>deeply uninteresting in terms of edge </em></strong>– they’re just the simple mathematics of updating probability in the face of changing parameters.</p>
+<h2 class="wp-block-heading">A Sports Bet is Like an Option</h2>
+<p class="wp-block-paragraph">For this example, we’ll bet on the outcome of a soccer game: Home Win, Draw, or Away Win.</p>
+<p class="wp-block-paragraph">The bet expires after 90 minutes when the game is over.</p>
+<p class="wp-block-paragraph">We’ll model the football game as two separate <a href="https://en.wikipedia.org/wiki/Poisson_distribution">Poisson processes</a>, where we set the expected number of goals per game as the intensity parameter.</p>
+<p class="wp-block-paragraph">Let’s say that you have done some analysis and that your analysis suggests that the expectation is that the home team scores 2 goals per game, and the away team 1.5 goals per game.</p>
+<p class="wp-block-paragraph">This lets us calculate the probability of various score scenarios, and from this, we can back out the probability of a win, draw or loss.</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-97669 perfmatters-lazy" data-sizes="(max-width: 977px) 100vw, 977px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/07/24171613/poisson_prob.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/07/24171613/poisson_prob.png 977w, https://media.robotwealth.com/wp-content/uploads/2024/07/24171613/poisson_prob-300x109.png 300w, https://media.robotwealth.com/wp-content/uploads/2024/07/24171613/poisson_prob-768x280.png 768w" decoding="async" height="356" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='977'%20height='356'%20viewBox='0%200%20977%20356'%3E%3C/svg%3E" width="977"/></figure>
+</div>
+<p class="wp-block-paragraph">Before the game starts, we can see that the probability of the home team winning is 47.7%, which implies fair decimal odds of 2.1</p>
+<p class="wp-block-paragraph">It would be possible to calculate “Greeks” for this bet by looking at how its fair value changes with respect to time and to changes in score during the match. But it’s obvious (I hope) that we don’t need to:</p>
+<ul class="wp-block-list">
+<li>If someone is prepared to offer us odds substantially better than 2.1 then we should bet on the home team (which would be analogous to buying options on the home team).</li>
+<li>And we might also offer odds of less than 2.1 to others who want to bet on the home team (which would be analogous to selling options).</li>
+</ul>
+<p class="wp-block-paragraph">So the obvious lesson here is that the sensitivities to changes in time and score are irrelevant to us in finding edge (or at best a very indirect way of doing it). Instead, we just need to compare fair value to the odds we get. This is how we find edge, both in sports betting and in options trading: decide what we think fair value is, and trade at prices that deviate from our fair value.</p>
+<h3 class="wp-block-heading">The Fair Value of an In-Play Football Bet</h3>
+<p class="wp-block-paragraph">Our comparison with an option becomes a little more real if we look at how the value of the best changes while the match is in process. Let’s start by pricing the outcome with respect to changes to time and score.</p>
+<p class="wp-block-paragraph">There are a few different drivers of the probabilities of the outcomes:</p>
+<ul class="wp-block-list">
+<li>The expected goals per game of each team<em> (which we’ve fixed at 2 for the home team and 1.5 for the away team – similar to how we might fix implied volatility in option pricing)</em></li>
+<li>The number of minutes left <em>(analogous to DTE in option pricing)</em></li>
+<li>The current score<em> (analogous to moneyness in option pricing)</em></li>
+</ul>
+<p class="wp-block-paragraph">Now we can build a model which predicts the probability of an outcome given these things:</p>
+<p class="wp-block-paragraph">It looks like this (I’ll share the link to the spreadsheet at the end of the post):</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img alt="" class="wp-image-97670 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/07/24172147/soccer_model-1024x273.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/07/24172147/soccer_model-1024x273.png 1024w, https://media.robotwealth.com/wp-content/uploads/2024/07/24172147/soccer_model-300x80.png 300w, https://media.robotwealth.com/wp-content/uploads/2024/07/24172147/soccer_model-768x205.png 768w, https://media.robotwealth.com/wp-content/uploads/2024/07/24172147/soccer_model-1536x410.png 1536w, https://media.robotwealth.com/wp-content/uploads/2024/07/24172147/soccer_model.png 1820w" decoding="async" height="273" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='273'%20viewBox='0%200%201024%20273'%3E%3C/svg%3E" width="1024"/></figure>
+</div>
+<p class="wp-block-paragraph">The user can fill in the yellow cells and the model spits out the fair value probabilities of the match outcomes. The yellow cells, from top to bottom and left to right are:</p>
+<ul class="wp-block-list">
+<li>Expected home team goals</li>
+<li>Expected away team goals</li>
+<li>Minutes remaining in the match</li>
+<li>Current goal differential (home goals minus away goals)</li>
+</ul>
+<p class="wp-block-paragraph">First, let’s look at the time decay of our outcome probabilities. We vary the time remaining (cell C2) and goal difference (cell C5), and record and plot the probability of the match outcomes.</p>
+<p class="wp-block-paragraph">First, let’s keep the score constant at 0-0 and plot the fair value probabilities of a home and away win throughout the 90 minutes of the game.</p>
+<figure class="gb-block-image gb-block-image-b066928d"><img class="gb-image gb-image-b066928d perfmatters-lazy" data-sizes="(max-width: 600px) 100vw, 600px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/07/24172744/time_decay.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/07/24172744/time_decay.png 600w, https://media.robotwealth.com/wp-content/uploads/2024/07/24172744/time_decay-300x186.png 300w" decoding="async" height="371" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='371'%20viewBox='0%200%20600%20371'%3E%3C/svg%3E" width="600"/></figure>
+<div aria-hidden="true" class="wp-block-spacer" style="height:7px"></div>
+<p class="wp-block-paragraph">We see the effect of “time decay”. If the score doesn’t’ change then the fair value of the bets on the home and away team decay to zero over the course of the game.</p>
+<p class="wp-block-paragraph">Now let’s create a payoff diagram, where we plot the payoff at expiry (end of the game) as well as lines that represent the fair value at each score during various times throughout the game (we’ll do 0 mins, 22.5 mins, 45 mins, 67.5mins):</p>
+<p class="wp-block-paragraph"><em>(For simplicity, this is actually showing fair value rather than “payoff” – but it should be easy enough to read) </em></p>
+<figure class="gb-block-image gb-block-image-56f7dfc2"><img alt="" class="gb-image gb-image-56f7dfc2 perfmatters-lazy" data-sizes="(max-width: 600px) 100vw, 600px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/07/24173332/change_in_gd.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/07/24173332/change_in_gd.png 600w, https://media.robotwealth.com/wp-content/uploads/2024/07/24173332/change_in_gd-300x186.png 300w" decoding="async" height="371" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='371'%20viewBox='0%200%20600%20371'%3E%3C/svg%3E" title="change_in_gd" width="600"/></figure>
+<div aria-hidden="true" class="wp-block-spacer" style="height:6px"></div>
+<h3 class="wp-block-heading">The Greeks of a Soccer Game</h3>
+<p class="wp-block-paragraph">By taking the rate of change of these things, we could calculate Greeks for this bet:</p>
+<ul class="wp-block-list">
+<li>Theta would be the change of fair value with respect to <strong><em>time</em></strong></li>
+<li>Delta would be the change of fair value with respect to <strong><em>changes in the score</em></strong></li>
+<li>Gamma would be the change in <strong><em>delta with respect to changes in the score</em></strong> </li>
+</ul>
+<p class="wp-block-paragraph">And we would recover results that help us understand why the fair value of our bet changes when various things happened during the game.</p>
+<p class="wp-block-paragraph"><strong>But the greeks wouldn’t really help us work out whether we had an edge</strong>:</p>
+<ul class="wp-block-list">
+<li>Theta is just the loss of value of the bet if nothing happens.</li>
+<li>Delta is the change in the value of the bet if something happens.</li>
+</ul>
+<p class="wp-block-paragraph">But we’re interested in the chance of something happening, and the price we can get the bet on at. That’s not obvious at all from the parameter sensitivities, yet it’s precisely where our edge comes from!</p>
+<h2 class="wp-block-heading">The Greeks are Not Where You Go Looking For Edge in Sports Betting or Option Trading</h2>
+<p class="wp-block-paragraph">It is self-evident that you wouldn’t try to assess the viability of a sports bet based on these model-derived parameter sensitivities we call Greeks.</p>
+<p class="wp-block-paragraph">It should be equally self-evident that you shouldn’t try the same thing with options either.</p>
+<p class="wp-block-paragraph">In this case, let’s say that the market has underestimated the chance of the Away side winning. Let’s say the market is offering you implied odds of 29%, but the probability of the outcome is more like 40%.</p>
+<p class="wp-block-paragraph">This is a big edge, and you should bet on the Away team even though:</p>
+<ul class="wp-block-list">
+<li>You’re likely to lose this particular bet, and</li>
+<li>It is a “negative theta” bet.</li>
+</ul>
+<h2 class="wp-block-heading">Summary</h2>
+<p class="wp-block-paragraph">Most of the obvious features of options are simply due to the fact that they are expiring bets whose fair values update in predictable ways with respect to time and changes to other parameters.</p>
+<p class="wp-block-paragraph">These features are shared by other expiring bets such as in-play sports bets. They are not unique in any way to financial options.</p>
+<p class="wp-block-paragraph"><strong><em>You bet when you have the right odds</em></strong>. The parameter-sensitivities (Greeks) have little to do with that.</p>
+<h2 class="wp-block-heading">Here’s the Spreadsheet</h2>
+<p class="wp-block-paragraph">If you’d like to explore the soccer betting model further, it’s available as a Google Sheet <a href="https://docs.google.com/spreadsheets/d/18l__DkOhEsKdja3fAUPQTPlBFCpFt-WVo4oZrmFE2Wo/edit?usp=sharing" rel="noreferrer noopener" target="_blank">here</a>. You won’t be able to edit this version, but take a copy for yourself (<em>File –&gt; Make a copy</em>).</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>options</span>, <span>sports betting</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/pricing-a-sports-bet-like-an-option/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

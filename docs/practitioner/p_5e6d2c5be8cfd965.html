@@ -1,0 +1,229 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Optimising MetaTrader for Algorithmic Trading</title>
+<!-- source: https://robotwealth.com/optimising-metatrader-for-algorithmic-trading/ -->
+<h1>Optimising MetaTrader for Algorithmic Trading</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-5962 post type-post status-publish format-standard hentry category-quant-trading category-tools-of-the-trade category-trading-infrastructure tag-darwinex tag-fx tag-mt4 tag-zorro pmpro-has-access" id="post-5962">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 31, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Optimising MetaTrader for Algorithmic Trading</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Optimising MetaTrader for Algorithmic Trading" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">If you’ve ever delved into the world of retail foreign exchange trading, you’ll have come across the MetaTrader platform. Let’s be clear. The platform has its drawbacks. If you’ve traded “grown-up” markets, some of the features will leave you scratching your head. But one thing’s for sure – MetaTrader provides fast, convenient access to pretty much every retail forex broker on the planet. That’s no small thing.
+
+If we had the choice, we’d rather trade directly with the broker through a dedicated API rather than through a third-party platform, but often that’s not an option. One thing that my life as a trader has taught me is that it’s better to move fast in order to get trading strategies into the market with a solution that’s “good enough” rather than spending valuable R&amp;D time on developing “optimal” solutions – which usually end up changing anyway. So we suck it up and make the best of the tools at our disposal. It’s all about being smart with priorities.
+
+We do our Spot FX trading through <a href="https://www.darwinex.com/" rel="noopener noreferrer" target="_blank">Darwinex</a>. Not only is their business model aligned with their clients’ desire to make money through trading (which is not as common as you might think in FX land), but they were generous enough to provide a fantastic deal on brokerage fees for our members. Darwinex is developing an API to enable fast, direct automated trading and we very much look forward to making use of that in the future. But for now, we’re executing our FX strategies via the MetaTrader platform. Specifically, we’re running our strategies through the <a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro Automated Trading software</a>, which in turn controls MetaTrader.
+
+The main benefit of this stack is convenience – we get all the power and flexibility of Zorro for doing automated trading, without having to build any additional market connectivity infrastructure. This makes the path from idea generation to research to market feedback to live trading about as short as one could hope.
+
+There are a few drawbacks to this approach. One is the additional execution latency that comes with executing through MetaTrader (the Zorro link adds almost nothing however). None of our strategies are latency sensitive, so we’re not worried about this right now.
+
+Another drawback is that MetaTrader is something of a resource hog. And since you’ll generally want to run an automated trading portfolio on a commercial server, resource intensive software leads to bigger servers, which leads to added costs.
+
+Getting Zorro set up and connected to MetaTrader is a bit of a pain the first time around. I’ll give you a walk through of that process in another blog post. But right now, I want to show you some simple tips and tricks for reducing the resource footprint of the MetaTrader platform – and hopefully saving you a few bucks along the way. Here goes.
+<h2>Reduce the number of bars plotted</h2>
+MetaTrader is capable of plotting a lot of information about a lot of different markets all at the same time. Which is awesome if you’re this guy:
+
+<img alt="" class="alignnone size-full wp-image-5976 perfmatters-lazy" data-sizes="(max-width: 800px) 100vw, 800px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170053/many-monitors.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170053/many-monitors.jpg 800w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170053/many-monitors-600x450.jpg 600w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170053/many-monitors-300x225.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170053/many-monitors-768x576.jpg 768w" decoding="async" height="600" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='600'%20viewBox='0%200%20800%20600'%3E%3C/svg%3E" width="800"/>
+
+But we don’t need this for automated trading. And you can save a decent amount of computer resources by getting rid of it. Under the <em>Tools</em> menu, select <em>Options</em>, then click on the <em>Charts</em> tab in the pop-up. Then, enter <em>1</em> for <em>Max bars in history</em> and <em>Max bars in chart:</em>
+<img alt="mt4 optimization" class="alignnone size-full wp-image-5970 perfmatters-lazy" data-sizes="(max-width: 571px) 100vw, 571px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170056/image1-2.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170056/image1-2.png 571w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170056/image1-2-300x200.png 300w" decoding="async" height="380" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='571'%20height='380'%20viewBox='0%200%20571%20380'%3E%3C/svg%3E" width="571"/>
+<h2>Disable auto-scrolling of charts</h2>
+By default, MetaTrader will automatically scroll its charts as time marches on. Again, we don’t need this feature for our purposes. Disable it like so:
+
+<img alt="metatrader 4 optimization" class="alignnone size-full wp-image-5966 perfmatters-lazy" data-sizes="(max-width: 422px) 100vw, 422px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170058/disable_autoscroll.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170058/disable_autoscroll.png 422w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170058/disable_autoscroll-300x82.png 300w" decoding="async" height="115" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='422'%20height='115'%20viewBox='0%200%20422%20115'%3E%3C/svg%3E" width="422"/>
+<h2>Disable news and sounds</h2>
+More unnecessary (for our purposes) bloat. Turn off MetaTrader’s news feed by selecting <em>Tools</em> –&gt; <em>Options</em> as above, then select the <em>Server</em> tab and uncheck the <em>Enable News</em> box:
+
+<img alt="metatrader 4 optimization" class="alignnone size-full wp-image-5968 perfmatters-lazy" data-sizes="(max-width: 574px) 100vw, 574px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170057/disable-news.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170057/disable-news.png 574w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170057/disable-news-300x201.png 300w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='574'%20height='384'%20viewBox='0%200%20574%20384'%3E%3C/svg%3E" width="574"/>
+
+Disable sounds by selecting the <em>Events</em> tab and unchecking the <em>Enable</em> box:
+
+<img alt="mt4 optimization" class="alignnone size-full wp-image-5969 perfmatters-lazy" data-sizes="(max-width: 568px) 100vw, 568px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170056/disable-sounds.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170056/disable-sounds.png 568w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170056/disable-sounds-300x200.png 300w" decoding="async" height="379" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='568'%20height='379'%20viewBox='0%200%20568%20379'%3E%3C/svg%3E" width="568"/>
+<h2>Disable unnecessary tickers</h2>
+<span style="font-weight: 400;">MetaTrader can subscribe to data feeds that you don’t need, hogging valuable resources. Right click in the <em>Market Watch</em> window and select <em>Hide All</em>: </span>
+<img alt="" class="alignnone size-full wp-image-5998 perfmatters-lazy" data-sizes="(max-width: 415px) 100vw, 415px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170049/hide-symbols.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170049/hide-symbols.png 415w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170049/hide-symbols-189x300.png 189w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170049/hide-symbols-378x600.png 378w" decoding="async" height="659" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='415'%20height='659'%20viewBox='0%200%20415%20659'%3E%3C/svg%3E" width="415"/>
+
+The <em>Market Watch</em> window will then look something like this, showing that you’re only pulling data for one or a few products:
+
+<img alt="" class="alignnone size-full wp-image-5997 perfmatters-lazy" data-sizes="(max-width: 390px) 100vw, 390px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170050/hide-symbols-after.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170050/hide-symbols-after.png 390w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170050/hide-symbols-after-285x300.png 285w" decoding="async" height="410" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='390'%20height='410'%20viewBox='0%200%20390%20410'%3E%3C/svg%3E" width="390"/>
+<span style="font-weight: 400;">Now that only a few tickers will remain, you may need to add back the ones you wish to trade. Do this by once again right-clicking in the <em>Market Watch</em> window and selecting <em>Symbols</em>, like so:</span>
+<img alt="" class="alignnone size-full wp-image-5999 perfmatters-lazy" data-sizes="(max-width: 423px) 100vw, 423px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170048/hide-symbols-after2.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170048/hide-symbols-after2.png 423w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170048/hide-symbols-after2-220x300.png 220w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='423'%20height='576'%20viewBox='0%200%20423%20576'%3E%3C/svg%3E" width="423"/>
+
+Another pop-up menu appears listing all the products that you can subscribe to. Anything with a greyed-out box next to it is currently unsubscribed; while anything with a gold box is subscribed. Double click on the boxes to toggle them back and forth:
+
+<img alt="" class="alignnone size-full wp-image-6000 perfmatters-lazy" data-sizes="(max-width: 547px) 100vw, 547px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170047/hide-symbols-after3.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170047/hide-symbols-after3.png 547w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170047/hide-symbols-after3-279x300.png 279w" decoding="async" height="589" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='547'%20height='589'%20viewBox='0%200%20547%20589'%3E%3C/svg%3E" width="547"/>
+<h2>Close unnecessary charts, minimise the one you need</h2>
+We don’t need to display charts for all the tickers we intend trading in order to use Zorro to send trades to MetaTrader. Being subscribed via <em>Market Watch</em> (see above) is enough. <em>But you do need one chart.</em>
+
+Because of the way MetaTrader works, Zorro is able to control it by “attaching” some software to a chart. I’ll cover this in another blog post, but the wash up is that this chart needs to remain open in order for Zorro to work properly.
+
+If you close all the charts you don’t need you’ll save some resources, and if you minimise the one chart that you do need, you can save a tiny bit more by reducing the amount of visual rendering.
+
+Your platform should now look like this:
+
+<img alt="" class="alignnone size-full wp-image-6001 perfmatters-lazy" data-sizes="(max-width: 593px) 100vw, 593px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170046/minimised.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170046/minimised.png 593w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170046/minimised-300x195.png 300w" decoding="async" height="386" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='593'%20height='386'%20viewBox='0%200%20593%20386'%3E%3C/svg%3E" width="593"/>
+<h2>Hide the terminal</h2>
+The terminal outputs a bunch of information from the platform: useful things like real-time trade profit  and account margin, and less useful things like “signals” that you can subscribe to from within the platform that will trade on your behalf.
+
+Admittedly, turning this off won’t make a huge difference, but it’s easy to do and there’s no downside. Disable the terminal by clicking this button on the toolbar (you can turn it back on anytime by clicking the same button):
+
+<img alt="metatrader otpimization" class="alignnone size-full wp-image-5971 perfmatters-lazy" data-sizes="(max-width: 359px) 100vw, 359px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170055/disable-terminal.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170055/disable-terminal.png 359w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170055/disable-terminal-300x64.png 300w" decoding="async" height="76" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='359'%20height='76'%20viewBox='0%200%20359%2076'%3E%3C/svg%3E" width="359"/>
+<h2>Restart</h2>
+To get the benefit of all those changes, you may need to restart your MetaTrader platform.
+<h2>Performance</h2>
+At the time of writing, we were running our Zorro-MetaTrader automated fx portfolio on a virtual machine provided by Google Cloud Platform (<a href="https://robotwealth.com/run-trading-algorithms-google-cloud-platform-6-easy-steps/" rel="noopener noreferrer" target="_blank">here’s an article that will help you get something similar up and running)</a>. We’re running an n1 standard instance with 3.5GB of memory, 1 virtual CPU and 50GB of persistent disk (which we wouldn’t need if we weren’t bound to using Windows – I’ve heard that Zorro for Linux is coming, but we make do with what we have). We’re running a MetaTrader platform set up as described in this post. We’ve also got five Zorro instances interacting with it.
+
+How’s the performance? Well, Google’s resource monitor tells us that we’re over-utilising the machine and that we should upgrade, but we haven’t run into any problems yet. Our CPU monitoring looks like this:
+
+<img alt="" class="alignnone size-full wp-image-6002 perfmatters-lazy" data-sizes="(max-width: 832px) 100vw, 832px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170045/CPU-monitoring.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170045/CPU-monitoring.png 832w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170045/CPU-monitoring-600x257.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170045/CPU-monitoring-300x128.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170045/CPU-monitoring-768x329.png 768w" decoding="async" height="356" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='832'%20height='356'%20viewBox='0%200%20832%20356'%3E%3C/svg%3E" width="832"/>
+<h2>Conclusion</h2>
+Like all trading tools, MetaTrader has its pros and cons. For fast and easy access to retail foreign exchange markets, it’s hard to beat.
+
+By performing some simple optimisations, we can significantly reduce the resource load of the platform, thereby reducing the specs of our trading server, improving its performance and saving some dollars along the way.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>Darwinex</span>, <span>fx</span>, <span>MT4</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">1 thought on “Optimising MetaTrader for Algorithmic Trading”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-4466">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 05/31/2019 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/optimising-metatrader-for-algorithmic-trading/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

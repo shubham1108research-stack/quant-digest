@@ -1,0 +1,559 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Exploring the rsims package for fast backtesting in R</title>
+<!-- source: https://robotwealth.com/exploring-the-rsims-package-for-fast-backtesting-in-r/ -->
+<h1>Exploring the rsims package for fast backtesting in R</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-41854 post type-post status-publish format-standard hentry category-quant-trading pmpro-has-access" id="post-41854">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">August 13, 2021</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Exploring the rsims package for fast backtesting in R</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Exploring the rsims package for fast backtesting in R" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><code>rsims</code> is a new package for fast, realistic (quasi event-driven) backtesting of trading strategies in R.
+
+<blockquote><em>Really?? Does the world really need another backtesting platform…??</em></blockquote>
+
+It’s hard to argue with that sentiment. Zipline, QuantConnect, Quantstrat, Backtrader, Zorro… there are certainly plenty of good options out there. But allow me to offer a justification for why we felt the need to build our own tool.
+
+It boiled down to a combination of:
+
+<ul>
+<li>Wanting control and ownership over the internal workings of the simulator</li>
+<li>A need for speed</li>
+<li>A preference for simplicity</li>
+<li>A desire to focus less on indicators and signals and more on the problem of trading an existing set of positions into a target set of positions in the face of costs, risk, and other constraints.</li>
+</ul>
+<code>rsims</code> is a good choice if:
+
+<ul>
+<li>Your research happens upstream of backtesting as opposed to consisting of backtesting (and this should nearly always be the case).</li>
+<li>Backtest speed is of interest to you, for example you have a large universe, higher resolution data, or some combination of the two. This makes it a good choice for classic quant equity style strategies.</li>
+</ul>
+
+It was originally developed to simulate a quant equity style strategy on cryptocurrencies.
+
+While <code>rsims</code> is fast (it simulates trading on a set of weights and prices for a universe of 2,000 assets over 3,650 time steps in a shade over three seconds on my laptop), its speed does come with some trade-offs:
+
+<ul>
+<li>Work is required by the user to ensure data inputs meet the backtesting engine’s requirements. For example, data alignment is critical, as there’s no indexing by human-readable timestamp.</li>
+<li>Related, there is danger if you get these input data wrong. For example, the simulation engine only performs cursory checks on the “correctness” of your inputs and will run to completion if these cursory checks pass, even if there are other issues with your data.</li>
+</ul>
+
+To help alleviate these issues, <code>rsims</code> includes a vignette on preparing input data. We also have some tools for checking and verifying input data in the works.
+
+Let’s explore <code>rsims</code>.
+
+<h2>Install and load</h2>
+
+The easiest way to install and load <code>rsims</code> is using <code>pacman::p_load_current_gh</code> which wraps <code>devtools::install_github</code> and <code>require</code>:
+
+<code>pacman::p_load_current_gh("Robot-Wealth/rsims", dependencies = TRUE)</code>
+<h2>Usage</h2>
+
+The key function is <code>cash_backtest</code>, an optimised, quasi event-driven backtesting function.
+
+<code>cash_backtest</code> simulates trading into a set of weights (calculated upstream) subject to transaction cost and other constraints. It expects matrixes for the <code>prices</code> and <code>theo_weights</code> arguments, both with a timestamp as the first column and being of the same dimensions. Further details can be found in the function documentation. (<code>?rsims::cash_backtest</code>)
+
+<h2>Approach to calculating position deltas</h2>
+
+Currently, there is one module implemented for calculating optimal position deltas in the face of costs: the “no-trade region” approach. <a href="https://twitter.com/macrocephalopod/status/1373236950728052736">Here’s a good derivation of this approach from @macrocephalopod on Twitter.</a>
+
+This leads to a simple heuristic trading rule, which is theoretically optimal if your costs are linear and you don’t mind holding exposures within a certain range. Here’s how it works:
+
+Given a <code>trade_buffer</code> parameter value of <code>x</code>:
+
+<ul>
+<li>if the current weight for an asset, <code>w0</code> is greater than the target weight <code>w</code> plus <code>x</code>, sell down the asset to <code>w + x</code></li>
+<li>if <code>w0</code> is less than <code>w - x</code>, buy the asset to <code>w - x</code></li>
+<li>if <code>w0</code> is between <code>w - x</code> and <code>w + x</code>, do nothing</li>
+</ul>
+
+Linear costs is a reasonable assumption for certain cryptocurrency strategies since most crypto exchanges charge a fixed percentage commission fee. It’s not a good approach when your trading costs aren’t approximately linear, for example, small trading with a fixed minimum commission per trade.
+
+This heuristic rule for trading position deltas is implemented as a C++ function: <code>positionsFromNoTradeBuffer</code>. We wrote it in C++ because it was relatively easy to do so thanks to the <code>Rcpp</code> package, and since it gets used in proportion to the number of timestamps multiplied by the number of assets, it can potentially be a bottleneck.
+
+The intent is to implement other approaches in the future, such as numerical optimisation of the return-risk-cost problem, subject to constraints.
+
+<h2>Cost model</h2>
+
+Currently <code>rsims</code> implements a simplified “fixed percent of traded value” cost model. For some applications, market impact, spread, and commission might be reasonably represented by such a model. No attempt is made (yet) to explicitly account for these costs separately. Borrow, margin, and funding costs are not yet implemented.
+
+<h2>Example</h2>
+<code>rsims</code> was built with speed in mind, which required trading off certain conveniences such as holding weights and prices in long-format data frames indexed by a human-readable timestamp. Instead, it requires the user to ensure their input data meets some fairly strict requirements.
+
+This example demonstrates how to wrangle price and target weight data into formats <code>rsims</code> can work with, and then how to simulate an example “quant equity” style strategy on cryptocurrencies.
+
+<h3>Price and weight matrixes</h3>
+<code>cash_backtest</code> requires two matrixes of identical dimensions. Both matrix’s first column needs to be a timestamp or date in Unix format.
+
+The first input matrix contains prices, one column for each asset or product in the strategy’s universe.
+
+The second matrix contains theoretical or ideal weights, again, one column for each asset in the strategy’s universe.
+
+The timestamp should be aligned with the weights and prices such that on a single row, the price is the price at which you assume you can trade into the weight. This may require lagging of signals or weights upstream of the simulation and is up to the user.
+
+Columns must map between the two matrixes:
+
+<ul>
+<li>Column 1 is always the date or timestamp column</li>
+<li>Column 2 contains the prices and weights for the first asset</li>
+<li>Column 3 contains the prices and weights for the second asset</li>
+<li>etc</li>
+</ul>
+
+Let’s run through an example of how you might wrangle such input data using tools from the tidyverse.
+
+If you load <code>rsims</code>, you’ll get in your global environment an example long-format data frame containing prices and target weights for a small universe of cryptocurrencies:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(rsims)
+library(tidyverse)
+
+head(backtest_df_long)
+#&gt; # A tibble: 6 x 4
+#&gt; # Groups:   date [1]
+#&gt;   ticker date        price_usd theo_weight
+#&gt;   &lt;chr&gt;  &lt;date&gt;          &lt;dbl&gt;       &lt;dbl&gt;
+#&gt; 1 BTC    2015-04-22 234.              0.1 
+#&gt; 2 DASH   2015-04-22   3.24           -0.1 
+#&gt; 3 DGB    2015-04-22   0.000110       -0.06
+#&gt; 4 DOGE   2015-04-22   0.000109       -0.02
+#&gt; 5 LTC    2015-04-22   1.44            0.02
+#&gt; 6 MAID   2015-04-22   0.0233          0.18
+</pre>
+
+How you arrived at the weights for each product for each day is up to you – it will typically drop out of your upstream research process. But for the sake of our example, <code>backtest_df_long</code> contains weights for a simple cross-sectional momentum strategy on an evolving universe of cryptocurrencies.
+
+Recall that we need to end up with two wide matrixes (date and prices, and date and weights), and that the matrixes must map column-wise.
+
+One easy way to do that is to use <code>tidyr::pivot_wider</code>, which will guarantee that prices and weights will be mapped correctly, filling any missing price or weight with <code>NA</code>:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">backtest_df &lt;- backtest_df_long %&gt;% 
+  pivot_wider(names_from = ticker, values_from = c(price_usd, theo_weight)) 
+
+head(backtest_df)
+#&gt; # A tibble: 6 x 37
+#&gt; # Groups:   date [6]
+#&gt;   date       price_usd_BTC price_usd_DASH price_usd_DGB price_usd_DOGE price_usd_LTC price_usd_MAID price_usd_VTC
+#&gt;   &lt;date&gt;             &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;
+#&gt; 1 2015-04-22          234.           3.24      0.000110      0.000109           1.44         0.0233       0.00875
+#&gt; 2 2015-04-23          236.           3.67      0.000119      0.000111           1.45         0.0236       0.00890
+#&gt; 3 2015-04-24          231.           3.20      0.000133      0.000105           1.43         0.0224       0.00879
+#&gt; 4 2015-04-25          226.           3.09      0.000122      0.0000997          1.41         0.0225       0.00829
+#&gt; 5 2015-04-26          221.           3.05      0.000123      0.0000976          1.34         0.0207       0.00736
+#&gt; 6 2015-04-27          227.           2.98      0.000120      0.000105           1.38         0.0216       0.00714
+#&gt; # ... with 29 more variables: price_usd_XEM &lt;dbl&gt;, price_usd_XMR &lt;dbl&gt;, price_usd_XRP &lt;dbl&gt;, price_usd_ETH &lt;dbl&gt;,
+#&gt; #   price_usd_XLM &lt;dbl&gt;, price_usd_DCR &lt;dbl&gt;, price_usd_LSK &lt;dbl&gt;, price_usd_ETC &lt;dbl&gt;, price_usd_REP &lt;dbl&gt;,
+#&gt; #   price_usd_ZEC &lt;dbl&gt;, price_usd_WAVES &lt;dbl&gt;, theo_weight_BTC &lt;dbl&gt;, theo_weight_DASH &lt;dbl&gt;, theo_weight_DGB &lt;dbl&gt;,
+#&gt; #   theo_weight_DOGE &lt;dbl&gt;, theo_weight_LTC &lt;dbl&gt;, theo_weight_MAID &lt;dbl&gt;, theo_weight_VTC &lt;dbl&gt;, theo_weight_XEM &lt;dbl&gt;,
+#&gt; #   theo_weight_XMR &lt;dbl&gt;, theo_weight_XRP &lt;dbl&gt;, theo_weight_ETH &lt;dbl&gt;, theo_weight_XLM &lt;dbl&gt;, theo_weight_DCR &lt;dbl&gt;,
+#&gt; #   theo_weight_LSK &lt;dbl&gt;, theo_weight_ETC &lt;dbl&gt;, theo_weight_REP &lt;dbl&gt;, theo_weight_ZEC &lt;dbl&gt;, theo_weight_WAVES &lt;dbl&gt;
+</pre>
+
+From this point, we can split our single wide matrix into two matrixes. Note that since matrixes must hold a common data type, our date column will be converted to a Unix-style timestamp. R takes care of that for us automatically.
+
+First, the weights matrix, which will have some <code>NA</code> values where we didn’t have a weight for an asset on a particular day in our long data frame. It makes sense to replace these with zero:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># get weights as a wide matrix
+# note that date column will get converted to unix timestamp
+backtest_theo_weights &lt;- backtest_df %&gt;% 
+  select(date, starts_with("theo_weight_")) %&gt;% 
+  data.matrix()
+
+# NA weights should be zero
+backtest_theo_weights[is.na(backtest_theo_weights)] &lt;- 0
+
+head(backtest_theo_weights, c(5, 5))
+#&gt;       date theo_weight_BTC theo_weight_DASH theo_weight_DGB theo_weight_DOGE
+#&gt; [1,] 16547            0.10            -0.10           -0.06            -0.02
+#&gt; [2,] 16548            0.14            -0.06           -0.10             0.06
+#&gt; [3,] 16549            0.14            -0.10            0.10            -0.06
+#&gt; [4,] 16550            0.10            -0.10            0.06            -0.06
+#&gt; [5,] 16551            0.06            -0.06            0.14            -0.02
+</pre>
+
+We do the same thing for our prices, but this time where an asset didn’t have a price (for example because it wasn’t in existence on a particular day), we leave the existing <code>NA</code>:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># get prices as a wide matrix
+# note that date column will get converted to unix timestamp
+backtest_prices &lt;- backtest_df %&gt;% 
+  select(date, starts_with("price_")) %&gt;% 
+  rename_with(.cols = -date, .fn = ~ stringr::str_remove(.x, "price_usd_")) %&gt;% 
+  data.matrix()
+
+head(backtest_prices, c(5, 5))
+#&gt;       date      BTC     DASH          DGB         DOGE
+#&gt; [1,] 16547 233.8224 3.241223 0.0001098965 1.091501e-04
+#&gt; [2,] 16548 235.9333 3.667605 0.0001194309 1.113668e-04
+#&gt; [3,] 16549 231.4586 3.203421 0.0001334753 1.046427e-04
+#&gt; [4,] 16550 226.4460 3.093542 0.0001222808 9.972296e-05
+#&gt; [5,] 16551 220.5034 3.054431 0.0001227349 9.762035e-05
+</pre>
+
+That’s all there is to it. At this point, we are ready to simulate trading according to our weights. <code>cash_backtest</code> returns a nicely formatted data frame of all the trades, commissions, and other accounting details for each asset for each day:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># simulation parameters
+initial_cash &lt;- 10000
+capitalise_profits &lt;- FALSE  # remain fully invested?
+trade_buffer &lt;- 0.
+commission_pct &lt;- 0.
+
+# simulation
+results_df &lt;- cash_backtest(
+  backtest_prices, 
+  backtest_theo_weights, 
+  trade_buffer, 
+  initial_cash, 
+  commission_pct, 
+  capitalise_profits
+)
+
+head(results_df)
+#&gt; # A tibble: 6 x 8
+#&gt;   ticker Date            Close    Position Value      Trades TradeValue Commission
+#&gt;   &lt;chr&gt;  &lt;date&gt;          &lt;dbl&gt;       &lt;dbl&gt; &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
+#&gt; 1 Cash   2015-04-22   1           10000    10000       NA            NA          0
+#&gt; 2 BTC    2015-04-22 234.              4.28  1000        4.28       1000          0
+#&gt; 3 DASH   2015-04-22   3.24         -309.   -1000     -309.        -1000          0
+#&gt; 4 DGB    2015-04-22   0.000110 -5459681.    -600 -5459681.         -600          0
+#&gt; 5 DOGE   2015-04-22   0.000109 -1832339.    -200 -1832339.         -200          0
+#&gt; 6 LTC    2015-04-22   1.44          139.     200      139.          200          0
+</pre>
+
+From there, we can calculate performance statistics and plot a chart of portfolio NAV using convenient tidyverse tools. Here’s a helper function:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(glue)
+
+# plot equity curve from output of simulation
+plot_results &lt;- function(backtest_results, title = "Backtest results", trade_on = "close") {
+  equity_curve &lt;- backtest_results %&gt;% 
+    group_by(Date) %&gt;% 
+    summarise(Equity = sum(Value, na.rm = TRUE)) 
+
+  fin_eq &lt;- equity_curve %&gt;% 
+    tail(1) %&gt;% 
+    pull(Equity)
+
+  init_eq &lt;- equity_curve %&gt;% 
+    head(1) %&gt;% 
+    pull(Equity)
+
+  total_return &lt;- (fin_eq/init_eq - 1) * 100
+  days &lt;- nrow(equity_curve)
+  ann_return &lt;- total_return * 365/days
+  sharpe &lt;- equity_curve %&gt;%
+    mutate(returns = Equity/lag(Equity)- 1) %&gt;%
+    na.omit() %&gt;%
+    summarise(sharpe = sqrt(355)*mean(returns)/sd(returns)) %&gt;%
+    pull()
+
+  equity_curve %&gt;% 
+    ggplot(aes(x = Date, y = Equity)) +
+      geom_line() +
+      labs(
+        title = title,
+        subtitle = glue(
+          "Costs {commission_pct*100}% trade value, trade buffer = {trade_buffer}, trade on {trade_on}
+          {round(total_return, 1)}% total return, {round(ann_return, 1)}% annualised, Sharpe {round(sharpe, 2)}"
+        )
+      ) +
+    theme_bw()
+}
+</pre>
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">plot_results(results_df)
+</pre>
+<img alt="plot of chunk results" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2021/08/21160104/results-1-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk results"/>
+<h2>Simulating costs</h2>
+
+A reasonable estimate of trading costs for a crypto strategy is around 0.15% of traded volume. Here’s how we’d simulate that:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">commission_pct &lt;- 0.0015
+
+cash_backtest(
+  backtest_prices, 
+  backtest_theo_weights, 
+  trade_buffer, 
+  initial_cash, 
+  commission_pct = commission_pct, 
+  capitalise_profits
+) %&gt;% 
+  plot_results()
+</pre>
+<img alt="plot of chunk with_costs" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2021/08/21160103/with_costs-1-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk with_costs"/>
+<h3>Finding an optimal trade buffer parameter</h3>
+
+We can find a historically Sharpe-optimal value for our “no-trade region” parameter by iterating through reasonable values of the parameter and plotting the resulting backtested Sharpe ratio:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># calculate sharpe ratio from output of simulation
+calc_sharpe &lt;- function(backtest_results) {
+  backtest_results %&gt;% 
+    group_by(Date) %&gt;% 
+    summarise(Equity = sum(Value, na.rm = TRUE)) %&gt;%
+    mutate(returns = Equity/lag(Equity)- 1) %&gt;%
+    na.omit() %&gt;%
+    summarise(sharpe = sqrt(355)*mean(returns)/sd(returns)) %&gt;%
+    pull()
+}
+
+sharpes &lt;- list()
+trade_buffers &lt;- seq(0, 0.15, by = 0.01)
+for(trade_buffer in trade_buffers) {
+  sharpes &lt;- c(
+    sharpes, 
+    cash_backtest(
+      backtest_prices, 
+      backtest_theo_weights, 
+      trade_buffer, 
+      initial_cash, 
+      commission_pct, 
+      capitalise_profits
+    ) %&gt;%
+      calc_sharpe()
+  )
+}
+
+sharpes &lt;- unlist(sharpes)
+data.frame(
+  trade_buffer = trade_buffers, 
+  sharpe = sharpes
+) %&gt;%
+  ggplot(aes(x = trade_buffer, y = sharpe)) +
+    geom_line() +
+    geom_point(colour = "blue") +
+    geom_vline(xintercept = trade_buffers[which.max(sharpes)], linetype = "dashed") +
+    labs(
+      x = "Trade Buffer Parameter",
+      y = "Backtested Sharpe Ratio",
+      title = glue("Trade Buffer Parameter vs Backtested Sharpe, costs {commission_pct*100}% trade value"),
+      subtitle = glue("Max Sharpe {round(max(sharpes), 2)} at buffer param {trade_buffers[which.max(sharpes)]}")
+    ) +
+    theme_bw()
+</pre>
+<img alt="plot of chunk sharpe-optimal-trade-buffer" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2021/08/21160103/sharpe-optimal-trade-buffer-1-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk sharpe-optimal-trade-buffer"/>
+Backtesting with this optimal value:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">trade_buffer &lt;- 0.06
+results_df &lt;- cash_backtest(
+  backtest_prices, 
+  backtest_theo_weights, 
+  trade_buffer = trade_buffer, 
+  initial_cash, 
+  commission_pct, 
+  capitalise_profits
+) 
+
+plot_results(results_df)
+</pre>
+<img alt="plot of chunk optimal_tb_backtest" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2021/08/21160102/optimal_tb_backtest-1-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk optimal_tb_backtest"/>
+It’s interesting to see how much the portfolio turned over with this approach. Here’s a plot of daily traded value by coin for a subset of our universe and for a random month:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">results_df %&gt;%
+  filter(
+    ticker %in% c("BTC", "LTC", "XEM", "DOGE"), 
+    Date &gt;= "2016-01-01", 
+    Date &lt; "2016-02-01"
+  ) %&gt;%
+  ggplot(aes(x = Date, y = TradeValue)) +
+    geom_bar(stat = "identity") +
+    facet_wrap(~ticker, ncol = 2) +
+    theme_bw()
+</pre>
+<img alt="plot of chunk tb_turnover" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2021/08/21160101/tb_turnover-1-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk tb_turnover"/>
+Compared with a trade buffer parameter of zero (that is, always trading into the target weight):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">results_df &lt;- cash_backtest(
+  backtest_prices, 
+  backtest_theo_weights, 
+  trade_buffer = 0.0, 
+  initial_cash, 
+  commission_pct, 
+  capitalise_profits
+) 
+
+results_df %&gt;%
+  filter(
+    ticker %in% c("BTC", "LTC", "XEM", "DOGE"), 
+    Date &gt;= "2016-01-01", 
+    Date &lt; "2016-02-01"
+  ) %&gt;%
+  ggplot(aes(x = Date, y = TradeValue)) +
+    geom_bar(stat = "identity") +
+    facet_wrap(~ticker, ncol = 2) +
+    theme_bw()
+</pre>
+<img alt="plot of chunk no_tb_turnover" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2021/08/21160100/no_tb_turnover-1-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk no_tb_turnover"/>
+<h2>What’s next for rsims?</h2>
+
+We’ll continue the development of <code>rsims</code>. In particular, we’re interested in implementing:
+
+<ul>
+<li>Convenient performance reporting, possibly by integrating with existing tools such as <code>PerformanceAnalytics</code></li>
+<li>Other trading mechanisms of interest, such as optimisation of the return-risk-cost problem subject to constraints</li>
+<li>Other cost models beyond the simple fixed percent of traded volume approach.</li>
+</ul>
+
+The focus will continue to be on speed and simplicity. If you’d like to contribute or explore the code, you can find <code>rsims</code> on Github <a href="https://github.com/Robot-Wealth/rsims">here</a>.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8"></div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">4 thoughts on “Exploring the rsims package for fast backtesting in R”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-22164">
+<article class="comment-body" id="div-comment-22164" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great Post. One of the best I’ve read, thanks for that.</p>
+<p>I have 2 questions:</p>
+<p>1.- Can you teach us the C ++ code?</p>
+<p>2.- I want to work with other and more updated assets, how do I do?</p>
+<span class="reply"><a aria-label="Reply to Elmer Niño" class="comment-reply-link" data-belowelement="div-comment-22164" data-commentid="22164" data-postid="41854" data-replyto="Reply to Elmer Niño" data-respondelement="respond" href="#comment-22164" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-22277">
+<article class="comment-body" id="div-comment-22277" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks very much Elmer. Honestly, I’m not the best person to teach C++. To learn how to use C++ with R via Rcpp, I recommend going straight to the source and focusing on Dirk Eddelbuettel’s <a href="https://dirk.eddelbuettel.com/code/rcpp.html" rel="noopener noreferrer nofollow ugc" target="_blank">docs</a> and <a href="https://gallery.rcpp.org/" rel="noopener noreferrer nofollow ugc" target="_blank">Rcpp examples</a>. You can browse the source for the Rcpp function we use in rsims <a href="https://github.com/Robot-Wealth/rsims/blob/main/src/positionsFromNoTradeBuffer.cpp" rel="noopener noreferrer nofollow ugc" target="_blank">here</a> if that’s helpful.</p>
+<p><code>rsims</code> can work with any price data and signals, so long as you provide them to the <code>cash_accounting_backtest</code> function in the correct format (wide matrixes with a date or timestamp column).</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-22277" data-commentid="22277" data-postid="41854" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-22277" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-22242">
+<div class="comment-body">
+				Pingback: Optimising the rsims package for fast backtesting in R - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/exploring-the-rsims-package-for-fast-backtesting-in-r/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,207 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Reduce Trading Costs and Boost Profits with the “No-Trade Region” Strategy</title>
+<!-- source: https://robotwealth.com/reduce-trading-costs-and-boost-profits-with-the-no-trade-region-strategy/ -->
+<h1>Reduce Trading Costs and Boost Profits with the “No-Trade Region” Strategy</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-114791 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-backtesting tag-quantitative-trading tag-rebalancing pmpro-has-access" id="post-114791">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">June 9, 2025</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Reduce Trading Costs and Boost Profits with the “No-Trade Region” Strategy</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Reduce Trading Costs and Boost Profits with the “No-Trade Region” Strategy" class="ipa-media gb-media-81e19d89" data-media-id="114797" decoding="async" fetchpriority="high" height="683" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2025/06/09135402/no_trade_region_featured_image-1024x683.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/06/09135402/no_trade_region_featured_image-1024x683.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/06/09135402/no_trade_region_featured_image-300x200.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/06/09135402/no_trade_region_featured_image-768x512.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/06/09135402/no_trade_region_featured_image.webp 1536w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph"><em><strong>An easy, practical way to harness an edge in the face of trading costs is the “no trade region” technique.</strong></em></p>
+<p class="wp-block-paragraph">It nearly always improves after-cost performance. Here’s a real example:</p>
+<figure class="wp-block-image size-large"><img alt="" class="wp-image-114792 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/06/09131454/image-1024x512.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/06/09131454/image-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/06/09131454/image-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/06/09131454/image-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/06/09131454/image-1536x768.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/06/09131454/image.png 1680w" decoding="async" height="512" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='512'%20viewBox='0%200%201024%20512'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">And it does so with only one-tenth of the trading of the baseline strategy!</p>
+<h2 class="wp-block-heading">Uncertain edge vs certain costs</h2>
+<p class="wp-block-paragraph">A good thing to remember is that your edge is uncertain – not only do you usually not know how big it is, you also don’t know if it even exists anymore.</p>
+<p class="wp-block-paragraph">On the other hand, your trading costs are certain. Every time you click “buy” or “sell,” you’re paying for the privilege.</p>
+<p class="wp-block-paragraph">One of the most powerful improvements to any strategy is simply <em>trading less</em>. Or more accurately, doing the <em>bare minimum </em>amount of trading required to harness your edge.</p>
+<h2 class="wp-block-heading">The no-trade region: A powerful heuristic</h2>
+<p class="wp-block-paragraph">Here’s how it works: </p>
+<p class="wp-block-paragraph">Your strategy generates a target position (\(w\)) for each asset. But instead of immediately trading to that exact position, you create a buffer zone (\(b\)) around it. For a minimum commission cost structure (where there is some fixed minimum commission):</p>
+<ul class="wp-block-list">
+<li>If your current position (\(w_0\)) is below \(w-b\), trade up to \(w\)</li>
+<li>If your current position is above \(w+b\), trade down to \(w\)</li>
+<li>If your position falls within this “no trade region,” do nothing</li>
+</ul>
+<p class="wp-block-paragraph">If your costs are only a function of size, you would trade to the edge of the barrier instead:</p>
+<ul class="wp-block-list">
+<li>If your current position (\(w0\)) is below \(w-b\), trade up to \(w-b\)</li>
+<li>If your current position is above \(w+b\), trade down to \(w+b\)</li>
+<li>If your position falls within this “no trade region,” do nothing</li>
+</ul>
+<p class="wp-block-paragraph">Express \(b\) as a percentage of your target weight.</p>
+<p class="wp-block-paragraph">This simple rule dramatically reduces unnecessary churn while still keeping you reasonably aligned with your strategy’s intentions.</p>
+<h2 class="wp-block-heading"><strong>How big should your no-trade region be?</strong></h2>
+<p class="wp-block-paragraph">The simplest approach is to run a bunch of simulations and find the value that maximises after-cost Sharpe ratio.</p>
+<p class="wp-block-paragraph">This might sound like overfitting, but so long as you think carefully about what you’re doing, it’s not a huge deal. It’s certainly not on the same level as fitting a trend rule to the 127-day moving average!</p>
+<p class="wp-block-paragraph">However, a sensible way to view a backtest is that it likely overstates performance. Like it or not, some sort of bias will usually creep into the development process. I therefore view any backtest as an absolute upper limit on expected performance going forward.</p>
+<p class="wp-block-paragraph">The implication is that optimising the buffer value on backtested Sharpe will produce a value that is too low, since the backtest is a little overestimated. So it’s not a bad idea to increase the value of the buffer over what you found in your backtest.</p>
+<p class="wp-block-paragraph">I’ve heard of people doubling this value; personally, I might add, say 25-50% – but it depends on what you’re doing. In any event, it’s useful to remember that we’re not trying to be overly precise (we can’t be) – we’re just trying to reduce our trading costs to the extent possible.</p>
+<p class="wp-block-paragraph">This simple technique can have quite an impact. While it isn’t an edge in itself, it can help you harness edges that would otherwise not survive trading costs and put more money in your pocket from edges that would.</p>
+<h2 class="wp-block-heading">An example</h2>
+<p class="wp-block-paragraph">This is a simulation of a 7-asset, equal-weight, risk-premia harvesting strategy.</p>
+<p class="wp-block-paragraph">It simply distributes $50k across 7 ETFs in equal dollar amounts. It doesn’t reinvest any profits; it simply allows the cash balance to grow over time. The simulated costs correspond to an Interactive Brokers tiered commission structure.</p>
+<figure class="wp-block-image size-large"><img alt="Performance of an equal weighted risk premia harvesting strategy rebalanced daily" class="wp-image-114798 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/06/09135834/eq_weight_rp_perf-1024x512.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/06/09135834/eq_weight_rp_perf-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/06/09135834/eq_weight_rp_perf-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/06/09135834/eq_weight_rp_perf-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/06/09135834/eq_weight_rp_perf-1536x768.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/06/09135834/eq_weight_rp_perf.png 1680w" decoding="async" height="512" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='512'%20viewBox='0%200%201024%20512'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">The colours represent the exposure to each asset in the portfolio. The blue represents the cash balance, which grows over time as the value of the underlying assets goes up. You can see that the asset exposures are rebalanced back to equal dollar weight daily.</p>
+<p class="wp-block-paragraph">The after-cost Sharpe was about 0.7, and the trading costs were over 10% of the strategy’s profits. </p>
+<p class="wp-block-paragraph">It turned over about 50% of the portfolio value per year, on average (which might not be a lot for an alpha trade, but feels excessive for a risk premia harvesting strategy).</p>
+<p class="wp-block-paragraph">Here’s a plot of commissions per asset over time:</p>
+<figure class="wp-block-image size-large"><img alt="Commissions paid on risk premia harvesting strategy rebalanced daily to equal weights" class="wp-image-114800 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/06/09140032/eq_weight_rp_commissions-1024x512.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/06/09140032/eq_weight_rp_commissions-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140032/eq_weight_rp_commissions-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140032/eq_weight_rp_commissions-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140032/eq_weight_rp_commissions-1536x768.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140032/eq_weight_rp_commissions.png 1680w" decoding="async" height="512" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='512'%20viewBox='0%200%201024%20512'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">You can see that it’s trading and paying costs pretty much every day.</p>
+<p class="wp-block-paragraph">If you run a bunch of backtests using different values for the barrier, you get the following plot of the after-cost Sharpe:</p>
+<figure class="wp-block-image size-large"><img alt="After cost Sharpe ratio of a risk premia harvesting strategy by no-trade region size" class="wp-image-114801 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/06/09140111/trade_barrier_vs_sharpe-1024x512.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/06/09140111/trade_barrier_vs_sharpe-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140111/trade_barrier_vs_sharpe-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140111/trade_barrier_vs_sharpe-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140111/trade_barrier_vs_sharpe-1536x768.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140111/trade_barrier_vs_sharpe.png 1680w" decoding="async" height="512" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='512'%20viewBox='0%200%201024%20512'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">For the sake of the example, let’s increase the trade barrier to 0.5 – the point where after-cost Sharpe starts to level off.</p>
+<p class="wp-block-paragraph"><em>(In reality, you could probably go even higher – the trade-off would be a higher tracking error, but even less trading.)</em></p>
+<figure class="wp-block-image size-large"><img alt="After cost performance of a risk premia harvesting strategy rebalanced to equal weights using the no-trade region strategy" class="wp-image-114802 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/06/09140203/eq_weight_rp_trade_buffer_perf-1024x512.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/06/09140203/eq_weight_rp_trade_buffer_perf-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140203/eq_weight_rp_trade_buffer_perf-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140203/eq_weight_rp_trade_buffer_perf-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140203/eq_weight_rp_trade_buffer_perf-1536x768.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/06/09140203/eq_weight_rp_trade_buffer_perf.png 1680w" decoding="async" height="512" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='512'%20viewBox='0%200%201024%20512'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">This results in a higher after-cost Sharpe (0.9 vs 0.7), higher total return, and much lower turnover (5% vs 50% per year).</p>
+<p class="wp-block-paragraph">The trade-off is the large tracking error. You can see that our asset weights deviate quite far from equality, whereas when we rebalanced every day, they were virtually constant.</p>
+<p class="wp-block-paragraph">Of course, in this case, for the trader who cares about making money in the most efficient way possible, you’d take this trade-off every day of the week.</p>
+<p class="wp-block-paragraph">If you were an ETF manager managing to a mandate, your take on the trade-off would be quite different.</p>
+<p class="wp-block-paragraph">Another interesting point is the dynamics of the minimum commission structure. If your account is small, you’ll hit these minimum commissions more often, and your commissions will be higher as a proportion of your capital.</p>
+<p class="wp-block-paragraph">In that case, you’d prefer to do as little trading as possible, and your preferred trade barrier would be even higher.</p>
+<p class="wp-block-paragraph">I used <a href="https://preview.convertkit-mail4.com/click/dpheh0hzhm/aHR0cHM6Ly9naXRodWIuY29tL1JvYm90LVdlYWx0aC9yc2ltcy90cmVlL21haW4=" rel="noreferrer noopener" target="_blank">rsims </a>to do the backtests and make the plots. It’s an R library for backtesting that I wrote to fit in with my typical workflow. I added the <a href="https://preview.convertkit-mail4.com/click/dpheh0hzhm/aHR0cHM6Ly9naXRodWIuY29tL1JvYm90LVdlYWx0aC9yc2ltcy9ibG9iL21haW4vZXhhbXBsZXMvQV9zaW1wbGVfdHJpY2tfdG9fbWluaW1pc2VfdHJhZGluZ19jb3N0cy5pcHluYg==" rel="noreferrer noopener" target="_blank">code </a>for this example to the github repo here if you’d like to explore it further.</p>
+<h2 class="wp-block-heading">Summary</h2>
+<ul class="wp-block-list">
+<li><strong>Trading costs are guaranteed</strong>, while your trading <strong>edge is uncertain</strong> and difficult to measure.</li>
+<li>The <strong>“no-trade region”</strong> can <strong>reduce trading costs</strong> by creating a buffer around your target position. You only trade when your actual position moves outside this buffer.</li>
+<li>This helps you do only the minimum amount of trading required to harness your edge.</li>
+</ul>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>backtesting</span>, <span>quantitative trading</span>, <span>rebalancing</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/reduce-trading-costs-and-boost-profits-with-the-no-trade-region-strategy/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

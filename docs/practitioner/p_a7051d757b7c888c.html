@@ -1,0 +1,313 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Benchmarking backtest results against random strategies</title>
+<!-- source: https://robotwealth.com/benchmarking-backtest-results-against-random-strategies/ -->
+<h1>Benchmarking backtest results against random strategies</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-822 post type-post status-publish format-standard hentry category-backtesting category-trading-books category-zorro tag-backtesting tag-zorro pmpro-has-access" id="post-822">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">October 18, 2015</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Benchmarking backtest results against random strategies</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Benchmarking backtest results against random strategies" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><div><span style="color: #003366;">Picture this: A developer has coded up a brilliant strategy, taking great care not to over-optimize. There is no look-ahead bias and the developer has accounted for data-mining bias. The out of sample backtest looks great. Is it time to go live?</span></div>
+<div><span style="color: #003366;"> </span></div>
+<div><span style="color: #003366;"> </span><span style="color: #003366;">I would’ve said yes, until I read Ernie Chan’s <i>Algorithmic Trading</i> and realised that I hadn’t adequately accounted for randomness. Whenever we compute a performance metric from a backtest, we face the problem of a finite sample size. We can’t know the true value of the performance metric, and the value we computed may or may not be representative of this true value. We may have been simply fooled by randomness into thinking we had a profitable strategy. Put another way, was the strategy’s performance simply due to being in the market at the right time?</span></div>
+<div></div>
+<div></div>
+<div><span style="color: #003366;">There are a number of empirical methods that can be used to address this issue. Chan describes three in his book mentioned above, and there are probably others. I am going to implement the approach described by Lo, Mamaysky and Wang (2000), who simulated sets of trades constraining their quantity in each direction to be the same as in the backtest, and with the same average holding period and distributed randomly over the price series used in the backtest. These random strategies are run a large number of times and</span><span style="color: #003366;"> a frequency histogram of the performance metric of interest constructed. The strategy’s backtest performance is compared with this histogram to reveal insight into whether it is in fact better than random and does have predictive power.</span></div>
+<div><span style="color: #003366;"> </span></div>
+<div><span style="color: #003366;"> </span><span style="color: #003366;">One pitfall that springs to mind is curve-fitting bias. If the comparison was done on the same data used to optimize the strategy, you would absolutely expect the strategy to outperform the random trader almost every time; otherwise something probably went wrong in the optimization process. Therefore, this method is valid when used on out of sample data only. The strategy should not have ever ‘seen’ this data before. Violating this principle would very likely lead to overly-optimistic results.</span></div>
+<div><span style="color: #003366;"> </span></div>
+<div><span style="color: #003366;"> </span><span style="color: #003366;">I think that this method has real value when (and this is why I implemented it) the developer cherry picks a portfolio of strategies depending on their performance in an out of sample test. For example, I optimized a strategy on a dozen different markets separately in the long and short directions. I then tested the portfolio of strategies on out of sample data and selected only those that performed well for the live portfolio. Using the proposed method of benchmarking in this scenario is essentially a counter for the selection bias introduced by cherry picking the strategies for the final portfolio.</span></div>
+<div><span style="color: #003366;"> </span></div>
+<div><span style="color: #003366;"> </span><span style="color: #003366;">This is the approach I used in the investigation:</span></div>
+<div><span style="color: #003366;"> </span></div>
+<ol>
+<li><span style="color: #003366;">Constructed random strategies that mirror the trade distribution and frequency of the original strategy</span></li>
+<li><span style="color: #003366;">Ran the random strategy 5,000 times and constructed a histogram of the profit factor</span></li>
+<li><span style="color: #003366;">Compared the profit factor of the strategy against the distribution of randomly obtained profit factors</span></li>
+</ol>
+<div><span style="color: #003366;"> </span><span style="color: #003366;">Here’s a code for a random strategy written for the Zorro trading platform in Lite-C. It can be set up to match the trade frequency and duration of any strategy by modifying the parameters in the switch-case function (controlling trade duration and total number of trades) and the random number generator in the trade function (controlling the frequency of trades).</span></div>
+<div></div>
+<div>
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="random trade generator">//Randomly generate entries to match a strategy's simulation period, number of trades and trade duration
+#define ASSETLOOP while(asset(loop("GBP/JPY", "GBP/USD", "USD/CAD")))
+#define TradesLong AlgoVar[0]
+#define TradesShort AlgoVar[1]
+function getOpt(string param) {
+    switch (Asset) {
+        case "GBP/JPY":
+        switch (param)
+        {
+            case "strategyTradesLong"  : return 114;
+            case "strategyTradesShort" : return 0;
+            case "strategyDuration"     : return 4;
+        }
+        case "GBP/USD":
+        switch (param)
+        {
+            case "strategyTradesLong"  : return 128;
+            case "strategyTradesShort" : return 0;
+            case "strategyDuration"     : return 4;
+        }
+        case "USD/CAD":
+        switch (param)
+        {
+            case "strategyTradesLong"  : return 0;
+            case "strategyTradesShort" : return 113;
+            case "strategyDuration"     : return 4;
+        }
+    }
+}
+function tradeRandom() {
+    var StrategyTradesLong = getOpt("strategyTradesLong"); //Number of trades in the actual strategy
+    var StrategyTradesShort = getOpt("strategyTradesShort");
+    int StrategyDuration = getOpt("strategyDuration"); //Average trade length in the actual strategy strategy
+    ExitTime = StrategyDuration;
+    var NumOpen = NumOpenLong + NumOpenShort;
+    if (random() &gt; 0) { //prevents trades being taken on the same bars each run of the strategy
+    if(NumOpen == 0 and TradesLong &lt; StrategyTradesLong and random() &gt; 0) { //may need to modify this line to get correct random trade frequency
+            enterLong();
+            TradesLong += 1;
+            }
+        if (NumOpen == 0 and TradesShort &lt; StrategyTradesShort and random() &lt; 0) { //may need to modify this line to get correct random trade frequency
+            enterShort();
+            TradesShort += 1;
+            }
+    }
+}
+function run() {
+    set(LOGFILE);
+    BarPeriod = 1440;
+    StartDate = 2010; //Set start and end dates to match those from the acutal strategy's simulation
+    EndDate = 2014;
+    LookBack = 0;
+    if (is(INITRUN)) TradesLong = 0;
+    if (is(INITRUN)) TradesShort = 0;
+    ASSETLOOP
+    while(algo(loop("RAND")))
+  {
+    if(Algo == "RAND")
+      tradeRandom();
+   }
+}
+</pre>
+<span style="color: #003366;">I ran this strategy 5,000 times and extracted the profit factor of each run using this Unix script that I ran with Cygwin.</span>
+</div>
+<div>
+<pre class="EnlighterJSRAW" data-enlighter-language="sh" data-enlighter-title="unix control script">#!/bin/bash
+i=0
+while [ $i -lt 5000 ]
+do
+    cd "C:/~/Zorro"
+        ./Zorro -run random_trades
+    cd "C:/~/Zorro/Log"
+        sed -n 56p random_trades.txt  &gt;&gt; RandomTrades_GBPJPY.txt
+        sed -n 57p random_trades.txt  &gt;&gt; RandomTrades_GBPUSD.txt
+        sed -n 58p random_trades.txt  &gt;&gt; RandomTrades_USDCAD.txt
+    i=`expr $i + 1`
+done</pre>
+<span style="color: #003366;">This feels like a crude approach, but it let me move fast, which counts for a lot. In order to use this on a random strategy with different assets, the lines extracted from the performance report would need to be modified accordingly. Zorro can also be programmed to run a certain number of times using the <code>NumTotalCycles</code> parameter. The profit factor metric can then be calculated and stored in a histogram. </span>
+<span style="color: #003366;">In the next post, I’ll explore some results obtained with this approach.</span>
+</div>
+<span style="color: #003366;"><strong>References</strong></span>
+<span style="color: #003366;">Chan, Ernest, <em>Algorithmic Trading</em>, 2013, John Wiley and Sons</span>
+<span style="color: #003366;">Lo, Andrew, Mamyskey, Harry and Wang, Jiang, 2000, <em>Foundations of Technical Analysis: Computational Algorithms, Statistical Inference, and Empirical Implementation</em>, Journal of Finance, Volume IV, Number 4.</span>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>backtesting</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-103161 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader category-trading-books pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/trading-books-lets-get-real-about-what-you-actually-need/"><img alt="Trading books: Let’s get real about what you actually need" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="103168" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/11/08193453/books_vs_experience-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/11/08193453/books_vs_experience-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/11/08193453/books_vs_experience-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/11/08193453/books_vs_experience-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/11/08193453/books_vs_experience-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/11/08193453/books_vs_experience.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-89281 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-factors category-quant-trading category-r category-trading-strategies tag-crypto tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-simple-effective-way-to-manage-turnover-and-not-get-killed-by-costs/"><img alt="A Simple, Effective Way to Manage Turnover and Not Get Killed by Costs" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="89282" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-33396 post type-post status-publish format-standard has-post-thumbnail hentry category-r category-zorro pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/exporting-zorro-data-to-csv/"><img alt="Exporting Zorro Data to CSV" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="35919" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-300x157.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-300x157.png 300w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-600x314.png 600w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-1024x536.png 1024w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-768x402.png 768w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-1000x523.png 1000w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7.png 1200w" decoding="async" height="157" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='157'%20viewBox='0%200%20300%20157'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">7 thoughts on “Benchmarking backtest results against random strategies”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-424">
+<div class="comment-body">
+				Pingback: Benchmarking backtest results against random trading part 2 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-425">
+<div class="comment-body">
+				Pingback: Exploring mean reversion and cointegration with Zorro and R: part 1 | Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-426">
+<article class="comment-body" id="div-comment-426" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Robot Master,<br/>
+Nice post on the application of random portfolios for strategy evaluation.<br/>
+In your example application, you say that you pick the optimal strategy from a range of strategies based on out of sample performance. If this is the case, then you need to compare the statistics of this optimal strategy to the histogram of the ‘optimal’ profit factor.<br/>
+A simple way to do this is on each of your 5000 runs, have the same number of random strategies running as in your original portfolio of strategies from which you choose from. Then for each of your 5000 runs,  pick the optimal random strategy and record its profit factor. This is the correct distribution to compare your actual optimal strategy’s profit factor against.<br/>
+See David Aronson’s 2011 textbook on technical analysis or look up White’s (2000) Reality Check method (see Hansen (2005) for an improved version).</p>
+<span class="reply"><a aria-label="Reply to Emlyn" class="comment-reply-link" data-belowelement="div-comment-426" data-commentid="426" data-postid="822" data-replyto="Reply to Emlyn" data-respondelement="respond" href="#comment-426" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-427">
+<article class="comment-body" id="div-comment-427" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Emlyn! One limitation with the approach I documented above is that in order for it to work, one has to assume that no data mining bias has taken place. This would be almost impossible to achieve in reality.<br/>
+If I understood you correctly, picking the optimal random strategy from each of the 5000 runs would be equivalent to Wihte’s bootstrap method? This seems like a much simpler implementation than keeping track of all the tested strategy variants and detrending and sampling from their equity curves, as is my understanding of White’s Reality Check.<br/>
+Even if it is not precisely equivalent, I can see that your suggestion is a more robust benchmark to use than the one I wrote about. Thanks for sharing it!</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-427" data-commentid="427" data-postid="822" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-427" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-428">
+<div class="comment-body">
+				Pingback: Machine learning for financial prediction: experimentation with David Aronson’s latest work – part 1 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-14411">
+<article class="comment-body" id="div-comment-14411" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>It looks like it does not work. That the message from my Zorro platform:</p>
+<p>‘tradeRandom’ undeclared identifier<br/>
+.</p>
+<p>A1 compiling………..<br/>
+Error 055: GBP/JPY no 2010 history (History\GBPJPY.t6)<br/>
+Error 055: No bars generated</p>
+<span class="reply"><a aria-label="Reply to Alejandro Vázquez" class="comment-reply-link" data-belowelement="div-comment-14411" data-commentid="14411" data-postid="822" data-replyto="Reply to Alejandro Vázquez" data-respondelement="respond" href="#comment-14411" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-14610">
+<article class="comment-body" id="div-comment-14610" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>That’s odd…the <code>tradeRandom</code> is defined before <code>main</code> in the code. Maybe try declaring the function as <code>void</code> rather than <code>function</code> – perhaps the latter no longer works in recent Zorro version.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14610" data-commentid="14610" data-postid="822" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14610" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/benchmarking-backtest-results-against-random-strategies/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

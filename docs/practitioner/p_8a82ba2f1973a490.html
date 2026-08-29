@@ -1,0 +1,1249 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Machine learning for Trading: Adventures in Feature Selection</title>
+<!-- source: https://robotwealth.com/machine-learning-financial-prediction-david-aronson/ -->
+<h1>Machine learning for Trading: Adventures in Feature Selection</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1010 post type-post status-publish format-standard hentry category-machine-learning category-r tag-data-mining tag-david-aronson tag-machine-learning pmpro-has-access" id="post-1010">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">March 4, 2016</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Machine learning for Trading:<br/> Adventures in Feature Selection</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Machine learning for Trading:&lt;br&gt; Adventures in Feature Selection" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><strong>Updates:</strong>
+<ul>
+<li><strong>2019: In this first Machine Learning for Trading post, we’ve added a <a href="https://robotwealth.com/machine-learning-financial-prediction-david-aronson/#boruta">section on feature selection using the Boruta package</a></strong><strong>, <a href="https://robotwealth.com/machine-learning-financial-prediction-david-aronson/#simple%20trading%20system">equity curves of a simple trading system</a></strong><strong>, and some Lite-C code that generates the training data. </strong></li>
+<li><strong>2020: I’ve updated the original post with some new thinking about data-mining, refreshed the code, updated the data and plots, and added the code and data to our <a href="https://github.com/Robot-Wealth/r-quant-recipes/tree/master/research-examples/aronson-ml" rel="noopener noreferrer" target="_blank">GitHub repository</a>.</strong></li>
+</ul>
+<h2>My thinking about data mining has evolved</h2>
+Back when I originally wrote this article, there was a commonly held idea that a newly-hyped approach to predictive modeling known as <em>machine learning</em> could discern predictive patterns in market data. A quick search on SSRN will turn up dozens of examples of heroic attempts at this very thing, many of which have been downloaded thousands of times.
+
+Personally, I spent more hours than I care to count on this approach. And while I learned an absolute ton, I can also say that <em>nothing</em> that I trade today emerged from such a data-mining exercise.
+
+Over the years since I first wrote this article, a realisation slowly dawned on me:
+<blockquote><em>Trading is very hard, and these techniques don’t really help that much with the hardest part.</em></blockquote>
+I think, in general, the trading and investment community has had a similar awakening.
+
+<em>OK, so what’s the “hardest part” of trading?</em>
+
+Operational issues of running a trading business aside, the hardest part of trading is maximising the probability that the edges you choose to trade continue to pay off in the future.
+
+Of course, we can never be entirely sure about anything in the markets. They change. Edges come and go. There’s usually anxiety that an edge isn’t really an edge at all, that it’s simply a statistical mirage. There is uncertainty everywhere.
+
+Perhaps the most honest goal of the quantitative researcher is to reduce this uncertainty as far as reasonably possible.
+
+Unfortunately (or perhaps fortunately, if you take the view that if it were easy, everyone would do it), reducing this uncertainty takes a lot of work and more than a little market nouse.
+
+In the practical world of our own trading, we do this in a number of ways centred on detailed and careful analysis:
+<ul>
+<li>Does the edge make sense from a structural, economic, financial, or behavioural perspective?</li>
+<li>Is there a reason for it to exist that I can explain in terms of taking on risk or operational overhead that others don’t want, or providing a service?</li>
+<li>Is it stable through time?</li>
+<li>Does it show up in the assets that I’d expect it to, given my explanation for why it exists?</li>
+<li>What else could explain it? Have I isolated the effect from things we already know about?</li>
+<li>What other edges can I trade with this one to diversify my risk?</li>
+</ul>
+In the world of machine learning and data mining, “reducing uncertainty” involves accounting for data mining bias (the tendency to eventually find things that look good if you look at enough combinations). There are statistical tests for data-mining bias, which, if being generous, offer plausible-sounding statistical tools for validating data mining efforts. However, I’m not here to be generous to myself and can admit that the appeal of such tools, at least for me, lay in the promise of avoiding the really hard work of careful analysis. <em>I don’t need to do the analysis, because a statistical test can tell me how certain my edge is!</em>
+
+But what a double-edged sword such avoidance turns out to be.
+
+If you’ve ever tried to trade a data-mined strategy, regardless of what your statistical test for data-mining bias told you, you know that it’s a constant battle with your anxiety and uncertainty. Because you haven’t done the work to understand the edge, it’s impossible to just leave it alone. You’re constantly adjusting, wondering, and looking for answers <em>after the</em> <em>fact</em>. It turns into an endless cycle – and I’ve <em>personally </em>seen it play out at all levels from beginner independent traders through to relatively sophisticated and mature professional trading firms.
+
+The real tragedy about being on this endless cycle is that it short-circuits the one thing that is most effective at reducing uncertainty, at least at the level of your overall portfolio – finding new edges to trade.
+
+This reality leads me to an approach for adding a new trade to our portfolio:
+<ul>
+<li>Do the work to reduce the uncertainty to the extent possible. You don’t want to trade just <em>anything</em>, you want to trade high-probability edges that you understand.</li>
+<li>Trade it at a size that can’t hurt you at the portfolio level if you’re wrong – and we will all be wrong from time to time.</li>
+<li>Leave it alone and go look for something else to trade.</li>
+</ul>
+The third point is infinitely more palatable if you’ve done the work and understand the things you’re already trading.
+
+Having said all that, I’m not about to abandon machine learning and other statistical tools. They absolutely have their place, but it’s worth thinking about the relative importance of what to concentrate on and what we spend our time on.
+
+At one extreme, we might think that market insight and quantitative analysis (what we’d call “feature engineering” in machine learning speak) is the most important thing and that we should spend all our time there.
+
+However, the problem with this approach is that there are effective and well-understood techniques (for example PCA, lasso regression, and others) that will very much help with modeling and analysis. Understanding these tools well enough to know what they are and when they might help greatly enhances your effectiveness as a quantitative researcher.
+
+On the other extreme, we might think that spending all our time on machine learning, data mining and statistical tests is appropriate. This is akin to owning a top-notch toolkit for servicing a car, but not knowing anything about cars, and leads to the endless cycle of patching things up mentioned above.
+<div aria-expanded="false" class="c-virtual_list__item" data-qa="virtual-list-item" id="1607393890.069100" role="listitem" tabindex="-1">
+<div class="c-message_kit__background p-message_pane_message__message c-message_kit__message" data-qa="message_container" data-qa-placeholder="false" data-qa-unprocessed="false" role="document">
+<div class="c-message_kit__hover" data-qa-hover="true" role="document">
+<div class="c-message_kit__actions c-message_kit__actions--above">
+<div class="c-message_kit__gutter">
+<div class="c-message_kit__gutter__left">
+<p class="p-message_pane_message__compact_timestamp p-message_pane_message__compact_timestamp--light p-message_pane_message__compact_timestamp--adjacent">To be frank, it’s not obvious how to manage the middle ground between these two extremes. Viewing machine learning and statistical techniques as <em>tools</em> rather than <em>alpha</em> is certainly a step in the right direction. Like the markets themselves, we must always be looking to evolve – finding new trades and more effective tools for doing good analysis, and adding to our skills and knowledge with time.</p>
+<blockquote>
+<p class="p-message_pane_message__compact_timestamp p-message_pane_message__compact_timestamp--light p-message_pane_message__compact_timestamp--adjacent"><em>Now, philosophising aside, on to the original article, with updated code and charts.</em></p>
+</blockquote>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p id="start-of-main-article">One of the first books I read, when I began studying the markets, was David Aronson’s <em>Evidence-Based Technical Analysis</em>. The engineer in me was attracted to the ‘Evidence-Based’ part of the title. This was soon after I had digested a trading book that claimed a basis in chaos theory, the link to which actually turned out to be non-existent (apparently using complex-sounding terms in the title of a trading book lends some measure of credibility… and book sales).</p>
+<em>Evidence-Based Technical Analysis </em>promotes a scientific approach to trading, including a detailed method for the assessment of data-mining bias in backtest results. There’s also a discussion around the reasons that some traders turn away from objective methods and embrace subjective beliefs. I find this area fascinating.
+
+Readers know that I am interested in using machine learning to profit from the markets. I was excited to discover that David Aronson had co-authored a new book with Timothy Masters titled <em>Statistically Sound Machine Learning for Algorithmic Trading of Financial Instruments – </em>which I’ll now refer to as SSML. While it is intended as a companion to Aronson’s (free) software platform for strategy development, it has a bunch of practical tips for anyone using machine learning for trading the financial markets and I’ve implemented many of his ideas in R.
+<blockquote><em>So Kris, how does this backstory of your reading habits benefit me?</em></blockquote>
+Well, SSML was a survival guide of sorts during my early forays into machine learning for trading, and I want to walk you through some of those early experiments, focusing on the more significant and practical learnings that I encountered along the way. Maybe this can be a source of inspiration for your own research.
+
+This first post will focus on feature engineering and also introduce the data mining approach. <a href="https://robotwealth.com/machine-learning-for-financial-prediction-experimentation-with-david-aronsons-latest-work-part-2/" rel="noopener noreferrer" target="_blank">Machine Learning for Trading Part 2</a> will focus on algorithm selection and ensemble methods for combining the predictions of numerous learners.
+
+Let’s get started!
+<h2> The data mining approach</h2>
+Data mining is just one approach to extracting profits from the markets and is different from a model-based approach.
+
+Rather than constructing a mathematical representation of price, returns, or volatility from first principles, data mining involves searching for patterns first and then fitting a model to those patterns. Both model-based and data mining approaches have pros and cons.
+
+The <a href="https://www.financial-hacker.com/build-better-strategies/" rel="noopener noreferrer" target="_blank">Financial Hacker</a> summed up the advantages and disadvantages of the data mining approach nicely:
+<blockquote>
+<p style="text-align: justify;"><em>The advantage of data mining is that you do not need to care about market hypotheses. The disadvantage: those methods usually find a vast amount of random patterns and thus generate a vast amount of worthless strategies. Since mere data mining is a blind approach, distinguishing real patterns – caused by real market inefficiencies – from random patterns is a challenging task. Even sophisticated reality checks can normally not eliminate all data mining bias. Not many successful trading systems generated by data mining methods are known today.</em></p>
+</blockquote>
+<a href="https://www.evidencebasedta.com/" rel="noopener noreferrer" target="_blank">David Aronson</a> himself cautions against putting blind faith in data mining methods:
+<blockquote><em>Though data mining is a promising approach for finding predictive patterns in data produced by largely random complex processes such as financial markets, its findings are upwardly biased. This is the data mining bias. Thus, the profitability of methods discovered by data mining must be evaluated with specialized statistical tests designed to cope with the data mining bias. </em></blockquote>
+Data mining is a term that can mean different things to different people depending on the context. When I refer to a data mining approach to trading systems development, I am referring to the use of statistical learning algorithms to uncover relationships between feature variables and a target variable (in the regression context, these would be referred to as the independent and dependent variables, respectively).
+
+The feature variables are observations that are assumed to have some relationship to the target variable and could include, for example, historical returns, historical volatility, various transformations or derivatives of a price series, economic indicators, and sentiment barometers. The target variable is the object to be predicted from the feature variables and could be the future return (next day return, next month return, etc), the sign of the next day’s return, or the actual price level (although the latter is not really recommended, for reasons that will be explained below).
+
+Although I differentiate between the data mining approach and the model-based approach, the data mining approach can also be considered an exercise in predictive modeling. Interestingly, the model-based approaches that I have written about previously (for example ARIMA, GARCH, Random Walk etc) assume linear relationships between variables. Modeling non-linear relationships using these approaches is (apparently) complex and time-consuming. On the other hand, some statistical learning algorithms can be considered ‘universal approximators’ in that they have the ability to model any linear or non-linear relationship. It was not my intention to get into a philosophical discussion about the differences between a model-based approach and a data mining approach, but clearly, there is some overlap between the two.
+
+I would add that the implicit assumption behind the data mining approach is that the patterns identified will continue to repeat in the future. Of course,  this assumption is made in one form or another however we approach the markets, but the point is it’s always subject to uncertainty.
+<h2>Variables and feature engineering</h2>
+<h3>The prediction target</h3>
+The first and most obvious decision to be made is the choice of target variable. In other words, what are we trying to predict?
+
+For one-day ahead forecasting systems, some measure of profit derived from a correct prediction seems a sensible starting point. For this post, I chose the next day’s return normalized to the recent average true range, the implication being that in live trading, position sizes would be inversely proportionate to the recent volatility. In addition, by normalizing the target variable in this way, we control for the confounding effect of volatility and provide a means to scale the target across multiple markets.
+<h3>Choosing predictive variables</h3>
+<span style="font-size: 16px; line-height: 1.5;">In SSML, Aronson states that the golden rule of feature selection is that the predictive power should come primarily from the features and not from the model itself. This is eminently good advice. A model is a tool by which we can understand a tradable effect – it’s not an effect in itself.</span>
+<span style="font-size: 16px; line-height: 1.5;">Later in this post, you’ll notice this golden rule playing out in a practical sense with many algorithm types returning correlated predictions for the same feature set. Further, the choice of features had a far greater impact on performance than the choice of model. </span>
+<span style="font-size: 16px; line-height: 1.5;">The implication is that spending considerable effort on feature selection and feature engineering is well and truly justified. This hints at my earlier comments about seeking to understand an effect rather than blindly data mining.</span>
+
+Many variables will have little or no relationship with the target and including these will lead to overfitting or other forms of poor performance. Aronson recommends using <a href="https://en.wikipedia.org/wiki/Chi-squared_test" rel="noopener noreferrer" target="_blank">Chi-squared tests</a> and <a href="https://en.wikipedia.org/wiki/Cram%C3%A9r%27s_V" rel="noopener noreferrer" target="_blank">Cramer’s V</a> to quantify the relationship between variables and the target. I actually didn’t use this approach, but instead used a number of others including ranking a list of candidate features according to their Maximal Information Coefficient (MIC) and selecting the highest ranked features, Recursive Feature Elimination (RFE) via the caret package in R, feature selection via the Boruta algorithm, an exhaustive search of all linear models, and Principal Components Analysis (PCA). Each of these is discussed below.
+<h3>Some candidate features</h3>
+Following is the list of features that I investigated as part of this research. Most were derived from SSML. This list is by no means exhaustive and only consists of derivatives and transformations of the price series. I haven’t yet tested alternative data sets, volume features, the price histories of related instruments and the like, but I think these are deserving of attention too. The following list is by no means exhaustive, but provides a decent starting point:
+<ul>
+<li>1-day log return</li>
+<li>Trend deviation: the logarithm of the closing price divided by the lowpass filtered price</li>
+<li>Momentum: the price today relative to the price <em>x</em> days ago, normalized by the standard deviation of daily price changes.</li>
+<li>ATR: the average true range of the price series</li>
+<li>Velocity: a one-step-ahead linear regression forecast on closing prices</li>
+<li>Linear forecast deviation: the difference between the most recent closing price and the closing price predicted by a linear regression line</li>
+<li>Price variance ratio: the ratio of the variance of the log of closing prices over a short time period to that over a long time period.</li>
+<li>Delta price variance ratio: the difference between the current value of the price variance ratio and its value <em>x</em> periods ago.</li>
+<li>The Market Meanness Index: A measure of the likelihood of the market being in a state of mean reversion, created by the <a href="https://www.financial-hacker.com/the-market-meanness-index/" rel="noopener noreferrer" target="_blank">Financial Hacker</a>.</li>
+<li>MMI deviation: The difference between the current value of the Market Meanness Index and its value <em>x</em> periods ago.</li>
+<li>The Hurst exponent</li>
+<li>ATR ratio: the ratio of an ATR of a short (recent) price history to an ATR of a longer period.</li>
+<li>Delta ATR ratio: the difference between the current value of the ATR ratio and the value <em>x</em> bars ago.</li>
+<li>Bollinger width: the log ratio of the standard deviation of closing prices to the mean of closing prices, that is a moving standard deviation of closing prices relative to the moving average of closing prices.</li>
+<li>Delta bollinger width: the difference between the current value of the bollinger width and its value <em>x </em>bars ago.</li>
+<li>Absolute price change oscillator: the difference between a short and long lookback mean log price divided by a 100-period ATR of the log price.</li>
+</ul>
+<h4>Limitations and caveats on the candidate features</h4>
+These features cover various momentum, mean reversion, and volatility effects. In the feature selection work below, we use a number of data-mining tools to assess their predictive utility. However, at this point, I make no attempt to justify their inclusion in the model on any economic or structural basis – a crucial step that in the real world you wouldn’t skip. This requires some detailed and careful analysis and in the interest of demonstrating some tools, I’m not going to do that analysis here.
+
+Thus far I have only considered the most recent value of each variable. The recent history of each variable would provide another dimension of data to mine. I left this out of the feature selection stage since it makes more sense to firstly identify features whose current values contain predictive information about the target variable before considering their recent histories. Incorporating this from the beginning of the feature selection stage would increase the complexity of the process by several orders of magnitude – so let’s also skip that for now.
+<h3> Transforming the candidate features</h3>
+In my experiments, the variables listed above were used with various cutoff periods (that is, the number of periods used in their calculation). Typically, I used values between 3 and 20 since Aronson states in SSML that lookback periods greater than about 20 will generally not contain information useful to the one period ahead forecast. Some variables (like the Market Meanness Index) benefit from a longer lookback. For these, I experimented with 50, 100, and 150 periods.
+
+Additionally, it is important to enforce a degree of stationarity on the variables. Davind Aronson again:
+<blockquote><em>Using stationary variables can have an enormous positive impact on a machine learning model. There are numerous adjustments that can be made in order to enforce stationarity such as centering, scaling, and normalization. So long as the historical lookback period of the adjustment is long relative to the frequency of trade signals, important information is almost never lost and the improvements to model performance are vast.</em></blockquote>
+<div>Aronson suggests the following approaches to enforcing stationarity:</div>
+<ul>
+<li>Scaling: divide the indicator by the interquartile range (note, not by the standard deviation, since the interquartile range is not as sensitive to extremely large or small values).</li>
+<li>Centering: subtract the historical median from the current value.</li>
+<li>Normalization: both of the above. Roughly equivalent to traditional z-score standardization, but uses the median and interquartile range rather than the mean and standard deviation in order to reduce the impact of outliers.</li>
+<li>Regular normalization: standardizes the data to the range -1 to +1 over the lookback period (x-min)/(max-min) and re-centered to the desired range.</li>
+</ul>
+In my experiments, I generally adopted regular normalization using the most recent 50 values of the features.
+<h2>Data Pre-Processing</h2>
+If you’re following along with the code and data provided (see <strong>note in bold</strong> above), I used the data for the EUR/USD exchange rate (sampled daily at 9 am London time, for the period 2009-2019). The raw data was created with the Zorro Trading Automation Platform using the script in the GitHub repository here.
+<h2>Removing highly correlated variables</h2>
+It makes sense to remove variables that are highly correlated with other variables since they are unlikely to provide additional information that isn’t already contained elsewhere in the feature space. Keeping these variables will also add unnecessary computation time, increase the risk of overfitting and bias the final model towards the correlated variables.
+
+<code>caret::findCorrelation()</code> finds variables which, if removed, will reduce pairwise correlations below some <code>cutoff</code> value.  With a <code>cutoff</code> of 0.3, these are the remaining variables and their pairwise correlations:
+
+<img alt="" class="size-full wp-image-32628 aligncenter perfmatters-lazy" data-sizes="(max-width: 672px) 100vw, 672px" data-src="https://media.robotwealth.com/wp-content/uploads/2016/03/21160835/corrmat.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2016/03/21160835/corrmat.png 672w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160835/corrmat-300x300.png 300w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160835/corrmat-100x100.png 100w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160835/corrmat-600x600.png 600w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160835/corrmat-150x150.png 150w" decoding="async" height="672" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='672'%20height='672'%20viewBox='0%200%20672%20672'%3E%3C/svg%3E" width="672"/>
+<h2>Feature selection via Maximal Information</h2>
+<div>
+
+The maximal information coefficient (MIC) is a non-parametric measure of two-variable dependence designed specifically for rapid exploration of many-dimensional data sets. While MIC is limited to univariate relationships (that is, it does not consider variable interactions), it does pick up non-linear relationships between dependent and independent variables.
+
+Read more about MIC <a href="https://www.exploredata.net/">here</a>. I used the <code><span class="lang:default decode:true crayon-inline">minerva</span></code> package in R to rank my variables according to their MIC with the target variable (next day’s return normalized to the 100-period ATR). Here’s the output:
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">&gt; mic
+                var          Y
+1        atrRatSlow 0.10202538
+2             trend 0.10143818
+3              mom3 0.09854331
+4             apc10 0.09752206
+5     deltaATRrat10 0.09599392
+6         deltaPVR5 0.09521441
+7  deltaMMIFastest5 0.09438674
+8         MMIFaster 0.09219701
+9       HurstFaster 0.09126731
+10        deltaPVR3 0.08766022
+11       bWidthSlow 0.08661493
+12          ATRSlow 0.00000000</pre>
+None of the features have a particularly high MIC with respect to the target variable, which is what I would expect from noisy data such as daily exchange rates sampled at an arbitrary time.
+<h2>Recursive feature elimination</h2>
+I also used recursive feature elimination (RFE) via the <code><span class="lang:default decode:true crayon-inline">caret</span></code> package to isolate the most predictive features from my list of candidates. RFE is an iterative process that involves constructing a model from the entire set of features, retaining the best performing features, and then repeating the process until all the features are eliminated. The model with the best performance is identified and the feature set from that model declared the most useful.
+
+I performed cross-validated RFE using a random forest model. Using the top five variables identified in the RFE process (<code>apc10</code>, <code>trend</code>, <code>ATRSlow</code>, <code>bWidthSlow</code>, and <code>atrRatSlow</code>), we get a decent drop in root mean squared error (RMSE). If we use all twelve variables that remain after filtering on the correlation matrix, we get a further drop in cross-validated RMSE, although the top five features seem to account for the majority of the performance.
+
+Here’s a plot of RMSE against the number of variables retained:
+
+<img alt="" class="size-full wp-image-32630 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2016/03/21160834/RFE.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2016/03/21160834/RFE.png 700w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160834/RFE-600x370.png 600w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160834/RFE-300x185.png 300w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='432'%20viewBox='0%200%20700%20432'%3E%3C/svg%3E" width="700"/>
+
+The RFE process assigned the features an importance value:
+
+<img alt="" class="size-full wp-image-32631 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2016/03/21160833/RFE-importance.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2016/03/21160833/RFE-importance.png 700w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160833/RFE-importance-600x370.png 600w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160833/RFE-importance-300x185.png 300w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='432'%20viewBox='0%200%20700%20432'%3E%3C/svg%3E" width="700"/>
+
+The RFE process has emphasized variables that describe volatility and trend and there seems to be general although imperfect agreement with the MIC results.
+
+I am tempted to take the results of the RFE with a grain of salt because:
+<ol>
+<li>The RFE algorithm does not fully account for interactions between variables. For example, assume that two variables individually have no effect on model performance, but due to some relationship between them they improve performance when both are included in the feature set. RFE is likely to miss this predictive relationship.</li>
+<li>Finally, the implementation of RFE that I used was the ‘out of the box’ caret version. This implementation uses root mean squared error (RMSE) as the objective function, however, I don’t believe that RMSE is best for this data due to the influence of extreme values on model performance. It is possible to have a low RMSE but poor overall performance if the model is accurate across the middle regions of the target space (corresponding to small wins and losses), but inaccurate in the tails (corresponding to big wins and losses).</li>
+</ol>
+In order to address (2) above, I implemented a custom summary function that maximises the cross-validated absolute return. I also applied the additional criterion that only predictions with an absolute value greater than 5 would be considered to reflect what we might do if trading the model’s predictions. The inclusion of eight features led to the highest cross-validated absolute return (although this varied between 7 and 10 with different settings of the random seed):
+
+<img alt="" class="size-full wp-image-32640 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2016/03/21160832/RFE-absret.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2016/03/21160832/RFE-absret.png 700w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160832/RFE-absret-600x370.png 600w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160832/RFE-absret-300x185.png 300w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='432'%20viewBox='0%200%20700%20432'%3E%3C/svg%3E" width="700"/>
+
+This approach led to some differences in the feature importance ranking:
+
+<img alt="" class="size-full wp-image-32641 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2016/03/21160831/RFE-imp-absret.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2016/03/21160831/RFE-imp-absret.png 700w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160831/RFE-imp-absret-600x370.png 600w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160831/RFE-imp-absret-300x185.png 300w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='432'%20viewBox='0%200%20700%20432'%3E%3C/svg%3E" width="700"/>
+<h2>Models with in-built feature selection</h2>
+</div>
+<div>
+
+A number of machine learning algorithms have feature selection in-built. <a href="https://topepo.github.io/caret/feature-selection-overview.html#models-with-built-in-feature-selection" rel="noopener noreferrer" target="_blank">Max Kuhn’s website</a> for the <code>caret</code> package contains a list of such models that are accessible through the <code><span class="lang:default decode:true crayon-inline">caret</span></code> package. I’ll apply several and compare the features selected to those selected with other methods.
+
+For this experiment, I used a diverse range of algorithms that include various ensemble methods and both linear and non-linear interactions:
+<ul>
+<li>Bagged multi-adaptive regressive splines (MARS)</li>
+<li>Boosted generalized additive model (bGAM)</li>
+<li>Lasso</li>
+<li>Spike and slab regression (SSR)</li>
+</ul>
+For each model, I did only very basic hyperparameter tuning using time series cross-validation with a train window length of 200 days and a test window length of 20 days. Maximization of absolute return was used as the objective function. Following cross-validation, <code>caret</code> trains a model on the full data set with the best cross-validated hyperparameters – but this is not what we want if we are to mimic actual trading behaviour (we are more interested in the aggregated performance across each test window, which caret very neatly allows us to access – details on this below when we investigate a trading system).
+
+The figure below shows the proportional frequency with which varieables were selected in the top 5 of each algorithm. For instance, a value of 0.75 indicates that a variable was selected in the top 5 by 75% of the algorithms tested:
+
+<img alt="" class="size-full wp-image-32643 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2016/03/21160829/prop_selected_top5.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2016/03/21160829/prop_selected_top5.png 700w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160829/prop_selected_top5-600x370.png 600w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160829/prop_selected_top5-300x185.png 300w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='432'%20viewBox='0%200%20700%20432'%3E%3C/svg%3E" width="700"/>
+
+We see less overlap with other feature selection methods, however the slow volatility and fast momentum features do appear regularly. All of the variables that passed the correlation filter were selected by at least one algorithm in the top 5 variables.
+
+The overall lack of consistency hints that our features probably aren’t overly predictive.
+
+</div>
+<h2>Model selection using glmulti</h2>
+The <code><span class="lang:default decode:true crayon-inline">glmulti</span></code> package fits all possible unique generalized linear models from the variables and returns the ‘best’ models as determined by an information criterion (Aikake in this case).
+
+The package is essentially a wrapper for the <code>glm</code> (generalized linear model) function that allows selection of the ‘best’ model or models, providing insight into the most predictive variables. By default, <code>glmulti</code> builds models from the main interactions, but there is an option to also include pairwise interactions between variables. This increases the computation time considerably, and I found that the resulting ‘best’ models were orders of magnitude more complex than those obtained using main interactions only, and results were on par.
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># glmulti.analysis
+# Method: h / Fitting: glm / IC used: aicc
+# Level: 1 / Marginality: FALSE
+# From 100 models:
+# Best IC: 31216.8153639823
+# Best model:
+# [1] "target ~ 1 + MMIFaster"
+# Evidence weight: 0.0283330120226094
+# Worst IC: 31220.2936057687
+# 29 models within 2 IC units.
+# 90 models to reach 95% of evidence weight.</pre>
+We retain the models whose AICs are less than two units from the ‘best’ model. Two units is a rule of thumb for models that are likely to be on par in terms of their performance:
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">#                                                          model     aicc    weights
+# 1                                       target ~ 1 + MMIFaster 31216.82 0.02833301
+# 2                               target ~ 1 + apc10 + MMIFaster 31216.94 0.02668724
+# 3                          target ~ 1 + MMIFaster + atrRatSlow 31217.13 0.02418697
+# 4                   target ~ 1 + apc10 + deltaPVR3 + MMIFaster 31217.17 0.02377989
+# 5                           target ~ 1 + deltaPVR3 + MMIFaster 31217.18 0.02361508
+# 6                  target ~ 1 + apc10 + MMIFaster + atrRatSlow 31217.30 0.02226910
+# 7              target ~ 1 + deltaPVR3 + MMIFaster + atrRatSlow 31217.47 0.02042182
+# 8      target ~ 1 + apc10 + deltaPVR3 + MMIFaster + atrRatSlow 31217.50 0.02009271
+# 9                          target ~ 1 + MMIFaster + bWidthSlow 31218.33 0.01330753
+# 10                              target ~ 1 + MMIFaster + trend 31218.47 0.01237686
+# 11                 target ~ 1 + MMIFaster + trend + atrRatSlow 31218.48 0.01233432
+# 12                                                  target ~ 1 31218.52 0.01211088
+# 13         target ~ 1 + deltaATRrat10 + MMIFaster + atrRatSlow 31218.52 0.01209924
+# 14                      target ~ 1 + deltaATRrat10 + MMIFaster 31218.52 0.01207773
+# 15                 target ~ 1 + apc10 + MMIFaster + bWidthSlow 31218.52 0.01207104
+# 16              target ~ 1 + apc10 + deltaATRrat10 + MMIFaster 31218.56 0.01184645
+# 17 target ~ 1 + apc10 + deltaATRrat10 + MMIFaster + atrRatSlow 31218.57 0.01177378
+# 18                        target ~ 1 + MMIFaster + HurstFaster 31218.58 0.01174280
+# 19                            target ~ 1 + MMIFaster + ATRSlow 31218.59 0.01165791
+# 20             target ~ 1 + deltaPVR3 + MMIFaster + bWidthSlow 31218.59 0.01164927
+# 21                target ~ 1 + apc10 + MMIFaster + HurstFaster 31218.65 0.01133414
+# 22     target ~ 1 + apc10 + deltaPVR3 + MMIFaster + bWidthSlow 31218.66 0.01126059
+# 23                   target ~ 1 + MMIFaster + deltaMMIFastest5 31218.70 0.01105118
+# 24                    target ~ 1 + apc10 + MMIFaster + ATRSlow 31218.71 0.01100487
+# 25                                     target ~ 1 + atrRatSlow 31218.72 0.01092551
+# 26     target ~ 1 + deltaPVR3 + MMIFaster + trend + atrRatSlow 31218.75 0.01079397
+# 27                          target ~ 1 + deltaPVR5 + MMIFaster 31218.78 0.01059770
+# 28                  target ~ 1 + deltaPVR3 + MMIFaster + trend 31218.79 0.01057023
+# 29                               target ~ 1 + mom3 + MMIFaster 31218.81 0.01046743</pre>
+Notice any patterns here? Many of the top models selected the ATR ratio and MMI features, as well as the price change oscillator (apc10). Perhaps surprisingly sparse are the momentum variables. This is confirmed with this plot of the model-averaged variable importance (averaged over the best 100 models):
+
+<img alt="" class="size-full wp-image-32646 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2016/03/21160828/glm-multi-averaged.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2016/03/21160828/glm-multi-averaged.png 700w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160828/glm-multi-averaged-600x370.png 600w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160828/glm-multi-averaged-300x185.png 300w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='432'%20viewBox='0%200%20700%20432'%3E%3C/svg%3E" width="700"/>
+Note that these models only considered the main, linear interactions between each variable and the target. Of course, there is no guarantee that any relationship is linear if it exists at all. Further, there is the implicit assumption of stationary relationships amongst the variables – which are unlikely to hold. Still, this method provides some useful insight.
+
+One of the great things about <code><span class="lang:default decode:true crayon-inline">glmulti</span></code> is that it facilitates model-averaged predictions – more on this when I delve into ensembles in part 2 of this series.
+<h2>Generalized linear model with stepwise feature selection</h2>
+<div>
+
+Finally, I used a generalized linear model with stepwise feature selection:
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># Coefficients:
+#   (Intercept)        trend   atrRatSlow  
+# -1.907       -3.632       -5.100  
+# 
+# Degrees of Freedom: 2024 Total (i.e. Null);  2022 Residual
+# Null Deviance:        8625000 
+# Residual Deviance: 8593000    AIC: 22670</pre>
+The final model selected 2 of the 15 variables: the ratio of the 20- to 100-day ATR, and the difference between a short-term and long-term trend indicator.
+
+</div>
+<div id="boruta">
+<h2>Boruta: all relevant feature selection</h2>
+Boruta finds relevant features by comparing the importance of the original features with the importance of random variables. Random variables are obtained by permuting the order of values of the original features. Boruta finds a minimum, mean, and maximum value of the importance of these permuted variables, and then compares these to the original features. Any original feature that is found to be more relevant than the maximum random permutation is retained.
+
+Boruta does not measure the absolute importance of individual features. Rather, it compares each feature to random permutations of the original variables and determines the relative importance. This theory very much resonates with me, particularly for weeding out uninformative features from noisy financial data. The idea of adding randomness to the sample and then comparing performance is analogous to an approach I experimented with to <a href="https://robotwealth.com/benchmarking-backtest-results-against-random-strategies/" rel="noopener noreferrer" target="_blank">benchmark my systems against a random trader</a> with a similar trade distribution.
+
+</div>
+The box plots in the figure below show the results obtained when I ran the Boruta algorithm for the 12 filtered variables for 1,000 iterations. The blue box plots show the permuted variables of minimum, mean and maximum importance, the green box plots indicate the original features that ranked higher than the maximum importance of the random permuted variables, and the variables represented by the red box plots are discarded.
+
+<img alt="" class="size-full wp-image-32647 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2016/03/21160828/boruta.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2016/03/21160828/boruta.png 700w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160828/boruta-600x370.png 600w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160828/boruta-300x185.png 300w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='432'%20viewBox='0%200%20700%20432'%3E%3C/svg%3E" width="700"/>
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># Boruta performed 103 iterations in 3.279162 mins.
+#  8 attributes confirmed important: apc10, atrRatSlow, ATRSlow, bWidthSlow, deltaATRrat10 and 3 more;
+#  4 attributes confirmed unimportant: deltaMMIFastest5, HurstFaster, MMIFaster, mom3;</pre>
+These results are generally but not perfectly consistent with the results obtained through other methods.
+
+Side note: The developers state that “Boruta” means “Slavic spirit of the forest.” As something of a Slavophile myself, I did some googling and discovered that this description is quite a euphemism. Check out some of the items that pop up in a Google image search!
+<h2>Discussion of feature selection methods</h2>
+Any feature selection process naturally invites a degree of selection bias. For example, from a large set of uninformative variables, a small number may randomly correlate with the target variable.
+
+The selection algorithm would then rank these variables highly. The error would only be (potentially) uncovered through cross-validation of the selection algorithm or by using an unseen test or validation set. Feature selection is difficult and can often make predictive performance worse since it is easy to over-fit the feature selection criterion.  It is all too easy to end up with a subset of attributes that works really well on one particular sample of data, but not necessarily on any other.  There is a fantastic discussion of this at the Statistics Stack Exchange community that I have <a href="https://stats.stackexchange.com/questions/20836/algorithms-for-automatic-model-selection">linked here</a> because it is just so useful.
+
+It is critical to take steps to minimize selection bias at every opportunity. The results of any feature selection process should be cross-validated or tested on an unseen hold out set. If the hold out set selects a vastly different set of predictors, something has obviously gone wrong – or the features are worthless.
+
+The approach I took in this post was to cross-validate the results of each test that I performed, with the exception of the Maximal Information Criterion and <code>glmulti</code> approaches. I’ve also selected features based on data for one market only. If the selected features are not robust, this would likely show up with poor performance when I attempt to build predictive models for other related markets using these features.
+
+I think that it could be useful to apply a wide range of methods for feature selection and <strong><em>then look for patterns and consistencies across these methods</em></strong>. This approach seems to intuitively be far more likely to yield useful information than drawing absolute conclusions from a single feature selection process.
+
+Applying this logic to the approach described above, we can conclude that the ratio of the 10- to 20-day ATR (atrRatSlow), the trend difference indicator (trend), the absolute price change oscillator (apc10), and the change in price variance ratio (deltaPVR3) are probably the most likely to yield useful information since they show up in most of the feature selection methods that I investigated.
+
+In part 2 of this article, I’ll describe how I built and combined various models based on these variables.
+<h2>Principal Components Analysis</h2>
+An alternative to feature selection is Principal Components Analysis (PCA), which attempts to reduce the dimensionality of the data while retaining the majority of the information contained therein.
+
+PCA is a linear technique: it transforms the data by linearly projecting it onto a lower dimension space while preserving as much of its variation as possible. Another way of saying this is that PCA attempts to transform the data so as to express it as a sum of uncorrelated components.
+<div>
+<p class="vspace">Again, note that PCA is limited to a linear transformation of the data. Another significant assumption when using PCA is that the principal components of future data will look those of the training data.</p>
+To investigate the effects of PCA on model performance, I cross-validated two random forest models, the first using the principal components of the 12 variables, and the other using those variables in their raw form. I chose the random forest model since it includes feature selection and thus may reveal some insights about how PCA stacks up in relation to other feature selection methods. For both models, I performed time-series cross-validation on a training window of 200 days and a testing window of 50 days.
+
+</div>
+<p class="vspace">In order to infer the difference in model performance, I collected the results from each resampling iteration of both final models and compared their distributions via a pair of box and whisker plots:</p>
+<img alt="" class="size-full wp-image-32653 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2016/03/21160827/pca.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2016/03/21160827/pca.png 700w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160827/pca-600x370.png 600w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160827/pca-300x185.png 300w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='432'%20viewBox='0%200%20700%20432'%3E%3C/svg%3E" width="700"/>
+<p class="vspace">The model built on the raw data under-performs the model built on the principal components in this case. The mean profit is slightly higher and the distribution is shifted in the positive direction.</p>
+<h2>A simple trading system</h2>
+<p id="simple trading system">I will go into more detail about building an example trading system using machine learning in the next post, but the following demonstrates a simple system based on some of the information gained from the analysis presented above.</p>
+The system is based on four of the features that the feature selection analysis identified as being potentially predictive of the target variable: the ratio of the 10- to 20-day ATR (atrRatSlow), the trend difference indicator (trend), the absolute price change oscillator (apc10), and the change in price variance ratio (deltaPVR3).
+
+I trained a generalized boosted regression model using the <code>gbm</code> package using these features as the independent variables predicting the next day return normalized to the recent ATR. The model was trained on a sliding window of 200 days and tested on the adjacent 50 days over the length of the entire data set. I didn’t include transaction costs.
+
+The returns series of most financial instruments consists of a relatively large number of small positive and small negative values and a smaller number of large positive and large negative values. I hypothesize that the values whose magnitude is smaller are more random in nature than the values whose magnitude is larger. On any given day, all things being equal, a small negative return could turn out to be a small positive return by the time the close rolls around, or vice versa, as a result of any number of random occurrences related to the fundamentals of the exchange rate. These same random occurrences are less likely to push a large positive return into negative territory and vice versa, purely on account of the size of the price swings involved.
+
+Following this logic, I <em>think </em>that my model is likely to be more accurate in its extreme predictions than in its ‘normal’ range. We can test this hypothesis on the simple trading strategy described above by entering positions only when the model predicts a return that is large in magnitude.
+
+Here are the results of each “strategy” (T0 corresponds to a prediction threshold of 0, T20 to a prediction threshold of 20, etc), along with the return of the (volatility adjusted) underlying from the testing data set:
+
+<img alt="" class="size-full wp-image-32657 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2016/03/21160826/pnl.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2016/03/21160826/pnl.png 700w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160826/pnl-600x370.png 600w, https://media.robotwealth.com/wp-content/uploads/2016/03/21160826/pnl-300x185.png 300w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='432'%20viewBox='0%200%20700%20432'%3E%3C/svg%3E" width="700"/>
+
+While the strategy may look interesting, it is actually not overly robust to changing the random initialization or the hyperparameters of the GBM algorithm – more work is needed to turn this into a viable strategy.
+
+We can see that increasing the prediction threshold for entering a trade resulted in a reduced final equity, but increased risk-adjusted returns. The model significantly outperformed the underlying.
+<div>
+<h2>Conclusions</h2>
+<div>Following are the generalizations that will inform the next stage of model development:</div>
+<ul>
+<li>Several approaches agreed that ratio of long- and short-term ATRs was the most important feature.</li>
+<li>This feature and the price change oscillator were selected by all approaches used in this post.</li>
+<li>The RFE analysis indicated that it may be prudent to focus on variables that measure long-term volatility or recent changes in volatility relative to the longer term.</li>
+<li>An exhaustive search of all possible generalized linear models that considered main interactions using <code><span class="lang:default decode:true crayon-inline">glmulti</span></code> implied that the 20- to 100-day ATR ratio and the MMI variables are most predictive.</li>
+<li>Stepwise feature selection using a generalized linear model returned similar results.</li>
+<li>Boruta identified 8 useful variables, with the ATR ratio and price change oscillator the clear winners.</li>
+<li>Transforming the variables using PCA slightly improved the performance of a random forest model relative to using the raw variables.</li>
+<li>Undoubtedly the results of the simple trading strategy are upwardly biased. After all, we’ve selected the very features we found to be most useful on our data set, albeit with some care around cross-validation. It would be informative to test a rolling feature selection approach where the features are selected at each model building stage.</li>
+</ul>
+The same features seem to be selected over and over again using the different methods. Is this just a fluke, or has this long and exhaustive data mining exercise revealed something of practical use to a trader? In <a href="https://robotwealth.com/machine-learning-for-financial-prediction-experimentation-with-david-aronsons-latest-work-part-2/">part 2 of this series</a>, I will investigate the performance of various machine learning algorithms based on this feature selection exercise. I’ll compare different algorithms and then investigate combining their predictions using ensemble methods with the objective of creating a useful trading system.
+<h2>References</h2>
+Aronson, D. 2006, <em><span class="a-size-large" id="productTitle">Evidence-Based Technical Analysis: Applying the Scientific Method and Statistical Inference to Trading Signals</span></em><span class="a-size-large" id="productTitle">. </span>
+
+Aronson, D. and Masters, T. 2014-, <em>Statistically Sound Machine Learning for Algorithmic Trading of Financial Instruments: Developing Predictive-Model-Based Trading Systems Using TSSB</em>
+</div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>data mining</span>, <span>david aronson</span>, <span>Machine Learning</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-98042 post type-post status-publish format-standard hentry category-options category-quant-trading category-r category-think-like-a-trader tag-options tag-simulation pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-95276 post type-post status-publish format-standard has-post-thumbnail hentry category-data-analysis category-r tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/revisiting-overnight-vs-intraday-equity-returns/"><img alt="Revisiting Overnight vs Intraday Equity Returns" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="95278" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-92479 post type-post status-publish format-standard has-post-thumbnail hentry category-data category-r category-time-series-modelling tag-quantitative-analysis tag-r tag-tidyverse pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-simple-trick-for-dealing-with-overlapping-data/"><img alt="A Simple Trick for Dealing with Overlapping Data" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="92480" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-300x171.webp" data-srcset="https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-300x171.webp 300w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-1024x585.webp 1024w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-768x439.webp 768w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-1536x878.webp 1536w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">78 thoughts on “Machine learning for Trading:&lt;br&gt; Adventures in Feature Selection”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-481">
+<article class="comment-body" id="div-comment-481" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great post! I’ll be sure to follow the next parts of the series.  I’m just starting in the world of algo trading and based on what you wrote SSML looks like a good starting point. Would you recommend any other book?</p>
+<span class="reply"><a aria-label="Reply to dcast" class="comment-reply-link" data-belowelement="div-comment-481" data-commentid="481" data-postid="1010" data-replyto="Reply to dcast" data-respondelement="respond" href="#comment-481" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-482">
+<article class="comment-body" id="div-comment-482" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks! Glad you liked it.<br/>
+My reading list for starting out with algo trading includes both of Ernie Chan’s books and Aronson’s first book, ‘Evidence Based Technical Analysis’. Jaekle and Tomasini is a handy reference too. If you don’t already have the background, an introductory statistics/probability text (sorry, can’t recommend one off the top of my head). If you want to delve into time series analysis, Ruey Tsay’s book on the topic is heavy going, but worth persisting with. In terms of machine learning, Lantz’s ‘Machine Learning with R’ will get you started. Depending on your stats background, Tibrishani et. al. released two works – ‘The Elements of Statistical Learning’ (more advanced) and ‘Introduction to Statistical Learning’ – these are the logical next steps for machine learning. Finally, I find the caret package in R to be immensely useful, and the author of the package also wrote a book called ‘Applied Predictive Modelling’ – definitely worth a read if you are interested in the machine learning side of things.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-482" data-commentid="482" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-482" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-499">
+<article class="comment-body" id="div-comment-499" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Brilliant post Kris, Thank you.<br/>
+This has really helped me to get started in the area of using ML in trading. Was even part of the recommended reading I was given.<br/>
+Will email you about adding your recommended books here to the Quantocracy book list.<br/>
+I am really looking forward to the follow up post.<br/>
+God speed<br/>
+Jacques Joubert</p>
+<span class="reply"><a aria-label="Reply to Jacques Joubert" class="comment-reply-link" data-belowelement="div-comment-499" data-commentid="499" data-postid="1010" data-replyto="Reply to Jacques Joubert" data-respondelement="respond" href="#comment-499" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4" id="comment-500">
+<article class="comment-body" id="div-comment-500" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for that feedback, Jaques. I am really glad you found it useful.<br/>
+Best<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-500" data-commentid="500" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-500" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even depth-2" id="comment-7184">
+<article class="comment-body" id="div-comment-7184" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This is awesome stuff you must be killing it</p>
+<span class="reply"><a aria-label="Reply to David Johnson" class="comment-reply-link" data-belowelement="div-comment-7184" data-commentid="7184" data-postid="1010" data-replyto="Reply to David Johnson" data-respondelement="respond" href="#comment-7184" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-483">
+<article class="comment-body" id="div-comment-483" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Excellent Work !<br/>
+I love Aronson’s books also. Did you implement a version of the MCPT ?<br/>
+Best, Nick</p>
+<span class="reply"><a aria-label="Reply to Nick" class="comment-reply-link" data-belowelement="div-comment-483" data-commentid="483" data-postid="1010" data-replyto="Reply to Nick" data-respondelement="respond" href="#comment-483" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-485">
+<article class="comment-body" id="div-comment-485" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Nick! I haven’t yet implemented MCPT in R, but I think the ‘coin’ package could be used. Do you know of any others? MCPT would be a good inclusion as an update to this post, or perhaps in the next.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-485" data-commentid="485" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-485" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-487">
+<article class="comment-body" id="div-comment-487" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I’m not familiar with ‘coin’ but thanks for mentioning that … I’ve implemented my own version of the MCPT.<br/>
+BTW, you mention that you use Zorro. Have you used their R bridge for strategy development or live trading ?<br/>
+Best, Nick</p>
+<span class="reply"><a aria-label="Reply to Nick" class="comment-reply-link" data-belowelement="div-comment-487" data-commentid="487" data-postid="1010" data-replyto="Reply to Nick" data-respondelement="respond" href="#comment-487" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-488">
+<article class="comment-body" id="div-comment-488" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Nick,<br/>
+Yes I’ve used Zorro’s R bridge extensively for strategy development and am using it for live trading right now. Its an integral part of my workflow and I am much more efficient during the development stage compared with using either Zorro or R separately. Its a very useful piece of kit to have in your toolbox.<br/>
+I ‘ll do a post in the near future on exactly how this works and why it is efficient.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-488" data-commentid="488" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-488" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-484">
+<article class="comment-body" id="div-comment-484" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very interesting work. You might also be interested in the “Boruta” all relevant feature selection method, which can be found at <a href="https://m2.icm.edu.pl/boruta/" rel="nofollow ugc">https://m2.icm.edu.pl/boruta/</a><br/>
+I look forward to your next few posts.</p>
+<span class="reply"><a aria-label="Reply to Dekalog" class="comment-reply-link" data-belowelement="div-comment-484" data-commentid="484" data-postid="1010" data-replyto="Reply to Dekalog" data-respondelement="respond" href="#comment-484" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-486">
+<article class="comment-body" id="div-comment-486" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for pointing me to Boruta, Dekalog. I’ll update the post to include this method. I see that it is implemented as an R package – how convenient!</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-486" data-commentid="486" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-486" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-2" id="comment-492">
+<article class="comment-body" id="div-comment-492" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Dekalog,<br/>
+I’ve updated the post with a paragraph on Boruta. Thanks for pointing me to this package – very easy to use and wonderfully intuitive logic behind it.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-492" data-commentid="492" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-492" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-489">
+<div class="comment-body">
+				Pingback: Best Links of the Week | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-490">
+<article class="comment-body" id="div-comment-490" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi and thanks for sharing your work.  One suggestion and request I would make would be to plot equity curves of some of the more promising candidates against say a simple Buy and Hold model. For example, if your in sample training set found ATR and BB (with some parameter set) useful and you created a model built around those features, you could plot both the in and out of sample resulting equity curves of the results (you also need to determine how you want to translate those predictions to actions. e.g. Buy/Sell/Flat). I’ve found the equity curve can reveal a lot about the results that may not be evident from looking at standalone metrics. One test may show promising results around a certain set of variables, but depending on how the individual results are finally aggregated, a different set of features may have performed much better.</p>
+<span class="reply"><a aria-label="Reply to IT" class="comment-reply-link" data-belowelement="div-comment-490" data-commentid="490" data-postid="1010" data-replyto="Reply to IT" data-respondelement="respond" href="#comment-490" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-491">
+<article class="comment-body" id="div-comment-491" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi IT, thanks for that comment. I take your point – equity curves certainly reveal a lot more useful information than the result of a feature selection test. And after all, this is a blog about trading. I had originally intended to leave all of the strategy development stuff until the next post where I will write about how I transform a model output into actionable intelligence, combining predictions from multiple learners and all that. But you’re right – an illustrative trading strategy and equity curve would fit nicely here. I’ll update the post accordingly.<br/>
+Thanks again for your feedback – always much appreciated.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-491" data-commentid="491" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-491" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-493">
+<article class="comment-body" id="div-comment-493" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>\nThat will be the common answer you will come across for every machine learning and knowledge discovery problem you face. There is no best learning system, classification system, or statistical method. You need to know your data-set well enough to realize where one approach might be better than others.</p>
+<span class="reply"><a aria-label="Reply to Deshawn Janas" class="comment-reply-link" data-belowelement="div-comment-493" data-commentid="493" data-postid="1010" data-replyto="Reply to Deshawn Janas" data-respondelement="respond" href="#comment-493" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-494">
+<article class="comment-body" id="div-comment-494" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Couldn’t agree more, Deshawn. There is an important place for subject matter knowledge in nearly any machine learning task.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-494" data-commentid="494" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-494" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-495">
+<article class="comment-body" id="div-comment-495" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello and thank you for the great post. I discovered TSSB thanks to it and now I’m playing with the application. I see you also use ATR normalized return. I tried to compute it in R and compare the values to TSSB outputs but they differ. For example on D1 GBP/USD data from 2009-11-11 to 2016-03-01 mean value of my computed ATR 250 normalized return is -0.01237755 while TSSB values give mean of -0.01529271. Do you experience the same (which would probably mean that the implementations differ)? Or did I make a mistake?</p>
+<span class="reply"><a aria-label="Reply to pcz" class="comment-reply-link" data-belowelement="div-comment-495" data-commentid="495" data-postid="1010" data-replyto="Reply to pcz" data-respondelement="respond" href="#comment-495" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-496">
+<article class="comment-body" id="div-comment-496" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello and thanks for commenting. Are you sampling your data at the same time in both applications? Since foreign exchange doesn’t have an official closing time, make sure that the one you use is consistent across both applications. Also, I believe TSSB calculates this variable using open prices, which in theory shouldn’t differ from the previous day’s closing price. Unless of course there is a price gap between one day’s close and the next’s open, which can happen due to weekends and holidays. Can those ideas account for the differences you are seeing?<br/>
+I have not actually run anything in TSSB myself. I like using R too much!</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-496" data-commentid="496" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-496" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-498">
+<article class="comment-body" id="div-comment-498" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey and sorry for the late reply, I was without my laptop for a while.<br/>
+I completely understand, it’s easy to fall in love with R!:) I also wanted to rewrite the stuff into R but after reading the whole book I decided to give TSSB a go because I saw how much work had already been put into it.<br/>
+Or maybe I will combine the approaches somehow. I noticed there is an automation framework for TSSB written in Python which could be modified to handle both: R and TSSB (unfortunately it’s Windows only solution).<br/>
+About the problem – it turned out it was only because at the end of TSSB returns vector there was bunch of NA values while my computed one had all of them. I should have checked the end of the data frame more carefully, stupid mistake.</p>
+<span class="reply"><a aria-label="Reply to pcz" class="comment-reply-link" data-belowelement="div-comment-498" data-commentid="498" data-postid="1010" data-replyto="Reply to pcz" data-respondelement="respond" href="#comment-498" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-520">
+<article class="comment-body" id="div-comment-520" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi pcz<br/>
+Where is “here is an automation framework for TSSB “? Did I miss something?<br/>
+Jeff</p>
+<span class="reply"><a aria-label="Reply to Jeff" class="comment-reply-link" data-belowelement="div-comment-520" data-commentid="520" data-postid="1010" data-replyto="Reply to Jeff" data-respondelement="respond" href="#comment-520" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-497">
+<div class="comment-body">
+				Pingback: Build Better Strategies! Part 4: Machine Learning – The Financial Hacker 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-501">
+<div class="comment-body">
+				Pingback: Machine Learning Section Added to Our Library with @RobotWealth | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="trackback odd alt thread-odd thread-alt depth-1" id="comment-502">
+<div class="comment-body">
+				Pingback: URL 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-503">
+<article class="comment-body" id="div-comment-503" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Robot Master, great post! I was wondering if you thought about potential implication of using ATR normalized returns in your target, especially for feature selection. What I mean with that is; by normalizing with ATR you are introducing a strong recent volatility component in your target variable. And as any quant would appreciate volatility clusters heavily and therefore recent volatility measures popping-up in your best features across the board. (Maybe not only the time you redefined your target metric as profit where you only observed 2 variables.) And of course you can estimate volatility pretty decently utilizing some recent vola information but when it come to making a directional bet you won’t have much of an edge. What do you think? I just had a quick read of the post, so apologies if I am missing something.  Keep up the good work.</p>
+<span class="reply"><a aria-label="Reply to Erk" class="comment-reply-link" data-belowelement="div-comment-503" data-commentid="503" data-postid="1010" data-replyto="Reply to Erk" data-respondelement="respond" href="#comment-503" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-505">
+<article class="comment-body" id="div-comment-505" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Erk<br/>
+Thanks for the comment. You raise a very good point – by normalizing the target variable to the current ATR, a strong volatility component is introduced. This was actually a recommendation that Aronson makes in the book on which the post is based, but may not be the best solution, particularly in relation to feature selection. I’ve done some recent work using the raw first difference of the time series and found that the feature selection algorithms tend towards slightly different features under this scenario.<br/>
+This suggests to me that there may be merit in using a differenced time series as the target variable during the feature selection phase, and then during the model building phase normalizing the target variable to the ATR so as to ensure volatility is included at some level in the trading model.<br/>
+Thanks for commenting, great suggestion!</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-505" data-commentid="505" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-505" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-504">
+<div class="comment-body">
+				Pingback: Build Better Strategies! Part 4: Machine Learning | Trade Signal Machine Hub 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-506">
+<article class="comment-body" id="div-comment-506" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thank you for a very thorough writeup of your very interesting work. I’m looking forward to the next installment. The recommended reading list is appreciated as well. (I hope you will consider making a separate blog entry of Recommended Reading so the books are easy to find in one entry.)</p>
+<span class="reply"><a aria-label="Reply to Mike Scirocco" class="comment-reply-link" data-belowelement="div-comment-506" data-commentid="506" data-postid="1010" data-replyto="Reply to Mike Scirocco" data-respondelement="respond" href="#comment-506" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-509">
+<article class="comment-body" id="div-comment-509" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Mike<br/>
+Thanks for commenting. Great idea regarding the recommended reading list! I will make that my next post.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-509" data-commentid="509" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-509" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-507">
+<article class="comment-body" id="div-comment-507" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Really Thanks for posting these machine learning contents!<br/>
+I’m trying to follow up and apply your posting using R.<br/>
+but now, I get in trouble with making data table using variables in “Some candidate features”.  I can see Zorro code in second post to make selected variables.<br/>
+Since I’ve never learned the Zorro, I don’t understand how you make the variables in<br/>
+“Some candidate features” .<br/>
+Could you explain how did you make variables in “Some candidate features” using R?<br/>
+I know this is time-consuming  but I really appreciate if you explain about making variables…</p>
+<span class="reply"><a aria-label="Reply to Sung" class="comment-reply-link" data-belowelement="div-comment-507" data-commentid="507" data-postid="1010" data-replyto="Reply to Sung" data-respondelement="respond" href="#comment-507" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-508">
+<article class="comment-body" id="div-comment-508" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Sung<br/>
+I created those variables using Zorro and then exported them for use in R. You can reproduce them using the descriptions in the section that you are referring to, whether that be in R, C, or some other language. If you get really stuck, shoot me an email using the contact form and I’ll send you an R implementation.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-508" data-commentid="508" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-508" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-510">
+<article class="comment-body" id="div-comment-510" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello, I’m sung.<br/>
+I’m wondering what kind of data, lev, model(input) should be put in to operate  the absretSummary function?<br/>
+absretSummary &lt;- function (data, lev = NULL, model = NULL) {<br/>
+  positions  5, sign(data[, “pred”]), 0)<br/>
+  trades &lt;- abs(c(1,diff(positions)))<br/>
+  profits &lt;- positions*data[, "obs"]<br/>
+  profit &lt;- sum(profits)<br/>
+  names(profit) &lt;- 'profit'<br/>
+  return(profit)<br/>
+}</p>
+<span class="reply"><a aria-label="Reply to sung" class="comment-reply-link" data-belowelement="div-comment-510" data-commentid="510" data-postid="1010" data-replyto="Reply to sung" data-respondelement="respond" href="#comment-510" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-511">
+<div class="comment-body">
+				Pingback: Optimal Data Windows for Training a Machine Learning Model for Financial Prediction | Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-512">
+<article class="comment-body" id="div-comment-512" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great post however…<br/>
+1) cross validation<br/>
+its not allowed to use cross validation for time series as simple it introduces future leak and bias. See Rob Hydman page <a href="https://robjhyndman.com/hyndsight/crossvalidation/" rel="nofollow ugc">https://robjhyndman.com/hyndsight/crossvalidation/</a><br/>
+2) From my experience every subset of financial data will give you different features. The method which I use to find the best features is based on bootstraping and its called Neyman – Pearson method. Different features will be selected for BUY and different for SELL side so perhaps its good to split the selection.<br/>
+3) I read the paper about Boruta method. I’m using filter methods based on correlation (FCBF) and mutal information (MRMR, JMI etc). Than I bootstrap those selection by Neyman-Person method. Wrapper methods (like Boruta) take too much time to compute so you can’t bootstrap them specially if you use big and many datasets.<br/>
+Krzysztof<br/>
+Krzysztof<br/>
+Krzysztof</p>
+<span class="reply"><a aria-label="Reply to Krzysztof" class="comment-reply-link" data-belowelement="div-comment-512" data-commentid="512" data-postid="1010" data-replyto="Reply to Krzysztof" data-respondelement="respond" href="#comment-512" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-513">
+<article class="comment-body" id="div-comment-513" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Krzysztof<br/>
+Thanks for reading my blog. Regarding your points:<br/>
+1) I wouldn’t say its not allowed. But I agree regular cross-validation (k-fold, bootstrap, leave-one-out etc) is not suitable for financial data. I now use and recommend the time series cross-validation approach that is mentioned at the bottom of the link you provided. See my post on <a href="https://robotwealth.com/optimal-data-windows-for-training-a-machine-learning-model-for-financial-prediction/" rel="nofollow">selecting optimal data windows</a> for more information.<br/>
+2) Thanks for the heads up re the Neyman-Pearson method. I haven’t used this, but I will look into it. I agree that different models for long and short sides may be a good idea.<br/>
+3) I find Boruta to be quite useful for my applications. I also like the intuition behind the algorithm. Its only one of many possible feature selection algoirthms though and I’m sure your methods are great too.<br/>
+Thanks again for reading.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-513" data-commentid="513" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-513" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3" id="comment-514">
+<article class="comment-body" id="div-comment-514" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello again,<br/>
+ad 3) None of the methods is great or the best, just combining with Nyman-Person give you better chance that you will not end up not relevant at all feature after selection. But its just better chance…All this analysis of financial data is very slippery, after more than 5 years of applying ML algos to it my only conclusion is than only very extensive backtest on multiple data sets from different instruments can give the answer if something works better or not. You can just try to repeat your steps on series from different instrument or the same instrument but from different period and I guess you will get different results. (e.g. different features are relevant or different technique is better)<br/>
+Krzysztof</p>
+<span class="reply"><a aria-label="Reply to Krzysztof" class="comment-reply-link" data-belowelement="div-comment-514" data-commentid="514" data-postid="1010" data-replyto="Reply to Krzysztof" data-respondelement="respond" href="#comment-514" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-515">
+<div class="comment-body">
+				Pingback: Better Strategies 5: Developing a Machine Learning System – The Financial Hacker 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-516">
+<article class="comment-body" id="div-comment-516" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>hello,i am tom. can you tell me how to use the function absretSummary in rfeControl and rfe? Thank you. absretSummary &lt;- function (data, lev = NULL, model = NULL) {<br/>
+positions 5, sign(data[, “pred”]), 0)<br/>
+trades &lt;- abs(c(1,diff(positions)))<br/>
+profits &lt;- positions*data[, "obs"]<br/>
+profit &lt;- sum(profits)<br/>
+names(profit) &lt;- 'profit'<br/>
+return(profit)<br/>
+}</p>
+<span class="reply"><a aria-label="Reply to Tom" class="comment-reply-link" data-belowelement="div-comment-516" data-commentid="516" data-postid="1010" data-replyto="Reply to Tom" data-respondelement="respond" href="#comment-516" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-519">
+<article class="comment-body" id="div-comment-519" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Tom<br/>
+This is just a custom Summary function for use with the caret <code>train()</code> function. The Summary function is simply the objective function for the training process; this one trains the learning algorithm towards maximizing the profit at the end of the training period. You can easily write your own for maximizing the Sharpe ratio or any other performance metric of interest.<br/>
+Max Kuhn (the author of the caret package) explains the use of the summary function <a href="https://topepo.github.io/caret/training.html" rel="nofollow" target="_blank">here</a>. In particular, scroll down to read about the <code>trainControl()</code> function and alternative performance metrics.<br/>
+Hope that helps.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-519" data-commentid="519" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-519" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-517">
+<article class="comment-body" id="div-comment-517" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great article! really good research in all aspects<br/>
+is it possible to post the code showing how you make the training file (gu_data)?<br/>
+Thanks,</p>
+<span class="reply"><a aria-label="Reply to alon" class="comment-reply-link" data-belowelement="div-comment-517" data-commentid="517" data-postid="1010" data-replyto="Reply to alon" data-respondelement="respond" href="#comment-517" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-518">
+<article class="comment-body" id="div-comment-518" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for reading! I’ve added the code showing how I created the training file as an appendix. I created this code a while ago and have since added to it, so there are a bunch of other indicators and transforms that will be output to a csv file. You can pick out the ones that I’ve used in this post, or experiment with the others, as you like. The output file is called “variables.csv” and this is what I read into my training data object “gu_data” in this post.<br/>
+Also, you will need to manually exclude some rows from the output file where indicator values are unable to be calculated due to an insufficient lookback period.<br/>
+This code is written in Lite-C and is compatible with the Zorro platform, which is an awesome tool for doing this sort of analysis. Some exciting things you can do to extend my research by tweaking this code include:<br/>
+1. Try other bar periods (I used daily)<br/>
+2. If using daily bars, try sampling at a more sensible time (ie not midnight, as I have done here)<br/>
+3. Obtain the same data for any market for which you have data by changing the <code>asset()</code> call towards the start of the script<br/>
+4. Use Zorro’s recently added pre-processing tools for better scaling/compressing/normalizing of the data than I have used here (these tools were added to the platform after I wrote this post)<br/>
+5. Add other indicators or data that you are interested in<br/>
+6. Experiment with longer prediction horizons. By default, I used a one-day prediction horizon. Could predicting further into the future give better results?<br/>
+7. Try using a classification approach by changing the target variable from a return (a numerical value) to a market direction (a binary value).<br/>
+8. Plenty  more that I haven’t even thought of…<br/>
+Hope this is useful for you.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-518" data-commentid="518" data-postid="1010" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-518" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-521">
+<article class="comment-body" id="div-comment-521" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great work! Very good tutorial for beginner like me!<br/>
+A small question thought, why did you times 100 to the price change of the target?<br/>
+Thanks.</p>
+<span class="reply"><a aria-label="Reply to David" class="comment-reply-link" data-belowelement="div-comment-521" data-commentid="521" data-postid="1010" data-replyto="Reply to David" data-respondelement="respond" href="#comment-521" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-523">
+<article class="comment-body" id="div-comment-523" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi David<br/>
+No reason other than aesthetics. I just find it nicer to look at figures on the left of the decimal point. You’ll get the same results if you don’t multiply by 100.<br/>
+Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-523" data-commentid="523" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-523" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-525">
+<article class="comment-body" id="div-comment-525" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+Thanks for reply.<br/>
+Another small question bothers me while reading your post.<br/>
+In “Removing highly correlated variables” step, we remained variables having correlation less than 0.5 with others. Then, why did some high correlation pairs still remain and show on the map? (f.i. velocity10 v.s. atrRat10 ; atrRat10 v.s. atrRat10_20)<br/>
+Is there something possibly wrong?<br/>
+Thanks.</p>
+<span class="reply"><a aria-label="Reply to David" class="comment-reply-link" data-belowelement="div-comment-525" data-commentid="525" data-postid="1010" data-replyto="Reply to David" data-respondelement="respond" href="#comment-525" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4 parent" id="comment-526">
+<article class="comment-body" id="div-comment-526" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello David<br/>
+You can answer your own question very easily by looking into the documentation of the relevant function, <code>caret::findCorrelation()</code>. I’ll do the leg-work for you so that we have a reference here on Robot Wealth. From the documentation:<br/>
+<em>The absolute values of pair-wise correlations are considered. If two variables have a high correlation, the function looks at the mean absolute correlation of each variable and removes the variable with the largest mean absolute correlation.</em><br/>
+The key point is that the function considers <em>mean absolute correlations</em> of each variable when the pair-wise correlation between them is higher than the threshold. The function will then remove the variable that has the highest mean absolute correlation with all remaining variables. This is not the same as simply removing any variable that has a pair-wise correlation with another variable greater than the cutoff value.<br/>
+Hope that helps.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-526" data-commentid="526" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-526" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-5 parent" id="comment-527">
+<article class="comment-body" id="div-comment-527" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+I think the point is whenever two variables have a high correlation, one of them will be removed. The mean absolute correlations is just a way to decide which one would be cut out.<br/>
+So, your correlation map shouldn’t have the pair like velocity10 to atrRat10 with large circle/high correlation. Otherwise, what’s the point for using the findCorrelation() and setting the cutoff ?</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even depth-5 parent" id="comment-528">
+<article class="comment-body" id="div-comment-528" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi David<br/>
+The point is that the pair-wise correlations reveal useful information about the data. As do the results of the <code>findCorrelation()</code> function. Further, if there were many variables from which to select, the function is an efficient first step in processing them. Its also interesting to see which variables the function identifies for removal in relation to their pair-wise correlations with the remaining variables.<br/>
+I don’t see any basis to your statement ‘your correlation map shouldn’t have the pair like velocity10 to atrRat10 with large circle/high correlation.’ Why not? Does it not reveal useful information? Have I misrepresented the pair-wise correlations? I think you might be confusing the roles of the correlation map and the <code>findCorrelation()</code> function by assuming they represent the same thing, or perhaps you see them as being somehow contradictory rather than complimentary. I’m struggling to see where you’re coming from here.</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-5" id="comment-529">
+<article class="comment-body" id="div-comment-529" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+I don’t think I’m confused with the function and the map, but still thanks for the reply. I’ll think it through again and check my code.</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-522">
+<div class="comment-body">
+				Pingback: Site News: Dabbling in Ads and Where All the Clicks Went in 2016 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-524">
+<div class="comment-body">
+				Pingback: Back to Basics: Introduction to Algorithmic Trading – Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-530">
+<article class="comment-body" id="div-comment-530" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi,<br/>
+I’m an R beginner and trying to reproduce the results.<br/>
+I don’t understand where the “gu_data_filt” variable is filled with data in the first small code block of the article.<br/>
+Any help appreciated.<br/>
+Thanks<br/>
+Vincenzo</p>
+<span class="reply"><a aria-label="Reply to Vincenzo Somma" class="comment-reply-link" data-belowelement="div-comment-530" data-commentid="530" data-postid="1010" data-replyto="Reply to Vincenzo Somma" data-respondelement="respond" href="#comment-530" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-531">
+<article class="comment-body" id="div-comment-531" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Vincenzo, you found an error – nicely spotted. There was a missing line of code which has been added.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-531" data-commentid="531" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-531" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even depth-2 parent" id="comment-532">
+<article class="comment-body" id="div-comment-532" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Vincenzo,<br/>
+I suggest adding “highCor &lt;- highCor+1;" before "gu_data_filt &lt;- gu_data[, -highCor];", for your reference.</p>
+<span class="reply"><a aria-label="Reply to David" class="comment-reply-link" data-belowelement="div-comment-532" data-commentid="532" data-postid="1010" data-replyto="Reply to David" data-respondelement="respond" href="#comment-532" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3" id="comment-533">
+<article class="comment-body" id="div-comment-533" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>David,<br/>
+Can you explain that suggestion? Why do you need to increment the values in the <code>highCor</code> object?</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-533" data-commentid="533" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-533" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-534">
+<article class="comment-body" id="div-comment-534" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>It’s because we use cor(gu_data[, -1]), making highCor contained  the wrong column numbers(all are 1 smaller) of removed feature. Adding 1 back so that we can get the correct result.</p>
+<span class="reply"><a aria-label="Reply to David" class="comment-reply-link" data-belowelement="div-comment-534" data-commentid="534" data-postid="1010" data-replyto="Reply to David" data-respondelement="respond" href="#comment-534" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-535">
+<article class="comment-body" id="div-comment-535" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Nicely spotted! You are absolutely correct. I’ve updated the code accordingly. Note that this would alter the features which get passed through to the next feature selection stage.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-535" data-commentid="535" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-535" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-536">
+<article class="comment-body" id="div-comment-536" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+If you have time can you update the article with the correct resulting features ?<br/>
+Just to compare my results with yours.<br/>
+Thanks</p>
+<span class="reply"><a aria-label="Reply to Vincenzo Somma" class="comment-reply-link" data-belowelement="div-comment-536" data-commentid="536" data-postid="1010" data-replyto="Reply to Vincenzo Somma" data-respondelement="respond" href="#comment-536" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4 parent" id="comment-537">
+<article class="comment-body" id="div-comment-537" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Vincenzo,<br/>
+You mean the features that fall out of the correlation analysis? Or the entire post? Sure, I’ll update the figures and results, when I can find the time.<br/>
+Note however that there aren’t any ‘correct’ features – a better way to approach the problem is to think in terms of which features or combination of features are most useful for the problem at hand.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-537" data-commentid="537" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-537" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-5 parent" id="comment-538">
+<article class="comment-body" id="div-comment-538" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+I mean in your reply to David pasted below, the resulting features are incorrect because of the code issue he outlined. Would be nice if you could update the article feature selection results after this fix.<br/>
+Thanks for setting up a great interesting web site.<br/>
+“Note that this would alter the features which get passed through to the next feature selection stage”</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-5" id="comment-539">
+<article class="comment-body" id="div-comment-539" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Understood. Yes, updating the post is on my radar. Might take me a week or two to find the time, but I’ll make sure it happens.<br/>
+Thanks for the kind words.</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even depth-4" id="comment-543">
+<article class="comment-body" id="div-comment-543" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Vincenzo<br/>
+In case you are following this thread via email, I’ve updated the post following David’s observations about the correlation filter.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-543" data-commentid="543" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-543" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-3 parent" id="comment-540">
+<article class="comment-body" id="div-comment-540" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Glad it helped. Looking forward to the updated result. Thanks for the good work.</p>
+<span class="reply"><a aria-label="Reply to David" class="comment-reply-link" data-belowelement="div-comment-540" data-commentid="540" data-postid="1010" data-replyto="Reply to David" data-respondelement="respond" href="#comment-540" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-542">
+<article class="comment-body" id="div-comment-542" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi David,<br/>
+In case you are following this thread via email, I’ve updated the post following your observations about the correlation filter.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-542" data-commentid="542" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-542" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-541">
+<article class="comment-body" id="div-comment-541" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great post. I am facing a couple of these problems.</p>
+<span class="reply"><a aria-label="Reply to corburt erilio" class="comment-reply-link" data-belowelement="div-comment-541" data-commentid="541" data-postid="1010" data-replyto="Reply to corburt erilio" data-respondelement="respond" href="#comment-541" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-544">
+<article class="comment-body" id="div-comment-544" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris, thanks for releasing all the R code unified (including the GBM model), it’s very helpful and adds a lot of insight to the whole experimentation process.</p>
+<span class="reply"><a aria-label="Reply to Paul" class="comment-reply-link" data-belowelement="div-comment-544" data-commentid="544" data-postid="1010" data-replyto="Reply to Paul" data-respondelement="respond" href="#comment-544" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-545">
+<article class="comment-body" id="div-comment-545" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Paul,<br/>
+My pleasure! Glad to hear it is helpful.<br/>
+Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-545" data-commentid="545" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-545" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-546">
+<article class="comment-body" id="div-comment-546" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi, thanks for the great article, but where is the link to download the scripts? In two places you say the scripts are available for download, but I can’t find any links.<br/>
+Jimmy.</p>
+<span class="reply"><a aria-label="Reply to Jimmy" class="comment-reply-link" data-belowelement="div-comment-546" data-commentid="546" data-postid="1010" data-replyto="Reply to Jimmy" data-respondelement="respond" href="#comment-546" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-549">
+<article class="comment-body" id="div-comment-549" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>You’re most welcome. There’s a link at the top of the article, under Update 4. But you have to give me your email address in return. I promise not to spam you.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-549" data-commentid="549" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-549" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-547">
+<article class="comment-body" id="div-comment-547" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Predicting a single bar is bound to be problematic because of the aliasing noise. John Ehlers often points out that if you sample the data at one bar per day then the simple fact of sampling introduces noise that is significant for signal wavelengths less than 10 bars long.<br/>
+I find the use of the normalize and zscore functions to be philosophically problematic for some sorts of data. As an example, lets take a value for the trend. Obviously if this value is positive, we have an up-trend. The problem is that normalize and zscore recenter the values around their mean, so a positive value might be transformed into a negative value. I’d be interested to see any studies on whether non-shifted values give better results.</p>
+<span class="reply"><a aria-label="Reply to Jimmy" class="comment-reply-link" data-belowelement="div-comment-547" data-commentid="547" data-postid="1010" data-replyto="Reply to Jimmy" data-respondelement="respond" href="#comment-547" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-548">
+<article class="comment-body" id="div-comment-548" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Its only bound to be problematic if you accept that Ehlers’ digital signal processing paradigm is applicable to financial time series. My personal opinion is that it can be, at times and under certain conditions. I’ve taken parts of Ehlers’ approach and used it in my own work, but I’d be careful of treating it as dogma. After all, many of the frequency decomposition techniques referenced in his work were intended for stationary, repeating signals, not the type of data we typically deal with. Of course they can be adapted to the markets, but a flexible and open minded approach is required.<br/>
+Regarding the scaling and normalizing question: but the fact that such data, in its raw form, is of a certain sign is only applicable to our understanding and perception of what that means. A machine doesn’t care about the sign in the sense that we associate it with an ‘up’ trend. It cares about what that data point means in relation to the other variables, in particular the target. But still, experimentation is the best way to explore such questions, and it wouldn’t be difficult to come up with a way to scale your data while preserving the sign. I’d love to hear what you find out.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-548" data-commentid="548" data-postid="1010" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-548" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1" id="comment-8217">
+<article class="comment-body" id="div-comment-8217" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris, hope this finds you well. The download link for the code and data is broken. Can you please share with us again? Thank you!</p>
+<span class="reply"><a aria-label="Reply to Thiago" class="comment-reply-link" data-belowelement="div-comment-8217" data-commentid="8217" data-postid="1010" data-replyto="Reply to Thiago" data-respondelement="respond" href="#comment-8217" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-13225">
+<div class="comment-body">
+				Pingback: TodoTrader의 DeepTrading with TensorFlow | | 그대안의 작은 호수 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-18114">
+<div class="comment-body">
+				Pingback: Evolving Thoughts on Data Mining - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/machine-learning-financial-prediction-david-aronson/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

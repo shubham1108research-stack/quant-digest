@@ -1,0 +1,368 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Fun with the Cryptocompare API</title>
+<!-- source: https://robotwealth.com/fun-with-the-cryptocompare-api/ -->
+<h1>Fun with the Cryptocompare API</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-4459 post type-post status-publish format-standard hentry category-python category-quant-trading category-trading-infrastructure tag-api tag-cryptocompare tag-cryptocurrency tag-data tag-python pmpro-has-access" id="post-4459">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">June 11, 2018</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Fun with the Cryptocompare API</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Fun with the Cryptocompare API" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Cryptocompare is a platform providing data and insights on pretty much everything in the crypto-sphere, from market data for cryptocurrencies to comparisons of the various crytpo-exchanges, to recommendations for where to spend your crypto assets. The user-experience is quite pleasant, as you can see from the screenshot of their real-time coin comparison table:
+<a href="https://robotwealth.com/wp-content/uploads/2018/06/cryptocompare_coin_list.png"><img alt="cryptcurrency prices" class="aligncenter size-full wp-image-4461 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/06/cryptocompare_coin_list.png" decoding="async" height="763" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1198'%20height='763'%20viewBox='0%200%201198%20763'%3E%3C/svg%3E" width="1198"/></a>
+As nice as the user-interface is, what I really like about Cryptocompare is its API, which provides programmatic access to a wealth of crypto-related data. It is possible to drill down and extract information from individual exchanges, and even to take aggregated price feeds from all the exchanges that Cryptocompare is plugged into – and there are quite a few!
+
+<h2>Interacting with the Cryptocompare API</h2>
+
+When it comes to interacting with Cryptocompare’s API, there are already some nice Python libraries that take care of most of the heavy lifting for us. For this post, I decided to use a library called <span class="lang:python decode:true crayon-inline">cryptocompare</span> . <a href="https://github.com/lagerfeuer/cryptocompare" rel="noopener noreferrer" target="_blank">Check it out on Git Hub here</a>.
+You can install the current stable release by doing<span class="lang:ps decode:true crayon-inline"> pip install cryptocompare</span> , but I installed the latest development version direct from Git Hub, as only that version had support for minutely price history at the time of writing.
+To install the dev version from Git Hub, do:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="ps" data-enlighter-title="">pip install git+https://github.com/lagerfeuer/cryptocompare.git
+</pre>
+
+This version will limit you to one month’s worth of daily price data and one week’s worth of hourly data. If you’re feeling adventurous, you can install the version that I forked into my own Git Hub account and modified to increase those limits. To do that, you’ll need to do:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="ps" data-enlighter-title="">pip install git+https://github.com/kplongdodd/cryptocompare.git</pre>
+
+Now that we’ve got our library of API functions, let’s take a look at what we can do with Cryptocompare!
+
+<h2>List all Available Coins</h2>
+
+To get a list of all the coins available on Cryptocompare, we can use the following Python script:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="All coins on Cryptocompare">import numpy as np
+import pandas as pd
+import cryptocompare as cc
+# list of coins
+coin_list = cc.get_coin_list()
+coins = sorted(list(coin_list.keys()))</pre>
+
+At the time of writing, this returned a list of 2,609 coins! By comparison, there are around 2,800 stocks listed on the New York Stock Exchange.
+
+<h2>Coins by Market Capitalisation</h2>
+
+Let’s focus on the biggest players in crypto-world: the coins with the largest market capitalisation.
+We can get price data for a list of coins using the function <span class="lang:python decode:true crayon-inline">cryptocompare.get_price()</span>  and if we specify <span class="lang:python decode:true crayon-inline">full=True</span> , the API will return a whole bunch of data for each coin in the list, including last traded price, 24-hour volume, number of coins in circulation, and of course market capitalisation.
+Cryptocompare’s API will only allow us to pass it a list of coins that contains no more than 300 characters at any one time. To get around that limitation, we’ll pass lists of 50 coins at a time, until we’ve passed our entire list of all available coins.
+The API returns a json string, which we can interpret as a dictionary in Python. Note that the outer-most keys in the resulting dictionary are <span class="lang:python decode:true crayon-inline">‘RAW’</span>  and <span class="lang:python decode:true crayon-inline">‘DISPLAY’</span>  which hold the raw data and data formatted for better displaying respectively. In our case, we prefer to work with the raw data, so we’ll keep it and discard the rest.
+Here’s the code for accomplishing all that:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Get data for all coins"># get data for all available coins
+coin_data = {}
+for i in range(len(coins)//50 + 1):
+    # limited to a list containing at most 300 characters #
+    coins_to_get = coins[(50*i):(50*i+50)]
+    message = cc.get_price(coins_to_get, curr='USD', full=True)
+    coin_data.update(message['RAW'])</pre>
+<span class="lang:python decode:true crayon-inline">coin_data</span>  now contains a whole bunch of dictionaries-within-dictionaries that hold our data. Each outer key corresponds to a coin symbol, and looks like this:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="API get_price return string">'ZXT': {'USD': {'CHANGE24HOUR': 0,
+    'CHANGEDAY': 0,
+    'CHANGEPCT24HOUR': 0,
+    'CHANGEPCTDAY': 0,
+    'FLAGS': '4',
+    'FROMSYMBOL': 'ZXT',
+    'HIGH24HOUR': 2.01e-06,
+    'HIGHDAY': 2.01e-06,
+    'LASTMARKET': 'CCEX',
+    'LASTTRADEID': '1422076',
+    'LASTUPDATE': 1491221170,
+    'LASTVOLUME': 998,
+    'LASTVOLUMETO': 0.0020059799999999997,
+    'LOW24HOUR': 2.01e-06,
+    'LOWDAY': 2.01e-06,
+    'MARKET': 'CCCAGG',
+    'MKTCAP': 0,
+    'OPEN24HOUR': 2.01e-06,
+    'OPENDAY': 2.01e-06,
+    'PRICE': 2.01e-06,
+    'SUPPLY': 0,
+    'TOSYMBOL': 'USD',
+    'TOTALVOLUME24H': 0,
+    'TOTALVOLUME24HTO': 0,
+    'TYPE': '5',
+    'VOLUME24HOUR': 0,
+    'VOLUME24HOURTO': 0,
+    'VOLUMEDAY': 0,
+    'VOLUMEDAYTO': 0}},</pre>
+
+That <span class="lang:python decode:true crayon-inline">‘USD’</span>  key is common to all the coins in <span class="lang:python decode:true crayon-inline">coin_data</span>  and it specifies the counter-currency in which prices are displayed. That key is going to be troublesome when we turn our dictionary into a more analysis-friendly data structure, like a pandas <span class="lang:python decode:true crayon-inline">DataFrame</span> , so let’s get rid of it:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Remove 'USD' level"># remove 'USD' level
+for k in coin_data.keys():
+    coin_data[k] = coin_data[k]['USD']
+</pre>
+
+Now we can go ahead and create a <span class="lang:python decode:true crayon-inline">DataFrame</span>  from our <span class="lang:python decode:true crayon-inline">coin_data</span>  dictionary and sort it by market capitalization:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Create and sort coin_data DataFrame">coin_data = pd.DataFrame.from_dict(coin_data, orient='index')
+coin_data = coin_data.sort_values('MKTCAP', ascending=False)
+</pre>
+
+All good so far, but interrogating this data by doing <span class="lang:python decode:true crayon-inline">coin_data[‘MKTCAP’].head(20)</span>  reveals that the coin with the highest market cap is something called AMO:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="">coin_data['MKTCAP'].head(20)
+Out[3]:
+AMO       1.928953e+13
+WBTC*     1.421202e+11
+BTC       1.156607e+11
+BITCNY    6.769687e+10
+ETH       5.327990e+10
+NPC       3.108324e+10
+XRP       2.222890e+10
+XUC       1.644538e+10
+BCH       1.623158e+10
+EOS       1.103000e+10
+VERI      7.803077e+09
+PRPS      7.342302e+09
+LTC       6.087482e+09
+MTN       5.000000e+09
+TRX       4.731000e+09
+XLM       4.628553e+09
+ADA       4.485383e+09
+DCN       3.928000e+09
+IOT       3.863547e+09
+VEN       3.330000e+09</pre>
+
+Wouldn’t we expect that honour to go to Bitcoin, with symbol BTC? And what about all those other coins that you’ve probably never heard of? What’s going on here?
+It turns out that Cryptocompare includes data for coins that haven’t yet gone to ICO, and it appears that in such cases, the market capitalisation calculation is done using the pre-ICO price of the coin, and its total possible supply of coins.
+That’s going to skew things quite significantly, so let’s exclude any coins from our list that haven’t traded in the last 24 hours. We can get this information from the <span class="lang:python decode:true crayon-inline">TOTALVOLUME24H</span>  field, which is the total amount the coin has been traded in 24 hours against all its trading pairs:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Exclude coins that haven't traded recently"># exclude coins that haven't traded in last 24 hours
+# TOTALVOLUME24H is the amount the coin has been traded
+# in 24 hours against ALL its trading pairs
+coin_data = coin_data[coin_data['TOTALVOLUME24H'] != 0]</pre>
+<span class="lang:python decode:true crayon-inline">coin_data[‘MKTCAP’].head()</span>  now looks a lot more sensible:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="">coin_data['MKTCAP'].head()
+Out[4]:
+BTC    1.156607e+11
+ETH    5.327990e+10
+XRP    2.222890e+10
+XUC    1.644538e+10
+BCH    1.623158e+10</pre>
+<h2>Get Market Data for Top Coins</h2>
+
+We can get the last month’s historical daily data for the 100 top coins by market cap, stored as a dictionary of DataFrames, by doing the following:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Download market data for top coins">top_coins = coin_data[:100].index
+df_dict = {}
+for coin in top_coins:
+    hist = cc.get_historical_price_day(coin, curr='USD')
+    if hist:
+        hist_df = pd.DataFrame(hist['Data'])
+        hist_df['time'] = pd.to_datetime(hist_df['time'], unit='s')
+        hist_df.index = hist_df['time']
+        del hist_df['time']
+        df_dict[coin] = hist_df</pre>
+
+And we can access the data for any coin in the dictionary by doing <span class="lang:python decode:true crayon-inline">df_dict[coin]</span>  where coin is the symbol of the coin we interested in, such as ‘BTC’. Now that we have our data, we can do some fun stuff!
+You will need to use the version of <span class="lang:python decode:true crayon-inline">cryptocompare</span>  from my Git Hub repo (see above) in order to get enough to data to reproduce the examples below. In that case, once you’ve downloaded my version, just replace line 5 in the script above with
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="">hist = cc.get_historical_price_day(coin, curr='USD', limit=2000)</pre>
+<h2>Some Basic Analysis</h2>
+
+First, let’s pull out all the closing prices from each <span class="lang:python decode:true crayon-inline">DataFrame</span>  in our dictionary:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title=""># pull out closes
+closes = pd.DataFrame()
+for k, v in df_dict.items():
+    closes[k] = v['close']
+# re-order by market cap
+closes = closes[coin_data.index[:100]]</pre>
+
+Plot some prices from 2017, an interesting year for cryptocurrency, to say the least:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title=""># some cool stuff we can do with our data
+import matplotlib.pyplot as plt
+import seaborn as sns
+# plot some prices
+closes.loc['2017', ['BTC', 'ETH', 'LTC']].plot()
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2018/06/price-series-plot.png"><img alt="" class="aligncenter size-full wp-image-4462 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/06/price-series-plot.png" decoding="async" height="949" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1920'%20height='949'%20viewBox='0%200%201920%20949'%3E%3C/svg%3E" width="1920"/></a>Plot some returns series from the same period:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title=""># plot some returns
+closes.loc['2017', ['BTC', 'ETH', 'LTC']].pct_change().plot()
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2018/06/returns_plot.png"><img alt="" class="aligncenter size-full wp-image-4463 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/06/returns_plot.png" decoding="async" height="949" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1920'%20height='949'%20viewBox='0%200%201920%20949'%3E%3C/svg%3E" width="1920"/></a>
+A correlation matrix:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title=""># plot correlation matrx
+sns.heatmap(closes.loc['2017', ['BTC', 'ETH', 'LTC', 'XRP', 'XUC', 'BCH', 'EOS', 'VERI', 'TRX',]].pct_change().corr())
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2018/06/correlation_matrix.png"><img alt="" class="aligncenter size-full wp-image-4464 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/06/correlation_matrix.png" decoding="async" height="779" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1103'%20height='779'%20viewBox='0%200%201103%20779'%3E%3C/svg%3E" width="1103"/></a>
+And finally, a scatterplot matrix showing distributions on the diagonal:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title=""># scatter plot matrix
+sns.pairplot(closes.loc['2018', ['BTC', 'ETH', 'XRP', 'VERI', 'LTC']].pct_change().dropna())
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2018/06/scatterplot_matrix.png"><img alt="" class="aligncenter size-full wp-image-4465 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/06/scatterplot_matrix.png" decoding="async" height="993" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1250'%20height='993'%20viewBox='0%200%201250%20993'%3E%3C/svg%3E" width="1250"/></a>
+There’s lots more interesting analysis you can do with data from Cryptocompare, before we even do any backtesting, for example:
+
+<ul>
+<li>Value of BTC and other major coins traded through the biggest exchanges over time – which exchanges are dominating?</li>
+<li>Top coins traded by fiat currency – do some fiats gravitate towards certain cryptocurrencies?</li>
+<li>Are prices significantly different at the same time across exchanges – that is, are arbitrage opportunities present?<span class="inline-footnote" style="" title="Of course, there are  a host of implementation and execution challenges to overcome to realise arbitrage opportunities, but identifying their existence is the first step.">1<span class="footnoteContent" style="display:none;">Of course, there are  a host of implementation and execution challenges to overcome to realise arbitrage opportunities, but identifying their existence is the first step.</span></span></li>
+</ul>
+<h2>Conclusion</h2>
+
+In this post, I introduced the Cryptocompare API and some convenient Python tools for interacting with it. I also alluded to the depth and breadth of data available: over 2,000 coins, some going back several years, broken down by exchange and even counter-currency. I also showed you some convenient base-Python and pandas data structures for managing and interrogating all that data. In future blog posts, we’ll use this data to backtest some crypto trading strategies.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>API</span>, <span>cryptocompare</span>, <span>cryptocurrency</span>, <span>data</span>, <span>python</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">3 thoughts on “Fun with the Cryptocompare API”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-835">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 06/12/2018 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-39430">
+<div class="comment-body">
+				Pingback: CryptoCompare: Your Guide to Digital Currency 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-51538">
+<article class="comment-body" id="div-comment-51538" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>awesome</p>
+<span class="reply"><a aria-label="Reply to user-365636" class="comment-reply-link" data-belowelement="div-comment-51538" data-commentid="51538" data-postid="4459" data-replyto="Reply to user-365636" data-respondelement="respond" href="#comment-51538" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/fun-with-the-cryptocompare-api/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

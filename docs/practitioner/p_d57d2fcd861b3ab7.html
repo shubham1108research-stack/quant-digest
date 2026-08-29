@@ -1,0 +1,279 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>A Quant’s Approach to Drawdown: Part 1</title>
+<!-- source: https://robotwealth.com/a-quants-approach-to-drawdown/ -->
+<h1>A Quant’s Approach to Drawdown: Part 1</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-9425 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-think-like-a-trader category-trading-as-a-business tag-drawdown pmpro-has-access" id="post-9425">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">August 28, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">A Quant’s Approach to Drawdown: Part 1</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="A Quant’s Approach to Drawdown: Part 1" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Imagine you’ve tinkered for days or even weeks, perfecting a strategy idea that’s showing a whole lot of promise. You’ve meticulously tweaked a mouth-watering Sharpe Ratio out of your backtests….it even survived costs. YES!
+
+Systems go, let’s trade it.
+
+Imagine this new strategy <strong>enters a drawdown.…maybe a lengthy one….maybe from <em>day one!</em></strong>
+
+How would you react to such a letdown?
+
+A common response to a long or sharp drawdown is to defer to our self-preservative instincts and pull the strategy entirely. Maybe you’d compare your poor live performance to your promising backtest, turn red and frisbee your laptop out the window.
+
+If you enjoy making money trading you’ll need to do better.
+
+A relatively experienced systematic trader, who we’ll call <em>Jack the Quant,</em> would look at this drawdown scenario a bit differently.
+
+<img alt="" class="aligncenter wp-image-10391 perfmatters-lazy" data-sizes="(max-width: 236px) 100vw, 236px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/08/21165008/napoleon-30071_640.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/08/21165008/napoleon-30071_640.png 512w, https://media.robotwealth.com/wp-content/uploads/2019/08/21165008/napoleon-30071_640-240x300.png 240w, https://media.robotwealth.com/wp-content/uploads/2019/08/21165008/napoleon-30071_640-480x600.png 480w" decoding="async" height="295" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='236'%20height='295'%20viewBox='0%200%20236%20295'%3E%3C/svg%3E" width="236"/>
+<p style="text-align: center;"><span style="font-size: 12pt;"><strong>Yes I know Jack is actually a terribly drawn Napoleon Dynamite</strong></span></p>
+
+Anyway, Jack would rely on:
+
+<ul>
+<li>an understanding (and acceptance) of the nature of the markets</li>
+<li>a sound systematic research process</li>
+<li>generally <em>chilling the heck out</em></li>
+</ul>
+
+We’re going to quickly talk about the latter two.
+
+<h2>Why Drawdowns Are Inevitable in Trading</h2>
+
+Drawdowns are simply a part of the game. No strategy, no matter how well-researched or perfectly backtested, is immune to them. The market’s randomness, volatility, and the inevitable noise in the data all contribute to these periods of underperformance.
+
+Think of trading like sailing a ship through rough seas. You might have the best boat (strategy) designed with cutting-edge materials (research), but you still can’t avoid the occasional storm (drawdown). Even the most experienced sailors (traders) know how to navigate through those rough patches and keep moving forward.
+
+In trading, drawdowns are often statistical, they represent the natural ebb and flow of markets. Even a strategy with a high Sharpe Ratio will experience drawdowns, as it relies on statistical edges that don’t always play out as expected.
+
+But here’s the key: drawdowns don’t mean failure. They are just temporary setbacks. What matters is how you manage them and whether your strategy still has the potential to produce alpha in the long run.
+
+<h2>Jack’s knee-jerk reaction to drawdown</h2>
+
+Firstly, he’d go make some tea and relax.
+
+Jack knows it would be <a href="https://robotwealth.com/the-law-of-large-numbers-part-2/" rel="noopener noreferrer" target="_blank">trivial to show</a> that a strategy with a true Sharpe ratio of 1.5 stands a reasonable chance of having a two-year drawdown. Jack also knows that the strategy he backtested to a Sharpe of 1.5 isn’t likely to deliver him that performance once live.
+
+This implies that in order to decide whether the performance of Jack’s strategy is “unexpected”, he might have to <em>wait years. </em>
+
+That’s assuming he has an accurate picture of what the “expected” performance might be – which he almost certainly <em>doesn’t</em> have.
+
+Quite the conundrum, <em>isn’t it?</em>
+
+This is why having a <strong>sound research process to begin with</strong> is so important to your success and sanity as a trader.
+
+A sensible research process lets you gather enough evidence to make a smart bet that your strategy has a good chance of paying off in the long run, even if your strategy isn’t too hot out of the gates.
+
+Satisfied with that evidence, Jack’s approach is to:
+
+<ol>
+<li>size the strategy small</li>
+<li>chill out and let it do its thing for a couple of years</li>
+<li>in the meantime go hunting for other trades.</li>
+</ol>
+
+This might surprise most beginners who would assume a systematic trader would have some kind of automated process for decision making during drawdown. But, Jack’s approach stems from his understanding that trading is hard and that losing money sometimes is completely normal. Sometimes (or actually, most times), the solution is just to relax and keep moving.
+
+Besides, Jack is smart and has structured his portfolio sensibly so that his <a href="https://robotwealth.com/harvesting-risk-premia" rel="noopener noreferrer" target="_blank">risk premia tailwind</a> acts as a buffer for when his alpha trades don’t go his way, which is <em>inevitable</em>. In the end, he still has trades on and is making money.
+
+This is the less frenzied, more liveable way to run a trading operation.
+
+So be like Jack — copy his well-rounded approach and keep your eyes open for new trades.
+
+<h3>When Should We Turn Off a Strategy? A Quant’s Perspective</h3>
+
+You bet!
+
+Jack would down his tea quick smart and pull the pin if live trading demonstrated that his backtest assumptions had been violated so badly that his edge was destroyed. Maybe he was a tad optimistic in his execution assumptions during the research phase, and the live market showed that unexpected frictions are too much of a hurdle to surmount.
+
+He might also pull out if the basis for the trade ceased to exist. For instance, say the trade was based on forced flows from ETF rebalancing. If the ETF Jack was trading changed its mandate in such a way that impacted those forced flows, he’d stop trading the strategy.
+
+But that’s a pretty clear cut example. Often trading <em>isn’t clear cut at all</em>.
+
+Say you were running a convergence trade betting that two related financial assets were linked through shared risk factors. It’s a complex question to decide if the dynamics of those risk factors have changed permanently.
+
+In that case again, as in most cases, the best answer is to size it small, chill out, and find more stuff to trade.
+
+Trading can be uncomfortable, you’ll often lose money before you make it….
+
+….this is part of the game, and that’s OK! We just need to make more than we lose. We show you this inside our <a href="https://robotwealth.com/bootcamp" rel="noopener noreferrer" target="_blank">Bootcamps</a>.
+
+<h3>The Backtest Says It’s Solid, But What’s Really Happening Live?</h3>
+
+There’s always a temptation to compare live trading results with the backtest to decide whether or not to pull out. But this violates one of the most important tenets of successful systematic trading:
+
+<strong>Don’t use a backtest to define performance objectives!</strong>
+
+Think about it. You’ve spent days or weeks or longer researching and developing the strategy. Consider how many decision points you encountered along the way. Which universe of assets to trade. Whether to choose this parameter, that parameter, or both. No matter how careful and considered your development process, some amount of optimistic bias creeps in with each decision. This is a fact of life. Unavoidable. It’s part and parcel of strategy development. We <em>can’t not</em> introduce data mining bias. Which means that we can’t trust our backtest to set future performance objectives for us.
+
+Don’t get me wrong, backtesting is probably the most powerful tool in your arsenal. The ability to acquire empirical evidence that an idea worked or not in the past is crucial. Backtesting gives you this ability.
+
+Problems arise, however, when you expect live trading performance to match the backtest.
+
+Again, sensible ol’ Jack knows this.
+
+<h2>What Can We Measure? Drawing the Line Between Live and Backtest Performance</h2>
+<em>Not entirely….</em>
+
+There’s always the temptation to try and systematise decisions (they don’t call it systematic trading for nothing). The decision to pull a strategy based on live performance compared to a backtest is no exception. It’s comfortable to know that there’s an algorithm or a set of rules that’s got our back.
+
+This is generally <em>not</em> a good idea.
+
+Generally speaking, to repeat what we talked about earlier, a good systematic trader is likely to approach drawdown by:
+
+<ul>
+<li>adopting a sound research process and sizing small – before drawdown ever occurs</li>
+<li>chilling out and letting the strategy go to work, even during said drawdown</li>
+<li>always looking for other opportunities to trade</li>
+</ul>
+
+Find yourself faced with a strategy that’s a bit underwater? Does it fly in the face of your backtest? Are you frustrated?
+
+<img alt="" class="aligncenter size-full wp-image-10405 perfmatters-lazy" data-sizes="(max-width: 417px) 100vw, 417px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/08/21165007/Screenshot-2019-08-28-at-23.20.00.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/08/21165007/Screenshot-2019-08-28-at-23.20.00.png 417w, https://media.robotwealth.com/wp-content/uploads/2019/08/21165007/Screenshot-2019-08-28-at-23.20.00-100x100.png 100w, https://media.robotwealth.com/wp-content/uploads/2019/08/21165007/Screenshot-2019-08-28-at-23.20.00-300x296.png 300w" decoding="async" height="412" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='417'%20height='412'%20viewBox='0%200%20417%20412'%3E%3C/svg%3E" width="417"/>
+<strong>It’s all part of the journey.</strong>
+<em>But all that said, maybe there IS some small utility in quantifying this approach </em>— we’ll investigate this in <strong>part 2</strong> of this series.
+
+While we’re putting that together you can learn more about where exactly algo trading CAN help you trade more profitably by downloading the free PDF below….
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>drawdown</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">1 thought on “A Quant’s Approach to Drawdown: Part 1”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-13703">
+<div class="comment-body">
+				Pingback: A Quant's Approach to Drawdown: The Cold Blood Index - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/a-quants-approach-to-drawdown/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

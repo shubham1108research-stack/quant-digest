@@ -1,0 +1,396 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Financial Data Manipulation in dplyr for Quant Traders</title>
+<!-- source: https://robotwealth.com/financial-data-manipulation-in-dplyr-for-quant-traders/ -->
+<h1>Financial Data Manipulation in dplyr for Quant Traders</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-22770 post type-post status-publish format-standard hentry category-r tag-data-manipulation tag-dplyr tag-tidyverse pmpro-has-access" id="post-22770">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/jameshodges/">Robot James</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 14, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Financial Data Manipulation in dplyr for Quant Traders</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Financial Data Manipulation in dplyr for Quant Traders" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In this post, we’re going to show how a quant trader can manipulate stock price data using the <code>dplyr</code> R package.
+
+<img alt="" class="aligncenter wp-image-22755 perfmatters-lazy" data-sizes="(max-width: 155px) 100vw, 155px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-259x300.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-259x300.png 259w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-600x695.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-883x1024.png 883w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-768x890.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-1325x1536.png 1325w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-1767x2048.png 1767w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-518x600.png 518w" decoding="async" height="180" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='155'%20height='180'%20viewBox='0%200%20155%20180'%3E%3C/svg%3E" width="155"/>
+<div style="position: relative; padding-bottom: 56.25%; height: 0;"></div>
+<h2>Getting set up and loading data</h2>
+
+Load the <code>dplyr</code> package via the <code>tidyverse</code> package.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">if (!require('tidyverse')) install.packages('tidyverse')
+library(tidyverse)</pre>
+
+First, load some price data.
+
+<code>energystockprices.RDS</code> contains a data frame of daily price observations for 3 energy stocks.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices &lt;- readRDS('energystockprices.RDS')
+prices</pre>
+<img alt="" class="aligncenter size-full wp-image-22731 perfmatters-lazy" data-sizes="(max-width: 1286px) 100vw, 1286px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162118/dplyr-for-traders-1.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162118/dplyr-for-traders-1.png 1286w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162118/dplyr-for-traders-1-600x156.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162118/dplyr-for-traders-1-300x78.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162118/dplyr-for-traders-1-1024x267.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162118/dplyr-for-traders-1-768x200.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162118/dplyr-for-traders-1-1000x260.png 1000w" decoding="async" height="335" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1286'%20height='335'%20viewBox='0%200%201286%20335'%3E%3C/svg%3E" width="1286"/>
+
+We’ve organised our data so that
+
+<ul>
+<li>Every column is variable.</li>
+<li>Every row is an observation.</li>
+</ul>
+
+In this data set:
+
+<ul>
+<li>We have 13,314 rows in our data frame.</li>
+<li>Each row represents a daily price <em>observation</em> for a given stock.</li>
+<li>For each observation measure the open, high, low and close prices, and the volume traded.</li>
+</ul>
+
+This is a very helpful way to structure your price data. We’ll see how we can use the <code>dplyr</code> package to manipulate price data for quant analysis.
+
+<h2>The main dplyr verbs</h2>
+
+There are 6 main functions to master in dplyr.
+
+<code>filter()</code> picks outs observations (rows) by some filter criteria
+<code>arrange()</code> reorders the observations (rows)
+<code>select()</code> picks out the variables (columns)
+<code>mutate()</code> creates new variables (columns) by applying transformations to existing variables
+<code>summarise()</code> allows you to group and summarise data – reducing the data into a grouped summary with fewer rows.
+
+Finally, the <code>group_by()</code> causes the verbs above to act on a group at a time, rather than the whole dataset.
+
+We’ll go through them one by one.
+
+<h3>The <code>filter()</code> dplyr verb</h3>
+<img alt="" class="aligncenter size-full wp-image-22757 perfmatters-lazy" data-sizes="(max-width: 432px) 100vw, 432px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-filter.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-filter.png 432w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162058/dplyr-filter-300x57.png 300w" decoding="async" height="82" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='432'%20height='82'%20viewBox='0%200%20432%2082'%3E%3C/svg%3E" width="432"/>
+
+Filter returns only those observations (rows) which satisfy certain criteria.
+
+<h4>Filtering rows for a single stock with <code>filter()</code> and <code>==</code></h4>
+
+Here we use <code>filter</code> to just pull out prices for XOM.
+
+A common mistake is to use <code>=</code> instead of <code>==</code>
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;%
+  filter(ticker == 'XOM')</pre>
+<img alt="" class="aligncenter size-full wp-image-22732 perfmatters-lazy" data-sizes="(max-width: 1290px) 100vw, 1290px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162116/dplyr-for-traders-2.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162116/dplyr-for-traders-2.png 1290w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162116/dplyr-for-traders-2-600x153.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162116/dplyr-for-traders-2-300x77.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162116/dplyr-for-traders-2-1024x262.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162116/dplyr-for-traders-2-768x196.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162116/dplyr-for-traders-2-1000x256.png 1000w" decoding="async" height="330" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1290'%20height='330'%20viewBox='0%200%201290%20330'%3E%3C/svg%3E" width="1290"/>
+<h4>Filtering rows for multiple stocks with <code>filter()</code> and <code>%in%</code></h4>
+
+Here we use %in% to match to multiple criteria. We pick out records for XOM and CVX.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;%
+  filter(ticker %in% c('XOM','CVX'))</pre>
+<img alt="" class="aligncenter size-full wp-image-22733 perfmatters-lazy" data-sizes="(max-width: 1276px) 100vw, 1276px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162115/dplyr-for-traders-3.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162115/dplyr-for-traders-3.png 1276w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162115/dplyr-for-traders-3-600x158.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162115/dplyr-for-traders-3-300x79.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162115/dplyr-for-traders-3-1024x270.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162115/dplyr-for-traders-3-768x203.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162115/dplyr-for-traders-3-1000x264.png 1000w" decoding="async" height="337" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1276'%20height='337'%20viewBox='0%200%201276%20337'%3E%3C/svg%3E" width="1276"/>
+<h3>The <code>arrange()</code> dplyr verb</h3>
+<img alt="" class="aligncenter size-full wp-image-22758 perfmatters-lazy" data-sizes="(max-width: 430px) 100vw, 430px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162057/dplyr-arrange.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162057/dplyr-arrange.png 430w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162057/dplyr-arrange-300x90.png 300w" decoding="async" height="129" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='430'%20height='129'%20viewBox='0%200%20430%20129'%3E%3C/svg%3E" width="430"/>Arrange reorders the rows in your data by one or more criteria.
+
+<h4>Reordering rows in order of volume traded ascending with <code>arrange()</code></h4>
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;%
+  arrange(desc(volume))</pre>
+<img alt="" class="aligncenter size-full wp-image-22734 perfmatters-lazy" data-sizes="(max-width: 1283px) 100vw, 1283px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162113/dplyr-for-traders-4.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162113/dplyr-for-traders-4.png 1283w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162113/dplyr-for-traders-4-600x157.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162113/dplyr-for-traders-4-300x78.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162113/dplyr-for-traders-4-1024x267.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162113/dplyr-for-traders-4-768x201.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162113/dplyr-for-traders-4-1000x261.png 1000w" decoding="async" height="335" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1283'%20height='335'%20viewBox='0%200%201283%20335'%3E%3C/svg%3E" width="1283"/>
+<h4>Reordering rows in order of date descending, then volume ascending with <code>arrange()</code></h4>
+
+We can sort by multiple variables using <code>arrange()</code>. Here we sort by date descending then volume ascending.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;%
+  arrange(desc(date), volume)</pre>
+<img alt="" class="aligncenter size-full wp-image-22735 perfmatters-lazy" data-sizes="(max-width: 1277px) 100vw, 1277px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162112/dplyr-for-traders-5.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162112/dplyr-for-traders-5.png 1277w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162112/dplyr-for-traders-5-600x155.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162112/dplyr-for-traders-5-300x77.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162112/dplyr-for-traders-5-1024x264.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162112/dplyr-for-traders-5-768x198.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162112/dplyr-for-traders-5-1000x258.png 1000w" decoding="async" height="329" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1277'%20height='329'%20viewBox='0%200%201277%20329'%3E%3C/svg%3E" width="1277"/>
+<h3>The <code>select()</code> dplyr verb</h3>
+<img alt="" class="aligncenter size-full wp-image-22759 perfmatters-lazy" data-sizes="(max-width: 419px) 100vw, 419px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162057/dplyr-select.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162057/dplyr-select.png 419w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162057/dplyr-select-300x52.png 300w" decoding="async" height="73" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='419'%20height='73'%20viewBox='0%200%20419%2073'%3E%3C/svg%3E" width="419"/>
+<code>select()</code> is used to pull out certain columns from your data.
+
+<h4>Selecting columns with <code>select()</code></h4>
+
+Here we use <code>select()</code>to pull out the <code>ticker</code>, <code>date</code> and <code>close</code> columns.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;%
+  select(ticker, date, close)</pre>
+<img alt="" class="aligncenter size-full wp-image-22746 perfmatters-lazy" data-sizes="(max-width: 850px) 100vw, 850px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162110/dplyr-for-traders-6.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162110/dplyr-for-traders-6.png 850w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162110/dplyr-for-traders-6-600x234.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162110/dplyr-for-traders-6-300x117.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162110/dplyr-for-traders-6-768x300.png 768w" decoding="async" height="332" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='850'%20height='332'%20viewBox='0%200%20850%20332'%3E%3C/svg%3E" width="850"/>
+<h4>Chaining Transformations Together: Filtering, selecting and arranging</h4>
+<img alt="" class="aligncenter size-full wp-image-22764 perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162054/dplyr-pipes.png" decoding="async" height="108" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='161'%20height='108'%20viewBox='0%200%20161%20108'%3E%3C/svg%3E" width="161"/>
+
+We can chain transformations together using the pipe operator %&gt;%.
+
+<blockquote><em>If you’re unsure how the pipe operator works, watch this…</em>
+<div style="position: relative; padding-bottom: 56.25%; height: 0;"></div></blockquote>
+
+We’re going to chain together a transformation which:
+
+<ul>
+<li>filters out a single stock</li>
+<li>selects the date and close price</li>
+<li>re-arranges by date descending.</li>
+</ul>
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;%
+  filter(ticker == 'XOM') %&gt;%
+  select(date, close) %&gt;%
+  arrange(desc(date))</pre>
+<img alt="" class="aligncenter size-full wp-image-22747 perfmatters-lazy" data-sizes="(max-width: 569px) 100vw, 569px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162109/dplyr-for-traders-7.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162109/dplyr-for-traders-7.png 569w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162109/dplyr-for-traders-7-300x173.png 300w" decoding="async" height="328" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='569'%20height='328'%20viewBox='0%200%20569%20328'%3E%3C/svg%3E" width="569"/>
+<blockquote><em>When debugging a dplyr pipeline, it can be helpful to select each transformation one by one, and press CTRL-Enter in Rstudio to just run the selected transformation.</em></blockquote>
+<h3>The <code>mutate()</code> dplyr verb</h3>
+<img alt="" class="aligncenter size-full wp-image-22760 perfmatters-lazy" data-sizes="(max-width: 342px) 100vw, 342px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162056/dplyr-mutate.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162056/dplyr-mutate.png 342w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162056/dplyr-mutate-300x57.png 300w" decoding="async" height="65" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='342'%20height='65'%20viewBox='0%200%20342%2065'%3E%3C/svg%3E" width="342"/>
+
+So far we’ve just filtered selected and re-arranged existing data. Now we’re going to look at creating new data.
+
+Mutate lets us add variables (columns) to our data. These are usually derived from existing columns.
+
+<h4>Add new variable (column) for log volume with <code>mutate()</code></h4>
+
+Here we use mutate to add a column called <code>logvolume</code> to our data. It is calculated as the log of the <code>volume</code> variable.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;%
+  mutate(logvolume = log(volume))</pre>
+<img alt="" class="aligncenter size-full wp-image-22748 perfmatters-lazy" data-sizes="(max-width: 1283px) 100vw, 1283px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162108/dplyr-for-traders-8.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162108/dplyr-for-traders-8.png 1283w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162108/dplyr-for-traders-8-600x160.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162108/dplyr-for-traders-8-300x80.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162108/dplyr-for-traders-8-1024x274.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162108/dplyr-for-traders-8-768x205.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162108/dplyr-for-traders-8-1000x267.png 1000w" decoding="async" height="343" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1283'%20height='343'%20viewBox='0%200%201283%20343'%3E%3C/svg%3E" width="1283"/>
+<h4>Add new variable (column) for intraday returns with <code>mutate()</code></h4>
+
+In this example, we add a column for the intraday (open to close) simple returns of the stock each day.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;%
+  mutate(intradayreturns = close / open - 1)</pre>
+<img alt="" class="aligncenter size-full wp-image-22750 perfmatters-lazy" data-sizes="(max-width: 1285px) 100vw, 1285px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162106/dplyr-for-traders-9.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162106/dplyr-for-traders-9.png 1285w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162106/dplyr-for-traders-9-600x160.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162106/dplyr-for-traders-9-300x80.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162106/dplyr-for-traders-9-1024x273.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162106/dplyr-for-traders-9-768x205.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162106/dplyr-for-traders-9-1000x267.png 1000w" decoding="async" height="343" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1285'%20height='343'%20viewBox='0%200%201285%20343'%3E%3C/svg%3E" width="1285"/>
+<h3>The <code>summarise()</code> dplyr verb</h3>
+<img alt="" class="aligncenter size-full wp-image-22761 perfmatters-lazy" data-sizes="(max-width: 409px) 100vw, 409px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162055/dplyr-summarise.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162055/dplyr-summarise.png 409w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162055/dplyr-summarise-300x51.png 300w" decoding="async" height="69" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='409'%20height='69'%20viewBox='0%200%20409%2069'%3E%3C/svg%3E" width="409"/>
+<code>Summarise()</code> summarises all our observations to a single row.
+
+<h4>Calculate the mean volume over all observations using <code>summarise()</code></h4>
+
+Here we use <code>summarise()</code> to calculate the mean volume traded over our complete data set. We also count the number of records using <code>n()</code>
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;%
+  summarise(meanvolume = mean(volume),
+            count = n())</pre>
+<img alt="" class="aligncenter size-full wp-image-22751 perfmatters-lazy" data-sizes="(max-width: 605px) 100vw, 605px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162105/dplyr-for-traders-10.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162105/dplyr-for-traders-10.png 605w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162105/dplyr-for-traders-10-600x130.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162105/dplyr-for-traders-10-300x65.png 300w" decoding="async" height="131" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='605'%20height='131'%20viewBox='0%200%20605%20131'%3E%3C/svg%3E" width="605"/>
+<h3>The <code>group_by()</code> dplyr verb</h3>
+<img alt="" class="aligncenter size-full wp-image-22762 perfmatters-lazy" data-sizes="(max-width: 433px) 100vw, 433px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162055/dplyr-groupby.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162055/dplyr-groupby.png 433w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162055/dplyr-groupby-300x120.png 300w" decoding="async" height="173" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='433'%20height='173'%20viewBox='0%200%20433%20173'%3E%3C/svg%3E" width="433"/>
+
+Summarising the entire data set isn’t always very useful.
+
+Usually, we want to group by a variable, and then summarise that grouped data.
+
+The <code>group_by()</code> function tells the <code>dplyr</code> verbs to operate on each group one at a time.
+
+<h4>Use <code>summarise()</code> with <code>group_by()</code> to calculate mean traded volume for each stock</h4>
+
+If we group by ticker, then call summarise, then <code>dplyr</code> will preform the summary calculations separately for each ticker. We will get a row for each ticker.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;% 
+  group_by(ticker) %&gt;%
+  summarise(meanvolume = mean(volume))</pre>
+<img alt="" class="aligncenter size-full wp-image-22752 perfmatters-lazy" data-sizes="(max-width: 541px) 100vw, 541px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162104/dplyr-for-traders-11.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162104/dplyr-for-traders-11.png 541w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162104/dplyr-for-traders-11-300x94.png 300w" decoding="async" height="170" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='541'%20height='170'%20viewBox='0%200%20541%20170'%3E%3C/svg%3E" width="541"/>
+<h4>Use <code>summarise()</code> with multiple <code>group_by</code> variables, to calculate the mean traded volume for each stock for each year</h4>
+
+In this example we:
+
+<ul>
+<li>calculate a new variable <code>year</code>using <code>mutate()</code></li>
+<li>group by ticker and year</li>
+<li>summarise.</li>
+</ul>
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(lubridate)
+prices %&gt;%
+  mutate(year = year(date)) %&gt;%
+  group_by(ticker, year) %&gt;%
+  summarise(meanvolume = mean(volume),
+            obscount = n())</pre>
+<img alt="" class="aligncenter size-full wp-image-22753 perfmatters-lazy" data-sizes="(max-width: 1280px) 100vw, 1280px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162103/dplyr-for-traders-12.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162103/dplyr-for-traders-12.png 1280w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162103/dplyr-for-traders-12-600x154.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162103/dplyr-for-traders-12-300x77.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162103/dplyr-for-traders-12-1024x262.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162103/dplyr-for-traders-12-768x197.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162103/dplyr-for-traders-12-1000x256.png 1000w" decoding="async" height="328" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1280'%20height='328'%20viewBox='0%200%201280%20328'%3E%3C/svg%3E" width="1280"/>
+<h3>Using <code>group_by()</code> with <code>mutate()</code> to do grouped row-level transformations</h3>
+
+We can also use <code>group_by</code> with <code>mutate()</code> to calculate new variables which are calculated separately for a given variable (or set of variables)
+
+You’ll use this nearly every time you do any quant analysis to calculate periodic returns.
+
+<h4>Using <code>group_by</code> with <code>mutate()</code> and <code>lag()</code> to calculate daily close-to-close returns</h4>
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">prices %&gt;%
+  group_by(ticker) %&gt;%
+  arrange(date) %&gt;%
+  mutate(c2creturns = close / lag(close) - 1)</pre>
+<img alt="" class="aligncenter size-full wp-image-22754 perfmatters-lazy" data-sizes="(max-width: 1283px) 100vw, 1283px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162101/dplyr-for-traders-13.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162101/dplyr-for-traders-13.png 1283w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162101/dplyr-for-traders-13-600x159.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162101/dplyr-for-traders-13-300x79.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162101/dplyr-for-traders-13-1024x271.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162101/dplyr-for-traders-13-768x203.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162101/dplyr-for-traders-13-1000x264.png 1000w" decoding="async" height="339" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1283'%20height='339'%20viewBox='0%200%201283%20339'%3E%3C/svg%3E" width="1283"/>
+<h2>Summary</h2>
+
+Arrange your data so:
+
+<ul>
+<li>Every column is variable</li>
+<li>Every row is an observation</li>
+</ul>
+
+You can then easily use <code>dplyr</code> to manipulate that data very efficiently.
+
+There are 6 main functions to master in <code>dplyr</code>.
+
+<ul>
+<li><code>filter()</code>picks outs observations (rows) by some filter criteria</li>
+<li><code>arrange()</code> reorders the observations (rows)</li>
+<li><code>select()</code> picks out the variables (columns)</li>
+<li><code>mutate()</code> creates new variables (columns) by applying transformations to existing variables</li>
+<li><code>summarise()</code> allows you to group and summarise data – reducing the data into a grouped summary with fewer rows.</li>
+</ul>
+
+The <code>group_by()</code> causes the verbs above to act on a group at a time, rather than the whole dataset.
+
+<h2>Want the Code?</h2>
+
+The code for this post is available in our <a href="https://github.com/Robot-Wealth/r-quant-recipes/blob/master/dplyr-for-traders.Rmd">github repository.</a>
+<div class="convertful-36233"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>data manipulation</span>, <span>dplyr</span>, <span>tidyverse</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-98042 post type-post status-publish format-standard hentry category-options category-quant-trading category-r category-think-like-a-trader tag-options tag-simulation pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-95276 post type-post status-publish format-standard has-post-thumbnail hentry category-data-analysis category-r tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/revisiting-overnight-vs-intraday-equity-returns/"><img alt="Revisiting Overnight vs Intraday Equity Returns" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="95278" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-92479 post type-post status-publish format-standard has-post-thumbnail hentry category-data category-r category-time-series-modelling tag-quantitative-analysis tag-r tag-tidyverse pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-simple-trick-for-dealing-with-overlapping-data/"><img alt="A Simple Trick for Dealing with Overlapping Data" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="92480" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-300x171.webp" data-srcset="https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-300x171.webp 300w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-1024x585.webp 1024w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-768x439.webp 768w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-1536x878.webp 1536w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">7 thoughts on “Financial Data Manipulation in dplyr for Quant Traders”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-14422">
+<div class="comment-body">
+				Pingback: How to Run Python from R Studio - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-14623">
+<div class="comment-body">
+				Pingback: Rolling and Expanding Windows For Dummies - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-14660">
+<div class="comment-body">
+				Pingback: How to Fill Gaps in Large Stock Data Universes Using tidyr and dplyr - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-14787">
+<div class="comment-body">
+				Pingback: Working with Tidy Financial Data in tidyr - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-15311">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 05/14/2020 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-48243">
+<div class="comment-body">
+				Pingback: Extend ETF Prices Using Mutual Funds 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-48326">
+<div class="comment-body">
+				Pingback: Handling Large Stock Data in R 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/financial-data-manipulation-in-dplyr-for-quant-traders/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

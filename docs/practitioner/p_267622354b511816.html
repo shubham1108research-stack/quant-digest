@@ -1,0 +1,247 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Brave New Backtest</title>
+<!-- source: https://robotwealth.com/brave-new-backtest/ -->
+<h1>Brave New Backtest</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-131547 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai pmpro-has-access" id="post-131547">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">March 29, 2026</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Brave New Backtest</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Brave New Backtest" class="ipa-media gb-media-81e19d89" data-media-id="131550" decoding="async" fetchpriority="high" height="1024" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst.jpeg" srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst.jpeg 1024w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-150x150.jpeg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-80x80.jpeg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-480x480.jpeg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-960x960.jpeg 960w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">My last two articles on AI and trading research got more engagement than almost anything I’ve written.</p>
+<p class="wp-block-paragraph">“<a href="https://robotwealth.com/more-of-the-disease-faster-what-happens-when-you-ask-an-llm-to-find-you-an-edge/">More of the Disease, Faster</a>” argued that LLMs can’t answer the critical question: <em>who pays you and why?</em></p>
+<p class="wp-block-paragraph">“<a href="https://robotwealth.com/ai-will-create-millions-of-quants">AI Will Create Millions of Quants</a>” went deeper on the why: AI makes beautiful backtests trivially easy to produce, which means more false discoveries, more overfitting dressed up as research, and more people confusing a good-looking equity curve with a real edge.</p>
+<p class="wp-block-paragraph">Both pieces argued from experience. I’ve been doing this long enough to know what works and what doesn’t, and I was pretty confident in the arguments. But the most telling thing about the comments wasn’t the disagreement. It was how many people clearly don’t understand that backtesting, statistics, and pattern matching aren’t research.</p>
+<p class="wp-block-paragraph">Their LLMs don’t understand this either. And you can’t outsource the thinking part of trading research to a machine that doesn’t understand what research <em>is</em>.</p>
+<p class="wp-block-paragraph">Two recent papers suggest this isn’t a temporary limitation that better models will fix. It’s structural.</p>
+<p class="wp-block-paragraph">A <em>feature</em> of the system, rather than a <em>bug</em>.</p>
+<p class="wp-block-paragraph">And they provide the scientific backing for what I’ve been saying.</p>
+<p class="wp-block-paragraph">My earlier articles argued that the training data is the problem. That’s true. But it’s only Problem 1. Here are Problems 2 and 3.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<h2 class="wp-block-heading"><strong>Problem 1: The Training Data (Quick Recap)</strong></h2>
+<p class="wp-block-paragraph">For anyone who missed the first two articles, the short version:</p>
+<p class="wp-block-paragraph">LLMs are trained on the internet. The internet’s trading content is overwhelmingly noise. “Don’t fight the trend.” “Use RSI for entries.” “Paper trade for six months.” “Validate with out of sample data.” “Cointegration matters for pairs trading”.</p>
+<p class="wp-block-paragraph">The dominant paradigm online is that backtesting and statistics IS research, that finding a pattern in historical data IS finding an edge.</p>
+<p class="wp-block-paragraph">The critical question, <em><strong>“who pays you and why?”</strong></em>, barely exists in the training data.</p>
+<p class="wp-block-paragraph">Mechanism-based thinking, structural edges, understanding participant constraints… this stuff lives in the tail of the distribution. The vast majority of trading content online is conventional wisdom dressed up as insight.</p>
+<p class="wp-block-paragraph">So the LLM doesn’t know that backtesting isn’t research because the internet doesn’t know it either. It reproduces the dominant paradigm with extraordinary confidence. Which is bad.</p>
+<p class="wp-block-paragraph">But some people reasonably argued: fix the training data, and you fix the problem. Train the model on better material. Use RAG. Curate your knowledge base.</p>
+<p class="wp-block-paragraph">Two recent papers suggest that’s only partly true. Even with perfect training data, two more problems remain. And these are architectural, meaning they’re baked into how these models work.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<h2 class="wp-block-heading"><strong>Problem 2: The Forgetful Machine</strong></h2>
+<p class="wp-block-paragraph">A paper called “<a href="https://arxiv.org/abs/2506.08184">Unable to Forget</a>” (Wang &amp; Sun, 2025) tested something deceptively simple: can LLMs track a value that changes over time?</p>
+<p class="wp-block-paragraph">Imagine a patient’s blood pressure being recorded throughout a hospital visit. BP at triage: 120. Ten minutes later: 128. At discharge: 125. Ask the model: <em>what’s the current blood pressure?</em></p>
+<p class="wp-block-paragraph">Simple, right? The answer is right there at the end of the context. The model was explicitly told to retrieve the most recent value.</p>
+<p class="wp-block-paragraph">Across <strong>35+ models</strong> (GPT, Claude, Llama, Gemini, DeepSeek, the lot), accuracy declined log-linearly toward zero as the number of prior updates increased. The more historical values the model had seen for the same variable, the worse it got at retrieving the current one.</p>
+<p class="wp-block-paragraph">And this wasn’t a gentle, noisy, or hard-to-discern decline. It was <em>consistent</em>, <em>relentless, and universal</em>.</p>
+<p class="wp-block-paragraph">The researchers call this “proactive interference,” borrowed from cognitive science. Earlier values compete with the current value in the model’s retrieval process. Old information interferes with new information. And the interference gets worse, continuously, as context accumulates.</p>
+<p class="wp-block-paragraph">Three things make this particularly frightening:</p>
+<p class="wp-block-paragraph"><strong>Prompt engineering doesn’t fix it.</strong> They tried telling the model to “forget” old values. They tried “focus on the most recent update.” They tried meta-prompts asking the model to self-assess what to prioritise. Marginal improvement at best. In some cases, the “forget” instruction actually made things worse, anchoring errors around the point where the instruction was inserted.</p>
+<p class="wp-block-paragraph"><strong>Bigger context windows don’t help.</strong> A bigger window just gives the model more room to accumulate more interference.</p>
+<p class="wp-block-paragraph"><strong>It’s universal.</strong> <em>Every</em> <em>model tested showed the same pattern</em>. From tiny open-source models to the biggest proprietary ones. The curve shape was the same. Bigger models declined more slowly, but they all declined.</p>
+<p class="wp-block-paragraph">Now think about what trading research requires.</p>
+<p class="wp-block-paragraph">Some trading concepts are evergreen: the theory of edge, the importance of mechanism, portfolio construction principles. An LLM can learn those from training data, and it does a reasonable job of reproducing them, when it isn’t drowning them in conventional wisdom, per Problem 1.</p>
+<p class="wp-block-paragraph">But even when explicitly told to use a specific database of curated material, it will still throw in the conventional wisdom with all the conviction in the world (more on this below).</p>
+<p class="wp-block-paragraph">But <em>applying</em> those concepts requires tracking an ever-changing environment. Market regimes shift. Carry changes direction. Volatility spikes and mean-reverts. Correlations break down. Borrow costs change. Liquidity dries up and returns. New players enter. Regulations get updated and replaced.</p>
+<p class="wp-block-paragraph">A model that can’t reliably track “the current value of blood pressure” in a simple key-value test certainly can’t track evolving states of things that affect markets.</p>
+<p class="wp-block-paragraph">Knowing the theory of edge is one thing. Applying it in a market that adapts and evolves is where the dynamic tracking matters. And the architecture fails at exactly that task.</p>
+<p class="wp-block-paragraph">Crucially, this isn’t a training data problem. You could train the model on perfect data and it would still fail at tracking sequential updates. The architecture can’t handle it.</p>
+<p class="wp-block-paragraph">I’ve long felt in my bones that the conviction with which LLMs speak about trading is truly misplaced. And now there’s some published research that says so too.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<h2 class="wp-block-heading"><strong>Problem 3: The Artificial Hivemind</strong></h2>
+<p class="wp-block-paragraph">A second paper, “<a href="https://arxiv.org/abs/2510.22954">Artificial Hivemind</a>” (Jiang et al., <a href="https://neurips.cc/virtual/2025/loc/san-diego/poster/121421">NeurIPS 2025</a>), measured something equally concerning: when you ask LLMs open-ended questions, how diverse are their answers?</p>
+<p class="wp-block-paragraph">They tested 25+ models across 100 open-ended queries, generating 50 responses per model per query. The results are <em><strong>shocking</strong></em>… but I’d wager they align with your recent experience of online content.</p>
+<p class="wp-block-paragraph"><strong>Intra-model repetition:</strong> A single model gives you the same answer over and over. In 79% of queries, the pairwise similarity between responses from the <em>same model</em> exceeded 0.8. <strong>Ask it the same question fifty times, you get essentially the same answer fifty times.</strong> Even with aggressive sampling parameters designed to maximise diversity.</p>
+<p class="wp-block-paragraph"><strong>Inter-model homogeneity:</strong> Different models, built by different organisations, with different architectures and different training data, produce strikingly similar outputs. Average pairwise similarity between responses from <em><strong>different</strong></em> models ranged from 71% to 82%. DeepSeek-V3 and GPT-4o hit 0.81 similarity. These are supposed to be independent systems.</p>
+<p class="wp-block-paragraph">The paper’s most vivid example asked 25 different models to “write a metaphor about time.” Fifty responses each. 1,250 total responses from independent systems. They cluster into just <em><strong>two metaphors</strong></em>: “time is a river” and “time is a weaver.” That’s it.</p>
+<p class="wp-block-paragraph"><em><strong>Twenty-five different models, all converging on the same two ideas.</strong></em></p>
+<p class="wp-block-paragraph">And if you’ve been feeling a growing disdain for all that similarly soulless LLM-generated content popping up in your feed, now you know the mechanism. What we consume is collapsing to the mode of anti-creativity.</p>
+<p class="wp-block-paragraph">“Time is a river” dominates because it’s the most common metaphor about time in the training data.</p>
+<p class="wp-block-paragraph">And that’s the mechanism that matters for trading.</p>
+<p class="wp-block-paragraph"><strong>Mode collapse means convergence toward the most represented patterns in the training data.</strong> For trading, the mode of internet content is conventional wisdom: “use a stop loss,” “paper trade first,” “backtest with moving averages,” “validate with out of sample data,” “cointegration matters for pairs trading”. All the usual bollocks.</p>
+<p class="wp-block-paragraph">The actually useful insights (mechanism-based thinking, structural edges, “who pays you and why?”) live in the tail of the distribution of online content.</p>
+<p class="wp-block-paragraph">Mode collapse systematically suppresses the tail and amplifies the centre. So it’s not just that the training data is bad (Problem 1). The architecture <em>preferentially surfaces the bad stuff</em> because that’s what convergence toward the mode means.</p>
+<p class="wp-block-paragraph">“Use a stop loss” is the “time is a river” of trading content. It’s the modal output. The rare, useful insights get pushed out by convergence.</p>
+<p class="wp-block-paragraph">I experienced this first-hand.</p>
+<p class="wp-block-paragraph">I built a RAG system on our <a href="https://robotwealth.com/trade-like-a-quant-bootcamp/">TLQ Bootcamp</a> material, which is high-quality, mechanism-first content. Explicitly told the LLM to <em>only</em> respond using data from the RAG database. It still mixed in conventional wisdom that was clearly not in the database: generic stop loss advice, paper trading suggestions. Both problems at once: couldn’t suppress prior training (proactive interference from Problem 2), and defaulted to the most common trading advice (mode collapse from Problem 3).</p>
+<h3 class="wp-block-heading"><strong>The Stepford Quants</strong></h3>
+<p class="wp-block-paragraph">Remember the backtest cycle of doom from <a href="https://robotwealth.com/ai-will-create-millions-of-quants">Article 2</a>? AI makes it trivially easy to produce beautiful backtests that prove nothing. The unsuspecting trader ends up with a complicated algorithm for fitting to past noise and learns nothing useful in the process.</p>
+<p class="wp-block-paragraph">Mode collapse implies an added layer of insidiousness: everyone using LLMs for trading research converges on roughly the same conventional-wisdom-flavoured strategies.</p>
+<p class="wp-block-paragraph">It’s the perfect tool to tell you what already fits into your preconceived frameworks.</p>
+<p class="wp-block-paragraph">The implication is that millions of AI quants aren’t just running the cycle of doom independently. They’re running the <em>same</em> doom cycle. And the “strategies” being discovered aren’t real edges in the first place. They’re the modal output of bad training data, amplified by architectural convergence.</p>
+<p class="wp-block-paragraph">The Stepford Quants: pleasant, productive, and identical.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<h2 class="wp-block-heading"><strong>LLMs Are Brilliant Coders but Terrible Traders</strong></h2>
+<p class="wp-block-paragraph">This is the part that makes the whole thing click.</p>
+<p class="wp-block-paragraph">I use AI for coding every day. It’s extraordinary. It writes boilerplate, handles data wrangling, produces charts, writes tests. I’ve said this in both previous articles, and I’ll keep saying it: AI is the best research <em>assistant</em> I’ve ever had.</p>
+<p class="wp-block-paragraph">Why does it work so well for code?</p>
+<p class="wp-block-paragraph">Because mode collapse in coding is convergence toward <em>best practices</em>.</p>
+<p class="wp-block-paragraph">The training data (Stack Overflow, GitHub, documentation) is self-correcting: bad code gets downvoted, good patterns get reinforced. Software engineering has well-established paradigms and right answers (or at least well-established good answers). When the model converges on “use a dictionary for O(1) lookups” or “handle this edge case with a try-except block,” that convergence is <em>helpful</em>.</p>
+<p class="wp-block-paragraph">Mode collapse in trading is convergence toward <em>conventional wisdom</em>, which is mostly wrong. The LLM surfaces “validate with out of sample data” and “use cointegration tests to find pairs trading opportunities” because that’s what most trading content says. The actually useful insights (mechanism-based thinking, structural edges) live in the tail and get suppressed by convergence.</p>
+<p class="wp-block-paragraph">It’s the same architectural property. But it’s beneficial in one domain, lethal in another.</p>
+<p class="wp-block-paragraph">Similarly, proactive interference doesn’t matter much in coding. You’re working on a specific, well-defined task. The context is relatively static: here’s the codebase, here’s what I want to change, here are the tests. But for tracking an evolving, complex state, where the whole point is that yesterday’s values are different from today’s and the model needs to know which is current, interference is devastating.</p>
+<p class="wp-block-paragraph">This explains exactly why the appropriate use of LLMs in trading is to <em>implement</em> a good idea (coding task, well-suited) rather than to <em>find</em> the idea in the first place (trading research, structurally ill-suited).</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<h2 class="wp-block-heading"><strong>The Bug Is Not a Bug</strong></h2>
+<p class="wp-block-paragraph">There are at least three layers of limitation, and only one is even theoretically fixable:</p>
+<ul class="wp-block-list">
+<li><strong>Problem 1 (training data):</strong> Fixable in principle. Better data, better RAG, curated knowledge bases. But fixing it doesn’t solve Problems 2 and 3.</li>
+<li><strong>Problem 2 (proactive interference):</strong> Architectural. Tested across 35+ models from every major organisation. Bigger models decline more slowly, but they all decline. Prompt engineering doesn’t fix it. Bigger context windows don’t fix it.</li>
+<li><strong>Problem 3 (mode collapse):</strong> Architectural. Tested across 70+ models. Different organisations, different architectures, different training data, same convergence. Model ensembles don’t help because different models produce the same outputs anyway.</li>
+</ul>
+<p class="wp-block-paragraph">The “just wait for GPT-6” argument fails because Problems 2 and 3 are universal across every model tested, spanning all architectures and all organisations. These aren’t bugs that get fixed with the next release. They’re properties of how these systems work.</p>
+<p class="wp-block-paragraph">And, look, I could be wrong. Maybe some architectural breakthrough changes this. But these papers tested the full spectrum of current models, and the patterns were universal. I wouldn’t bet on it, short of a completely new and different architectural paradigm.</p>
+<p class="wp-block-paragraph">This reinforces the Edge Alchemy framework. The human-driven theory of edge (“who pays you and why?”) is the step that LLMs cannot do, for multiple independent reasons. The training data doesn’t teach it (Problem 1). The architecture can’t track evolving state (Problem 2). And it converges on the most common answers, which are wrong (Problem 3).</p>
+<p class="wp-block-paragraph">Here’s a workflow that stands a chance of working: human generates insight (theory of edge), then AI implements it (coding, data wrangling), then human evaluates results.</p>
+<p class="wp-block-paragraph">AI for the implementation, humans for the thinking.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<h2 class="wp-block-heading"><strong>Go Easy on the Soma</strong></h2>
+<p class="wp-block-paragraph"><em>Brave New World</em> is my favourite novel. Huxley’s genius was showing that the most dangerous dystopia isn’t the one where people are oppressed. It’s the one where everyone’s perfectly content. Nobody questions anything because the system feels good from the inside.</p>
+<p class="wp-block-paragraph">That’s AI-assisted trading research right now.</p>
+<p class="wp-block-paragraph">It feels productive. You’re generating strategies, running backtests, getting clean code in <em>minutes</em>.</p>
+<p class="wp-block-paragraph">The dystopia is that you’re converging on conventional wisdom while feeling like you’re doing cutting-edge work. Work that moves your life forward. The machine tells you what you want to hear, confirms what you already believe, and does it with such confidence and speed that you never stop to ask whether any of it is real.</p>
+<p class="wp-block-paragraph">AI is the best research assistant ever built. I use it every day and it makes me faster at everything except the one thing that actually matters: understanding why an edge exists and whether it will persist.</p>
+<p class="wp-block-paragraph">That’s three independent reasons to keep doing the hard work of understanding <em>why</em> edges exist. You only learn this stuff by reading, talking to other people, and, primarily, by doing. There’s no shortcut, no matter how good the AI gets.</p>
+<p class="wp-block-paragraph">I didn’t need research papers to tell me this, but it’s nice to have the receipts.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph"><strong>References:</strong></p>
+<p class="wp-block-paragraph">Wang, C. &amp; Sun, J.V. (2025). “Unable to Forget: Proactive Interference Reveals Working Memory Limits in LLMs Beyond Context Length.” <em>arXiv:2506.08184v3</em>.</p>
+<p class="wp-block-paragraph">Jiang, L. et al. (2025). “Artificial Hivemind: The Open-Ended Homogeneity of Language Models (and Beyond).” <em>39th Conference on Neural Information Processing Systems (NeurIPS 2025)</em>.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>AI</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-133234 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai tag-data-mining tag-llms pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/for-the-love-of-the-game/"><img alt="For The Love of The Game" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="133235" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-80x69.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-480x413.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game.png 893w" decoding="async" height="660" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='660'%20viewBox='0%200%20768%20660'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-132449 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/to-trend-or-not-to-trend-wrong-question/"><img alt="To Trend or Not To Trend? (Wrong question)" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="132450" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-131545 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/ai-will-create-millions-of-quants/"><img alt="AI Will Create Millions of Quants" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="131546" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/19153217/ai-quants-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/19153217/ai-quants-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/19153217/ai-quants-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/19153217/ai-quants-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/19153217/ai-quants-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/19153217/ai-quants-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/19153217/ai-quants.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/brave-new-backtest/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

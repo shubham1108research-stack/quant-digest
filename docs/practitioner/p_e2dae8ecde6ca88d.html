@@ -1,0 +1,425 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Are Cheap Stocks Expensive? A Simple Equity Factor Analysis Walkthrough</title>
+<!-- source: https://robotwealth.com/are-cheap-stocks-expensive-a-factor-analysis-walkthrough/ -->
+<h1>Are Cheap Stocks Expensive? A Simple Equity Factor Analysis Walkthrough</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-32223 post type-post status-publish format-standard has-post-thumbnail hentry category-r category-trading-strategies tag-factors tag-low-beta-factor pmpro-has-access" id="post-32223">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/jameshodges/">Robot James</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">December 2, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Are Cheap Stocks Expensive? A Simple Equity Factor Analysis Walkthrough</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Are Cheap Stocks Expensive? A Simple Equity Factor Analysis Walkthrough" class="ipa-media gb-media-81e19d89" data-media-id="32426" decoding="async" fetchpriority="high" height="780" sizes="(max-width: 853px) 100vw, 853px" src="https://media.robotwealth.com/wp-content/uploads/2020/12/21160836/stocks.png" srcset="https://media.robotwealth.com/wp-content/uploads/2020/12/21160836/stocks.png 853w, https://media.robotwealth.com/wp-content/uploads/2020/12/21160836/stocks-600x549.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/12/21160836/stocks-300x274.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/12/21160836/stocks-768x702.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/12/21160836/stocks-656x600.png 656w" width="853"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">I have been sharing examples of simple real-time trading research on my <a href="https://twitter.com/therobotjames">Twitter account.</a>
+
+I do this kind of thing a lot in the training program of our <a href="https://robotwealth.com/bootcamp">trading group</a> – and I’m sharing in the hope that it might also help a wider audience.
+
+Here’s a piece of analysis I did recently on a really simple factor that appeared to be predictive of relative equity returns.
+
+<blockquote class="twitter-tweet">
+<p dir="ltr" lang="en">Shall we do some analysis on a *really dumb* factor which might predict relative returns in stocks?</p>
+“Are cheap stocks expensive?”
+
+A research thread 👇👇👇
+
+— Robot James (@therobotjames) <a href="https://twitter.com/therobotjames/status/1326755668368396289?ref_src=twsrc%5Etfw">November 12, 2020</a></blockquote>
+
+
+Options on stocks with a low share price tend to be overpriced.
+
+Equity options (at 100 shares a pop) are quite big for a small retail trader. So we might say there is excess retail demand for options on cheap stocks – which would result in them being overpriced.
+
+<h2>Are Low-Priced Stocks Actually Expensive?</h2>
+
+The AMZN share price is $3k+. There are Robinhooders who can’t afford a single stock.
+
+Do we see the same effect in Stocks as we do in the options?
+
+I’m going to analyze this in R – using datasets from the Robot Wealth <a href="https://robotwealth.com/bootcamp">research lab.</a>
+<h3>Data Cleaning and Preparation</h3>
+
+My raw price data looks like this:
+
+<p style="text-align: center;"><span class="entity-image"><a href="https://pbs.twimg.com/media/EmmMhK_U4AIMqX1.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmMhK_U4AIMqX1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span></p>
+
+I have daily OHLC for every stock that appeared in the Russell 1000 index over the last 20 years. (Whether it still exists or not)
+
+<ul>
+<li>The OHLC points are adjusted for splits and dividends.</li>
+<li>The unadjusted_close price is the price the stock actually closed on that day</li>
+<li>If the stock didn’t trade that day we still have a row. It has <code>volume = 0</code></li>
+<li>If the stock was not in the index that day then <code>is_universe = 0</code></li>
+</ul>
+
+I don’t need daily data. I’m trying to answer a pretty dumb question here. So let’s keep things simple.
+
+I’m going to just get snapshots of the prices on the last day of each calendar year.
+
+<p style="text-align: center;"><span class="entity-image"><a href="https://pbs.twimg.com/media/EmmNZ9EU4AEL6rW.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmNZ9EU4AEL6rW.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span></p>
+<blockquote><em>Always keep stuff simple for yourself. At the start of a piece of analysis, you’re just trying to quickly disprove an idea. Most ideas are bad and the market is super-efficient. So make life easy, move fast, and disprove fast.</em></blockquote>
+
+Borrowing the language of machine learning for my trivial analysis (because it’s precise) I now need to prepare:
+
+<ul>
+<li>the target (the thing I am trying to predict)</li>
+<li>the feature (the thing I hope is predictive)</li>
+</ul>
+
+My (raw) target is going to be the log returns of the stock over a year
+
+My (raw) feature is going to be the unadjusted close price of the stock at the end of the previous year.
+
+Here I calculate the feature and target and align them in a single data set:
+
+<span class="entity-image"><a href="https://pbs.twimg.com/media/EmmPukAVkAElqqA.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded aligncenter perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmPukAVkAElqqA.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span>
+
+I’ve calculated those for all the stocks, including on days when those stocks weren’t in the Russell 1000 index.
+
+So now I filter out the days when the stock wasn’t in the index and days when a given stock didn’t trade (due to a trading halt or similar)
+
+<p style="text-align: center;"><span class="entity-image"><a href="https://pbs.twimg.com/media/EmmQGSuUYAIB9Zd.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmQGSuUYAIB9Zd.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span></p>
+
+Always assume you’ve screwed it up. Check. Here I spot check on TSLA.
+
+<p style="text-align: center;"><span class="entity-image"><a href="https://pbs.twimg.com/media/EmmQNdZUYAA9MNO.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmQNdZUYAA9MNO.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span></p>
+
+Looks good.
+
+<ul>
+<li>The feature is just the unadjusted close at the end of the year.</li>
+<li>The target is the log returns over the next year.</li>
+</ul>
+<h3>Scaling and Sorting</h3>
+
+Now we’re ready to do some scaling and sorting.
+
+We don’t want to work with the raw feature. We’re looking to answer a very broad question here, and large numbers are our friends.
+
+So we want to sort and group our data so we can aggregate it effectively.
+
+We’ll scale our feature by sorting each stock into one of 10 buckets each year
+
+<ul>
+<li>Bucket 1 will contain the stocks in the index with the lowest (unadjusted) share price that year</li>
+<li>Bucket 10 will contain the stocks in the index with the highest (unadjusted) share price that year</li>
+</ul>
+
+We call these deciles if we are fancy. I usually call them buckets.
+
+<p style="text-align: center;"><span class="entity-image"><a href="https://pbs.twimg.com/media/EmmRJt_VMAASqso.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmRJt_VMAASqso.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span></p>
+
+To understand what that has done we plot a histogram of all our feature observations and colour it by the bucket it ended up in..
+
+<img alt="Image" class="aligncenter perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmRqt7VMAAvhTA?format=png&amp;name=small" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/>
+
+Now we’ve reduced our raw feature to 10 buckets. That will be helpful.
+
+Our next task is to think about scaling the target.
+
+We’re really more interested in <em><strong>relative</strong></em> (rather than absolute) returns:  <em>“Did the cheap stuff perform better than the expensive stuff this year?”</em>
+
+So we “de-mean” the target by subtracting the mean returns of all stocks that year from the yearly returns for each stock in our universe.
+
+The data now look like this. I’ve highlighted the scaled feature (<code>bucket</code>) and target (<code>demeaned_target</code>.)
+
+<span class="entity-image"><a href="https://pbs.twimg.com/media/EmmSQ9OVcAARaaR.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded aligncenter perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmSQ9OVcAARaaR.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span>
+
+Now we want to see if the really low priced stuff that ended up in bucket 1 had lower returns than the really high priced stuff that ended up in bucket 10.
+
+So we take our observations, group by bucket and plot the mean of next years (de-meaned) returns for each bucket.
+
+<p style="text-align: center;"><span class="entity-image"><a href="https://pbs.twimg.com/media/EmmTg7eUcAICqNF.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmTg7eUcAICqNF.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span></p>
+<h2>Results? Kinda</h2>
+
+Interestingly… we do appear to see – at least over the whole sample – the annual return of the cheap stocks is significantly (6-7%) lower than the returns of the more expensive stocks.
+
+<em>I haven’t lost interest yet…</em>
+
+So let’s create one of those plots for each of the 22 years in the sample.
+
+We want to get a feel for whether we see this pattern consistently.
+
+<p style="text-align: center;"><span class="entity-image"><a href="https://pbs.twimg.com/media/EmmT6Z0VcAAr6Q2.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmT6Z0VcAAr6Q2.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span></p>
+
+Looks quite consistent… The relative shapes of 2000/2001 and 2007/2008 are interesting and point to this effect likely having some explanatory variable we already know about such as a beta / size / reversion effect…
+
+Let’s not worry about that yet… move fast and loop back.
+
+To make this thing more readable i’m going to group into groups of about 3 years and plot them.
+
+<p style="text-align: center;"><span class="entity-image"><a href="https://pbs.twimg.com/media/EmmUOVXVkAA7jMZ.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmUOVXVkAA7jMZ.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span></p>
+
+Woah there 2017-2019… makes me wonder whether I’ve introduced some bias <em>(or my unadjusted close is correct)</em>. Something to look at.
+
+To complete our superficial analysis, let’s plot a cumulative return time series of a strategy that goes long the 10% with the highest share price and the 0% with the lowest share price.
+
+<p style="text-align: center;"><span class="entity-image"><a href="https://pbs.twimg.com/media/EmmUkvIVkAECILy.png" rel="noopener noreferrer" target="_blank"><img alt="" class="b-loaded perfmatters-lazy" data-src="https://pbs.twimg.com/media/EmmUkvIVkAECILy.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a></span></p>
+
+Long bucket 10, short bucket 1
+
+Very interesting… I’m quite surprised at the results of this… I thought I would find nothing. Or at, least, an incredibly noisy effect.
+
+Two main things to do now
+
+<ol>
+<li>Get more acquainted with unadjusted close data to ensure it’s correct and I’m not introducing helpful bias
+2 Try to isolate this from any other casual factors we already know about (size, reversion from big moves, beta effect)</li>
+</ol>
+
+There is a <em><strong>suggestion</strong></em> that cheaper stocks are expensive.
+
+<h2>But is this an interesting or unique finding?</h2>
+<blockquote class="twitter-tweet">
+<p dir="ltr" lang="en">You think you’ve identified a new, useful predictive factor for trading…</p>
+But is it really new? Or just another way of looking at something you already know about?
+
+How might you tell? Here are some simple ways…
+
+A research thread 👇👇👇 <a href="https://t.co/q9ga3S6zbd">https://t.co/q9ga3S6zbd</a>
+
+— Robot James (@therobotjames) <a href="https://twitter.com/therobotjames/status/1332131740580683776?ref_src=twsrc%5Etfw">November 27, 2020</a></blockquote>
+
+
+We know that a low stock price doesn’t actually <em><strong>cause </strong></em>future returns to be lower. That would be silly.
+
+But we thought that stocks with very low share prices may be attractive to a low capitalized seeker of stock returns – whose marginal demand may bid up these stocks.
+
+This is <em>plausible</em>. And we <em>would like </em>it to be true (cos then we’ve found a new effect we might harness.) But we can’t always get what we want.
+
+So we must ask: <em><strong>“Is this something we already know about?”</strong></em>
+
+Economic intuition comes before statistics.
+
+<em>What do we already know about that might be causing this?</em>
+
+Well, it is well known that high volatility assets tend to have very poor long-run returns.You can read about this in Antti Ilmanen’s Expected Returns here…
+
+<img alt="" class="aligncenter size-full wp-image-32425 perfmatters-lazy" data-sizes="(max-width: 680px) 100vw, 680px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/12/21160837/antti.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/12/21160837/antti.jpg 680w, https://media.robotwealth.com/wp-content/uploads/2020/12/21160837/antti-600x450.jpg 600w, https://media.robotwealth.com/wp-content/uploads/2020/12/21160837/antti-300x225.jpg 300w" decoding="async" height="510" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='680'%20height='510'%20viewBox='0%200%20680%20510'%3E%3C/svg%3E" width="680"/>
+
+We suspect high vol assets are attractive to those who like lotterylike “YOLO” payoffs or who dislike leverage or can’t access it easily. This creates excess demand for highly volatile stocks, which makes them more expensive, which makes their future expected returns lower.
+
+So do stocks with lower share prices tend to underperform simply because they tend to be more volatile stocks? Or is there something else going on? Let’s look…
+
+First, we calculate a volatility factor – which will just be the annualised volatility of the stock over the last 252 trading days (1 year).
+
+I’m using the same dataset as in the linked thread at the top…
+
+<img alt="Image" class="aligncenter perfmatters-lazy" data-src="https://pbs.twimg.com/media/EnyoPT7UcAAZ8V7?format=png&amp;name=medium" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/>
+
+Now we want to answer the question:
+
+<blockquote><em>Do stocks with low share price also tend to be high volatility stocks (and vice versa)?</em></blockquote>
+
+A scatterplot is a useful tool for this. For each yearly stock observation plot its past volatility on the y-axis and the log share price on the x-axis.
+
+<img alt="Image" class="aligncenter perfmatters-lazy" data-src="https://pbs.twimg.com/media/EnypCwSVgAAvGSG?format=png&amp;name=900x900" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/>
+
+It’s quite clear that stocks with low share prices tend to be higher volatility stocks. This suggests what we are seeing could well be a high-volatility effect.
+
+<img alt="Image" class="aligncenter perfmatters-lazy" data-src="https://pbs.twimg.com/media/EnypduXVcAQxEHG?format=png&amp;name=small" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/>
+
+Now we want to see if our share price effect goes away if we control for the high volatility effect.
+
+First, let’s look at the volatility effect itself. We sort all our annual stock observations into deciles by rising volatility and plot the mean of their log returns the following year. It’s pretty clear the high vol stuff tends to have crappy returns.
+
+<img alt="Image" class="aligncenter perfmatters-lazy" data-src="https://pbs.twimg.com/media/EnyqGgKVcAAG0UD?format=png&amp;name=900x900" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/>
+
+What if we filter out the highly volatile stuff from our analysis?
+
+If we only look at the stuff that appears in volatility deciles 1-8, do we still see any “signal” in our share price factor? Do lower volatility stocks with low share prices still have worse returns?
+
+<img alt="Image" class="aligncenter perfmatters-lazy" data-src="https://pbs.twimg.com/media/Enyr-MLUYAAV7eC?format=png&amp;name=small" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/>
+
+So we:
+
+<ul>
+<li>filter out all the high vol stocks (vol_bucket &lt;= 8)</li>
+<li>plot the mean log return for each share price bucket for the remaining low and moderate volatility stocks.</li>
+</ul>
+<img alt="Image" class="aligncenter perfmatters-lazy" data-src="https://pbs.twimg.com/media/EnysS3ZUUAAZMCa?format=png&amp;name=900x900" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/>
+<strong>And it no longer looks interesting!</strong>
+
+Once we’ve controlled for the high volatility effect, the share price doesn’t seem to have anything interesting to add.
+
+As often happens in the markets, it’s unlikely we’re going to get what we want here. <strong>It’s likely we just found another proxy for volatility.</strong>
+
+Now, let’s try isolating the high vol stuff. Does the share price allow us to discriminate between high vol stuff with better (less bad?) returns?
+
+<img alt="Image" class="aligncenter perfmatters-lazy" data-src="https://pbs.twimg.com/media/Enys7DBVEAADBIM?format=png&amp;name=900x900" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/>
+
+Nope. Doesn’t seem to be anything there either!
+
+At this point, I think we can say that it’s very likely the share price effect we saw isn’t that interesting by itself – it’s really just a proxy for the volatility / “betting-against-beta” effect we already knew about.
+
+Such is the way it goes! 🙂
+
+The good news is we understand the effect better now. The less good news is it’s likely just another crude way of looking at something we already knew about.
+
+Here’s a simple recipe of sorts for doing this kind of thing:
+
+<ol>
+<li>Use economic intuition to identify what else might explain the effect</li>
+<li>Proxy that other thing as a factor</li>
+<li>Look at the relationship between the two factors (scatterplot is good)</li>
+<li>Control for one effect (as best you can) and see if the other factor still explains returns</li>
+</ol>
+
+Economic intuition and simple exploratory data analysis should always be your first port of call.
+
+Don’t rush into running regressions or the like without asking some good simple questions of the data first. You’ll get much more insight this way.
+
+
+<h2>Summary</h2>
+
+Stocks with low share prices tend to underperform those with higher share prices.
+
+Unfortunately, this doesn’t look to be a unique factor. It appears to be almost entirely explained by the fact that stocks with low share prices tend to be higher volatility stocks (a known “betting-against-beta” factor.)
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>factors</span>, <span>low-beta factor</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130666 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/"><img alt="The Winter of our Pairs Trading Discontent: Problems, limitations, frustrations" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130667" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130276 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/moneyball-finding-undervalued-pairs-using-unconventional-metrics/"><img alt="Moneyball: Finding Undervalued Pairs Using Unconventional Metrics" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130277" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-1280x964.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-80x60.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-480x361.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-960x723.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features.webp 1456w" decoding="async" height="578" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='578'%20viewBox='0%200%20768%20578'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130275 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-tale-of-two-prices/"><img alt="A Tale of Two Prices" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="120744" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-1024x538.jpg 1024w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-768x403.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04.jpg 1200w" decoding="async" height="158" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='158'%20viewBox='0%200%20300%20158'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">3 thoughts on “Are Cheap Stocks Expensive? A Simple Equity Factor Analysis Walkthrough”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1" id="comment-19856">
+<article class="comment-body" id="div-comment-19856" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I found this article fascinating.  Is there anyway that I could obtain the R code to conduct this analysis?<br/>
+thanks</p>
+<span class="reply"><a aria-label="Reply to ROBERT A MORITZ" class="comment-reply-link" data-belowelement="div-comment-19856" data-commentid="19856" data-postid="32223" data-replyto="Reply to ROBERT A MORITZ" data-respondelement="respond" href="#comment-19856" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/are-cheap-stocks-expensive-a-factor-analysis-walkthrough/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

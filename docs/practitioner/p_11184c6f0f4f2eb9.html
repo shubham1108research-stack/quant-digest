@@ -1,0 +1,521 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Trading FX using Autoregressive Models</title>
+<!-- source: https://robotwealth.com/trading-fx-using-autoregressive-models/ -->
+<h1>Trading FX using Autoregressive Models</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-32069 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-fx category-r category-time-series-modelling category-trading-strategies category-zorro tag-acr tag-arima tag-autoregressive-model tag-fx tag-mean-reversion tag-pacf tag-time-series pmpro-has-access" id="post-32069">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">November 24, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Trading FX using Autoregressive Models</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Trading FX using Autoregressive Models" class="ipa-media gb-media-81e19d89" data-media-id="32151" decoding="async" fetchpriority="high" height="536" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-1024x536.png" srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-1024x536.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-600x314.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-300x157.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-768x402.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-1000x523.png 1000w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models.png 1200w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">I’m a big fan of Ernie Chan’s quant trading books: <em>Quantitative Trading</em>, <em>Algorithmic Trading,</em> and <em>Machine Trading</em>. There are some great insights in there, but the thing I like most is the simple but thorough treatment of various edges and the quant tools you might use to research and trade them. Ernie explicitly states that the examples in the books won’t be tradable, but they’ve certainly provided fertile ground for ideas.
+
+In <em>Machine Trading</em>, there is an FX strategy based on an autoregressive model of intraday price data. It has a remarkably attractive pre-cost equity curve, and since I am attracted to shiny objects, I thought I’d take a closer look.
+
+<h2>Autoregressive Models 101</h2>
+
+An autoregressive (AR) model is a time-series multiple regression where:
+
+<ul>
+<li>the predictors are past values of the time series</li>
+<li>the target is the next realisation of the time series</li>
+</ul>
+
+If we used a single prior value as the only predictor, the AR model would be called an \(AR(1)\) and it would look like:
+
+\( y_t = \beta_0 + \beta_1 y_{t-1} + \epsilon_t \) (the \(\beta\)‘s are the regression coefficients)
+
+If we used two prior values, it would be called an \(AR(2)\) model and would look like:
+
+\(y_t = \beta_0 + \beta_1 y_{t-1} + \beta_2 y_{t-2} + \epsilon_t \)  <span style="color: #ffffff;">`</span>
+
+You get the picture.
+
+<div class="cof-form-row type_alert style_shortcode" data-id="cof78_place_shortcode" data-name="place_shortcode">
+<div class="cof-form-row-field">
+<div class="cof-form-row-control">
+<div class="g-alert style_shortcode">
+<div class="g-alert-body"></div>
+</div>
+</div>
+</div>
+</div>
+<h2>Ernie’s AR Model</h2>
+
+Ernie says that
+
+<blockquote><em>“Time-series techniques are most useful in markets where fundamental information and intuition are either lacking or not particularly useful for short-term predictions. Currencies … fit this bill.”</em></blockquote>
+
+He built an \(AR(p)\) model for AUD/USD minutely prices (spot, I assume), using <a href="https://en.wikipedia.org/wiki/Bayesian_information_criterion" rel="noopener noreferrer" target="_blank">Bayesian Information Criterion</a> to find the optimal \(p\). He used data from July 24 2007 to August 12 2014 to find \(p\) and the model coefficients:
+
+<img alt="" class="size-full wp-image-32073 aligncenter perfmatters-lazy" data-sizes="(max-width: 600px) 100vw, 600px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160852/model-ceoffs.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160852/model-ceoffs.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160852/model-ceoffs-300x175.png 300w" decoding="async" height="350" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='350'%20viewBox='0%200%20600%20350'%3E%3C/svg%3E" width="600"/>
+
+He used an out-of-sample data set from August 12 2014 to August 3 2015 to generate the following (pre-cost) backtest:
+
+<img alt="" class="size-full wp-image-32074 aligncenter perfmatters-lazy" data-sizes="(max-width: 570px) 100vw, 570px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160851/model-backtest.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160851/model-backtest.png 570w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160851/model-backtest-300x195.png 300w" decoding="async" height="371" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='570'%20height='371'%20viewBox='0%200%20570%20371'%3E%3C/svg%3E" width="570"/>
+<h2>Thinking deeper about the model</h2>
+
+If we were to use an \(AR(p)\) model of prices to predict future prices, what are we assuming?
+
+Essentially, that past prices are correlated with future prices, to the extent that they contain tradable information.
+
+The first part of that seems perfectly reasonable. After all, a very good place to start predicting tomorrow’s price would be today’s price. The latter part of that however is fairly heroic. Such a naive forecast is obviously not going to help much when it comes to making profitable trades. If we could forecast returns on the other hand…now that would be a useful thing!
+
+Most quants will tell you that price levels can’t contain information that is predictive in a useful way, and that instead, you need to focus on the process that manifests those prices – namely, returns. <em><strong>Building a time series model on prices feels a bit like doing technical analysis… albeit with a more interesting tool than a trend line.</strong></em>
+
+Anyway, let’s put that aside for now and dig in.
+
+If we’re going to use an AR model, then a reasonable place to start would be figuring out if we have an AR process. For that, we can use the <code>acf</code>function in R:
+
+<img alt="" class="size-full wp-image-32075 aligncenter perfmatters-lazy" data-sizes="(max-width: 594px) 100vw, 594px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160850/acf.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160850/acf.png 594w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160850/acf-300x209.png 300w" decoding="async" height="414" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='594'%20height='414'%20viewBox='0%200%20594%20414'%3E%3C/svg%3E" width="594"/>
+
+Our minutely price series is indeed very strongly autocorrelated, as we’d expect. We have a lot of data (I used minutely data from 2009 – 2020), and of course, the price from one minute ago looks a lot like the price right now.
+
+We can use the partial autocorrelation function (<code>pacf</code>) to get a handle on how many lags we might need to build an AR model.
+
+A partial autocorrelation is the correlation of a variable and a lagged version of itself <em>that isn’t explained by correlations of previous lags.</em> Essentially, it prevents information explained by prior lags from leaking into subsequent lags.
+
+That makes it a useful way to identify the number of lags to use in your AR model – if there is a significant partial correlation at a lag, then that lag has some explanatory power over your variable and should be included. Indeed, you find that the partial correlation values correspond to the coefficients of the AR model.
+
+Here are the partial autocorrelations with the lag-0 correlation removed:
+
+<img alt="" class="size-full wp-image-32076 aligncenter perfmatters-lazy" data-sizes="(max-width: 550px) 100vw, 550px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160850/pacf.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160850/pacf.png 550w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160850/pacf-300x218.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='550'%20height='400'%20viewBox='0%200%20550%20400'%3E%3C/svg%3E" width="550"/>
+
+This is interesting. If our price data were a random walk, we’d expect no lags of the PACF plot to be significant. Here, we have many lags having significant autocorrelation – is our price series weakly stationary, or does it drift?
+
+Here’s a random walk simulation and the resulting PACF plot for comparison:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># random walk for comparison
+n &lt;- 10000
+random_walk &lt;- cumsum(c(100, rnorm(n)))
+
+data.frame(x = 1:(n+1), y = random_walk) %&gt;% 
+  ggplot(aes(x = x, y = y)) +
+    geom_line() +
+    theme_bw()
+
+p &lt;- pacf(random_walk, plot = FALSE)
+plot(p[2:20])</pre>
+
+Here’s a plot of the random walk:
+
+<img alt="" class="size-full wp-image-32077 aligncenter perfmatters-lazy" data-sizes="(max-width: 550px) 100vw, 550px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160849/random_walk.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160849/random_walk.png 550w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160849/random_walk-300x191.png 300w" decoding="async" height="350" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='550'%20height='350'%20viewBox='0%200%20550%20350'%3E%3C/svg%3E" width="550"/>
+
+And the PACF plot (again, with the lag-0 correlation removed):
+
+<img alt="" class="size-full wp-image-32078 aligncenter perfmatters-lazy" data-sizes="(max-width: 550px) 100vw, 550px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160848/random_walk_pacf.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160848/random_walk_pacf.png 550w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160848/random_walk_pacf-300x191.png 300w" decoding="async" height="350" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='550'%20height='350'%20viewBox='0%200%20550%20350'%3E%3C/svg%3E" width="550"/>
+
+Returning to the PACF plot of our price data, Ernie’s choice of 10 lags for his AR model looks reasonable (those partial correlation values translate to the coefficients of the AR model), but the data also suggests that going as far back as 15 lags is OK too.
+
+It would be interesting to see how that PACF plot changes through time. Here it is separately for each year in our data set:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># annual pacfs
+annual_partials &lt;- audusd %&gt;% 
+  mutate(year = year(timestamp)) %&gt;% 
+  group_by(year) %&gt;% 
+  # create a column of date-close dataframes called data
+  nest(-year) %&gt;% 
+  mutate(
+    # calculate acf for each date-close dataframe in data column
+    pacf_res = purrr::map(data, ~ pacf(.x$close, plot = F)),
+    # extract acf values from pacf_res object and drop redundant dimensions of returned lists
+    pacf_vals = purrr::map(pacf_res, ~ drop(.x$acf))
+  ) %&gt;% 
+  # promote the column of lists such that we have one row per lag per year
+  unnest(pacf_vals) %&gt;% 
+  group_by(year) %&gt;% 
+  mutate(lag = seq(0, n() - 1))
+
+signif &lt;- function(x) {
+  qnorm((1 + 0.95)/2)/sqrt(sum(!is.na(x)))
+}
+
+signif_levels &lt;- audusd %&gt;% 
+  mutate(year = year(timestamp)) %&gt;% 
+  group_by(year) %&gt;% 
+  summarise(significance = signif(close))
+
+annual_partials %&gt;% 
+  filter(lag &gt; 0, lag &lt;= 20) %&gt;% 
+  ggplot(aes(x = lag, y = pacf_vals)) +
+  geom_segment(aes(xend = lag, yend = 0)) +
+  geom_point(size = 1, colour = "steelblue") +
+  geom_hline(yintercept = 0) +
+  facet_wrap(~year, ncol = 3) +
+  geom_hline(data = signif_levels, aes(yintercept = significance), colour = 'red', linetype = 'dashed')</pre>
+<img alt="" class="size-full wp-image-32079 aligncenter perfmatters-lazy" data-sizes="(max-width: 650px) 100vw, 650px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160848/annual_pacfs.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160848/annual_pacfs.png 650w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160848/annual_pacfs-600x508.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160848/annual_pacfs-300x254.png 300w" decoding="async" height="550" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='650'%20height='550'%20viewBox='0%200%20650%20550'%3E%3C/svg%3E" width="650"/>
+
+Those partial correlations do look quite stable… But remember, we’re not seeing any information about returns here – we’re only seeing that recent prices are correlated with past prices.
+
+My gut feel is that this represents the noisy mean reversion you tend to see in FX at short time scales. Take a look at this ACF plot of minutely <em>returns</em> (not prices):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">ret_acf &lt;- acf(audusd %&gt;% 
+    mutate(returns = (close - dplyr::lag(close))/dplyr::lag(close)) %&gt;% 
+    select(returns) %&gt;% 
+    na.omit() %&gt;% 
+    pull(), 
+  lags = 20, plot = FALSE
+)
+
+plot(ret_acf[2:20], main = 'ACF of minutely returns')</pre>
+<img alt="" class="size-full wp-image-32095 aligncenter perfmatters-lazy" data-sizes="(max-width: 550px) 100vw, 550px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160841/acf-returns.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160841/acf-returns.png 550w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160841/acf-returns-300x191.png 300w" decoding="async" height="350" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='550'%20height='350'%20viewBox='0%200%20550%20350'%3E%3C/svg%3E" width="550"/>
+
+There are clearly some significant negative autocorrelations when we view things through the lens of returns. Any method of trading that negative autocorrelation would show results like Ernie’s backtest – including AR models and dumber-seeming technical analysis approaches. At least, in a world without transaction costs.
+
+I think we can make the following assumptions:
+
+<ul>
+<li>There is nothing special about the last ten minutely prices</li>
+<li>This is not going to be something we can trade, particularly under retail spot FX trading conditions.</li>
+</ul>
+
+But let’s not get caught up with inconvenient assumptions and press on with some simulations…
+
+Here’s the game plan:
+
+<ul>
+<li>Fit an \(AR(10)\) model on a big chunk of data</li>
+<li>Simulate a trading strategy that uses that model for its predictions on unseen data</li>
+</ul>
+
+I’ll use R to fit the \(AR(10)\) model. I’ll use Zorro to simulate the profit and loss of a strategy that traded on the basis of that model’s predictions. In the simulation, I’ll use Zorro’s R bridge to execute an R function that returns the step-ahead prediction given the last ten prices. <a href="https://robotwealth.com/integrating-r-with-the-zorro-backtesting-and-execution-platform/" rel="noopener noreferrer" target="_blank">Here’s a tutorial for setting up Zorro’s R bridge if you’d like to follow along</a>.
+
+First, here’s how to fit the \(AR(10)\) model in R (I have my AUD/USD prices in a dataframe indexed by <code>timestamp</code>):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># fit an AR model
+ar &lt;- arima(
+  audusd %&gt;% filter(timestamp &lt; "2014-01-01") %&gt;%  select(close) %&gt;% pull(), 
+  order = c(10, 0, 0)
+)</pre>
+
+Here we use the <code>arima</code> function from the <code>stats</code> package and specify an order of <code>(10, 0, 0)</code>. Those numbers correspond to the number of autoregressive terms, the degree of differencing, and the number of moving average terms, respectively. Specifying zero for the latter two results in an AR model.
+
+Here are the model coefficients:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">ar$coef
+
+# ar1            ar2           ar3           ar4           ar5           ar6           ar7           ar8           ar9           ar10 
+#  0.9741941564  0.0228922865  0.0019821879 -0.0073977641  0.0045880720  0.0072364966 -0.0047513598  0.0003852733 -0.0048944003  0.0057283039 
+# intercept 
+# 0.6692288336</pre>
+
+Next, here’s an R function for generating predictions from an AR model:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># fit an AR model and return the step-ahead prediction
+# can fit a new model or return predictions given an existing set of coeffs and new data
+
+# params:
+# series: data to use to fit model or to predict on
+# fixed: either NA or a vector of coeffs of same length as number of model parameters
+
+# usage:
+# fit a new model an return next prediction: series should consist of the data to be fitted, fixed should be NA
+# fit_ar_predict(audusd$close[1:100000], order = c(10, 0, 0))
+
+# predict using an existing set of coeffs: series and fixed should be same length as number of model parameters
+# fit_ar_predict(audusd$close[100001:100010], order = c(10, 0, 0), fixed = ar$coef)
+fit_ar_predict &lt;- function(series, order = 10, fixed = NA) {
+  
+  if(sum(is.na(fixed)) == 0) {
+    # make predictions using static coefficients
+    # arima(series, c(1, 0, 0)) fits an AR(1)
+    predict(arima(series, order = c(order, 0, 0), fixed = fixed), 1)$pred[1]
+  } else {
+    # fit a new model 
+     predict(arima(series, order = c(order, 0, 0)), 1)$pred[1]
+  }
+}</pre>
+
+If you supply the <code>fixed</code> parameter (corresponding to the model coefficients), the function returns the step-ahead prediction given the values in <code>series</code>. The length of <code>series</code> needs to be the same as<code>order</code>, and the length of <code>fixed</code> needs to be <code>order + 1</code> to account for the intercept term.
+
+If you don’t supply the <code>fixed</code> parameter, the function will fit an \(AR(order)\) model on the data in <code>series</code> and return the step-ahead prediction.
+
+Save this file in Zorro’s Strategy folder.
+
+Finally, here’s the Zorro code for running the simulation given our model parameters derived above (no transaction costs):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">#include &lt;r.h&gt;
+
+function run()
+{
+    set(PLOTNOW);
+    setf(PlotMode, PL_FINE);
+    StartDate = 2014;
+    EndDate = 2015;
+    BarPeriod = 10;
+    LookBack = 10; 
+    MaxLong = MaxShort = 1;
+    MonteCarlo = 0;
+    
+    if(is(INITRUN)) 
+    {
+        // start R and source the kalman iterator function
+        if(!Rstart("ar.R", 2)) 
+        {
+            print("Error - can't start R session!");
+            quit();
+        }
+    }
+    
+    asset("AUD/USD");
+    Spread = Commission = RollLong = RollShort = Slippage = 0;
+    
+    // generate reverse price series (the order of Zorro series is opposite what you'd expect)
+    vars closes = rev(series(priceClose()));
+    
+    // model parameters
+    int order = 10;
+    var coeffs[11] = {0.9793975109, 0.0095665978, 0.0025503174, 0.0013394797, 0.0060263045, -0.0023060104, -0.0022220192, 0.0006940781, 0.0011942208, 0.0037558386, 0.9509437891}; //note 1 extra coeff - intercept
+    
+    if(!is(LOOKBACK)) {
+        // send function argument values to R
+        Rset("order", order);
+        Rset("series", closes, order);
+        Rset("fixed", coeffs, order+1);
+        
+        // compute AR prediction and trade
+        var pred = Rd("fit_ar_predict(series = series, order = order, fixed = fixed)");
+        printf("\nCurrent: %.5f\nPrediction: %.5f", priceClose(), pred);
+        
+        if(pred &gt; priceClose())
+            enterLong();
+        else if(pred &lt; priceClose())
+            enterShort();
+    }
+
+}</pre>
+
+Now, since we’re calling out to R once every minute for a new prediction, this simulation is going to take a while. Let’s just run it for a couple of years out of sample while we go make a cocktail…
+
+Here’s the result:
+
+<img alt="" class="size-full wp-image-32080 aligncenter perfmatters-lazy" data-sizes="(max-width: 1197px) 100vw, 1197px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160846/backtest.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160846/backtest.png 1197w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160846/backtest-600x306.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160846/backtest-300x153.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160846/backtest-1024x523.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160846/backtest-768x392.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160846/backtest-1000x510.png 1000w" decoding="async" height="611" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1197'%20height='611'%20viewBox='0%200%201197%20611'%3E%3C/svg%3E" width="1197"/>
+
+Which is quite consistent with Ernie’s pre-cost backtest (noting differences due to slightly different historical data periods and modeling software. Also note that Zorro’s percent return calculation is based on the assumption that you invest the minimum amount in order to avoid a margin call in the backtest – hence why it looks astronomically large in this case).
+
+Unfortunately, this is a massively hyperactive strategy that is going to get killed by costs. You can see in the Zorro backtest that the average pre-cost profit per trade is only 0.1 pip. That’s going to make your FX broker extremely pleased.
+
+<h2>Is there something we can trade here?</h2>
+
+Transaction costs are a major problem, so let’s start there.
+
+If we saw evidence of partial autocorrelation at longer time horizons, we could potentially slow the strategy down such that it traded less frequently and held on to positions for longer.
+
+Here are some rough PACF charts of what that might look like. First, using ten-minutely data:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># 10-minute partials
+partial &lt;- pacf(
+  audusd %&gt;% 
+    mutate(minute = minute(timestamp)) %&gt;% 
+    filter(minute %% 10 == 0) %&gt;% 
+    select(close) %&gt;% 
+    pull(), 
+  lags = 20, plot = FALSE)
+
+plot(partial[2:20], main = 'Ten minutely PACF')</pre>
+<img alt="" class="size-full wp-image-32081 aligncenter perfmatters-lazy" data-sizes="(max-width: 550px) 100vw, 550px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160845/ten-min-pacf.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160845/ten-min-pacf.png 550w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160845/ten-min-pacf-300x191.png 300w" decoding="async" height="350" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='550'%20height='350'%20viewBox='0%200%20550%20350'%3E%3C/svg%3E" width="550"/>
+
+Next, hourly:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># hourly partials
+partial &lt;- pacf(
+  audusd %&gt;% 
+    mutate(minute = minute(timestamp)) %&gt;% 
+    filter(minute == 0) %&gt;% 
+    select(close) %&gt;% 
+    pull(), 
+  lags = 20, plot = FALSE)
+
+plot(partial[2:20], main = 'Hourly PACF')</pre>
+<img alt="" class="size-full wp-image-32082 aligncenter perfmatters-lazy" data-sizes="(max-width: 550px) 100vw, 550px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160844/hourly-pacf.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160844/hourly-pacf.png 550w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160844/hourly-pacf-300x191.png 300w" decoding="async" height="350" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='550'%20height='350'%20viewBox='0%200%20550%20350'%3E%3C/svg%3E" width="550"/>
+
+Finally, at the daily resolution:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># daily partials
+partial &lt;- pacf(
+  audusd %&gt;% 
+    mutate(hour = hour(timestamp)) %&gt;% 
+    filter(hour == 0) %&gt;% 
+    select(close) %&gt;% 
+    pull(), 
+  lags = 20, plot = FALSE)
+
+plot(partial[2:20], main = 'Daily PACF')</pre>
+<img alt="" class="size-full wp-image-32083 aligncenter perfmatters-lazy" data-sizes="(max-width: 550px) 100vw, 550px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160843/daily-pacf.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160843/daily-pacf.png 550w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160843/daily-pacf-300x191.png 300w" decoding="async" height="350" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='550'%20height='350'%20viewBox='0%200%20550%20350'%3E%3C/svg%3E" width="550"/>
+
+There’s a pattern emerging there, with fewer and fewer significant partial correlations as we increase the resolution.
+
+We can try an \(AR(10)\) model using ten-minutely data. Follow the same procedure above, where we calculate the coefficients in R, then hard-code them in our Zorro script. This gives the following result:
+
+<img alt="" class="size-full wp-image-32084 aligncenter perfmatters-lazy" data-sizes="(max-width: 1190px) 100vw, 1190px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160842/backtest-10m.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160842/backtest-10m.png 1190w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160842/backtest-10m-600x309.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160842/backtest-10m-300x155.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160842/backtest-10m-1024x527.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160842/backtest-10m-768x396.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160842/backtest-10m-1000x515.png 1000w" decoding="async" height="613" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1190'%20height='613'%20viewBox='0%200%201190%20613'%3E%3C/svg%3E" width="1190"/>
+
+We managed to triple our average cost per trade, but it’s still not going to come close to covering costs.
+
+At this point, it’s becoming quite clear (if it wasn’t already) that this is a very marginal trade, no matter how you cut it. However, some other things that might be worth considering include:
+
+<ul>
+<li>If we assumed that our predictions were both useful in terms of magnitude as well as direction, we could implement a prediction threshold such that we would trade only when the prediction is a certain distance from the current price.</li>
+<li>It would be reasonable to think that when volatility is higher, price tends to move further. To the extent that an edge exists, it will be larger as a percent of costs the larger the volatility. Since volatility is somewhat predictable (at least in a noisy sense), we might be able to improve the average profit per trade by simply not trading when we think volatility is going to be low.</li>
+<li>Finally, we may want to try re-fitting the model at regular intervals. To check if that’s a useful thing to do, you could look for evidence of persistence of model coefficients. That is, are the model coefficients estimated over one window similar to those fitted over the next window? You can backtest this approach using the Zorro and R scripts above – simply don’t pass the <code>fixed</code> parameter from Zorro and think about how much data you want in your fitting window.</li>
+</ul>
+<h2>Conclusion</h2>
+
+Fitting an autoregressive model to historical prices of FX was a fun exercise that yielded a surprising result: namely, the deviation of the price series from the assumption of a random walk. The analysis suggests that short-term mean reversion of FX exists, but is unlikely to be something we can trade effectively.
+
+When we think about what the strategy is really doing, it’s merely trading mean-reversion around a recent price level. It’s unlikely that the ten AR lags are doing anything more nuanced than trading a noisy short-term reversal effect that could probably be harnessed in a more simple and effective way. For example, we could very likely get a similar result with less fuss by looking to fade extreme moves in the short term.
+
+Maybe there <em>are </em>sophisticated and important interdependencies between those ten lags, but I don’t think we should assume that there are. In any event, no matter how we trade this effect, it’s unlikely to yield profit after costs.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>acr</span>, <span>arima</span>, <span>autoregressive model</span>, <span>fx</span>, <span>mean reversion</span>, <span>pacf</span>, <span>time series</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130666 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/"><img alt="The Winter of our Pairs Trading Discontent: Problems, limitations, frustrations" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130667" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130276 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/moneyball-finding-undervalued-pairs-using-unconventional-metrics/"><img alt="Moneyball: Finding Undervalued Pairs Using Unconventional Metrics" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130277" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-1280x964.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-80x60.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-480x361.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-960x723.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features.webp 1456w" decoding="async" height="578" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='578'%20viewBox='0%200%20768%20578'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130275 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-tale-of-two-prices/"><img alt="A Tale of Two Prices" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="120744" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-1024x538.jpg 1024w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-768x403.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04.jpg 1200w" decoding="async" height="158" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='158'%20viewBox='0%200%20300%20158'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">4 thoughts on “Trading FX using Autoregressive Models”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1" id="comment-18466">
+<article class="comment-body" id="div-comment-18466" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>More of these posts please! I have been trying to get more experience using R applied to finance and this sort of post is very informative!</p>
+<span class="reply"><a aria-label="Reply to John" class="comment-reply-link" data-belowelement="div-comment-18466" data-commentid="18466" data-postid="32069" data-replyto="Reply to John" data-respondelement="respond" href="#comment-18466" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-18513">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 11/24/2020 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/trading-fx-using-autoregressive-models/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

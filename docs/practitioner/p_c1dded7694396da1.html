@@ -1,0 +1,286 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Practical Statistics for Algo Traders</title>
+<!-- source: https://robotwealth.com/practical-statistics-for-algo-traders/ -->
+<h1>Practical Statistics for Algo Traders</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-4550 post type-post status-publish format-standard hentry category-quant-trading category-r category-think-like-a-trader tag-hacking tag-simulation tag-statistics tag-trading pmpro-has-access" id="post-4550">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">July 23, 2018</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Practical Statistics for Algo Traders</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Practical Statistics for Algo Traders" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph"><em>This is the first in a two-part series. Be sure to read part 2 – <a href="https://robotwealth.com/the-law-of-large-numbers-part-2/" rel="noopener noreferrer" target="_blank">Practical Statistics for Algo Traders: The Law of Large Numbers</a> </em></p>
+<p class="wp-block-paragraph">How do you feel when you see the word “statistics”?  Maybe you feel that it’s something you should be really good at but aren’t. Maybe the word gives you a sense of dread, since you’ve started exploring its murky depths, but thrown your hands up in despair and given up – perhaps more than once. If you read lots of intelligent-sounding quant blogs displaying their use of “practical statistics”, you might even feel like your lack of statistical sophistication is what’s standing between you and algo trading success.</p>
+<p class="wp-block-paragraph">If you are confused, you’re not alone. The reality is that classical statistics is difficult, time-consuming and downright confusing. Fundamentally, we use statistics to answer a question – but when we use classical methods to answer it, half the time we forget what question we were seeking an answer to in the first place.</p>
+<div class="wp-block-image">
+<figure class="aligncenter"><img alt="practical statistics shown as charts" class="wp-image-13014 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2018/07/21164149/practical-statistics-for-algo-traders-1024x438.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2018/07/21164149/practical-statistics-for-algo-traders-1024x438.png 1024w, https://media.robotwealth.com/wp-content/uploads/2018/07/21164149/practical-statistics-for-algo-traders-600x257.png 600w, https://media.robotwealth.com/wp-content/uploads/2018/07/21164149/practical-statistics-for-algo-traders-300x128.png 300w, https://media.robotwealth.com/wp-content/uploads/2018/07/21164149/practical-statistics-for-algo-traders-768x329.png 768w, https://media.robotwealth.com/wp-content/uploads/2018/07/21164149/practical-statistics-for-algo-traders-1000x428.png 1000w" decoding="async" height="438" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='438'%20viewBox='0%200%201024%20438'%3E%3C/svg%3E" width="1024"/></figure>
+</div>
+<p class="has-text-align-center wp-block-paragraph"><em>even sparkles don’t soften the knee-jerk angst</em></p>
+<p class="wp-block-paragraph">But guess what? There’s another way to get our questions answered without resorting to classical statistics. And it’s one that will generally appeal to the practical, hands-on problem solvers that tend to be attracted to algo trading in the long run.</p>
+<p class="wp-block-paragraph">Specifically, algo traders can leverage their programming skills to get answers to tough statistical questions – without resorting to classical statistics. In the words of Jake van der Plas, whose awesome <a href="https://speakerdeck.com/jakevdp/statistics-for-hackers" rel="noopener noreferrer" target="_blank">PyCon 2016 talk</a> inspired some of the ideas in this post, <em>“if you can write a for loop, you can do statistics.”</em></p>
+<p class="wp-block-paragraph">In <em>Practical Statistics for Algo Traders</em>, I want to show you some examples of how simulation and resampling methods lend themselves to intuitive computational solutions to problems that are quite complex when posed in the domain of classical statistics.</p>
+<p class="wp-block-paragraph">Let’s get started!</p>
+<h2 class="wp-block-heading">Starting Simple: Beating a Game of Chance</h2>
+<p class="wp-block-paragraph">The example that we’ll start with is relatively simple and more for illustrative purposes than something that you’ll use a lot in a trading context. But it sets the scene for what follows and provides a useful place to start getting a sense for the intuition behind the methods I’ll show you later.</p>
+<p class="wp-block-paragraph">You’ve probably heard the story of Ed Thorp and Claude Shannon. The former is a mathematics professor and hedge fund manager; the latter was a mathematician and engineer referred to as “the father of information theory”, and whose discoveries underpin the digital age in which we live today (he’s kind of a big deal).</p>
+<p class="wp-block-paragraph">When they weren’t busy changing the world, these guys would indulge in another great hobby: beating casinos at games of chance. Thorp is known for developing a system of card counting to win at Blackjack. But the story I find even more astonishing is that together, Thorp and Shannon developed the first wearable computer, whose sole purpose was to beat the game of roulette. According to <a href="https://www.engadget.com/2013/09/18/edward-thorp-father-of-wearable-computing/" rel="noopener noreferrer" target="_blank">a 2013 article describing the affair,</a></p>
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow"><p>Roughly the size of a pack of cigarettes, the computer itself had 12 transistors that allowed its wearer to time the revolutions of the ball on a roulette wheel and determine where it would end up. Wires led down from the computer to switches in the toes of each shoe, which let the wearer covertly start timing the ball as it passed a reference mark. Another set of wires led up to an earpiece that provided audible output in the form of musical cues – eight different tones represented octants on the roulette wheel. When everything was in sync, the last tone heard indicated where the person at the table should place their bet. Some of the parts, Thorp says, were cobbled together from the types of transmitters and receivers used for model airplanes.</p></blockquote>
+<p class="wp-block-paragraph">So what’s all this got to do with hacking statistics? Well, nothing really, except that it provides context for an interesting example. Say we were a pit boss in a big casino, and we’d been watching a roulette player sitting at the table for hours, amassing an unusually large pile of chips. A review of the casino’s closed circuit television revealed that the player had played 150 games of roulette and won 7 of those. What are the chances that the player’s run of good luck is an indication of cheating?</p>
+<p class="wp-block-paragraph">To answer that question, we firstly need to understand the probabilities of the game of roulette. There are 37 numbers on the roulette wheel (0 to 36), so the probability of choosing the correct number on any given spin is 1 in 37.<span class="inline-footnote" style="" title="Some roulette wheels have an additional double-zero, for a total of 38 numbers, but here we assume a wheel with 37 numbers.">1<span class="footnoteContent" style="display:none;">Some roulette wheels have an additional double-zero, for a total of 38 numbers, but here we assume a wheel with 37 numbers.</span></span>For a correct guess, the house pays out $36 for every $1 wagered. So the payout is slightly less than the expectancy, which of course ensures that the house wins in the long run.</p>
+<p class="wp-block-paragraph">In order to use classical statistics to work out the probability that our player was cheating, we would firstly need to recognise that our player’s run of good luck could be modelled with the binomial probability distribution:</p>
+<div class="wp-block-katex-display-block katex-eq" data-katex-display="true"><pre>\begin{align*}
+&amp; P(X_{wins}) = {{Y}\choose{X}}  {P_{win}}^X {P_{loss}}^{Y-X}\\
+&amp; \text{where} {{Y}\choose{X}} \text{is the number of ways to arrive at X wins from Y games and is given by}\\ 
+&amp;\frac{(Y)!}{X!(Y!-X!}
+\end{align*}</pre></div>
+<p class="wp-block-paragraph">Here are some R functions for implementing these equations:<span class="inline-footnote" style="" title="Base R actually includes functions for all these equations, but I want to illustrate what’s involved when following the classical approach. Also, be careful calculating factorials of numbers greater than about 170. The resulting number is greater than the maximum possible integer size that R can cope with, and the function will return “Inf”.">2<span class="footnoteContent" style="display:none;">Base R actually includes functions for all these equations, but I want to illustrate what’s involved when following the classical approach. Also, be careful calculating factorials of numbers greater than about 170. The resulting number is greater than the maximum possible integer size that R can cope with, and the function will return “Inf”.</span></span></p>
+<pre class="EnlighterJSRAW" data-enlighter-group="" data-enlighter-highlight="" data-enlighter-language="r" data-enlighter-linenumbers="" data-enlighter-lineoffset="" data-enlighter-theme="" data-enlighter-title="">f &lt;- function(n) {
+  "calculate factorial of n"
+  if(n == 0)
+    return(1)
+  num &lt;- c(1:n)
+  if(length(num) == 0) {
+    return(1)
+  }
+  return(prod(num))
+}
+binom &lt;- function(x, y) {
+  "calculate number of ways to arrive at x outcomes from y attempts"
+  return(f(y)/(f(x)*f(y-x)))
+}
+binom_prob &lt;- function(x, y, p) {
+  "calculate the probability of getting x outcomes from y attempts when P(x)=p"
+  return(binom(x, y)*p^x*(1-p)^(y-x))
+}</pre>
+<p class="wp-block-paragraph">And here’s how to calculate the probability of winning 7 out of 150 games of roulette:</p>
+<pre class="EnlighterJSRAW" data-enlighter-group="" data-enlighter-highlight="" data-enlighter-language="r" data-enlighter-linenumbers="" data-enlighter-lineoffset="" data-enlighter-theme="" data-enlighter-title="">n_played &lt;- 150
+n_won &lt;- 7
+p_win = 1./37
+binom_prob(n_won, n_played, p_win)
+</pre>
+<p class="wp-block-paragraph">This returns a value of 0.062, which means there is about a 6% of chance of winning 7 out of 150 games of roulette.</p>
+<p class="wp-block-paragraph">But wait, we’re not done yet! We’ve actually found the probability of winning <em>exactly</em> 7 out of 150 games, but we really want to know the probability of winning <em>at least</em> 7 out of 150 games. So we actually need to sum up the probabilities associated with winning 7, 8, 9, 10, … etc games. This number is the <em>p-value</em>, which is used in statistics to measure the validity of the <em>null hypothesis</em>, which is the idea we are trying to <em>disprove – </em>in our case, that the player <em>isn’t </em>cheating.</p>
+<p class="wp-block-paragraph">Confused? You’re not alone. Classical statistics is full of these double negatives and it’s one of the reasons that it’s so easy to forget what question we were even trying to answer in the first place. Before we come to a simpler approach, here’s a function for calculating the p-value for our roulette player of possibly dubious integrity (or commendable ingenuity, depending on your point of view):</p>
+<pre class="EnlighterJSRAW" data-enlighter-group="" data-enlighter-highlight="" data-enlighter-language="r" data-enlighter-linenumbers="" data-enlighter-lineoffset="" data-enlighter-theme="" data-enlighter-title="">binom_pval &lt;- function(n_won, n_played, p_win) {
+  "calculate the p-value of a given result using binomial probability distribution"
+  p &lt;- 0
+  for(n in c(n_won:n_played)) {
+    p &lt;- p + binom_prob(n, n_played, p_win)
+  }
+  return(p)
+}
+binom_pval(n_won, n_played, p_win)</pre>
+<p class="wp-block-paragraph">In our case, the p-value comes out at 0.114, or 11.4%. We should settle on a cutoff p-value <em>prior</em> to performing our analysis, below which we reject the null hypothesis that our gambler isn’t cheating. In many fields, a p-value cutoff of 0.05 is used, but I’ve always felt that was somewhat arbitrary. Better in my opinion to avoid thinking in such black and white terms and consider what a particular p-value means in your specific context.</p>
+<span class="inline-footnote" style="" title="There’s also a growing consensus that science should demand much tighter p-values, and a re-thinking of p-values more generally.">3<span class="footnoteContent" style="display:none;">There’s also a <a href="https://theconversation.com/one-reason-so-many-scientific-studies-may-be-wrong-66384" rel="noopener noreferrer" target="_blank">growing consensus</a> that science should demand much tighter p-values, and a re-thinking of p-values more generally.</span></span>
+<p class="wp-block-paragraph">In any event, our p-value tells us that there is an 11.4% chance that the player could have realised 7 wins from 150 games of roulette by chance alone. You can draw your own conclusions regarding what this means in this particular context, but if I were the pit boss scrutinising this gambler, I’d find it hard to justify throwing them out of the casino.</p>
+<p class="wp-block-paragraph">Finally, here’s a plot of the probability of winning <span class="lang:r highlight:0 decode:true crayon-inline">n_won</span>  games out of 150, with a vertical line at 7 wins:</p>
+<pre class="EnlighterJSRAW" data-enlighter-group="" data-enlighter-highlight="" data-enlighter-language="r" data-enlighter-linenumbers="" data-enlighter-lineoffset="" data-enlighter-theme="" data-enlighter-title=""># plot distribution
+n_won &lt;- c(0:15)
+p &lt;- c()
+for(n in n_won) {
+  p[n+1] &lt;- binom_prob(n, n_played, p_win)
+}
+plot(n_won, p, type='S', col='blue', main='Probabilty of n wins from 150 games')
+abline(v=7, col='red')</pre>
+<div class="wp-block-image">
+<figure class="aligncenter"><a href="https://robotwealth.com/wp-content/uploads/2018/07/Binomial-probability.png"><img alt="probability of n wins from 150 games - practical statistics" class="wp-image-4552 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/07/Binomial-probability.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='500'%20viewBox='0%200%20500%20500'%3E%3C/svg%3E" width="500"/></a></figure>
+</div>
+<h3 class="wp-block-heading">A simpler way?</h3>
+<p class="wp-block-paragraph">You just saw the classic approach to solving what was actually a very simple problem. But if you didn’t know the formula for the binomial probability distribution, it would be hard to know where to start. It’s also very easy to get tripped up with p-values and their confusing double-negative terminology. I think you can probably see some evidence for my claim that we can easily end up forgetting the question we were trying to answer in the first place! And this was a very simple problem – things get <em>much</em> worse from here.</p>
+<p class="wp-block-paragraph">The good news is, there’s an easier way. We could watch someone play 150 games of roulette, then write down the number of games they won. We could then watch another 150 games and write down that result. If we did this many times, we would be able to plot a histogram showing the frequency of each result. If we watched many sequences of 150 games, we could expect the observed frequencies to start approaching the true frequencies.</p>
+<p class="wp-block-paragraph">But who has time to watch a few thousand sequences of 150 roulette games? Better to leverage our programming skills and <em>simulate</em> a few thousand such sequences.</p>
+<p class="wp-block-paragraph">Here’s a really simple roulette simulator that simulates sequences of roulette games, and returns the number of winning games in each sequence. We can use this simulator to generate sound statistical insights about our gambler.</p>
+<p class="wp-block-paragraph">The great thing about this simulator is that you can build it just by knowing a little about the game of roulette – it doesn’t matter if you’ve never heard of the binomial probability function, you can use the simulator to get robust answers to statistical questions.</p>
+<pre class="EnlighterJSRAW" data-enlighter-group="" data-enlighter-highlight="" data-enlighter-language="r" data-enlighter-linenumbers="" data-enlighter-lineoffset="" data-enlighter-theme="" data-enlighter-title=""># roulette simulator
+roulette_sim &lt;- function(num_sequences, num_games) {
+  lucky_number &lt;- 12
+  games_won_per_sequence &lt;- c()
+  for(n in c(1:num_sequences)) {
+    spins &lt;- sample(0:36, num_games, replace=TRUE)
+    games_won_per_sequence[n] &lt;- sum(spins==lucky_number)
+  }
+  return(games_won_per_sequence)
+}</pre>
+<p class="wp-block-paragraph">Most of the work is being done in the line <span class="lang:r highlight:0 decode:true crayon-inline">spins &lt;- sample(0:36, num_games, replace=TRUE)</span>  which we are using to simulate a single sequence of <span class="lang:r highlight:0 decode:true crayon-inline">num_games</span>  spins of the roulette wheel. The <span class="lang:r highlight:0 decode:true crayon-inline">sample()</span>  function randomly selects numbers between 0 and 36 <span class="lang:r highlight:0 decode:true crayon-inline">num_games</span>  times and stores the results in the <span class="lang:r highlight:0 decode:true crayon-inline">spins</span>  variable. Then, the line <span class="lang:r highlight:0 decode:true crayon-inline">games_won_per_sequence[n] &lt;- sum(spins==lucky_number)</span>  calculates the number of spins in the sequence that came up with our <span class="lang:r highlight:0 decode:true crayon-inline">lucky_number</span>  and stores the result in the vector <span class="lang:r highlight:0 decode:true crayon-inline">games_won_per_sequence</span> . I used the number 12 as the <span class="lang:r highlight:0 decode:true crayon-inline">lucky_number</span>  parameter, which is what I would choose if I were forced to choose a lucky number, but any number in the range 0:36 will do, as they all have an equal likelihood of turning up in any given “spin”.</p>
+<p class="wp-block-paragraph">Let’s simulate 10,000 sequences of 150 games and plot the result in a histogram. Simply do:</p>
+<pre class="EnlighterJSRAW" data-enlighter-group="" data-enlighter-highlight="" data-enlighter-language="r" data-enlighter-linenumbers="" data-enlighter-lineoffset="" data-enlighter-theme="" data-enlighter-title=""># plot histogram of simulated 150-game sequences
+hist(roulette_sim(10000, 150), col='blue')</pre>
+<div class="wp-block-image">
+<figure class="aligncenter"><a href="https://robotwealth.com/wp-content/uploads/2018/07/simulation_results.png"><img alt="a histogram of roulette simulation results" class="wp-image-4553 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/07/simulation_results.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='500'%20viewBox='0%200%20500%20500'%3E%3C/svg%3E" width="500"/></a></figure>
+</div>
+<p class="wp-block-paragraph">And you’ll end up with a histogram of games won that looks like this:<span class="inline-footnote" style="" title="Results will differ slightly each time you run the simulation.">4<span class="footnoteContent" style="display:none;">Results will differ slightly each time you run the simulation.</span></span><br/><br/>Hmmm…the shape of our histogram looks very much like the shape of the binomial distribution that we plotted above using the classic approach. Interesting! Could it be that our simulation is indeed a decent representation of reality?</p>
+<p class="wp-block-paragraph">We can also calculate an empirical p-value from our simulation results by calculating the proportion of times we won at least seven games. Here’s a general function for calculating the empirical p-value, and an example of using it to calculate our gambler’s p-value:</p>
+<pre class="EnlighterJSRAW" data-enlighter-group="" data-enlighter-highlight="" data-enlighter-language="r" data-enlighter-linenumbers="" data-enlighter-lineoffset="" data-enlighter-theme="" data-enlighter-title="">sim_pval &lt;- function(num_sequences, num_games, val) {
+  games_won_per_sequence &lt;- roulette_sim(num_sequences, num_games)
+  return(sum(games_won_per_sequence &gt;= val)/num_sequences)
+}
+pval &lt;- sim_pval(10000, 150, 7)</pre>
+<p class="wp-block-paragraph">When I ran this code, I got a p-value of 11.3, compared with a p-value of 11.4 calculated above using the classic approach. You’ll get a slightly different result every time you run this code, but the more sequences you simulate (the <span class="lang:r highlight:0 decode:true crayon-inline">num_sequences</span>  parameter), the more the empirical result will converge to the theoretical one.</p>
+<h2 class="wp-block-heading">Initial Conclusion on Practical Statistics</h2>
+<p class="wp-block-paragraph">My intent with this article was to convince you that you can get statistically sound insights without resorting to the complexities of classic statistics.  Personally, I find myself going around in circles and expending great energy for little reward when I try to solve a problem with the classic approach. On the other hand, I find that I get real insights and real intuition into a problem through simulation.</p>
+<p class="wp-block-paragraph">Simulation, however, is just one way you can hack statistics, and it won’t be applicable in all situations. For instance, in this example we happen to have a precise <em>generative model </em>for the phenomenon we wish to explore – namely, the probability of winning a game of roulette. In most trading situations, we normally have only data or at best some assumptions about the underlying generative model.</p>
+<p class="wp-block-paragraph">Read part 2 of this series – <a href="https://robotwealth.com/the-law-of-large-numbers-part-2/" rel="noopener noreferrer" target="_blank"><em>Practical Statistics: The Law of Large Numbers</em></a></p>
+<h2 class="wp-block-heading">Afterthought</h2>
+<p class="wp-block-paragraph">Apparently Thorp and Shannon’s roulette computer could predict which <em>octant</em> of the wheel the ball would end up in. That means that they could reduce the possible outcomes to five numbers of the thirty-seven total possibilities, increasing their odds of winning from 1/37 to 1/5. That means that from a sequence of 150 games, Thorp and Shannon might expect to win a staggering 30 times.</p>
+<p class="wp-block-paragraph">If we simulate the probability of Thorp and Shannon winning 30 of 150 games of roulette by chance:</p>
+<pre class="EnlighterJSRAW" data-enlighter-group="" data-enlighter-highlight="" data-enlighter-language="r" data-enlighter-linenumbers="" data-enlighter-lineoffset="" data-enlighter-theme="" data-enlighter-title=""># p-value for Thorp and Shannon
+pval &lt;- sim_pval(10000, 150, 30)</pre>
+<p class="wp-block-paragraph">we end up with a p-value of zero! That is, there is no conceivable possibility of winning 30 of 150 games of roulette by chance alone. In reality, of course the real probability isn’t zero, but apparently 10,000 simulations isn’t enough to detect a single occurrence of this many wins! Resorting to the analytical solution,</p>
+<pre class="EnlighterJSRAW" data-enlighter-group="" data-enlighter-highlight="" data-enlighter-language="r" data-enlighter-linenumbers="" data-enlighter-lineoffset="" data-enlighter-theme="" data-enlighter-title=""># analytical p-value for Thorp and Shannon
+pval &lt;- binom_pval(30, 150, 1./37)
+</pre>
+<p class="wp-block-paragraph">we find that the probability of 30 winning spins from 150 is 1.2e-17!</p>
+<p class="wp-block-paragraph">So how did Thorp and Shannon evade detection? Can we assume that the pit bosses back in the 1960s weren’t concerning themselves with the possibility that someone might be cheating? Actually, if you read their story, you find that Thorp and Shannon were plagued by the vagaries of the device itself, dealing with constant breakdowns and malfunctions that limited their ability to really exploit their edge.</p>
+<p class="wp-block-paragraph">Still, it’s a brilliant story and you really have to admire their ingenuity, not to mention their guts in taking on the casinos at their own game.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>hacking</span>, <span>simulation</span>, <span>statistics</span>, <span>trading</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">4 thoughts on “Practical Statistics for Algo Traders”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-837">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 07/22/2018 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-930">
+<div class="comment-body">
+				Pingback: The Law of Large Numbers – Part 2 – Fate Forex 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-10093">
+<div class="comment-body">
+				Pingback: The Law of Large Numbers - Part 2 - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/practical-statistics-for-algo-traders/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

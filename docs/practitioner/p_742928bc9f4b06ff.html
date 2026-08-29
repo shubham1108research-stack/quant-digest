@@ -1,0 +1,1243 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How to Calculate Rolling Pairwise Correlations in the Tidyverse</title>
+<!-- source: https://robotwealth.com/rolling-mean-correlations-in-the-tidyverse/ -->
+<h1>How to Calculate Rolling Pairwise Correlations in the Tidyverse</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-23176 post type-post status-publish format-standard has-post-thumbnail hentry category-r category-tools-of-the-trade tag-dplyr tag-rolling-windows tag-slider tag-tidyverse pmpro-has-access" id="post-23176">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 18, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">How to Calculate Rolling Pairwise Correlations in the Tidyverse</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="How to Calculate Rolling Pairwise Correlations in the Tidyverse" class="ipa-media gb-media-81e19d89" data-media-id="23301" decoding="async" fetchpriority="high" height="225" sizes="(max-width: 225px) 100vw, 225px" src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161942/stones.jpg" srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161942/stones.jpg 225w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161942/stones-100x100.jpg 100w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161942/stones-150x150.jpg 150w" width="225"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">How might we calculate rolling correlations between constituents of an ETF, given a dataframe of prices?
+
+For problems like this, the <code>tidyverse</code> really shines. There are a number of ways to solve this problem … read on for our solution, and let us know if you’d approach it differently!
+
+First, we load some packages and some data that we extracted earlier. <code>xlfprices.RData</code> contains a dataframe, <code>prices_xlf</code>, of constituents of the XLF ETF and their daily prices. You can get this data from our <a href="https://github.com/Robot-Wealth/r-quant-recipes/tree/master/data">GitHub repository</a>.
+
+The dataset isn’t entirely accurate, as it contains prices of today’s constituents and doesn’t account for historical changes to the makeup of the ETF. But that won’t matter for our purposes.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(tidyverse)
+library(lubridate)
+library(glue)
+library(here)
+theme_set(theme_bw())
+
+load(here::here("data", "xlfprices.RData"))
+
+prices_xlf %&gt;%
+  head(10)
+</pre>
+<pre>## # A tibble: 10 x 10
+##    ticker date        open  high   low close   volume dividends closeunadj inSPX
+##    &lt;chr&gt;  &lt;date&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;lgl&gt;
+##  1 AFL    2019-11-29  54.8  55.1  54.8  54.8  1270649         0       54.8 TRUE 
+##  2 AIG    2019-11-29  52.8  53.2  52.6  52.7  2865501         0       52.7 TRUE 
+##  3 AIZ    2019-11-29 133.  134.  133.  133.    202854         0      133.  TRUE 
+##  4 AJG    2019-11-29  93.3  93.6  93.0  93.3   392489         0       93.3 TRUE 
+##  5 ALL    2019-11-29 112.  112.  111.  111.    817942         0      111.  TRUE 
+##  6 AMP    2019-11-29 164.  165.  163.  164.    404660         0      164.  TRUE 
+##  7 AON    2019-11-29 203.  204.  202.  204.    415940         0      204.  TRUE 
+##  8 AXP    2019-11-29 120.  121.  120.  120.   1961463         0      120.  TRUE 
+##  9 BAC    2019-11-29  33.4  33.5  33.2  33.3 19503395         0       33.3 TRUE 
+## 10 BEN    2019-11-29  27.8  27.9  27.4  27.5  1485635         0       27.5 TRUE
+</pre>
+
+We’d like to be able to calculate <em>rolling average pairwise correlations</em> between all the stocks as tidily as possible.
+
+That requires that we calculate the rolling pairwise correlation between all the stock combinations in the index and then take the mean of all those.
+
+A good way to tackle such problems is to chunk them down into bite-sized pieces and then solve each piece in turn. We split the problem into the following steps:
+
+<ul>
+<li>calculate returns for each ticker</li>
+<li>create a long dataframe of all the pairwise ticker combinations for each day by doing a full join of the data on itself, keyed by date</li>
+<li>remove instances where we had the same stock twice (corresponding to the diagonal of the correlation matrix)</li>
+<li>remove instances where we have the complementary pair of the same stocks, eg we only want one of APPL-GOOG and GOOG-APPL (this is equivalent to removing the upper or lower triangle of the correlation matrix)</li>
+<li>use <code>slider::slide2_dbl</code> to do the rolling correlation calculation</li>
+<li>group by date and take the mean</li>
+</ul>
+<h3>Calculating returns</h3>
+
+The first step is straightforward – we simply calculate close-to-close returns and return a long dataframe of dates, tickers, and returns:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># calculate returns to each stock
+df &lt;- prices_xlf %&gt;%
+  group_by(ticker) %&gt;%
+  arrange(date, .by_group = TRUE) %&gt;%
+  mutate(return = close / dplyr::lag(close) - 1) %&gt;%
+  select(date, ticker, return)
+
+# function for prettier web display
+pretty_table &lt;- function(df) {
+  require(kableExtra)
+
+  df %&gt;%
+    kable() %&gt;%
+    kable_styling(full_width = TRUE, position = 'center') %&gt;%
+    scroll_box(height = '300px')
+}
+
+df %&gt;%
+  head(50) %&gt;%
+  pretty_table()
+</pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">return</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2015-01-02</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-06</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0089106</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-07</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0062765</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-08</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0097775</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-09</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0212020</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-12</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0057991</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-13</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0049751</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-14</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0077586</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-15</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0033015</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-16</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0142957</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-20</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0029220</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-21</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0015515</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-22</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0180723</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-23</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0071006</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-26</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0049379</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-27</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0086411</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-28</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0196548</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-29</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0050558</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-30</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0098873</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-02</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0190960</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-03</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0158157</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-04</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0269081</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0049440</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-06</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0049196</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-09</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0022846</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-10</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0050703</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-11</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0061839</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-12</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0004852</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-13</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0053398</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-17</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0035410</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-18</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0096231</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-19</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0004858</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-20</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0056653</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-23</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0112667</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-24</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0102556</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-25</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0017725</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-26</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0037127</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-02-27</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0011258</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-02</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0051406</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-03</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0046348</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-04</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0011240</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0072173</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-06</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0101911</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-09</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0022523</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-10</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0200642</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-11</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0072072</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-12</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0188649</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-13</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0083001</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-03-16</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">0.0133591</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+Next, we create a long dataframe of all the combinations for each day by doing a full join of the data on itself, by date.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># combinations by date
+pairwise_combos &lt;- df %&gt;%
+  full_join(df, by = "date")  
+
+pairwise_combos %&gt;%
+  na.omit() %&gt;%
+  head(20) %&gt;%
+  pretty_table()
+</pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker.x</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">return.x</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker.y</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">return.y</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AIG</td>
+<td style="text-align: right;">-0.0197826</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AIZ</td>
+<td style="text-align: right;">-0.0224288</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AJG</td>
+<td style="text-align: right;">-0.0059600</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">ALL</td>
+<td style="text-align: right;">-0.0198232</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AMP</td>
+<td style="text-align: right;">-0.0320993</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AON</td>
+<td style="text-align: right;">-0.0096470</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AXP</td>
+<td style="text-align: right;">-0.0264459</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">BAC</td>
+<td style="text-align: right;">-0.0290503</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">BEN</td>
+<td style="text-align: right;">-0.0331591</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">BK</td>
+<td style="text-align: right;">-0.0257044</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">BLK</td>
+<td style="text-align: right;">-0.0258739</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">C</td>
+<td style="text-align: right;">-0.0315149</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CB</td>
+<td style="text-align: right;">-0.0163404</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CB</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CBOE</td>
+<td style="text-align: right;">0.0318813</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CFG</td>
+<td style="text-align: right;">-0.0234249</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CINF</td>
+<td style="text-align: right;">-0.0143383</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CMA</td>
+<td style="text-align: right;">-0.0356448</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CME</td>
+<td style="text-align: right;">0.0056728</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+So far so good.
+
+Now we’ve got some wrangling to do. We want to remove instances where we have the same stock for <code>ticker.x</code> and <code>ticker.y</code>, which corresponds to the diagonal on the correlation matrix.
+
+We also want to remove instances where we have the same stock, but with the <code>ticker.x</code> and <code>ticker.y</code> designations reversed (this is equivalent to removing the upper or lower triangle of the correlation matrix).
+
+Note that we need to ungroup our dataframe (we grouped it earlier) – if we don’t ungroup our variables, the grouping variable will be added back and thwart attempts to filter distinct cases.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">pairwise_combos &lt;- pairwise_combos %&gt;%
+  ungroup() %&gt;%  # important!! 
+# drop diagonal 
+  filter(ticker.x != ticker.y) %&gt;% 
+# remove duplicate pairs (eg A-AAL, AAL-A)
+  mutate(tickers = ifelse(ticker.x &lt; ticker.y, glue("{ticker.x}, {ticker.y}"), glue("{ticker.y}, {ticker.x}"))) %&gt;%
+  distinct(date, tickers, .keep_all = TRUE) 
+
+pairwise_combos %&gt;%
+  na.omit() %&gt;%
+  head(30) %&gt;%
+  pretty_table()
+</pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker.x</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">return.x</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker.y</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">return.y</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">tickers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AIG</td>
+<td style="text-align: right;">-0.0197826</td>
+<td style="text-align: left;">AFL, AIG</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AIZ</td>
+<td style="text-align: right;">-0.0224288</td>
+<td style="text-align: left;">AFL, AIZ</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AJG</td>
+<td style="text-align: right;">-0.0059600</td>
+<td style="text-align: left;">AFL, AJG</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">ALL</td>
+<td style="text-align: right;">-0.0198232</td>
+<td style="text-align: left;">AFL, ALL</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AMP</td>
+<td style="text-align: right;">-0.0320993</td>
+<td style="text-align: left;">AFL, AMP</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AON</td>
+<td style="text-align: right;">-0.0096470</td>
+<td style="text-align: left;">AFL, AON</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">AXP</td>
+<td style="text-align: right;">-0.0264459</td>
+<td style="text-align: left;">AFL, AXP</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">BAC</td>
+<td style="text-align: right;">-0.0290503</td>
+<td style="text-align: left;">AFL, BAC</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">BEN</td>
+<td style="text-align: right;">-0.0331591</td>
+<td style="text-align: left;">AFL, BEN</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">BK</td>
+<td style="text-align: right;">-0.0257044</td>
+<td style="text-align: left;">AFL, BK</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">BLK</td>
+<td style="text-align: right;">-0.0258739</td>
+<td style="text-align: left;">AFL, BLK</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">C</td>
+<td style="text-align: right;">-0.0315149</td>
+<td style="text-align: left;">AFL, C</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CB</td>
+<td style="text-align: right;">-0.0163404</td>
+<td style="text-align: left;">AFL, CB</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CBOE</td>
+<td style="text-align: right;">0.0318813</td>
+<td style="text-align: left;">AFL, CBOE</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CFG</td>
+<td style="text-align: right;">-0.0234249</td>
+<td style="text-align: left;">AFL, CFG</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CINF</td>
+<td style="text-align: right;">-0.0143383</td>
+<td style="text-align: left;">AFL, CINF</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CMA</td>
+<td style="text-align: right;">-0.0356448</td>
+<td style="text-align: left;">AFL, CMA</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">CME</td>
+<td style="text-align: right;">0.0056728</td>
+<td style="text-align: left;">AFL, CME</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">COF</td>
+<td style="text-align: right;">-0.0230331</td>
+<td style="text-align: left;">AFL, COF</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">DFS</td>
+<td style="text-align: right;">-0.0223378</td>
+<td style="text-align: left;">AFL, DFS</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">ETFC</td>
+<td style="text-align: right;">-0.0324865</td>
+<td style="text-align: left;">AFL, ETFC</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">FITB</td>
+<td style="text-align: right;">-0.0301831</td>
+<td style="text-align: left;">AFL, FITB</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">FRC</td>
+<td style="text-align: right;">-0.0299424</td>
+<td style="text-align: left;">AFL, FRC</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">GL</td>
+<td style="text-align: right;">-0.0179099</td>
+<td style="text-align: left;">AFL, GL</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">GS</td>
+<td style="text-align: right;">-0.0312227</td>
+<td style="text-align: left;">AFL, GS</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">HBAN</td>
+<td style="text-align: right;">-0.0295238</td>
+<td style="text-align: left;">AFL, HBAN</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">HIG</td>
+<td style="text-align: right;">-0.0210577</td>
+<td style="text-align: left;">AFL, HIG</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">ICE</td>
+<td style="text-align: right;">0.0054677</td>
+<td style="text-align: left;">AFL, ICE</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">IVZ</td>
+<td style="text-align: right;">-0.0291262</td>
+<td style="text-align: left;">AFL, IVZ</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-01-05</td>
+<td style="text-align: left;">AFL</td>
+<td style="text-align: right;">-0.0261952</td>
+<td style="text-align: left;">JPM</td>
+<td style="text-align: right;">-0.0310450</td>
+<td style="text-align: left;">AFL, JPM</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+Next, we’ll use the brilliantly useful <code>slider</code> package and the function <code>slide2_dbl</code> to do the rolling correlation calculation (<code>slider</code> implements a number of rolling window calculation functions – we’ll explore it more in another post):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">period &lt;- 60
+
+pairwise_corrs &lt;- pairwise_combos %&gt;%
+  group_by(tickers) %&gt;%
+  arrange(date, .by_group = TRUE) %&gt;%
+  mutate(rollingcor = slider::slide2_dbl(
+    .x = return.x, 
+    .y = return.y, 
+    .f = ~cor(.x, .y), 
+    .before = period, 
+    .complete = TRUE)
+    ) %&gt;%
+  select(date, tickers, rollingcor)
+
+pairwise_corrs %&gt;%
+  na.omit() %&gt;%
+  head(30) %&gt;%
+  pretty_table()
+</pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">tickers</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">rollingcor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2015-04-01</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7818676</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-02</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7718580</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-06</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7678625</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-07</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7680022</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-08</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7813979</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-09</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7711979</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-10</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7678292</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-13</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7469418</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-14</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7423953</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-15</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7422602</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-16</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7375739</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-17</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7422152</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-20</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7391824</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-21</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7285547</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-22</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7220685</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-23</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7302781</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-24</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.7220693</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-27</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6898930</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-28</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6830527</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-29</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6761612</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-04-30</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6472679</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-05-01</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.5972614</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-05-04</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6544743</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-05-05</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6505913</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-05-06</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6460236</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-05-07</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6449847</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-05-08</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6497471</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-05-11</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6656422</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-05-12</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6721218</td>
+</tr>
+<tr>
+<td style="text-align: left;">2015-05-13</td>
+<td style="text-align: left;">AFL, AIG</td>
+<td style="text-align: right;">0.6832579</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+The syntax of <code>slide2_dbl</code> might look odd if it’s the first time you’ve seen it, but it leverages the tidyverse’s functional programming tools to repeatedly apply a function (given by <code>.f = ~cor(...)</code>) over windows of our data specified by <code>before</code> (number of prior periods to use in the window) and <code>complete</code> (whether to evaluate <code>.f</code> on complete windows only).
+
+The <code>~</code> notation might look odd too. In this case, it’s used as shorthand for an anonymous function: <code>function(.x, .y) {cor(.x, .y)}</code>
+
+So our pipeline of operations above is exactly the same as this one:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">pairwise_corrs &lt;- pairwise_combos %&gt;%
+  group_by(tickers) %&gt;%
+  arrange(date, .by_group = TRUE) %&gt;%
+  mutate(rollingcor = slider::slide2_dbl(
+    .x = return.x, 
+    .y = return.y, 
+    .f = function(.x, .y) { cor(.x, .y) },  # long-hand anonymous function
+    .before = period, 
+    .complete = TRUE)
+    ) %&gt;%
+  select(date, tickers, rollingcor)
+</pre>
+
+Now, the other confusing things about this transformation are the seemingly inconsistent arguments in <code>slider2_dbl</code>:
+
+<ul>
+<li>we designate a <code>.x</code> and a <code>.y</code> argument</li>
+<li>but we also define a function with these arguments</li>
+</ul>
+
+Actually, the <code>.x</code> and <code>.y</code> names are conventions used throughout the tidyverse to designate variables that are subject to non-standard evaluation (more on what that means in another post – it’s not critical right now). In our <code>slide2_dbl</code> function, <code>.x</code> is passed as the first argument to <code>.f</code> and <code>.y</code> is passed as the second.
+
+That means that we could equally write our transformation like this, and it would be equivalent:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">pairwise_corrs &lt;- pairwise_combos %&gt;%
+  group_by(tickers) %&gt;%
+  arrange(date, .by_group = TRUE) %&gt;%
+  mutate(rollingcor = slider::slide2_dbl(
+    .x = return.x, 
+    .y = return.y, 
+    .f = function(arg1, arg2) { cor(arg1, arg2) },  # the name of the args doesn't matter
+    .before = period, 
+    .complete = TRUE)
+    ) %&gt;%
+  select(date, tickers, rollingcor)
+</pre>
+
+Finally, to get the mean rolling correlation of the ETF constituents, we simply group by date and take the mean of the group:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">mean_pw_cors &lt;- pairwise_corrs %&gt;%
+  group_by(date) %&gt;%
+  summarise(mean_pw_corr = mean(rollingcor, na.rm = TRUE))
+
+mean_pw_cors %&gt;%
+  na.omit() %&gt;%
+  ggplot(aes(x = date, y = mean_pw_corr)) +
+    geom_line() +
+    labs(
+      x = "Date",
+      y = "Mean Pairwise Correlation",
+      title = "Rolling Mean Pairwise Correlation",
+      subtitle = "XLF Constituents"
+    )
+</pre>
+<img alt="plot of chunk unnamed-chunk-9" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21162011/unnamed-chunk-9-1-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk unnamed-chunk-9"/>
+<h2>Conclusion</h2>
+
+In this post, we broke down our problem of calculating the rolling mean correlation of the constituents of an ETF into various chunks and solved them one at a time to get the desired output.
+
+The tidy data manipulation snippets we used here will be useful for doing similar transformations, such as rolling beta calculations, as well as single-variable rolling calculations such as volatility.
+
+One problem that we glossed over here is that our largest dataframe – the one containing the pairwise combinations of returns – consisted of just under 3 million rows. That means we can easily do this entire piece of analysis in memory.
+Things get slightly more difficult if we want to calculate the mean rolling correlation of the constituents of a larger ETF or index.
+
+In another post, we’ll solve this problem for the S&amp;P 500 index. We’ll also consider how the index has changed over time.
+
+<div class="convertful-36233"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>dplyr</span>, <span>rolling windows</span>, <span>slider</span>, <span>tidyverse</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-111077 post type-post status-publish format-standard hentry category-excel category-think-like-a-trader category-tools-of-the-trade tag-excel tag-gld tag-research tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110579 post type-post status-publish format-standard hentry category-data-analysis category-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110175 post type-post status-publish format-standard has-post-thumbnail hentry category-excel category-quant-trading tag-data tag-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/quick-fix-yahoo-finance-data-access-with-excel/"><img alt="Quick fix: Yahoo Finance data access with Excel" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="110222" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">10 thoughts on “How to Calculate Rolling Pairwise Correlations in the Tidyverse”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-14532">
+<div class="comment-body">
+				Pingback: Handling a Large Universe of Stock Price Data in R: Profiling with profvis - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-14543">
+<div class="comment-body">
+				Pingback: Weekly Roundup 22 May - Doubling Down in Losing Trades Like a Drunken Hedge Fund Manager - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-14562">
+<article class="comment-body" id="div-comment-14562" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Are correlations and covariances like standard deviation and variances? i.e just like it’s frowned upon to average up correlations, but it’s okay to average up variances, might you want to calculate the average covariance, rather than the average correlation?</p>
+<span class="reply"><a aria-label="Reply to T.C." class="comment-reply-link" data-belowelement="div-comment-14562" data-commentid="14562" data-postid="23176" data-replyto="Reply to T.C." data-respondelement="respond" href="#comment-14562" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-14606">
+<article class="comment-body" id="div-comment-14606" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I’m not sure that it’s frowned upon to average pairwise correlations as such…perhaps if you were averaging multiple correlation estimates from a <em>single</em>pair of variables you’d run into some problems. But that’s not what we’re doing here.</p>
+<p>Ultimately it depends on what you’re doing with the calculation. We’re using it as part of a broader study to understand the effect of ETF-driven trading on constituent stocks. In particular, whether ETF-driven sell-offs in the constituents tend to drive correlations up and lead to exploitable mispricings. In that context, I think the mean pairwise correlation is fine.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14606" data-commentid="14606" data-postid="23176" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14606" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-14689">
+<div class="comment-body">
+				Pingback: Performant R Programming: Chunking a Problem into Smaller Pieces - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-14734">
+<article class="comment-body" id="div-comment-14734" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris!. Awesome post! Super useful!. The full_join is a very cool approach.</p>
+<p>For the rolling correlation with slider package, it got a bit slow when running over 17 million rows (over a different dataset). I tried  tibbletime’s “rollify” function as an alternative, and it’s also a bit slow.  Then tried the “Roll” package with roll_cor function.. and it runs 30X faster.<br/>
+The Roll package seems works fine with tidyverse except for some functions that are crashing  on my dataset like roll_max and roll_min.</p>
+<span class="reply"><a aria-label="Reply to Carlos Mata" class="comment-reply-link" data-belowelement="div-comment-14734" data-commentid="14734" data-postid="23176" data-replyto="Reply to Carlos Mata" data-respondelement="respond" href="#comment-14734" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-16907">
+<div class="comment-body">
+				Pingback: Corr-correlation – Data Science Austria 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-16908">
+<div class="comment-body">
+				Pingback: Corr-correlation | R-bloggers 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1" id="comment-17006">
+<article class="comment-body" id="div-comment-17006" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>The RollingWindow package won’t get you around the memory issues but is pretty quick.  <a href="https://github.com/andrewuhl/RollingWindow" rel="nofollow ugc">https://github.com/andrewuhl/RollingWindow</a></p>
+<span class="reply"><a aria-label="Reply to Brent Morrison" class="comment-reply-link" data-belowelement="div-comment-17006" data-commentid="17006" data-postid="23176" data-replyto="Reply to Brent Morrison" data-respondelement="respond" href="#comment-17006" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/rolling-mean-correlations-in-the-tidyverse/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

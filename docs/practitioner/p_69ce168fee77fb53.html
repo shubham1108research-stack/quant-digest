@@ -1,0 +1,481 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Kalman Filter Example:Pairs Trading in R</title>
+<!-- source: https://robotwealth.com/kalman-filter-pairs-trading-r/ -->
+<h1>Kalman Filter Example:Pairs Trading in R</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-11300 post type-post status-publish format-standard hentry category-backtesting category-cointegration category-quant-trading category-r category-time-series-modelling category-trading-strategies tag-backtesting tag-kalman-filter tag-pairs-trading tag-r tag-trading-strategies pmpro-has-access" id="post-11300">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">September 19, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Kalman Filter Example:<br/>Pairs Trading in R</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Kalman Filter Example:&lt;br&gt;Pairs Trading in R" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><em>This Kalman Filter Example post is the first in a series where we deploy the Kalman Filter in pairs trading. Be sure to follow our progress in <a href="https://robotwealth.com/pairs-trading-zorro/" rel="noopener noreferrer" target="_blank">Part 2: Pairs Trading in Zorro</a>, and <a href="https://robotwealth.com/kalman-filter-pairs-trading-with-zorro-and-r/" rel="noopener noreferrer" target="_blank">Part 3: Putting It All Together</a>.</em>
+
+Anyone who’s tried pairs trading will tell you that real financial series don’t exhibit truly stable, cointegrating relationships.
+
+If they did, pairs trading would be the easiest game in town. But the reality is that relationships are constantly evolving and changing. At some point, we’re forced to make uncertain decisions about how best to capture those changes.
+
+One way to incorporate both uncertainty and dynamism in our decisions is to use the Kalman filter for parameter estimation.
+
+The Kalman filter is a state space model for estimating an unknown (‘hidden’) variable using observations of related variables and models of those relationships. The Kalman filter is underpinned by Bayesian probability theory and enables an estimate of the hidden variable in the presence of noise.
+
+There are plenty of tutorials online that describe the mathematics of the Kalman filter, so I won’t repeat those here (<a href="https://www.bzarg.com/p/how-a-kalman-filter-works-in-pictures/" rel="noopener noreferrer" target="_blank">this article is a wonderful read</a>). Instead, this Kalman Filter Example post will show you how to implement the Kalman filter framework to provide a <em><strong>dynamic estimate of the hedge ratio in a pairs trading strategy</strong></em>. I’ll provide just enough math as is necessary to follow the implementation.
+
+For this Kalman Filter example, we need four variables:
+
+<ol>
+<li>A vector of our observed variable</li>
+<li>A vector of our hidden variable</li>
+<li>A state transition model (which describes how the hidden variable evolves from one state to the next)</li>
+<li>An observation model (a matrix of coefficients for the other variable – we use a hedge coefficient and an intercept)</li>
+</ol>
+
+For our hedge ratio/pairs trading application, the observed variable is one of our price series (p_1) and the hidden variable is our hedge ratio, (\beta). The observed and hidden variables are related by the familiar spread equation: [p_1 = \beta * p_2 + \epsilon] where (\epsilon) is noise (in our pairs trading framework, we are essentially making bets on the mean reversion of (\epsilon)). In the Kalman framework, the other price series, (p_2) provides our observation model.
+
+We also need to define a state transition model that describes the evolution of (\beta) from one time period to the next. If we assume that (\beta) follows a random walk, then our state transition model is simply [\beta_t = \beta_{t-1} + \omega]
+
+Here’s the well-known iterative Kalman filter algorithm.
+
+For every time step:
+
+<ol>
+<li>Predict the next state of the hidden variable given the current state and the state transition model</li>
+<li>Update the state covariance prediction</li>
+<li>Predict the next value of the observed variable given the prediction for the hidden variable and the observation model</li>
+<li>Update the measured covariance prediction</li>
+<li>Calculate the error between the observed and predicted values of the observed variable</li>
+<li>Calculate the Kalman gain</li>
+<li>Update the estimate of the hidden variable</li>
+<li>Update the state covariance prediction</li>
+</ol>
+
+To start the iteration, we need initial values for the covariances of the measurement and state equations. Methods exist to estimate these from data, but for our purposes we will start with some values that result in a relatively slowly changing hedge ratio. To make the hedge ratio change faster, increase the values of <span class="lang:r decode:true crayon-inline">delta</span>  and <span class="lang:r decode:true crayon-inline">Ve</span> in the R code below. The initial estimates of these values are as close to ‘parameters’ that we have in our Kalman filter framework.
+
+Here’s some R code for implementing the Kalman filter.
+
+The two price series used are daily adjusted closing prices for the “Hello world” of pairs trading: GLD and GDX (you can download the data at the end of this post).
+
+First, read in and take a look at the data:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Read in price history">library(xts)
+
+path &lt;- "C:/Path/To/Your/Data/"
+assets &lt;- c("GLD", "GDX")
+
+df1 &lt;- xts(read.zoo(paste0(path, assets[1], ".csv"), tz="EST", format="%Y-%m-%d", sep=",", header=TRUE)) 
+df2 &lt;- xts(read.zoo(paste0(path, assets[2], ".csv"), tz="EST", format="%Y-%m-%d", sep=",", header=TRUE))
+xy &lt;- merge(df1$Close, df2$Close, join="inner")
+colnames(xy) &lt;- assets
+
+plot(xy, legend.loc=1)</pre>
+
+Here’s what the data look like:
+
+<img alt="Here's what the data looks like - kalman filter example" class="aligncenter wp-image-11317 size-full perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164740/GLD-GDX.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164740/GLD-GDX.png 700w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164740/GLD-GDX-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164740/GLD-GDX-300x214.png 300w" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/>
+
+Looks OK at first glance.
+
+Here’s the code for the iterative Kalman filter estimate of the hedge ratio:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Kalman filter">x &lt;- xy[, assets[1]]
+y &lt;- xy[, assets[2]]
+x$int &lt;- rep(1, nrow(x))
+
+delta &lt;- 0.0001
+Vw &lt;- delta/(1-delta)*diag(2)
+Ve &lt;- 0.001
+R &lt;- matrix(rep(0, 4), nrow=2)
+P &lt;- matrix(rep(0, 4), nrow=2)
+
+beta &lt;- matrix(rep(0, nrow(y)*2), ncol=2)
+y_est &lt;- rep(0, nrow(y))
+e &lt;- rep(0, nrow(y))
+Q &lt;- rep(0, nrow(y))
+
+for(i in 1:nrow(y)) {
+  if(i &gt; 1) {
+    beta[i, ] &lt;- beta[i-1, ] # state transition
+    R &lt;- P + Vw # state cov prediction
+  }
+  y_est[i] &lt;- x[i, ] %*% beta[i, ] # measurement prediction
+  Q[i] &lt;- x[i, ] %*% R %*% t(x[i, ]) + Ve # measurement variance prediction
+  
+  # error between observation of y and prediction
+  e[i] &lt;- y[i] - y_est[i]
+  K &lt;- R %*% t(x[i, ]) / Q[i] # Kalman gain
+  
+  # state update
+  beta[i, ] &lt;- beta[i, ] + K * e[i]
+  P = R - K %*% x[i, ] %*% R
+}
+
+beta &lt;- xts(beta, order.by=index(xy))
+plot(beta[2:nrow(beta), 1], type='l', main = 'Kalman updated hedge ratio')
+plot(beta[2:nrow(beta), 2], type='l', main = 'Kalman updated intercept')</pre>
+
+And here is the resulting plot of the dynamic hedge ratio:
+
+<img alt="the resulting plot of the dynamic hedge ratio" class="aligncenter wp-image-11318 size-full perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164740/hedge-kalman-gdx-gld.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164740/hedge-kalman-gdx-gld.png 700w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164740/hedge-kalman-gdx-gld-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164740/hedge-kalman-gdx-gld-300x214.png 300w" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/>
+
+The value of this particular Kalman filter example is immediately apparent – you can see how drastically the hedge ratio changed over the years.
+
+We could use that hedge ratio to construct our signals for a trading strategy, but we can actually use the other by-products of the Kalman filter framework to generate them directly <em>(hat tip to Ernie Chan for this one):</em>
+
+The prediction error (<span class="lang:r decode:true crayon-inline">e</span> in the code above) is equivalent to the deviation of the spread from its predicted value. Some simple trade logic could be to buy and sell our spread when this deviation is very negative and positive respectively.
+
+We can relate the actual entry levels to the standard deviation of the prediction error. The Kalman routine also computes the standard deviation of the error term for us: it is simply the square root of <span class="lang:r decode:true crayon-inline">Q</span> in the code above.
+
+Here’s a plot of the trading signals at one standard deviation of the prediction error (we need to drop a few leading values as the Kalman filter takes a few steps to warm up):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Plot trade signals"># plot trade signals
+e &lt;- xts(e, order.by=index(xy))
+sqrtQ &lt;- xts(sqrt(Q), order.by=index(xy))
+signals &lt;- merge(e, sqrtQ, -sqrtQ)
+colnames(signals) &lt;- c("e", "sqrtQ", "negsqrtQ")
+plot(signals[3:length(index(signals))], ylab='e', main = 'Trade signals at one-standard deviation', col=c('blue', 'black', 'black'), lwd=c(1,2,2))
+</pre>
+<img alt="the trading signals at one standard deviation of the prediction error - kalman filter example" class="aligncenter wp-image-11319 size-full perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164739/gdx-gld-1sd-signals.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164739/gdx-gld-1sd-signals.png 700w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164739/gdx-gld-1sd-signals-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164739/gdx-gld-1sd-signals-300x214.png 300w" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/>
+
+Cool! Looks OK, except the number of signals greatly diminishes in the latter half of the simulation period. Later, we might come back and investigate a more aggressive signal, but let’s press on for now.
+
+At this point, we’ve got a time series of trade signals corresponding to the error term being greater than one standard deviation from its (estimated) mean. We could run a vectorised backtest by calculating positions corresponding to these signals, then determine the returns of holding those positions.
+
+In fact, let’s do that next:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Vectorised backtest"># vectorised backtest 
+sig &lt;- ifelse((signals[1:length(index(signals))]$e &gt; signals[1:length(index(signals))]$sqrtQ) &amp; (lag.xts(signals$e, 1) &lt; lag.xts(signals$sqrtQ, 1)), -1, 
+           ifelse((signals[1:length(index(signals))]$e &lt; signals[1:length(index(signals))]$negsqrtQ) &amp; (lag.xts(signals$e, 1) &gt; lag.xts(signals$negsqrtQ, 1)), 1, 0))
+
+colnames(sig) &lt;- "sig"
+
+## trick for getting only the first signals
+sig[sig == 0] &lt;- NA
+sig &lt;- na.locf(sig)
+sig &lt;- diff(sig)/2
+plot(sig)
+
+## simulate positions and pnl
+sim &lt;- merge(lag.xts(sig,1), beta[, 1], x[, 1], y)
+colnames(sim) &lt;- c("sig", "hedge", assets[1], assets[2])
+sim$posX &lt;- sim$sig * -1000 * sim$hedge
+sim$posY &lt;- sim$sig * 1000   
+sim$posX[sim$posX == 0] &lt;- NA
+sim$posX &lt;- na.locf(sim$posX)
+sim$posY[sim$posY == 0] &lt;- NA
+sim$posY &lt;- na.locf(sim$posY)
+
+pnlX &lt;- sim$posX * diff(sim[, assets[1]])
+pnlY &lt;- sim$posY * diff(sim[, assets[2]])
+pnl &lt;- pnlX + pnlY
+plot(cumsum(na.omit(pnl)), main="Cumulative PnL, $")</pre>
+<em>Just a quick explanation of my hacky backtest…</em>
+<blockquote>The ugly nested <code>ifelse</code> statement in line 2 creates a time series of trade signals where sells are represented as -1, buys as 1 and no signal as 0. The buy signal is the prediction error crossing under its -1 standard deviation from above; the sell signal is the prediction error crossing over its 1 standard deviation from below.
+
+The problem with this signal vector is that we can get consecutive sell signals and consecutive buy signals. We don’t want to muddy the waters by holding more than one position at a time, so we use a little trick in lines 7 – 10 to firstly replace any zeroes with <code>NA</code>, and then use the <code>na.locf</code> function to fill forward the <code>NA</code>values with the last real value. We then recover the original (non-consecutive) signals by taking the <code>diff</code>and dividing by 2.
+
+If that seems odd, just write down on a piece of paper a few signals of -1, 1 and 0 in a column and perform on them the operations described. You’ll quickly see how this works.
+
+Then, we calculate our positions in each asset according to our spread and signals, taking care to lag our signals so that we don’t introduce look-ahead bias. We’re trading 1,000 units of our spread per trade. Our estimated profit and loss is just the sum of the price differences multiplied by the positions in each asset.</blockquote>
+
+Here’s the result:
+
+<img alt="our cumulative profit and loss - kalman filter example" class="aligncenter wp-image-11320 size-full perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164738/gld-gdx-pnl-1sd.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164738/gld-gdx-pnl-1sd.png 700w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164738/gld-gdx-pnl-1sd-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164738/gld-gdx-pnl-1sd-300x214.png 300w" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/>
+
+Looks interesting!
+
+But recall that our trading signals were few and far between in the latter half of the simulation? If we plot the signals, we see that we were actually holding the spread for well over a year at a time:
+
+<img alt="a signal plot showing were holding the spread over a year at a time" class="aligncenter wp-image-11321 size-full perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164737/signals.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164737/signals.png 700w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164737/signals-600x257.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164737/signals-300x129.png 300w" decoding="async" height="300" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='300'%20viewBox='0%200%20700%20300'%3E%3C/svg%3E" width="700"/>
+
+I doubt we’d want to trade the spread this way, so let’s make our signals more aggressive:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="Aggressive trade signals"># more aggressive trade signals
+signals &lt;- merge(e, .5*sqrtQ, -.5*sqrtQ)
+colnames(signals) &lt;- c("e", "sqrtQ", "negsqrtQ")
+plot(signals[3:length(index(signals))], ylab='e', main = 'Trade signals at one-standard deviation', col=c('blue', 'black', 'black'), lwd=c(1,2,2))
+</pre>
+<img alt="trade signals at one half standard deviation" class="aligncenter wp-image-11322 size-full perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164737/half-sd-gld-gdx.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164737/half-sd-gld-gdx.png 700w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164737/half-sd-gld-gdx-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164737/half-sd-gld-gdx-300x214.png 300w" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/>
+
+Better! A smarter way to do this would probably be to adapt the trade level (or levels) to the recent volatility of the spread – I’ll leave that as an exercise for you.
+
+These trade signals lead to this impressive and highly dubious equity curve:
+
+<img alt="a more impressive, yet dubious, profit and loss - kalman filter example" class="aligncenter wp-image-11323 size-full perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164736/aggressive-gld-gdx.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164736/aggressive-gld-gdx.png 700w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164736/aggressive-gld-gdx-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164736/aggressive-gld-gdx-300x214.png 300w" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/>
+<blockquote><em>Why is it dubious?</em></blockquote>
+
+Well, you probably noticed that there are some pretty out-there assumptions in this backtest. To name the most obvious:
+
+<ul>
+<li>We’re trading at the daily closing price with no market impact or slippage</li>
+<li>We’re trading for free</li>
+</ul>
+
+My gut feeling is that this would need a fair bit of work to cover costs of trading – but that gets tricky to assess without a more accurate simulation tool.
+
+<h2>Where to next?</h2>
+
+You can see that it’s a bit of a pain to backtest – particularly if you want to incorporate costs. To be fair, there are native R backtesting solutions that are more comprehensive than my quick-n-dirty vectorised version. But in my experience none of them lets you move quite as fast as the <a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro platform</a>, which also allows you to go from backtest to live trading with almost the click of a button.
+
+You can see that R makes it quite easy to incorporate an advanced algorithm<em> (well, at least I think it’s advanced; our clever readers probably disagree).</em> But tinkering with the strategy itself – for instance, incorporating costs, trading at multiple standard deviation levels, using a timed exit, or incorporating other trade filters – is a recipe for a headache, not to mention a whole world of unit testing and bug fixing.
+
+On the other hand, Zorro makes tinkering with the trading aspects of the strategy easy. Want to get a good read on costs? That’s literally a line of code. Want to filter some trades based on volatility? Yeah, you might need two lines for that. What about trading the spread at say half a dozen levels and entering and exiting both on the way up and on the way down? OK, you might need four lines for that.
+
+The downside with Zorro is that it would be pretty nightmarish implementing a Kalman filter in its native Lite-C code. But thanks to Zorro’s R bridge, I can use the R code for the Kalman filter example that I’ve already written, with literally only a couple of minor tweaks. We can have the best of both worlds.
+
+<em>Which leads to my next post…</em>
+
+In <a href="https://robotwealth.com/pairs-trading-zorro/" rel="noopener noreferrer" target="_blank">Kalman Filter Example part 2</a>, I’ll show you a basic pairs trading script in Zorro, using a more vanilla method of calculating the hedge ratio. After that, I’ll show you <a href="https://robotwealth.com/kalman-filter-pairs-trading-with-zorro-and-r/" rel="noopener noreferrer" target="_blank">how to configure Zorro to talk to R</a> and thus make use of the Kalman filter algorithm.
+
+<em>I’d love to know if this series is interesting for you, and what else you’d like to read about on Robot Wealth. Let us know in the comments.
+</em>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>backtesting</span>, <span>Kalman filter</span>, <span>pairs trading</span>, <span>R</span>, <span>trading strategies</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">19 thoughts on “Kalman Filter Example:&lt;br&gt;Pairs Trading in R”</h2>
+<ol class="comment-list">
+<li class="comment byuser comment-author-nanook019 even thread-even depth-1 parent" id="comment-8882">
+<article class="comment-body" id="div-comment-8882" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great piece</p>
+<span class="reply"><a aria-label="Reply to nanook019" class="comment-reply-link" data-belowelement="div-comment-8882" data-commentid="8882" data-postid="11300" data-replyto="Reply to nanook019" data-respondelement="respond" href="#comment-8882" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-8953">
+<article class="comment-body" id="div-comment-8953" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks! Glad you liked it.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-8953" data-commentid="8953" data-postid="11300" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-8953" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1" id="comment-8942">
+<article class="comment-body" id="div-comment-8942" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Are your assets x and y returns, or prices? It looks like prices, but might it not be more correct to use returns? Also, is there a name for Vw and Ve? Is it possible to relate them to anything in the tutorial you linked? Very interesting post, thank you for putting it together.</p>
+<span class="reply"><a aria-label="Reply to ontic" class="comment-reply-link" data-belowelement="div-comment-8942" data-commentid="8942" data-postid="11300" data-replyto="Reply to ontic" data-respondelement="respond" href="#comment-8942" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt thread-even depth-1 parent" id="comment-8955">
+<article class="comment-body" id="div-comment-8955" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>x and y are prices. The decision to use prices or returns is not so much about which one is “more correct” – rarely is something so black and white in the trading world as to deserve the label of being correct – but there are certainly implications for how you’d trade the spread in each case. </p>
+<p>Ve is the variance of the residuals of the measurement equation. Vw is the covariance in the state transition model. We can’t observe these directly so we need to estimate them. You can “tweak” these estimates (the latter by tweaking the delta parameter) to make the filter more or less responsive. More details here: <a href="http://www2.econ.iastate.edu/tesfatsi/FLSTemporalDataMining.GMontana2009.pdf" rel="nofollow ugc">http://www2.econ.iastate.edu/tesfatsi/FLSTemporalDataMining.GMontana2009.pdf</a></p>
+<p>There are also approaches to estimate these quantities directly from data. No doubt there’s an R package out there that does this for you. You can also use a training and validation set to estimate these values and see if they hold up out of sample. </p>
+<p>Hope that helps.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-8955" data-commentid="8955" data-postid="11300" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-8955" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-14579">
+<article class="comment-body" id="div-comment-14579" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I really like this post. how do you interpret the beta coefficient since here our beta has two different component?</p>
+<span class="reply"><a aria-label="Reply to sarah" class="comment-reply-link" data-belowelement="div-comment-14579" data-commentid="14579" data-postid="11300" data-replyto="Reply to sarah" data-respondelement="respond" href="#comment-14579" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-3 parent" id="comment-14605">
+<article class="comment-body" id="div-comment-14605" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Sarah. Thanks for reading! The two components of <code>beta</code> here are the slope and intercept terms from the linear regression. We use the slope component as an estimate of the dynamic hedge ratio. We don’t directly use the intercept term in the trading model, but rather than setting it to zero, including it in the regression is helpful for dealing with bias in the residuals. <a href="http://fabian-kostadinov.github.io/2015/01/04/cointegration-and-the-role-of-the-intercept/" rel="noopener noreferrer nofollow ugc" target="_blank">This is a useful article for demonstrating the intuition</a>.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14605" data-commentid="14605" data-postid="11300" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14605" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-27123">
+<article class="comment-body" id="div-comment-27123" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Kris, </p>
+<p>This is a fantastic article. I’ve read both the Fabian post you’ve linked and your article a few times over. In my Kalman filter implementations (and in my standard OLS regression hedges), I have found the intercept to be very confusing. I’m often returning high intercepts with relatively low beta coefficients resulting in highly imbalanced hedge ratios. If my intercept is so high as significantly distort my hedge, should I add it back into the hedge and re-calculate or am I missing something? Is it every appropriate to include the intercept in the hedge? In an OLS regression,  is it appropriate to force the intercept to zero for hedging purposes? In Kalman filtering this seems less practical as the model then requires different implementation. </p>
+<p>As a real world example, I am currently looking at asset X valued $0.76235 and asset Y values at $0.04545. My Kalman filter quickly begins producing nearly perfect y-hat values, but results in beta of 0.0219 and intercept of 0.02874. With such a high intercept, my hedge [X * beta] is $0.016705. Clearly far lower than the Y value / y-hat value. Is the hedge result of ~$0.016 the appropriate hedge or do I need to re-add the intercept to produce a hedge at essentially 1:1 with my Y values?</p>
+<p>I may be misunderstanding the use of the intercept, but I’m finding very little explanation on the concept.</p>
+<span class="reply"><a aria-label="Reply to James VanLandingham" class="comment-reply-link" data-belowelement="div-comment-27123" data-commentid="27123" data-postid="11300" data-replyto="Reply to James VanLandingham" data-respondelement="respond" href="#comment-27123" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-9386">
+<article class="comment-body" id="div-comment-9386" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>that was really interesting thank you. Not an expert in the field but could you imagine a future post implementing an R  particle filtering package which is supposed to be free from KF’s certain normality assumptions?</p>
+<span class="reply"><a aria-label="Reply to Nicolas" class="comment-reply-link" data-belowelement="div-comment-9386" data-commentid="9386" data-postid="11300" data-replyto="Reply to Nicolas" data-respondelement="respond" href="#comment-9386" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-9417">
+<article class="comment-body" id="div-comment-9417" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for reading, Nicolas. Sure, I can imagine doing that at some point – would be interesting to see if and how the hedge ratio evolved differently. Next time though, I think I’ll just use one of the existing state space modeling packages rather than doing it from scratch!</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-9417" data-commentid="9417" data-postid="11300" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-9417" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-9953">
+<article class="comment-body" id="div-comment-9953" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Fantastic work!</p>
+<span class="reply"><a aria-label="Reply to Hampus" class="comment-reply-link" data-belowelement="div-comment-9953" data-commentid="9953" data-postid="11300" data-replyto="Reply to Hampus" data-respondelement="respond" href="#comment-9953" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-13699">
+<div class="comment-body">
+				Pingback: Pairs Trading in Zorro - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-13705">
+<div class="comment-body">
+				Pingback: Kalman Filter Pairs Trading with Zorro and R - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-13706">
+<div class="comment-body">
+				Pingback: Integrating R with the Zorro Backtesting and Execution Platform - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-14494">
+<div class="comment-body">
+				Pingback: Using Digital Signal Processing in Quantitative Trading Strategies - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/kalman-filter-pairs-trading-r/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

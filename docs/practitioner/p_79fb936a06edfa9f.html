@@ -1,0 +1,288 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Why We Use Apache Beam For Our Systematic Trading Data Pipeline</title>
+<!-- source: https://robotwealth.com/why-we-use-apache-beam-for-our-trading-data-pipeline/ -->
+<h1>Why We Use Apache Beam For Our Systematic Trading Data Pipeline</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-23832 post type-post status-publish format-standard has-post-thumbnail hentry category-python category-quant-trading category-trading-infrastructure tag-data tag-python pmpro-has-access" id="post-23832">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/19f7989eace47c5fe98211a8e81485cc773bdc6af0c455902d991c6cbe6514f7?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/19f7989eace47c5fe98211a8e81485cc773bdc6af0c455902d991c6cbe6514f7?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/ajet1996/">Ajet Luka</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">June 3, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Why We Use Apache Beam For Our Systematic Trading Data Pipeline</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Why We Use Apache Beam For Our Systematic Trading Data Pipeline" class="ipa-media gb-media-81e19d89" data-media-id="23853" decoding="async" fetchpriority="high" height="1000" sizes="(max-width: 1000px) 100vw, 1000px" src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000.png" srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000.png 1000w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-300x300.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-100x100.png 100w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-600x600.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-150x150.png 150w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-768x768.png 768w" width="1000"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In the world of Big Data, there are lots of tools and technologies to choose from. Choosing the <em>“right”</em> one depends on the things that you are building and the problems you are trying to solve.
+
+Trading firms have skilled teams that monitor and deploy data pipelines for their organisation and the technical overhead that comes with that. Firms invest in data infrastructure and research because data is at the centre of what they do.
+
+Data pipelines need to be robust and meet the technical requirements set by the organisation,  and they also need to be cost-efficient.
+
+These are challenges that a sole systematic trader can have a hard time tackling. This is especially true when you take into account that solo-traders also need to allocate their time in other parts of their trading business.
+
+So choosing a technology that is easy to manage and deploy pipelines with, and also offers good price efficiency is very important for a systematic trader.
+
+<strong>Enter Apache Beam…</strong>
+<img alt="" class="alignnone wp-image-23853 size-medium perfmatters-lazy" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-300x300.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-300x300.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-100x100.png 100w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-600x600.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-150x150.png 150w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000-768x768.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161902/beam-logo-full-color-name-bottom-1000.png 1000w" decoding="async" height="300" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='300'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" width="300"/>
+
+Apache Beam is a unified programming model for batch and streaming data processing jobs. It comes with support for many runners such as Spark, Flink, Google Dataflow and many more <a href="https://beam.apache.org/documentation/runners/capability-matrix/">(see here for all runners</a>).
+
+You can define your pipelines in Java, Python or Go. At this time the Java SDK is more mature with support for more database connections, but Python is being rapidly developed and comes at a close second, Go is still in its early stages of development.
+
+In the Robot Wealth batch data pipeline, we rely on Beam (on the Google <a href="https://cloud.google.com/dataflow">Dataflow</a> runner) for:
+
+<ul>
+<li>Downloading data from various APIs</li>
+<li>Loading it to Google Storage</li>
+<li>Transforming and enriching the data</li>
+<li>Calculating features</li>
+<li>Loading it to Big Query</li>
+<li>Data integrity checks</li>
+</ul>
+
+This gives us a scalable data pipeline which is also cost-efficient, because you only pay for Beam when you are using it.
+
+Here is how our batch data pipeline currently looks:
+
+<img alt="" class="alignnone size-full wp-image-23854 perfmatters-lazy" data-sizes="(max-width: 808px) 100vw, 808px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161900/RW-Pipeline-2.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161900/RW-Pipeline-2.png 808w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161900/RW-Pipeline-2-600x313.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161900/RW-Pipeline-2-300x157.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161900/RW-Pipeline-2-768x401.png 768w" decoding="async" height="422" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='808'%20height='422'%20viewBox='0%200%20808%20422'%3E%3C/svg%3E" width="808"/>
+
+The great thing about running Beam on Google Cloud is how seamlessly everything works together. In fact, every connection between the technologies used in the pipeline has native support in Beam.
+
+The most appealing features that make Beam the right choice for our data pipeline are
+
+<ul>
+<li>Autoscaling</li>
+<li>GCP Integration</li>
+<li>Easy to maintain codebase.</li>
+</ul>
+<h2>Apache Beam in Action in a Trading Workflow</h2>
+
+Let’s take a look at Beam in action.
+
+In the following code block, we will be defining a data integrity check pipeline that logs an error if OHLC data is faulty.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">import apache_beam as beam
+from apache_beam.options.pipeline_options import PipelineOptions
+import logging
+
+def price_integrity(row):
+    """A function that checks the integrity of a OHLC row, 
+    High must be the largest or equal data point in the row and Low must be the smallest or equal
+
+    Arguments:
+        row {dict} -- A dict with Keys being the column name and values being the column value
+
+    Returns:
+        bool -- True if row has errors False if row is good
+    """
+    
+    #Checks that the low(high) price is the lowest(highest) or equall 
+    low_error = not(round(float(row['low']),3) &lt;= round(float(row['high']),3) and round(float(row['low']),3)&lt;= round(float(row['open']),3) and round(float(row['low']),3) &lt;= round(float(row['close']),3))
+    high_error = not(round(float(row['high']),3) &gt;= round(float(row['low']),3) and round(float(row['high']),3) &gt;= round(float(row['open']),3) and round(float(row['high']),3) &gt;= round(float(row['close']),3))
+    if low_error or high_error:
+        row.update({'error':True})
+        logging.error('Integrity Check error uploading to datastore ....')
+        return row
+    else:
+        row.update({'error':False})
+        return row
+        
+        
+def run():
+
+    options = PipelineOptions()
+
+
+    p = beam.Pipeline(options=options)
+    PriceCheck = (
+            p 
+            | 'Mimic BigQuery Read' &gt;&gt; beam.Create([{'ticker':'RW','open':10,'high':11,'low':8,'close':10},
+                                              {'ticker':'RW','open':10,'high':11,'low':8,'close':11},
+                                              {'ticker':'RW','open':11,'high':11,'low':8,'close':9},
+                                              {'ticker':'RW','open':10,'high':12,'low':8,'close':10},
+                                              {'ticker':'RW','open':10,'high':11,'low':8,'close':17}])
+            | 'Row Integrity Check' &gt;&gt; beam.Map(price_integrity)
+            | 'Print Results' &gt;&gt; beam.Map(print)
+        )
+    p.run()
+
+run()</pre>
+
+This was a small part of our OHLC integrity check, in the production pipeline we are uploading the exceptions to <a href="https://cloud.google.com/datastore">Google Datastore</a>, and we are running some other kinds of integrity checks.
+
+Using this made up dataset we should have no errors on the rows except for the last one, where the close is bigger than the high. In that case the row will fail the integrity check and the error flag will be set to True.
+
+When running this in production, the Dataflow runner will optimize your pipeline and scale it across many workers .
+
+Using Apache Beam, we have no issues scaling this to run on hundreds of millions of rows.
+
+Its programming syntax is also easy to learn, and intuitive. This allows us to rapidly experiment with our pipelines designs and try out new things.
+
+<h2>Summary</h2>
+
+In summary Apache Beam is a great way to run your batch and streaming workflows with an easy to read API, scalable infrastructure and painless integration with the GCP suite of tools.
+
+<div class="convertful-36233"></div>
+<h2>If you liked this you’ll probably like these too…</h2>
+<blockquote class="wp-embedded-content" data-secret="Yeq3nJccjp"><a href="https://robotwealth.com/using-apache-airflow-data-processing/">Using Apache Airflow to Extract CoT Data</a></blockquote>
+<blockquote class="wp-embedded-content" data-secret="PzHAuKe0fm"><a href="https://robotwealth.com/using-python-from-the-comfort-of-r-studio/">How to Run Python from R Studio</a></blockquote>
+<blockquote class="wp-embedded-content" data-secret="RyHZsJPqdQ"><a href="https://robotwealth.com/rolling-and-expanding-windows-for-dummies/">Rolling and Expanding Windows For Dummies</a></blockquote>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>data</span>, <span>python</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">2 thoughts on “Why We Use Apache Beam For Our Systematic Trading Data Pipeline”</h2>
+<ol class="comment-list">
+<li class="comment byuser comment-author-greenzone even thread-even depth-1 parent" id="comment-14826">
+<article class="comment-body" id="div-comment-14826" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>In a prior article you mentioned using Apache Airflow for what appears to be a similar process.<br/>
+When would you choose one versus the other?</p>
+<span class="reply"><a aria-label="Reply to greenzone" class="comment-reply-link" data-belowelement="div-comment-14826" data-commentid="14826" data-postid="23832" data-replyto="Reply to greenzone" data-respondelement="respond" href="#comment-14826" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-ajet1996 bypostauthor odd alt depth-2" id="comment-14827">
+<article class="comment-body" id="div-comment-14827" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great Question Ron!</p>
+<p>In our experience you would want to use Airlfow for very light jobs, such as scheduling and orchestration of workflows across GCP technologies.</p>
+<p>You can see that Google Composer (Airflow) is the first step in our data pipeline it manages all of the reporting, error handling, and has determined steps on what to do when something fails (i.e retry the job again).</p>
+<p>So whatever light jobs that you might have Composer can take care of that, however when you start dealing with millions of rows it gets very expensive to run stuff in Composer, Dataflow compliments that very well, because of it’s Autoscaling and “Pay what you use”  features.</p>
+<span class="reply"><a aria-label="Reply to Ajet Luka" class="comment-reply-link" data-belowelement="div-comment-14827" data-commentid="14827" data-postid="23832" data-replyto="Reply to Ajet Luka" data-respondelement="respond" href="#comment-14827" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/why-we-use-apache-beam-for-our-trading-data-pipeline/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

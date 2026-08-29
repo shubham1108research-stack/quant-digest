@@ -1,0 +1,88 @@
+name: Core topics
+
+# OpenAlex subject labels for every candidate, so off-domain strays can be
+# found by SUBJECT rather than by a 33-word title blocklist.
+#
+# It runs here rather than on a laptop for one reason: 2,380 requests against
+# OpenAlex. The keyless budget is ~1,000/day and SHARED WITH EVERY ANONYMOUS
+# CALLER FROM THE SAME IP, so a local run either exhausts it or silently
+# returns less than it asked for. OPENALEX_API_KEY lifts it to 10,000/day,
+# which fits this job with room to retry.
+#
+# It does NOT rebuild the core list -- that is an hour of S2 sweep for inputs
+# this job does not use. It reuses the newest successful build-core artifact,
+# and says so loudly if there is none, because a topics run against a stale or
+# absent candidate list is worse than no run at all.
+#
+# READ-ONLY. Touches no database, takes no lock, removes nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Fetch only this many (0 = all). Use for a sample first."
+        required: false
+        default: "0"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  topics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Recover the candidate list
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p export
+          PREV=$(gh run list --workflow=build-core.yml --status=success \
+                   --limit 10 --json databaseId --jq '.[].databaseId' | head -1)
+          if [ -z "$PREV" ]; then
+            echo "!! no successful build-core run to take the candidate list from"
+            exit 1
+          fi
+          gh run download "$PREV" -n core-list -D export/
+          echo "recovered the candidate list from run $PREV"
+          wc -l export/core_candidates.csv
+
+      - name: Recover the topics cache
+        # RESUMABLE ACROSS RUNS. Without this every dispatch starts from zero
+        # and spends 2,380 requests of a 10,000/day budget re-fetching what the
+        # last run already had. Failure here is fine -- it just means a cold
+        # start -- so it must not fail the job.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+        run: |
+          mkdir -p _topics_prev
+          PREV=$(gh run list --workflow=core-topics.yml --status=success \
+                   --limit 10 --json databaseId --jq '.[].databaseId' | head -1)
+          if [ -n "$PREV" ]; then
+            gh run download "$PREV" -n core-topics -D _topics_prev/ || true
+            if [ -f _topics_prev/core_topics.json ]; then
+              cp _topics_prev/core_topics.json export/core_topics.json
+              echo "recovered topics cache from run $PREV"
+            fi
+          fi
+
+      - name: Fetch the topics
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+        run: |
+          python -c "import oa; oa.preflight()"
+          python tools/core_topics.py --limit "${{ inputs.limit }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-topics
+          path: export/core_topics.json
+          retention-days: 90

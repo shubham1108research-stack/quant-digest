@@ -1,0 +1,388 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Can you apply factors to trade performance?</title>
+<!-- source: https://robotwealth.com/can-you-apply-factors-to-trade-performance/ -->
+<h1>Can you apply factors to trade performance?</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-10953 post type-post status-publish format-standard hentry category-backtesting category-factors category-quant-trading category-r category-zorro tag-backtesting tag-factors tag-meta-labelling tag-quantitative-analysis pmpro-has-access" id="post-10953">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">September 10, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Can you apply factors to<br/> trade performance?</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Can you apply factors to&lt;br&gt; trade performance?" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">When tinkering with trading ideas, have you ever wondered whether a certain variable might be correlated with the success of the trade?
+
+For instance, maybe you wonder if your strategy tends to do better when volatility is high?
+
+In this case, you can get very binary feedback by, say, running backtests with and without a volatility filter.
+
+But this can mask interesting insights that might surface if the relationship could be explored in more detail.
+
+<a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro</a> has some neat tools that allow us to associate data of interest with particular trading decisions, and then export that data for further analysis. Here’s how it works:
+
+Zorro implements a <code>TRADE</code> struct for holding information related to a particular position. This struct is a data container which holds information about each trade throughout the life of our simulation. We can also add our own data to this struct via the <code>TRADEVAR</code> array, which we can populate with values associated with a particular trade.
+
+Zorro stores this array, along with all the other information about each and every position, as members of the <code>TRADE</code> struct. We can access the <code>TRADE</code> struct members in two ways: inside a <a href="https://zorro-project.com/manual/en/trade.htm" rel="noopener noreferrer" target="_blank">trade management function</a> (TMF) and inside a <a href="https://zorro-project.com/manual/en/fortrades.htm" rel="noopener noreferrer" target="_blank">trade enumeration loop</a>.
+
+Here’s an example of exporting the last estimated volatility at the time a position was entered, along with the return associated with that position <em>(this is a simple, long only moving average cross over strategy, data is <a href="https://zorro-project.com/manual/en/loadhistory.htm" rel="noopener noreferrer" target="_blank">loaded from Alpha Vantage</a>):</em>
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Export variables with trade results">/*
+Example of exporting data from a Zorro simulation.
+*/
+
+#define VOL TradeVar[0]
+
+int recordVol(var volatility)
+{
+    VOL = volatility;
+    
+    return 16;
+}
+
+function run()
+{
+    set(PLOTNOW);
+    StartDate = 2007;
+    EndDate = 2019;
+    BarPeriod = 1440;
+    LookBack = 200;
+    MaxLong = MaxShort = 1;
+    
+    string Name;
+    while(Name = loop("AAPL", "MSFT", "GOOGL", "IBM", "MMM", "AMZN", "CAT", "CL")) 
+    {
+        assetHistory(Name, FROM_AV);
+        asset(Name);
+        Spread = Commission = Slippage = 0;
+        
+        vars close = series(priceClose());
+        vars smaFast = series(SMA(close, 10));
+        vars smaSlow = series(SMA(close, 50));
+        
+        var vol = Moment(series(ROCP(close, 1)), 50, 2);  // rolling 50-period standard deviation of returns
+        
+        if(crossOver(smaFast, smaSlow))
+        {
+            enterLong(recordVol, vol);
+        }
+        else if(crossUnder(smaFast, smaSlow))
+        {
+            exitLong();
+        }
+        
+        plot("volatility", vol, NEW, BLUE);
+    }
+    
+    if(is(EXITRUN))
+    {
+        int count = 0;
+        char line[100];
+        string filename = "Log\\vol.csv";
+        if(file_length(filename))
+        {
+            printf("\nFound existing file. Deleting.");
+            file_delete(filename);
+        }
+        printf("\n writing vol file...");
+        sprintf(line, "Asset, EntryDate, TradeReturn, EntryVol");
+        file_append(filename, line);
+        for(closed_trades)
+        {
+            sprintf(line, "\n%s, %i, %.6f, %.5f", Asset, ymd(TradeDate), (-2*TradeIsShort+1)*(TradePriceClose-TradePriceOpen)/TradePriceOpen, VOL);
+            file_append(filename, line);
+            count++;
+        }
+        printf("\nTrades: %i", count);
+    }
+}</pre>
+
+The general pattern for accomplishing this is:
+
+<ol>
+<li>Define a meaningful name for the element of the <code>TradeVar</code> that we’ll use to hold our volatility data (line 5)</li>
+<li>Define a Trade Management Function to expose the <code>TRADE</code> struct and use it to assign our variable to our <code>TradeVar</code> (lines 7-12). A return value of 16 tells Zorro to run the TMF only when the position is entered and exited.</li>
+<li>Calculate the variable of interest in the Zorro script. Here we calculate the rolling 50-day standard deviation of returns (line 34).</li>
+<li>Pass the TMF and the variable of interest to Zorro’s <code>enter</code> function (line 38).</li>
+<li>In the <code>EXITRUN</code> (the last thing Zorro does after finishing a simulation), loop through all the positions using a trade enumeration loop and write the details, along with the volatility calculated just prior to entry, to a csv file.</li>
+</ol>
+
+Running this script results in a small csv file being written to Zorro’s Log folder. A sample of the data looks like this:
+
+<img alt="" class="size-full wp-image-10955 aligncenter perfmatters-lazy" data-sizes="(max-width: 698px) 100vw, 698px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164824/exampleData.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164824/exampleData.png 698w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164824/exampleData-600x271.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164824/exampleData-300x135.png 300w" decoding="async" height="315" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='698'%20height='315'%20viewBox='0%200%20698%20315'%3E%3C/svg%3E" width="698"/>
+
+Once we’ve got that data, we can easily read it into our favourite data analysis tool for a closer look. Here, I’ll read it into R and use the <code>tidyverse</code> libraries to dig deeper. <em>(This will be very cursory. You could and should go a lot deeper if this were a serious strategy.)</em>
+
+First, read the data in, and process it by adding a couple of columns that might be interesting:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Read in and process data">library(ggplot2)
+library(tidyverse)
+
+# analysis of gap size and trade profit
+path &lt;- "C:/Zorro/Log/"
+file &lt;- "vol.csv" 
+df &lt;- read.csv(paste0(path, file), header=TRUE, stringsAsFactors=FALSE, strip.white=TRUE)
+
+# make some additional columns
+df$AbsTradeReturn &lt;- abs(df$TradeReturn)
+df$Result &lt;- factor(ifelse(df$TradeReturn&gt;0, "win", "loss"))</pre>
+
+If we <code>head</code> the resulting data frame, we find that it looks like this:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">head(df)
+#    Asset EntryDate TradeReturn EntryVol AbsTradeReturn Result
+# 1  MSFT  20190906   -0.011359  0.00019       0.011359   loss
+# 2  MSFT  20190904    0.017583  0.00020       0.017583    win
+# 3  MSFT  20190829   -0.015059  0.00020       0.015059   loss
+# 4    CL  20190828   -0.010946  0.00017       0.010946   loss
+# 5  MSFT  20190819   -0.036269  0.00017       0.036269   loss
+# 6 GOOGL  20190712    0.052325  0.00023       0.052325    win</pre>
+<em>Sweet! Looks like we’re in business!</em>
+
+Now we can start to answer some interesting questions. First, is volatility at the time of entry related to the magnitude of the trade return? Intuitively we’d expect this to be the case, as higher volatility implies larger price swings and therefore larger absolute trade returns:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="is volatility related to the magnitude of the trade return?"># is volatility related to the magnitude of the trade return?
+ggplot(data=df[, c("AbsTradeReturn", "EntryVol")], aes(x=EntryVol, y=AbsTradeReturn)) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm", se=TRUE)</pre>
+<img alt="" class="size-full wp-image-10956 aligncenter perfmatters-lazy" data-sizes="(max-width: 500px) 100vw, 500px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164823/vol-vs-absreturn.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164823/vol-vs-absreturn.png 500w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164823/vol-vs-absreturn-300x240.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='400'%20viewBox='0%200%20500%20400'%3E%3C/svg%3E" width="500"/>
+
+Nice! Just what we’d expect to see.
+
+Does this relationship hold for each individual asset that we traded?
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="what about by asset?"># what about by asset?
+ggplot(data=df[, c("AbsTradeReturn", "EntryVol", "Asset")], aes(x=EntryVol, y=AbsTradeReturn)) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm", se=TRUE) +
+  facet_wrap(~Asset)</pre>
+<img alt="" class="size-full wp-image-10957 aligncenter perfmatters-lazy" data-sizes="(max-width: 500px) 100vw, 500px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164823/by-asset.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164823/by-asset.png 500w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164823/by-asset-300x240.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='400'%20viewBox='0%200%20500%20400'%3E%3C/svg%3E" width="500"/>
+
+Looks like the relationship generally holds at the asset level, but note that we have a small sample size so take the results with a grain of salt:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="note that we have a small sample siz"># note that we have a small sample size:
+df %&gt;%
+  group_by(Asset) %&gt;%
+  count()
+
+# Asset     n
+# &lt;chr&gt; &lt;int&gt;
+# 1 AAPL     36
+# 2 AMZN     30
+# 3 CAT      38
+# 4 CL       47
+# 5 GOOGL    36
+# 6 IBM      37
+# 7 MMM      32
+# 8 MSFT     37</pre>
+
+Is volatility related to the actual trade return?
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="is volatility related to the actual trade return?"># is volatility related to the actual trade return?
+ggplot(data=df[, c("TradeReturn", "EntryVol")], aes(x=EntryVol, y=TradeReturn)) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm", se=TRUE)</pre>
+<img alt="" class="size-full wp-image-10958 aligncenter perfmatters-lazy" data-sizes="(max-width: 500px) 100vw, 500px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164822/vol-vs-trade-return.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164822/vol-vs-trade-return.png 500w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164822/vol-vs-trade-return-300x240.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='400'%20viewBox='0%200%20500%20400'%3E%3C/svg%3E" width="500"/>
+
+Looks like it might be. But this was a long-only strategy that made money in a period where everything went up, so I wouldn’t read too much into this without controlling for that effect.
+
+Is there a significant difference in the entry volatility for winning and losing trades?
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="what's the spread of volatilitye for winning and losing trades?"># what's the spread of volatility for winning and losing trades?
+ggplot(data=df[, c("EntryVol", "Result")], aes(x=Result, y=EntryVol)) +
+  geom_boxplot()</pre>
+<img alt="" class="size-full wp-image-10959 aligncenter perfmatters-lazy" data-sizes="(max-width: 500px) 100vw, 500px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164822/boxplot.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164822/boxplot.png 500w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164822/boxplot-300x240.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='400'%20viewBox='0%200%20500%20400'%3E%3C/svg%3E" width="500"/>
+
+Finally, we can treat our volatility variable as a “factor” to which our trade returns are exposed. Is this factor useful in predicting trade returns?
+
+First, we’ll need some functions for bucketing our trade results by factor quantile:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="factor functions"># factor functions
+get_factor_quantiles &lt;- function(factor_df, n_quantiles = 5, q_type = 7) {
+  
+  n_assets &lt;- factor_df %&gt;% ungroup %&gt;% select(Asset) %&gt;% n_distinct()
+  factor_df %&gt;%
+    mutate(rank = rank(factor, ties.method='first'),
+           quantile = get_quantiles(factor, n_quantiles, q_type))
+}
+
+get_quantiles &lt;- function(factors, n_quantiles, q_type) {
+  cut(factors, quantile(factors, seq(0,1,1/n_quantiles), type = q_type), FALSE, TRUE)
+}</pre>
+
+If we bucket our results by factor quantile, do any buckets account for significantly more profit and loss? Are there any other interesting relationships?
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="trade returns by factor quantile"># if we bucket the vol, do any buckets account for more profit/loss?
+factor_df &lt;- df[, c("Asset", "EntryVol", "TradeReturn")]
+names(factor_df)[names(factor_df) == "EntryVol"] &lt;- "factor"
+
+quantiles &lt;- get_factor_quantiles(factor_df)
+r &lt;- quantiles %&gt;%
+  group_by(quantile) %&gt;%
+  summarise(MeanTradeReturn=mean(TradeReturn)) 
+
+ggplot(data=r, aes(quantile, MeanTradeReturn)) +
+  geom_col() +
+  ggtitle("Returns by volatility quantile")</pre>
+<img alt="" class="size-full wp-image-10960 aligncenter perfmatters-lazy" data-sizes="(max-width: 500px) 100vw, 500px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164821/factors.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164821/factors.png 500w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164821/factors-300x240.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='400'%20viewBox='0%200%20500%20400'%3E%3C/svg%3E" width="500"/>
+
+Looks like there might be something to that fifth quantile (but of course beware the small sample size).
+
+We can retrieve the cutoff value for the fifth quantile by sorting our factor and finding the value four-fifths the length of the resulting vector:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="fifth bin cutoff"># fifth bin cutoff
+sorted &lt;- sort(factor_df$factor)
+sorted[as.integer(4/5*length(sorted))]
+# [1] 0.00043</pre>
+<h2>Conclusion</h2>
+
+There you have it. This was a simple example of exporting potentially relevant data from a Zorro simulation and reading it into a data analysis package for further research.
+
+How might you apply this approach to more serious strategies? What data do you think is potentially relevant? Tell us your thoughts in the comments.
+
+<strong><em>Want a broader understanding of algorithmic trading? See why it’s the only sustainable approach to profiting from the markets and how you can use it to your success inside the free Algo Basics PDF below….</em></strong>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>backtesting</span>, <span>factors</span>, <span>meta-labelling</span>, <span>quantitative analysis</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">1 thought on “Can you apply factors to&lt;br&gt; trade performance?”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1" id="comment-8494">
+<article class="comment-body" id="div-comment-8494" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi ,<br/>
+I ‘m thinking  like this ; 1-calculate the maximum favourable excursion minus maximum adverse excursion  and high minus low  for each bar.Then use mutual information to measure  the  dependence.2-Apply the same method  for  each closed trade.Is  this possible?Does it make sense?</p>
+<span class="reply"><a aria-label="Reply to tovim" class="comment-reply-link" data-belowelement="div-comment-8494" data-commentid="8494" data-postid="10953" data-replyto="Reply to tovim" data-respondelement="respond" href="#comment-8494" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/can-you-apply-factors-to-trade-performance/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

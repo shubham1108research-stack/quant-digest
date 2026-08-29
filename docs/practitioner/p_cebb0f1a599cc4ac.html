@@ -1,0 +1,1017 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>More Intuitive Joins in dplyr 1.1.0 – how to do an asof join on trades and quotes data</title>
+<!-- source: https://robotwealth.com/more-intuitive-joins-in-dplyr-1-1-0/ -->
+<h1>More Intuitive Joins in dplyr 1.1.0 – how to do an asof join on trades and quotes data</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-73980 post type-post status-publish format-standard hentry category-r category-tools-of-the-trade tag-dplyr tag-r tag-tidyverse pmpro-has-access" id="post-73980">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">March 16, 2023</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">More Intuitive Joins in dplyr 1.1.0 – how to do an asof join on trades and quotes data</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="More Intuitive Joins in dplyr 1.1.0 – how to do an asof join on trades and quotes data" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><code>dplyr 1.1.0</code> was a significant release that makes several common data operations more syntactically intuitive.
+
+The most significant changes relate to joins and grouping/aggregating operations.
+
+In this post we’ll look at the changes to joins.
+
+First, install and load the latest version of <code>dplyr</code>:
+
+<pre><code class="language-r">install.packages("dplyr")
+library(dplyr)
+</code></pre>
+<h2>A new approach to joins</h2>
+
+The best way to explore the new syntax is through examples.
+
+Say we had a table of stock prices and a table of industry sectors, and we wanted to join them. The prices table has the field <code>ticker</code>, which is equivalent to the field <code>symbol</code> on the sectors table.
+
+An example of this data might look like this:
+
+<pre><code class="language-r">prices &lt;- data.frame(list(
+  ticker = c("AAPL", "TSLA", "AAPL", "TSLA", "AAPL", "TSLA"), 
+  date = structure(c(18716, 18716, 18717, 18717, 18718, 18718), class = "Date"), 
+  open = c(120.11, 601.75, 121.65, 646.62, 123.66, 688.37), 
+  high = c(120.40305, 637.66, 123.52, 672, 124.18, 692.42015), 
+  low = c(118.86, 591.01, 121.15, 641.11, 122.49, 659.42), 
+  close = c(119.9, 635.62, 122.15, 667.93, 123, 661.75), 
+  unadjusted_close = c(119.9, 635.62, 122.15, 667.93, 123, 661.75), 
+  volume = c(85671920, 39432360, 118323820, 33337288, 75089140, 35298376)
+))
+
+prices %&gt;% 
+  pretty_table_1() 
+</code></pre>
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left;">ticker</th>
+<th style="text-align: left;">date</th>
+<th style="text-align: right;">open</th>
+<th style="text-align: right;">high</th>
+<th style="text-align: right;">low</th>
+<th style="text-align: right;">close</th>
+<th style="text-align: right;">unadjusted_close</th>
+<th style="text-align: right;">volume</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: left;">2021-03-30</td>
+<td style="text-align: right;">120.11</td>
+<td style="text-align: right;">120.4030</td>
+<td style="text-align: right;">118.86</td>
+<td style="text-align: right;">119.90</td>
+<td style="text-align: right;">119.90</td>
+<td style="text-align: right;">85671920</td>
+</tr>
+<tr>
+<td style="text-align: left;">TSLA</td>
+<td style="text-align: left;">2021-03-30</td>
+<td style="text-align: right;">601.75</td>
+<td style="text-align: right;">637.6600</td>
+<td style="text-align: right;">591.01</td>
+<td style="text-align: right;">635.62</td>
+<td style="text-align: right;">635.62</td>
+<td style="text-align: right;">39432360</td>
+</tr>
+<tr>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: left;">2021-03-31</td>
+<td style="text-align: right;">121.65</td>
+<td style="text-align: right;">123.5200</td>
+<td style="text-align: right;">121.15</td>
+<td style="text-align: right;">122.15</td>
+<td style="text-align: right;">122.15</td>
+<td style="text-align: right;">118323820</td>
+</tr>
+<tr>
+<td style="text-align: left;">TSLA</td>
+<td style="text-align: left;">2021-03-31</td>
+<td style="text-align: right;">646.62</td>
+<td style="text-align: right;">672.0000</td>
+<td style="text-align: right;">641.11</td>
+<td style="text-align: right;">667.93</td>
+<td style="text-align: right;">667.93</td>
+<td style="text-align: right;">33337288</td>
+</tr>
+<tr>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: left;">2021-04-01</td>
+<td style="text-align: right;">123.66</td>
+<td style="text-align: right;">124.1800</td>
+<td style="text-align: right;">122.49</td>
+<td style="text-align: right;">123.00</td>
+<td style="text-align: right;">123.00</td>
+<td style="text-align: right;">75089140</td>
+</tr>
+<tr>
+<td style="text-align: left;">TSLA</td>
+<td style="text-align: left;">2021-04-01</td>
+<td style="text-align: right;">688.37</td>
+<td style="text-align: right;">692.4202</td>
+<td style="text-align: right;">659.42</td>
+<td style="text-align: right;">661.75</td>
+<td style="text-align: right;">661.75</td>
+<td style="text-align: right;">35298376</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-r">sectors &lt;- data.frame(list(
+  symbol = c("AAPL", "TSLA"), name = c("Apple Inc", "Tesla Inc"), 
+  sector = c("Technology", "Consumer Cyclical"), 
+  industry = c("Consumer Electronics", "Auto Manufacturers"), 
+  sicindustry = c("Electronic Computers", "Motor Vehicles &amp; Passenger Car Bodies")
+))
+
+sectors %&gt;% 
+  pretty_table_1()
+</code></pre>
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left;">symbol</th>
+<th style="text-align: left;">name</th>
+<th style="text-align: left;">sector</th>
+<th style="text-align: left;">industry</th>
+<th style="text-align: left;">sicindustry</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: left;">Apple Inc</td>
+<td style="text-align: left;">Technology</td>
+<td style="text-align: left;">Consumer Electronics</td>
+<td style="text-align: left;">Electronic Computers</td>
+</tr>
+<tr>
+<td style="text-align: left;">TSLA</td>
+<td style="text-align: left;">Tesla Inc</td>
+<td style="text-align: left;">Consumer Cyclical</td>
+<td style="text-align: left;">Auto Manufacturers</td>
+<td style="text-align: left;">Motor Vehicles &amp; Passenger Car Bodies</td>
+</tr>
+</tbody>
+</table>
+
+The legacy approach to doing this join would look like this:
+
+<pre><code class="language-r">prices %&gt;% 
+  left_join(sectors, by = c(ticker = "symbol")) %&gt;% 
+  pretty_table_2() 
+</code></pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 250px; overflow-x: scroll; width: 100%;">
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">open</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">high</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">low</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">close</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">unadjusted_close</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">volume</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">name</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">sector</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">industry</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">sicindustry</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: left; min-width: 2in;">2021-03-30</td>
+<td style="text-align: right;">120.11</td>
+<td style="text-align: right;">120.4030</td>
+<td style="text-align: right;">118.86</td>
+<td style="text-align: right;">119.90</td>
+<td style="text-align: right;">119.90</td>
+<td style="text-align: right;">85671920</td>
+<td style="text-align: left;">Apple Inc</td>
+<td style="text-align: left;">Technology</td>
+<td style="text-align: left; min-width: 2in;">Consumer Electronics</td>
+<td style="text-align: left; min-width: 2in;">Electronic Computers</td>
+</tr>
+<tr>
+<td style="text-align: left;">TSLA</td>
+<td style="text-align: left; min-width: 2in;">2021-03-30</td>
+<td style="text-align: right;">601.75</td>
+<td style="text-align: right;">637.6600</td>
+<td style="text-align: right;">591.01</td>
+<td style="text-align: right;">635.62</td>
+<td style="text-align: right;">635.62</td>
+<td style="text-align: right;">39432360</td>
+<td style="text-align: left;">Tesla Inc</td>
+<td style="text-align: left;">Consumer Cyclical</td>
+<td style="text-align: left; min-width: 2in;">Auto Manufacturers</td>
+<td style="text-align: left; min-width: 2in;">Motor Vehicles &amp; Passenger Car Bodies</td>
+</tr>
+<tr>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: left; min-width: 2in;">2021-03-31</td>
+<td style="text-align: right;">121.65</td>
+<td style="text-align: right;">123.5200</td>
+<td style="text-align: right;">121.15</td>
+<td style="text-align: right;">122.15</td>
+<td style="text-align: right;">122.15</td>
+<td style="text-align: right;">118323820</td>
+<td style="text-align: left;">Apple Inc</td>
+<td style="text-align: left;">Technology</td>
+<td style="text-align: left; min-width: 2in;">Consumer Electronics</td>
+<td style="text-align: left; min-width: 2in;">Electronic Computers</td>
+</tr>
+<tr>
+<td style="text-align: left;">TSLA</td>
+<td style="text-align: left; min-width: 2in;">2021-03-31</td>
+<td style="text-align: right;">646.62</td>
+<td style="text-align: right;">672.0000</td>
+<td style="text-align: right;">641.11</td>
+<td style="text-align: right;">667.93</td>
+<td style="text-align: right;">667.93</td>
+<td style="text-align: right;">33337288</td>
+<td style="text-align: left;">Tesla Inc</td>
+<td style="text-align: left;">Consumer Cyclical</td>
+<td style="text-align: left; min-width: 2in;">Auto Manufacturers</td>
+<td style="text-align: left; min-width: 2in;">Motor Vehicles &amp; Passenger Car Bodies</td>
+</tr>
+<tr>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: left; min-width: 2in;">2021-04-01</td>
+<td style="text-align: right;">123.66</td>
+<td style="text-align: right;">124.1800</td>
+<td style="text-align: right;">122.49</td>
+<td style="text-align: right;">123.00</td>
+<td style="text-align: right;">123.00</td>
+<td style="text-align: right;">75089140</td>
+<td style="text-align: left;">Apple Inc</td>
+<td style="text-align: left;">Technology</td>
+<td style="text-align: left; min-width: 2in;">Consumer Electronics</td>
+<td style="text-align: left; min-width: 2in;">Electronic Computers</td>
+</tr>
+<tr>
+<td style="text-align: left;">TSLA</td>
+<td style="text-align: left; min-width: 2in;">2021-04-01</td>
+<td style="text-align: right;">688.37</td>
+<td style="text-align: right;">692.4202</td>
+<td style="text-align: right;">659.42</td>
+<td style="text-align: right;">661.75</td>
+<td style="text-align: right;">661.75</td>
+<td style="text-align: right;">35298376</td>
+<td style="text-align: left;">Tesla Inc</td>
+<td style="text-align: left;">Consumer Cyclical</td>
+<td style="text-align: left; min-width: 2in;">Auto Manufacturers</td>
+<td style="text-align: left; min-width: 2in;">Motor Vehicles &amp; Passenger Car Bodies</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+Have you ever felt like that <code>by = c(ticker = "symbol")</code> argument is a bit off? I know it’s only semantics, but <code>ticker = "symbol"</code> feels like an assignment operation rather than an equivalence operation. It’s unintuitive.
+
+The new approach uses a helper function: <code>join_by</code>.
+
+<code>join_by</code> takes an expression that more naturally conveys the intent behind the join:
+
+<pre><code class="language-r">join_by(ticker == symbol)
+</code></pre>
+<pre>## Join By:
+## - ticker == symbol
+</pre>
+
+Here it is in action:
+
+<pre><code class="language-r">prices %&gt;% 
+  left_join(sectors, by = join_by(ticker == symbol)) %&gt;% 
+  pretty_table_2()
+</code></pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 250px; overflow-x: scroll; width: 100%;">
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">open</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">high</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">low</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">close</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">unadjusted_close</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">volume</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">name</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">sector</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">industry</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">sicindustry</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: left; min-width: 2in;">2021-03-30</td>
+<td style="text-align: right;">120.11</td>
+<td style="text-align: right;">120.4030</td>
+<td style="text-align: right;">118.86</td>
+<td style="text-align: right;">119.90</td>
+<td style="text-align: right;">119.90</td>
+<td style="text-align: right;">85671920</td>
+<td style="text-align: left;">Apple Inc</td>
+<td style="text-align: left;">Technology</td>
+<td style="text-align: left; min-width: 2in;">Consumer Electronics</td>
+<td style="text-align: left; min-width: 2in;">Electronic Computers</td>
+</tr>
+<tr>
+<td style="text-align: left;">TSLA</td>
+<td style="text-align: left; min-width: 2in;">2021-03-30</td>
+<td style="text-align: right;">601.75</td>
+<td style="text-align: right;">637.6600</td>
+<td style="text-align: right;">591.01</td>
+<td style="text-align: right;">635.62</td>
+<td style="text-align: right;">635.62</td>
+<td style="text-align: right;">39432360</td>
+<td style="text-align: left;">Tesla Inc</td>
+<td style="text-align: left;">Consumer Cyclical</td>
+<td style="text-align: left; min-width: 2in;">Auto Manufacturers</td>
+<td style="text-align: left; min-width: 2in;">Motor Vehicles &amp; Passenger Car Bodies</td>
+</tr>
+<tr>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: left; min-width: 2in;">2021-03-31</td>
+<td style="text-align: right;">121.65</td>
+<td style="text-align: right;">123.5200</td>
+<td style="text-align: right;">121.15</td>
+<td style="text-align: right;">122.15</td>
+<td style="text-align: right;">122.15</td>
+<td style="text-align: right;">118323820</td>
+<td style="text-align: left;">Apple Inc</td>
+<td style="text-align: left;">Technology</td>
+<td style="text-align: left; min-width: 2in;">Consumer Electronics</td>
+<td style="text-align: left; min-width: 2in;">Electronic Computers</td>
+</tr>
+<tr>
+<td style="text-align: left;">TSLA</td>
+<td style="text-align: left; min-width: 2in;">2021-03-31</td>
+<td style="text-align: right;">646.62</td>
+<td style="text-align: right;">672.0000</td>
+<td style="text-align: right;">641.11</td>
+<td style="text-align: right;">667.93</td>
+<td style="text-align: right;">667.93</td>
+<td style="text-align: right;">33337288</td>
+<td style="text-align: left;">Tesla Inc</td>
+<td style="text-align: left;">Consumer Cyclical</td>
+<td style="text-align: left; min-width: 2in;">Auto Manufacturers</td>
+<td style="text-align: left; min-width: 2in;">Motor Vehicles &amp; Passenger Car Bodies</td>
+</tr>
+<tr>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: left; min-width: 2in;">2021-04-01</td>
+<td style="text-align: right;">123.66</td>
+<td style="text-align: right;">124.1800</td>
+<td style="text-align: right;">122.49</td>
+<td style="text-align: right;">123.00</td>
+<td style="text-align: right;">123.00</td>
+<td style="text-align: right;">75089140</td>
+<td style="text-align: left;">Apple Inc</td>
+<td style="text-align: left;">Technology</td>
+<td style="text-align: left; min-width: 2in;">Consumer Electronics</td>
+<td style="text-align: left; min-width: 2in;">Electronic Computers</td>
+</tr>
+<tr>
+<td style="text-align: left;">TSLA</td>
+<td style="text-align: left; min-width: 2in;">2021-04-01</td>
+<td style="text-align: right;">688.37</td>
+<td style="text-align: right;">692.4202</td>
+<td style="text-align: right;">659.42</td>
+<td style="text-align: right;">661.75</td>
+<td style="text-align: right;">661.75</td>
+<td style="text-align: right;">35298376</td>
+<td style="text-align: left;">Tesla Inc</td>
+<td style="text-align: left;">Consumer Cyclical</td>
+<td style="text-align: left; min-width: 2in;">Auto Manufacturers</td>
+<td style="text-align: left; min-width: 2in;">Motor Vehicles &amp; Passenger Car Bodies</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+That feels much more natural to me.
+
+<h3>Inequality joins with <code>join_by</code></h3>
+<code>join_by</code> has some useful features that were hard to implement in the previous version of <code>dplyr</code>.
+
+Say I have a bunch of trades and quotes data. I want to match each trade with the previous quote that’s closest in time.
+
+Here are some trades and quotes data:
+
+<em>Trades:</em>
+<pre><code class="language-r">options("digits.secs" = 6)
+
+trades &lt;- data.frame(list(
+  time = structure(c(1464197400.023, 1464197400.038, 1464197400.048, 1464197400.048, 
+1464197400.048), class = c("POSIXct", "POSIXt"), tzone = "America/New_York"), 
+  ticker = c("MSFT", "MSFT", "GOOG", "GOOG", "AAPL"), 
+  price = c(51.95, 51.95, 720.77, 720.92, 98), 
+  quantity = c(75, 155, 100, 100, 100)
+))
+
+trades %&gt;% 
+  pretty_table_1() 
+</code></pre>
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left;">time</th>
+<th style="text-align: left;">ticker</th>
+<th style="text-align: right;">price</th>
+<th style="text-align: right;">quantity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.023</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">75</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.038</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">155</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.77</td>
+<td style="text-align: right;">100</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.92</td>
+<td style="text-align: right;">100</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: right;">98.00</td>
+<td style="text-align: right;">100</td>
+</tr>
+</tbody>
+</table>
+<em>Quotes:</em>
+<pre><code class="language-r">quotes &lt;- data.frame(list(
+  time = structure(c(1464197400.023, 1464197400.023, 1464197400.03, 1464197400.041, 
+1464197400.048, 1464197400.049, 1464197400.072, 1464197400.075), class = c("POSIXct", "POSIXt"), tzone = "America/New_York", class = c("POSIXct", "POSIXt"), tzone = "America/New_York"), 
+  ticker = c("GOOG", "MSFT", "MSFT", "MSFT", "GOOG", "AAPL", "GOOG", "MSFT"), 
+  bid = c(720.5, 51.95, 51.97, 51.99, 720.5, 97.99, 720.5, 52.01), 
+  ask = c(720.93, 51.96, 51.98, 52, 720.93, 98.01, 720.88, 52.03)
+))
+
+quotes %&gt;% 
+  pretty_table_1() 
+</code></pre>
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left;">time</th>
+<th style="text-align: left;">ticker</th>
+<th style="text-align: right;">bid</th>
+<th style="text-align: right;">ask</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.023</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.93</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.023</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">51.96</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.029</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.97</td>
+<td style="text-align: right;">51.98</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.040</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.99</td>
+<td style="text-align: right;">52.00</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.93</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.049</td>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: right;">97.99</td>
+<td style="text-align: right;">98.01</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.072</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.88</td>
+</tr>
+<tr>
+<td style="text-align: left;">2016-05-25 13:30:00.075</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">52.01</td>
+<td style="text-align: right;">52.03</td>
+</tr>
+</tbody>
+</table>
+
+We can find the most recent quote prior to each trade by passing an equality expression to <code>join_by</code>, which we wrap in the helper function <code>closest</code>:
+
+<pre><code class="language-r">join_by(ticker, closest(time &gt;= time)) 
+</code></pre>
+<pre>## Join By:
+## - ticker
+## - closest(time &gt;= time)
+</pre>
+<pre><code class="language-r">trades %&gt;% 
+  left_join(quotes, by = join_by(ticker, closest(time &gt;= time)), suffix = c(".trade", ".quote")) %&gt;% 
+  pretty_table_3()
+</code></pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 250px; overflow-x: scroll; width: 100%;">
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">time.trade</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">price</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">quantity</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">time.quote</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">bid</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">ask</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">75</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">51.96</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.038</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">155</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.029</td>
+<td style="text-align: right;">51.97</td>
+<td style="text-align: right;">51.98</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.77</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.93</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.92</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.93</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: right;">98.00</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+This is functionally equivalent to the SQL operation <code>ASOF</code> and the <code>merge_asof</code> function in <code>pandas</code> (in fact, I took the data for this example from the <code>pandas</code> docs).
+
+Note in the above example, we got a trade in MSFT outside the quoted bid-ask, which <a href="https://www.sciencedirect.com/science/article/abs/pii/S0304405X0500156X">can happen</a>.
+
+It might be reasonable to not match when the times are equal, in which case we can change the <code>&gt;=</code> equality to <code>&gt;</code> (here we have millisecond precision, and it’s entirely reasonable that a quote and a trade could occur in the same millisecond, but ignore that for the sake of the example):
+
+<pre><code class="language-r">trades %&gt;% 
+  left_join(quotes, by = join_by(ticker, closest(time &gt; time)), suffix = c(".trade", ".quote")) %&gt;% 
+  pretty_table_3()
+</code></pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 250px; overflow-x: scroll; width: 100%;">
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">time.trade</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">price</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">quantity</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">time.quote</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">bid</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">ask</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">75</td>
+<td style="text-align: left; min-width: 3in;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.038</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">155</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.029</td>
+<td style="text-align: right;">51.97</td>
+<td style="text-align: right;">51.98</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.77</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.93</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.92</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.93</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: right;">98.00</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+We could also impose a 2ms gap between our quote and our matched trade, but to do this we need to make a new column, as <code>join_by</code> can’t take a computed column:
+
+<pre><code class="language-r">library(lubridate)
+
+trades %&gt;%
+  left_join(
+    # create new column before doing the join
+    quotes %&gt;% mutate(time_buffer = time + lubridate::seconds(2/1e3)), 
+    by = join_by(ticker, closest(time &gt;= time_buffer)), 
+    suffix = c(".trade", ".quote")
+  ) %&gt;% 
+  pretty_table_4()
+</code></pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 250px; overflow-x: scroll; width: 100%;">
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">time.trade</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">price</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">quantity</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">time.quote</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">bid</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">ask</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">time_buffer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">75</td>
+<td style="text-align: left; min-width: 3in;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left; min-width: 3in;">NA</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.038</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">155</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.029</td>
+<td style="text-align: right;">51.97</td>
+<td style="text-align: right;">51.98</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.032</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.77</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.93</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.025</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.92</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.93</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.025</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: right;">98.00</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left; min-width: 3in;">NA</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+Lastly, <code>join_by</code> can take helpers other than <code>closest</code> to create overlapping joins:
+
+<ul>
+<li><code>between</code></li>
+<li><code>within</code></li>
+<li><code>overlaps</code></li>
+</ul>
+
+For example, we can match trades to all quotes that occur within the prior 15ms:
+
+<pre><code class="language-r">trades %&gt;%
+  left_join(
+    quotes %&gt;% mutate(time_buffer = time + lubridate::seconds(15/1e3)), 
+    by = join_by(ticker, between(x = time, y_lower = time, y_upper = time_buffer, bounds = "[]")), 
+    suffix = c(".trade", ".quote")
+  ) %&gt;% 
+  pretty_table_4()
+</code></pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 250px; overflow-x: scroll; width: 100%;">
+<table class="table table-striped" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">time.trade</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">price</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">quantity</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">time.quote</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">bid</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">ask</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">time_buffer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">75</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">51.96</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.038</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.038</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">155</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.023</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">51.96</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.038</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.038</td>
+<td style="text-align: left;">MSFT</td>
+<td style="text-align: right;">51.95</td>
+<td style="text-align: right;">155</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.029</td>
+<td style="text-align: right;">51.97</td>
+<td style="text-align: right;">51.98</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.045</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.77</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.93</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.063</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">GOOG</td>
+<td style="text-align: right;">720.92</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: right;">720.50</td>
+<td style="text-align: right;">720.93</td>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.063</td>
+</tr>
+<tr>
+<td style="text-align: left; min-width: 3in;">2016-05-25 13:30:00.048</td>
+<td style="text-align: left;">AAPL</td>
+<td style="text-align: right;">98.00</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: left; min-width: 3in;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left; min-width: 3in;">NA</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+Note how this method matches the second MSFT trade at 13:30:00.038 to two quotes at 13:30:00.023 and 13:30:00.029.
+
+<h2>Will the old approaches still work?</h2>
+
+Yes, for now. The <code>dplyr</code> docs state that both approaches to joining are supported, and there is no mention of deprecating the legacy approach. Good news for backwards compatibility.
+
+However, I’m not even sure how you’d implement an <code>ASOF</code> or an overlapping join using that approach. The new approach opens up a whole new set of joining operations.
+
+<h2>Other changes in dplyr 1.1.0</h2>
+
+The other big change in <code>dplyr</code> 1.1.0 is the approach to grouping and aggregating data. I’ll take a look at that in another post.
+
+<h2>Your thoughts?</h2>
+
+What do you think? Do you prefer this new approach to joining data in <code>dplyr</code>? Does it feel more natural, or more aligned with what you might have done in SQL? Let me know in the comments.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>dplyr</span>, <span>R</span>, <span>tidyverse</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-111077 post type-post status-publish format-standard hentry category-excel category-think-like-a-trader category-tools-of-the-trade tag-excel tag-gld tag-research tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110579 post type-post status-publish format-standard hentry category-data-analysis category-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110175 post type-post status-publish format-standard has-post-thumbnail hentry category-excel category-quant-trading tag-data tag-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/quick-fix-yahoo-finance-data-access-with-excel/"><img alt="Quick fix: Yahoo Finance data access with Excel" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="110222" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">2 thoughts on “More Intuitive Joins in dplyr 1.1.0 – how to do an asof join on trades and quotes data”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-32291">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 03/15/2023 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/more-intuitive-joins-in-dplyr-1-1-0/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

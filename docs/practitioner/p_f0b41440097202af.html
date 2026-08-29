@@ -1,0 +1,440 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Demystifying the Hurst Exponent – Part 2</title>
+<!-- source: https://robotwealth.com/demystifying-the-hurst-exponent-part-2/ -->
+<h1>Demystifying the Hurst Exponent – Part 2</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1684 post type-post status-publish format-standard hentry category-quant-trading tag-hurst tag-mean-reversion tag-python tag-quantitative-analysis pmpro-has-access" id="post-1684">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">January 3, 2017</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Demystifying the Hurst Exponent – Part 2</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Demystifying the Hurst Exponent – Part 2" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">What if you had a tool that could help you decide when to apply mean reversion strategies and when to apply momentum to a particular time series? That’s the promise of the Hurst exponent, which helps characterise a time series as mean reverting, trending, or a random walk. For a brief introduction to Hurst, including some Python code for its calculation, <a href="https://robotwealth.com/demystifying-the-hurst-exponent-part-1/">check out our previous post</a>. Even if you have read this post previously, it is worth checking out again as we have updated our method for calculating Hurst and believe this new implementation is more accurate.
+
+<h3>Challenges of Applying Hurst to Financial Data</h3>
+
+It would be great if we could plug some historical time series data into the Hurst algorithm and know whether we expect the time series to mean revert or trend. But as is usually the case when we apply such tools to the financial domain, it isn’t quite that straightforward. In the last post, we noted that Hurst gives different results depending on how it is calculated; this begs the question of how to choose a calculation method intelligently so that we avoid choosing arbitrary parameters. The purpose of this post is to delve into the algorithm behind the calculation of Hurst in an attempt to understand this very question. Hopefully we will draw some conclusions around if, when and how we might apply the very attractive theory of Hurst in a manner that is practical to systematic traders.
+
+<h3>Using Python for Hurst Analysis</h3>
+
+In this post, we perform the analysis in Python, which is something of a departure from tradition for Robot Wealth. We are currently building our skills in both Python and the Microsoft .Net framework to complement our skills in R, C and MATLAB, so expect to see more from us using these tools.&lt;/p&gt;&amp;lt;/p&amp;gt;
+
+<h2>Introduction to Hurst</h2>
+
+The Hurst exponent, <strong>H</strong>, measures the long-term memory of a time series, characterising it as either mean-reverting, trending or a random walk. <strong>H</strong> is a number between 0 and 1, with <strong>H</strong> &lt; 0.5 indicating mean reversion, <strong>H</strong> &gt; 0.5 indicating a trending time series and <strong>H</strong> = 0.5 indicating a random walk. Smaller and larger values of <strong>H</strong> indicate stronger mean-reversion and trending, respectively.
+Here, we apply the algorithm for calculating Hurst from the previous post to an artificial mean-reverting time series created from a discrete Ornstein-Uhlenbeck process parameterised arbitrarily:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Test Hurst algorithm on artificial O-U process"># create OU process
+N = 100000
+ts = zeros(N)
+mu = 0.75
+theta = 0.04
+sigma = 0.05
+for i in range(1,N):
+    dts  = (mu - ts[i-1])*theta + randn()*sigma
+    ts[i] = ts[i-1] + dts
+# calculate Hurst
+lag1 = 2
+lags = range(lag1, 20)
+tau = [sqrt(std(subtract(ts[lag:], ts[:-lag]))) for lag in lags]
+plot(log(lags), log(tau)); show()
+m = polyfit(log(lags), log(tau), 1)
+hurst = m[0]*2
+print 'hurst = ',hurst</pre>
+
+This returns a Hurst exponent of around 0.43, indicating that the series is moderately mean reverting, as expected.
+As the algorithm shows, calculation of Hurst is related to the autocorrelations of the time series. Autocorrelation (also known as serial correlation) refers to the correlation between a time series and lagged values of itself. In particular, Hurst is related to the rate at which these autocorrelations decrease as the lag increases. We know that we get different values of Hurst depending on which lags we use in its calculation. So which lags should we focus on?
+
+<h2>Analysing SPY with Hurst</h2>
+
+In the example above, we used lags 2-20. This is completely arbitrary and is the same value used by default in the MATLAB <em>genhurst</em> function for calculating the Hurst exponent. Let’s look at some real financial data – price history for the SPY ETF – and investigate the effect of varying this range of lags and the subset of data analysed. Here’s the code for obtaining and plotting the data:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Download and plot SPY ETF data 1975-2016">import pandas.io.data as web
+import datetime
+from numpy import *
+from pylab import plot, show
+start = datetime.datetime(1993, 1, 1)
+end = datetime.datetime(2016, 12, 31)
+spy = web.DataReader("SPY", 'yahoo', start, end)
+closes = spy['Adj Close'][:]
+plot(closes); show()</pre>
+
+And a plot of the data:
+
+<figure aria-describedby="caption-attachment-1728" class="wp-caption aligncenter" id="attachment_1728" style="width: 2390px"><a href="https://robotwealth.com/wp-content/uploads/2017/01/SPY_History.png"><img class="wp-image-1728 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/01/SPY_History.png" decoding="async" height="1203" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2400'%20height='1203'%20viewBox='0%200%202400%201203'%3E%3C/svg%3E" width="2400"/></a><figcaption class="wp-caption-text" id="caption-attachment-1728">Figure 1 – SPY adjusted closing prices 1993 – 2016</figcaption></figure>
+
+When we calculate Hurst we get a value of roughly  0.436, which tells us that our series is moderately mean reverting.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Hurst exponent of historical SPY data"># calculate Hurst
+lag1 = 2
+lags = range(lag1, 20)
+tau = [sqrt(std(subtract(closes[lag:], closes[:-lag]))) for lag in lags]
+plot(log(lags), log(tau)); show()
+m = polyfit(log(lags), log(tau), 1)
+hurst = m[0]*2
+print 'hurst = ',hurst</pre>
+
+Now, lets use the last 2000 values only.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Calculate Hurst for recent SPY data"># recent prices
+closes_recent = spy['Adj Close'][-2000:]
+plot(closes_recent); show()
+# calculate Hurst of recent prices
+lag1 = 2
+lags = range(lag1, 20)
+tau = [sqrt(std(subtract(closes_recent[lag:], closes_recent[:-lag]))) for lag in lags]
+plot(log(lags), log(tau)); show()
+m = polyfit(log(lags), log(tau), 1)
+hurst = m[0]*2
+print 'hurst = ',hurst</pre>
+
+Here’s a plot of the recent SPY data:
+
+<figure aria-describedby="caption-attachment-1730" class="wp-caption alignnone" id="attachment_1730" style="width: 790px"><a href="https://robotwealth.com/wp-content/uploads/2017/01/SPY_History_recent.png"><img class="wp-image-1730 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/01/SPY_History_recent.png" decoding="async" height="597" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='597'%20viewBox='0%200%20800%20597'%3E%3C/svg%3E" width="800"/></a><figcaption class="wp-caption-text" id="caption-attachment-1730">Figure 2 – SPY adjusted closing prices 2009 – 2016</figcaption></figure>
+
+We can see a clear trend so we would expect a Hurst value of greater than 0.5, however our algorithm returns <strong>H</strong> = 0.428, less than the value calculated for the longer period. This is clearly not in line with what we would expect, so let’s try looking at another range of lags. After trying a few different ranges, we found that using lags 300-400 resulted in a Hurst exponent of 0.668, which is more in line with what we would expect. However, if we plug those lags into the Hurst calculation for the entire series, we get H = 0.641, which may seem a little odd – at first glance anyway.
+
+<h3 data-end="161" data-start="122">Impact of Lags on Hurst Calculation</h3>
+<p data-end="877" data-start="163">We can draw a significant conclusion from these results: that the lags used to calculate Hurst have a much greater impact on the calculation than the particular segment of the time series analysed (for SPY, anyway). Further, when we look at the entire time series, we see that SPY is moderately mean-reverting for shorter lags. Lags up to about 20 are most mean reverting, and then H increases as we increase the lags used in its calculation. If we continue to increase the lags used to calculate H up to the range 300-400, we find that H indicates a moderately trending time series. We also find that for moderate lag values, H tends to approach 0.5, suggesting that SPY is also a random walk at some time scales.</p>
+<h3 data-end="936" data-start="884">SPY’s Mixed Mean-Reverting and Trending Behavior</h3>
+<p data-end="1478" data-start="938">This leads to the conclusion that SPY is neither absolutely mean reverting nor absolutely trending. Instead, Hurst indicates that it is moderately mean reverting over short time periods and tends to exhibit momentum over the longer term. I find this to be a pleasing result, one that is in line with the results of Jagadeesh and Titman (1993), who investigated momentum and found that multiple-month relative returns predict future returns. The result is also in line with what we tend to see over shorter time horizons in equities markets.</p>
+<hr data-end="1483" data-start="1480"/>
+<h3 data-end="1539" data-start="1485">Consistency of Hurst Results Despite Visual Trends</h3>
+<p data-end="2155" data-start="1541">What I find most extraordinary about these results is that they are consistent regardless of whether the time series appears to the naked eye to be trending (as in the sub-period from 2009 to the end of 2016) or mean reverting. Who could conclude, through observation of the price series alone, that the time series in Figure 2 was mean reverting over a short time horizon? I suppose if one looks closely, regular pullbacks in the uptrend are visible, but I don’t think it is obviously mean reverting. I believe that Hurst is therefore actually giving us some incredibly valuable insight into the behaviour of SPY.</p>
+<hr data-end="2160" data-start="2157"/>
+<h3 data-end="2199" data-start="2162">Example: Random Walk with Uptrend</h3>
+<p data-end="2355" data-start="2201">In order to see this effect more clearly, consider the following random walk, which by construction has no memory effect but does have a definite uptrend:</p>
+
+&lt;pre class=”lang:python decode:true ” title=”Synthetic random walk with trend”&gt;# artifical random walk with trend rw = cumsum(randn(10000)+0.025) plot(rw)
+
+<figure aria-describedby="caption-attachment-1731" class="wp-caption alignnone" id="attachment_1731" style="width: 2390px"><a href="https://robotwealth.com/wp-content/uploads/2017/01/RandomWalkwithTrend.png"><img class="wp-image-1731 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/01/RandomWalkwithTrend.png" decoding="async" height="1203" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2400'%20height='1203'%20viewBox='0%200%202400%201203'%3E%3C/svg%3E" width="2400"/></a><figcaption class="wp-caption-text" id="caption-attachment-1731">Figure 3 – Random walk with uptrend</figcaption></figure>
+<div class="mceTemp"></div>
+
+Calculating Hurst for this series gives <strong>H</strong> = 0.502, which indeed corresponds to a random walk, despite the obvious uptrend. This is a great example of how our eyes can easily fail to detect the underlying dynamics of a time series.
+
+<h2>Conclusions</h2>
+
+In summary, I hope I have demonstrated that despite the attractive theory, utilising the Hurst calculation requires some deeper thought and analysis than simply plugging some numbers into an algorithm. However, if we take the time to investigate, we can obtain some potentially very useful insights.
+
+Hurst is essentially a measure of the memory in a particular time series, and this memory can be both mean-reverting and trending at the same time, <strong><em>depending on the time scale</em></strong>.
+
+In the case of the SPY ETF, the Hurst calculation showed that we would be more likely to trade successfully on short time frames if we utilised a mean-reversion trading model. Conversely, Hurst suggests that we would be more likely to be successful on longer time frames with momentum-style trading models.
+
+<h3><strong>We also saw that Hurst approaches 0.5</strong></h3>
+
+the random walk – for medium time frames, suggesting that we should perhaps avoid models that rely on that time horizon.
+
+Of course, this assumes that the future will be like the past, which may or may not be the case. However, we did see some consistency in the H values calculated for the entire time series and a subset of that time series, which gives me some degree of confidence in this approach.
+
+What do you think? How would you interpret the results I obtained for the SPY ETF? I would love to hear from you in the comments.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>Hurst</span>, <span>mean reversion</span>, <span>python</span>, <span>quantitative analysis</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">23 thoughts on “Demystifying the Hurst Exponent – Part 2”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-710">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 01/03/2017 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-711">
+<article class="comment-body" id="div-comment-711" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>It would be interesting to test whether a hurst reading at a certain point in time is predictive for hurst readings in the future. If you’re looking for mean reversion systems and you find that the hurst exponent says 5 days is the optimal MR period for example, does this then hold for the future? Is the hurst exponent itself mean reverting over time or is it persistent?</p>
+<span class="reply"><a aria-label="Reply to Matt Haines" class="comment-reply-link" data-belowelement="div-comment-711" data-commentid="711" data-postid="1684" data-replyto="Reply to Matt Haines" data-respondelement="respond" href="#comment-711" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-712">
+<article class="comment-body" id="div-comment-712" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Matt, that’s a really good point and goes to the heart of why algo trading is so difficult – the analysis we perform holds for a certain period in the past but is not guaranteed to continue into the future. That is, the results of our analysis are non-stationary. What was interesting about the results I got on SPY was that the mean-reverting or trending behaviour of the time series (as indicated by Hurst) was actually quite consistent for various time scales when we sliced up the time series – even when the dominant regime looked completely different. What this means is that Hurst appears to be reasonably <em>stationary</em> when we keep the time scale constant, for SPY anyway. To me that’s a really surprising and significant result. I don’t know of too many other indicators or tests that show much consistency across obviously different overall regimes, and I guess you have found the same thing judging by your comment.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-712" data-commentid="712" data-postid="1684" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-712" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-713">
+<article class="comment-body" id="div-comment-713" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Interesting read. I find the conclusion that SPY seems to signal mean reverting behavior in short time periods  and being stationary over time, to be consistent with my trading experience where I use weekly calendar spreads on underlyings like SPY, SPX, RUT, NDX.<br/>
+It would be interesting to see if this also holds true for RUT, SPX, NDX. Is there code available in lite-C (Zorro) for the Hurst exponent?</p>
+<span class="reply"><a aria-label="Reply to Guido" class="comment-reply-link" data-belowelement="div-comment-713" data-commentid="713" data-postid="1684" data-replyto="Reply to Guido" data-respondelement="respond" href="#comment-713" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-714">
+<div class="comment-body">
+				Pingback: El Exponente de Hurst y la memoria de los precios en bolsa 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-715">
+<article class="comment-body" id="div-comment-715" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Apologies if this is the wrong forum to ask a question such as this.<br/>
+I was wondering if someone could help me understand where the sqrt and std come from in the following line of code that is used to calculate Hurst:<br/>
+tau = [np.sqrt(np.std(np.subtract(ts[lag:], ts[:-lag]))) for lag in lags]<br/>
+I believe it comes from the following principles (given on another RobotWealth page), but I just can’t reconcile how the formulae (copied below) lead to being able to use the code given, with the std and sqrt. I am also struggling to reconcile what the &lt;| ….. |&gt; symbols mean as well, am I right in thinking that the | | means absolute value or norm of a vector and as stated &lt; … &gt; means as average of all the data points?<br/>
+I have seen this question pop up in 2 different forums, so I’m not the only person that is lost, but I’ve never seen it answered.<br/>
+Thanks in advance and apologies if this question is not clear, I’m happy to provide further clarification, just let me know.<br/>
+<strong>Formulae</strong><br/>
+Var(τ) = 〈|z(t + τ) − z(t)|^2〉<br/>
+where</p>
+<pre><code class="prettyprint"><span class="pln">z </span><span class="pun">=</span><span class="pln"> log</span><span class="pun">(</span><span class="pln">price</span><span class="pun">)</span>
+<span class="pun">τ</span> <span class="kwd">is</span><span class="pln"> an arbitrary time lag
+</span><span class="pun">〈…〉</span> <span class="kwd">is</span><span class="pln"> an average over all t</span><span class="pun">’</span><span class="pln">s</span></code></pre>
+<p>For a geometric random walk:<br/>
+〈|z(t + τ) − z(t)|^2〉 ∼ τ<br/>
+But if the series is either mean reverting or trending, this relationship will not hold, and instead we get<br/>
+〈|z(t + τ) − z(t)|^2〉 ∼ τ^2H</p>
+<span class="reply"><a aria-label="Reply to Wei Chian Ong" class="comment-reply-link" data-belowelement="div-comment-715" data-commentid="715" data-postid="1684" data-replyto="Reply to Wei Chian Ong" data-respondelement="respond" href="#comment-715" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-716">
+<article class="comment-body" id="div-comment-716" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This is a good question and worthy of more attention than I can devote to it presently. I will come back to this in due course though!<br/>
+Many thanks for reading and posting, and apologies that I can’t respond in depth just yet.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-716" data-commentid="716" data-postid="1684" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-716" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-2 parent" id="comment-31582">
+<article class="comment-body" id="div-comment-31582" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Request: For loops are fairly inefficient for large datasets. This implementation of the tau function uses Python list comprehension. Is it more time efficient to implement the rescaled range (R/S) procedure using matrix operations?</p>
+<p>statement tau = [sqrt(std(subtract(closes[lag:], closes[:-lag]))) for lag in lags] uses Python list comprehension.</p>
+<p><a href="https://python-reference.readthedocs.io/en/latest/docs/comprehensions/list_comprehension.html" rel="nofollow ugc">https://python-reference.readthedocs.io/en/latest/docs/comprehensions/list_comprehension.html</a></p>
+<p>closes is a “slice” from the spy dataframe which selects the column ‘Adj Close’. Adj Close is a closing price series for ticker symbol SPY.</p>
+<p>closes = spy[‘Adj Close’][:]</p>
+<p><a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html" rel="nofollow ugc">https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html</a></p>
+<p>The left [ and right ] are selectors using Python slice notation.</p>
+<p>closes[lag:] selects from the row index lag to the end of the rows of the dataframe.<br/>
+Rows are selected by counting from row index 0 (first row). </p>
+<p>closes[:-lag] selects from the last row index -lag to the first row (row index 0) in the dataframe. Rows are selected in reverse order, counting from the last row in the dataframe.</p>
+<p>The code snippet defines lags as a range of numbers from 2 to 20.</p>
+<p>lag1 = 2<br/>
+lags = range(lag1, 20)</p>
+<p>for lag in lags is a Python for loop that iterates over the lags range.</p>
+<p>order of operations: starting from the innermost parentheses first-<br/>
+sqrt(std(subtract(closes[lag:], closes[:-lag])))</p>
+<p>numpy function subtract, subtracts a vector closes[lag:] from vector closes[:-lag]<br/>
+subtract(closes[lag:], closes[:-lag])</p>
+<p>the standard deviation of the resulting vector is calculated:<br/>
+std(subtract(closes[lag:], closes[:-lag]))</p>
+<p>the square root of the standard deviation is calculated:<br/>
+sqrt(std(subtract(closes[lag:], closes[:-lag])))</p>
+<p>this sequence of vector selection, subtraction, calculating standard deviation, and the square root continues for each iteration from 2 to 20. this returns a list tau.</p>
+<p>m = polyfit(log(lags), log(tau), 1)</p>
+<p>m is the slope of the log-log plot. log(lags) and log(tau).</p>
+<p>The hurst exponent is hurst = m[0]*2. </p>
+<p>m[0] is the value of the list m at index 0.</p>
+<p>hurst exponent is m[0] multiplied by 2.</p>
+<p>Deriving the mathematical proof that this correctly implements the rescaled range (R/S) procedure would be an interesting puzzle to solve.</p>
+<p>Here’s the wiki page on the rescaled range (R/S) procedure:<br/>
+<a href="https://en.wikipedia.org/wiki/Hurst_exponent#Rescaled_range_(R/S)_analysis" rel="nofollow ugc">https://en.wikipedia.org/wiki/Hurst_exponent#Rescaled_range_(R/S)_analysis</a></p>
+<span class="reply"><a aria-label="Reply to Joe" class="comment-reply-link" data-belowelement="div-comment-31582" data-commentid="31582" data-postid="1684" data-replyto="Reply to Joe" data-respondelement="respond" href="#comment-31582" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-3" id="comment-31604">
+<article class="comment-body" id="div-comment-31604" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very cool, thanks for sharing!</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-31604" data-commentid="31604" data-postid="1684" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-31604" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-5412">
+<div class="comment-body">
+				Pingback: How the Mathematics of Fractals Can Help Predict Stock Markets Shifts – AiProBlog.Com 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-5415">
+<div class="comment-body">
+				Pingback: How the Mathematics of Fractals Can Help Predict Stock Markets Shifts – JukeLogic 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-10139">
+<article class="comment-body" id="div-comment-10139" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris, thank you so much for this article. Is any possible to get negative hurst exponent? I know the number should in the range of 0 and 1. But when I play with different lag, I got negative value. Is the problem of poly fit? how to solve that?</p>
+<p>Thank you so much for any help.</p>
+<span class="reply"><a aria-label="Reply to Lori Li" class="comment-reply-link" data-belowelement="div-comment-10139" data-commentid="10139" data-postid="1684" data-replyto="Reply to Lori Li" data-respondelement="respond" href="#comment-10139" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-18973">
+<article class="comment-body" id="div-comment-18973" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>thanks for the insightful post, </p>
+<p>I never thought the lag parameters matters that much until this post, so thanks. </p>
+<p>My query is what are your experience in running Hurst in different “time bars” , most of the examples I see on the internet are daily close price. Have anyone tried to run this on say like 5 minutes bar close price ?  and does it tell you a different story ?  and has anyone try running Hurst on a moving/sliding window ?</p>
+<p>Thanks!</p>
+<span class="reply"><a aria-label="Reply to Darren Lim" class="comment-reply-link" data-belowelement="div-comment-18973" data-commentid="18973" data-postid="1684" data-replyto="Reply to Darren Lim" data-respondelement="respond" href="#comment-18973" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-20229">
+<article class="comment-body" id="div-comment-20229" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I am finding some inconsistencies here. First you mention that we have to look for other lags to accurately calculate Hurst exponent, because the value we were getting for 2-20 lags was not in line with our “expectations” based on what we see in the data:</p>
+<p>“We can see a clear trend so we would expect a Hurst value of greater than 0.5, however our algorithm returns H = 0.428, less than the value calculated for the longer period. This is clearly not in line with what we would expect, so let’s try looking at another range of lags. After trying a few different ranges, we found that using lags 300-400 resulted in a Hurst exponent of 0.668, which is more in line with what we would expect.”</p>
+<p>But then, towards the end you show the case of a generated random walk, where we see trends even though we later find (and already know) that the Hurst exponent is 0.5:</p>
+<p>“Calculating Hurst for this series gives H = 0.502, which indeed corresponds to a random walk, despite the obvious uptrend. **This is a great example of how our eyes can easily fail to detect the underlying dynamics of a time series.**”</p>
+<p>So, which is true? Can we take our intuition as a reliable guide to use the right lags to calculate the Hurst exponent, or we just keep calculating Hurst exponent over a wide range of lags and hope we find some convergence?</p>
+<span class="reply"><a aria-label="Reply to Smike" class="comment-reply-link" data-belowelement="div-comment-20229" data-commentid="20229" data-postid="1684" data-replyto="Reply to Smike" data-respondelement="respond" href="#comment-20229" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-20235">
+<article class="comment-body" id="div-comment-20235" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I don’t think either of those things is true, at least in any absolute sense.  </p>
+<p>Your question implies the existence of some “correct” value for Hurst. In the case where we know the underlying process that generated the data (as in the random walk example), we have an expected value of our Hurst exponent (0.5 in this case). Whether our estimate of Hurst gets close to that expected value is a function of sampling uncertainty.</p>
+<p>The broader and more interesting point is that for the financial data series, for which we don’t know the generating process, we get different values for Hurst when we use different lags. This implies that we could estimate Hurst in different ways (using different lags for instance) to help us infer certain things about that unknown generating process. For example, we might be able to infer that over some historical time period, SPY tended to be noisily mean-reverting when sampled over lag A, and noisily trending when sampled over lag B. Of course, an even more interesting question is “do I expect that behaviour to persist in the future?”</p>
+<p>It’s much  more practical and interesting, from a trading perspective anyway, to think less in terms of “what’s the ‘correct’ value of some statistical parameter” (there isn’t one) and more in terms of “what does this observation tell me (and not tell me) about the thing I’m trying to understand.”</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-20235" data-commentid="20235" data-postid="1684" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-20235" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/demystifying-the-hurst-exponent-part-2/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

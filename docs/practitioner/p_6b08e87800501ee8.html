@@ -1,0 +1,255 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Excel for trading research?</title>
+<!-- source: https://robotwealth.com/excel-for-trading-research/ -->
+<h1>Excel for trading research?</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-107726 post type-post status-publish format-standard has-post-thumbnail hentry category-data-analysis category-excel category-tools-of-the-trade tag-gold tag-seasonality pmpro-has-access" id="post-107726">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">January 28, 2025</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Excel for trading research?</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Excel for trading research?" class="ipa-media gb-media-81e19d89" data-media-id="107736" decoding="async" fetchpriority="high" height="206" sizes="(max-width: 740px) 100vw, 740px" src="https://media.robotwealth.com/wp-content/uploads/2025/01/28011638/algorithms.png" srcset="https://media.robotwealth.com/wp-content/uploads/2025/01/28011638/algorithms.png 740w, https://media.robotwealth.com/wp-content/uploads/2025/01/28011638/algorithms-300x84.png 300w" width="740"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">Ever met a quant who was slightly religious about their tools? I’ve had Python zealots, R devotees, and MATLAB missionaries (well, back in the day, at least) all claiming their way is the best way.</p>
+<p class="wp-block-paragraph">I use R for most of my analysis. The tidyverse libraries make sense to my brain, and I can move fast with them. But here’s the thing – the tool doesn’t matter nearly as much as what you do with it.</p>
+<p class="wp-block-paragraph">Let me share something that might surprise you: Excel can be a powerful weapon in your trading arsenal. Yes, <em>that</em> Excel. </p>
+<p class="wp-block-paragraph">I recently used Excel to dig into an interesting claim about gold prices – supposedly, gold shows unusually high returns on Fridays and tanks on Mondays. Sounds like the kind of market folklore that usually makes me roll my eyes, but let’s see what the data says.</p>
+<p class="wp-block-paragraph">I’m naturally sceptical of these patterns. </p>
+<p class="wp-block-paragraph">Usually, I want to see a solid reason why an effect exists: </p>
+<ul class="wp-block-list">
+<li>Risk premia? Makes sense – humans are risk-averse. </li>
+<li>Pairs trading? Sure – you’re pushing prices back to fair value. </li>
+<li>Turn-of-month effects? Yep – predictable rebalancing flows create those.</li>
+</ul>
+<p class="wp-block-paragraph">But gold being consistently stronger on Fridays? I can’t think of a convincing reason why that should happen (perhaps I’m revealing my economic naivety).</p>
+<p class="wp-block-paragraph">Still, data doesn’t lie (well, except when it does, but that’s another email). Here’s what I found:</p>
+<ol class="wp-block-list">
+<li>Friday returns are notably higher than other days</li>
+<li>Monday returns are negative – the only day showing negative returns</li>
+<li>The effect has been surprisingly consistent over time</li>
+<li>The pattern looks decidedly non-random</li>
+</ol>
+<p class="wp-block-paragraph">Despite the compelling data, I’m still not entirely convinced. Why? Because without understanding why something happens, you’re more at risk of the effect disappearing tomorrow.</p>
+<p class="wp-block-paragraph">If I were to trade this (and I might), I’d:</p>
+<ul class="wp-block-list">
+<li>Only play the long side on Fridays</li>
+<li>Skip the Monday short (returns are too small vs costs)</li>
+<li>Size it small (acknowledging the lack of fundamental backing)</li>
+<li>Run proper backtests with realistic costs</li>
+</ul>
+<p class="wp-block-paragraph">The broader point here isn’t about gold seasonality – it’s that I used Excel to gain some useful insights about this effect. </p>
+<p class="wp-block-paragraph">Excel let me:</p>
+<ul class="wp-block-list">
+<li>Group and analyze returns by day of the week</li>
+<li>Track consistency across different time periods</li>
+<li>Visualize the cumulative effect as a time series</li>
+<li>Poke and prod the data from different angles</li>
+</ul>
+<p class="wp-block-paragraph">All without writing a single line of code.</p>
+<p class="wp-block-paragraph">Here’s a quick run-through. </p>
+<h2 class="wp-block-heading">The data</h2>
+<p class="wp-block-paragraph">The hard part of putting this spreadsheet together was getting the data.</p>
+<p class="wp-block-paragraph">We pull price data for a user-specified ticker from Yahoo Finance using Excel’s data model. The details aren’t important here; we’ll focus on the analysis instead. I mostly want to give you a sense of how easy it is to do data analysis in Excel.</p>
+<p class="wp-block-paragraph">The data for GLD looks like this:</p>
+<figure class="wp-block-image size-full"><img alt="" class="wp-image-107728 perfmatters-lazy" data-sizes="(max-width: 1000px) 100vw, 1000px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/01/28003955/excel_gld_data.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/01/28003955/excel_gld_data.png 1000w, https://media.robotwealth.com/wp-content/uploads/2025/01/28003955/excel_gld_data-300x288.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/01/28003955/excel_gld_data-768x738.png 768w" decoding="async" height="961" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1000'%20height='961'%20viewBox='0%200%201000%20961'%3E%3C/svg%3E" width="1000"/></figure>
+<p class="wp-block-paragraph">We have columns for date, OHLCV and adjusted close, all of which were pulled from Yahoo Finance. We calculated some additional columns for our analysis:</p>
+<ul class="wp-block-list">
+<li>Log returns</li>
+<li>The day of the week</li>
+<li>The month</li>
+<li>The year</li>
+</ul>
+<h2 class="wp-block-heading">Day of week seasonality</h2>
+<p class="wp-block-paragraph">Let’s see if what were told stacks up – has gold historically shown higher returns on Friday and lower returns on Monday?</p>
+<p class="wp-block-paragraph">To figure this out, we can simply create a pivot table (<em>Insert –&gt; Pivot Table</em>), put the day of the week on the x-axis, and put the sum of the log returns on the y-axis. </p>
+<p class="wp-block-paragraph">This performs a group-by operation: create five groups of our log return data (one for each week day) and then add up the contents of each group.</p>
+<p class="wp-block-paragraph">You get some numerical output:</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-107729 perfmatters-lazy" data-sizes="(max-width: 962px) 100vw, 962px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/01/28004235/excel_gld_dow_seasonality.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/01/28004235/excel_gld_dow_seasonality.png 962w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004235/excel_gld_dow_seasonality-300x245.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004235/excel_gld_dow_seasonality-768x627.png 768w" decoding="async" height="785" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='962'%20height='785'%20viewBox='0%200%20962%20785'%3E%3C/svg%3E" width="962"/></figure>
+</div>
+<p class="wp-block-paragraph">But a chart makes for easier interpretation. </p>
+<p class="wp-block-paragraph">Simply select one of the cells containing numerical output, and then from the <em>Insert </em>menu, select <em>Bar chart</em>.</p>
+<p class="wp-block-paragraph">The results look like this:</p>
+<figure class="wp-block-image size-large"><img alt="" class="wp-image-107730 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/01/28004334/gld_dow_seasonality_plot-1024x611.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/01/28004334/gld_dow_seasonality_plot-1024x611.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004334/gld_dow_seasonality_plot-300x179.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004334/gld_dow_seasonality_plot-768x458.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004334/gld_dow_seasonality_plot-1536x917.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004334/gld_dow_seasonality_plot-2048x1223.png 2048w" decoding="async" height="611" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='611'%20viewBox='0%200%201024%20611'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">Indeed, we see anomalously high returns on Friday. </p>
+<p class="wp-block-paragraph">We also have negative returns on Monday. This is unusual because Monday is the only day showing negative returns. However, the magnitude of the negative return aligns with what we see on Tuesday through Thursday.</p>
+<h2 class="wp-block-heading">Making a single metric</h2>
+<p class="wp-block-paragraph">I like to get a sense of how the effect has changed over time. </p>
+<p class="wp-block-paragraph">In particular, I’ll be quite excited if it’s been unusually consistent – although, to be honest, nothing ever looks as consistent as you’d like, and if it did, I’d assume I’d made a mistake in the analysis!</p>
+<p class="wp-block-paragraph">To facilitate this, it’s helpful to distil the effect down into a single metric. </p>
+<p class="wp-block-paragraph">In this case, we’re interested in the long return on Friday and the short return on Monday. So I create a metric that is simply the log return if the day is Friday, the negative of the log return if it’s Monday, and zero otherwise.</p>
+<p class="wp-block-paragraph">The metric is in column M and looks like this (you can see its formula in the formula bar):</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-107731 perfmatters-lazy" data-sizes="(max-width: 1010px) 100vw, 1010px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/01/28004614/gld_seasonality_metric.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/01/28004614/gld_seasonality_metric.png 1010w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004614/gld_seasonality_metric-300x229.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004614/gld_seasonality_metric-768x587.png 768w" decoding="async" height="772" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1010'%20height='772'%20viewBox='0%200%201010%20772'%3E%3C/svg%3E" width="1010"/></figure>
+</div>
+<h2 class="wp-block-heading">How consistent is the effect over time?</h2>
+<p class="wp-block-paragraph">We can then make another pivot table to explore the consistency of the effect in each year. </p>
+<p class="wp-block-paragraph">Again, we do <em>Insert –&gt; Pivot Table</em>. This time, we put <em>year </em>on the x-axis and the sum of our metric on the y-axis. We can make a bar chart just like we did last time:</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img alt="" class="wp-image-107732 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/01/28004927/gld_dow_seasonality_by_year-1024x628.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/01/28004927/gld_dow_seasonality_by_year-1024x628.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004927/gld_dow_seasonality_by_year-300x184.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004927/gld_dow_seasonality_by_year-768x471.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/01/28004927/gld_dow_seasonality_by_year.png 1210w" decoding="async" height="628" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='628'%20viewBox='0%200%201024%20628'%3E%3C/svg%3E" width="1024"/></figure>
+</div>
+<p class="wp-block-paragraph">This is quite interesting. The effect has existed in all but four years in our data set, and is frequently quite significant. The bar chart looks decidedly non-random.</p>
+<h2 class="wp-block-heading">A time series plot of the effect</h2>
+<p class="wp-block-paragraph">I like to look at these effects from a few different angles. </p>
+<p class="wp-block-paragraph">As I work through my research process, I’m essentially on a mission to poke and prod, to uncover whatever is lurking in the data. I’m not goal-focused (that is, I’m not trying to build a trading strategy). I’m simply trying to understand the effect as best I can.</p>
+<p class="wp-block-paragraph">If I do a good job, then the trading strategy should be obvious.</p>
+<p class="wp-block-paragraph">To this end, I like to create a time-series plot of the metric that captures the effect. The most effective way to do this is to plot the cumulative returns to trading the effect without costs or other considerations.</p>
+<p class="wp-block-paragraph">Create another pivot table, and this time, put the <em>date</em> on the x-axis and the cumulative sum of the metric on the y-axis. </p>
+<p class="wp-block-paragraph">To do this, you need to click on the metric variable in the values box and select <em>“Value field settings”</em>. Then, go to the <em>“Show values as”</em> tab, select “Running Total In”, and make sure <em>date</em> is in the <em>“Base field”</em> box:</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-107733 perfmatters-lazy" data-sizes="(max-width: 365px) 100vw, 365px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/01/28005209/value_field_settings.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/01/28005209/value_field_settings.png 365w, https://media.robotwealth.com/wp-content/uploads/2025/01/28005209/value_field_settings-300x259.png 300w" decoding="async" height="315" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='365'%20height='315'%20viewBox='0%200%20365%20315'%3E%3C/svg%3E" width="365"/></figure>
+</div>
+<p class="wp-block-paragraph">Then, create a time-series plot by selecting a cell in the numerical output and selecting <em>Insert –&gt; Line cart.</em></p>
+<p class="wp-block-paragraph">Here’s the result:</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img alt="" class="wp-image-107734 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/01/28005252/gld_seasonality_time_series-1024x603.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/01/28005252/gld_seasonality_time_series-1024x603.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/01/28005252/gld_seasonality_time_series-300x177.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/01/28005252/gld_seasonality_time_series-768x452.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/01/28005252/gld_seasonality_time_series-1536x904.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/01/28005252/gld_seasonality_time_series-2048x1206.png 2048w" decoding="async" height="603" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='603'%20viewBox='0%200%201024%20603'%3E%3C/svg%3E" width="1024"/></figure>
+</div>
+<p class="wp-block-paragraph">This looks a bit like a backtest, but it isn’t.</p>
+<p class="wp-block-paragraph">A backtest, at least to my way of thinking, is a simulation of the trading rules that you come up with to harness the effect and includes costs and other relevant assumptions. In most cases, it’s path-dependent and subject to luck, but is useful in showing you whether you could have harnessed the effect in the past.</p>
+<p class="wp-block-paragraph">What we’re doing here is something else. </p>
+<p class="wp-block-paragraph">It’s simply the cumulative sum of the returns to trading the effect perfectly and without any costs. It gives us a sense of the variability of the effect over time.</p>
+<p class="wp-block-paragraph">The plot tells me that the effect has been surprisingly consistent and, again, looks decidedly non-random.</p>
+<h2 class="wp-block-heading">Do we have a trade?</h2>
+<p class="wp-block-paragraph">We have good evidence in the data, but we lack a plausible hypothesis for the existence of this effect.</p>
+<p class="wp-block-paragraph">In practical terms, the lack of a plausible hypothesis means that there’s a decent chance that we’re looking at an artefact of randomness that is just as likely to disappear tomorrow as it is to continue.</p>
+<p class="wp-block-paragraph">But what we see in the data looks non-random, so we can’t discount it entirely.</p>
+<p class="wp-block-paragraph">Personally, I would consider trading this to the long side on Fridays (that is, get long on Thursday’s close and flatten at Friday’s close), but I wouldn’t bother playing the short side on Monday (the historical return is small relative to costs). I’d do it small, which is an acknowledgement that I don’t have any basis for the trade other than what I see in the data, and therefore, this is more likely to be a random effect than most of the other things I trade.</p>
+<p class="wp-block-paragraph">I’d also do a backtest in the face of realistic costs to see how effectively it could have been traded in the past.</p>
+<h2 class="wp-block-heading">Conclusion</h2>
+<p class="wp-block-paragraph">I hope this example demonstrates that Excel can be a powerful and productive tool for data analysis.</p>
+<p class="wp-block-paragraph">Using Excel, we performed a fast and efficient analysis of the day-of-the-week seasonality effect in gold.</p>
+<p class="wp-block-paragraph">We have evidence for a non-random effect in the data but no plausible hypothesis for why the effect should exist. Therefore, we proceed with caution.</p>
+<p class="wp-block-paragraph">When it comes to data analysis for trading, use whatever tools help you understand the market. Sometimes, that’s programming. Sometimes, it’s good old Excel. The market doesn’t care what software you use – it only cares whether you have an edge.</p>
+<p class="wp-block-paragraph"></p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>gold</span>, <span>seasonality</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-118832 post type-post status-publish format-standard has-post-thumbnail hentry category-crypto category-data-analysis category-think-like-a-trader tag-crypto tag-quantitative-analysis tag-r tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/trading-signals-in-high-definition/"><img alt="Trading Signals in High Definition" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="118842" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-300x200.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-300x200.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-1024x683.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-768x512.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def.webp 1536w" decoding="async" height="200" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='200'%20viewBox='0%200%20300%20200'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-111077 post type-post status-publish format-standard hentry category-excel category-think-like-a-trader category-tools-of-the-trade tag-excel tag-gld tag-research tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110579 post type-post status-publish format-standard hentry category-data-analysis category-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/excel-for-trading-research/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

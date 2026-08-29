@@ -1,0 +1,637 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Overnight and Intraday SPX returns</title>
+<!-- source: https://robotwealth.com/overnight-and-intraday-spx-returns/ -->
+<h1>Overnight and Intraday SPX returns</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-22766 post type-post status-publish format-standard has-post-thumbnail hentry category-r category-trading-strategies tag-intraday tag-seasonality tag-spy tag-tidyverse tag-trading-strategies pmpro-has-access" id="post-22766">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/jameshodges/">Robot James</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 5, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Overnight and Intraday SPX returns</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Overnight and Intraday SPX returns" class="ipa-media gb-media-81e19d89" data-media-id="21263" decoding="async" fetchpriority="high" height="416" sizes="(max-width: 665px) 100vw, 665px" src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162437/image-29.png" srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162437/image-29.png 665w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162437/image-29-600x375.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162437/image-29-300x188.png 300w" width="665"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">One of the things I’ve noticed from staring at the screen all day for the last few months is that most of the large negative returns in US stock indexes have come overnight.
+
+<blockquote><em>What do you mean by “overnight”?</em></blockquote>
+
+The core stock trading session for US stocks is between 9:30 am and 4 pm Eastern Time.
+
+That’s when most stock market transactions take place. When we look at daily OHLC (<em>Open High Low Close</em>) stock data, the open price is the first trade of the core 9:30 am session, and the close price is the price of the auction at the end of the 4 pm core trading session.
+
+However, stocks also trade in the “pre-open” or “early trading session” which starts at 6:30 am and in the “late trading session” which goes until 8 pm. Futures on stock indexes also trade most of the day.
+
+I’m interested to see how overnight returns<em> (the jump from the close to the open)</em> differ from intraday returns – and how that relationship may have changed recently.
+
+Intuitively, we’d probably expect to see higher average returns overnight when the market is closed – because it’s much more difficult to hedge and manage our exposures when the cash market is closed, so we might expect to get paid a premium, on average, for taking that risk.
+
+Let’s have a look…
+
+<h2>Getting Data</h2>
+
+First, we need some daily OHLC data. (Open, High, Low, Close).
+
+Let’s use the SPY ETF, which is an exchange-traded fund which tracks the S&amp;P 500 index.
+
+If you want daily price data and don’t need to pull too much data at a time, then there are a number of free online sources for this, including:
+
+<ul>
+<li>AlphaVantage</li>
+<li>Tiingo</li>
+</ul>
+
+We can use the <code>alphavantager</code> and <code>riingo</code> packages to pull data from Alpha Vantage and Tiingo respectively.
+
+Let’s use alphavantage. Go <a href="https://www.alphavantage.co/support/#api-key">here</a> and sign up for a free API key.
+
+We’re going to use <code>alphavantager</code> to pull daily adjusted time series data for SPY and hold it in an R data frame called SPY.
+
+To make this work you’ll need to tell <code>alphavantager</code> about your API key running the command: <code>av_api_key(MY_API_KEY)</code>. You’ll need to replace <code>AV_API_KEY</code> with your actual API key.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">av_api_key(MY_API_KEY) 
+SPY &lt;- av_get(symbol = 'SPY', av_fun = 'TIME_SERIES_DAILY_ADJUSTED', outputsize = 'full')</pre>
+
+Here’s what our data looks like:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">SPY %&gt;% 
+  head(20) %&gt;% 
+  kable() %&gt;% 
+  kable_styling(full_width = FALSE, position = 'center') %&gt;% scroll_box(width = '800px', height = '300px')</pre>
+
+ 
+
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px; overflow-x: scroll; width: 800px;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">timestamp</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">open</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">high</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">low</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">close</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">adjusted_close</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">volume</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">dividend_amount</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">split_coefficient</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2000-04-10</td>
+<td style="text-align: right;">151.7500</td>
+<td style="text-align: right;">153.1093</td>
+<td style="text-align: right;">150.3125</td>
+<td style="text-align: right;">150.8437</td>
+<td style="text-align: right;">103.3035</td>
+<td style="text-align: right;">9624200</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-11</td>
+<td style="text-align: right;">150.0000</td>
+<td style="text-align: right;">151.6250</td>
+<td style="text-align: right;">148.3750</td>
+<td style="text-align: right;">150.4062</td>
+<td style="text-align: right;">103.0038</td>
+<td style="text-align: right;">9006400</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-12</td>
+<td style="text-align: right;">150.3750</td>
+<td style="text-align: right;">151.1562</td>
+<td style="text-align: right;">146.1562</td>
+<td style="text-align: right;">146.2812</td>
+<td style="text-align: right;">100.1789</td>
+<td style="text-align: right;">10779200</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-13</td>
+<td style="text-align: right;">147.4687</td>
+<td style="text-align: right;">148.1562</td>
+<td style="text-align: right;">143.7812</td>
+<td style="text-align: right;">144.2500</td>
+<td style="text-align: right;">98.7878</td>
+<td style="text-align: right;">12225800</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-14</td>
+<td style="text-align: right;">142.6250</td>
+<td style="text-align: right;">142.8125</td>
+<td style="text-align: right;">133.5000</td>
+<td style="text-align: right;">136.0000</td>
+<td style="text-align: right;">93.1379</td>
+<td style="text-align: right;">29604000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-17</td>
+<td style="text-align: right;">135.1875</td>
+<td style="text-align: right;">140.7500</td>
+<td style="text-align: right;">134.6875</td>
+<td style="text-align: right;">140.7500</td>
+<td style="text-align: right;">96.3909</td>
+<td style="text-align: right;">23918200</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-18</td>
+<td style="text-align: right;">140.5625</td>
+<td style="text-align: right;">144.4687</td>
+<td style="text-align: right;">139.7812</td>
+<td style="text-align: right;">144.4687</td>
+<td style="text-align: right;">98.9376</td>
+<td style="text-align: right;">11069200</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-19</td>
+<td style="text-align: right;">144.5000</td>
+<td style="text-align: right;">145.1250</td>
+<td style="text-align: right;">142.5312</td>
+<td style="text-align: right;">143.1250</td>
+<td style="text-align: right;">98.0174</td>
+<td style="text-align: right;">6553700</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-20</td>
+<td style="text-align: right;">143.5625</td>
+<td style="text-align: right;">143.9375</td>
+<td style="text-align: right;">142.3750</td>
+<td style="text-align: right;">143.8125</td>
+<td style="text-align: right;">98.4882</td>
+<td style="text-align: right;">8537600</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-24</td>
+<td style="text-align: right;">141.5000</td>
+<td style="text-align: right;">143.3125</td>
+<td style="text-align: right;">140.5000</td>
+<td style="text-align: right;">142.2500</td>
+<td style="text-align: right;">97.4182</td>
+<td style="text-align: right;">12893100</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-25</td>
+<td style="text-align: right;">144.6250</td>
+<td style="text-align: right;">148.1562</td>
+<td style="text-align: right;">144.4375</td>
+<td style="text-align: right;">148.1562</td>
+<td style="text-align: right;">101.4630</td>
+<td style="text-align: right;">14102000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-26</td>
+<td style="text-align: right;">147.9687</td>
+<td style="text-align: right;">148.7500</td>
+<td style="text-align: right;">146.0000</td>
+<td style="text-align: right;">146.4843</td>
+<td style="text-align: right;">100.3180</td>
+<td style="text-align: right;">7711100</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-27</td>
+<td style="text-align: right;">143.0000</td>
+<td style="text-align: right;">147.3437</td>
+<td style="text-align: right;">143.0000</td>
+<td style="text-align: right;">146.0000</td>
+<td style="text-align: right;">99.9863</td>
+<td style="text-align: right;">15595300</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-04-28</td>
+<td style="text-align: right;">147.0000</td>
+<td style="text-align: right;">147.8593</td>
+<td style="text-align: right;">145.0625</td>
+<td style="text-align: right;">145.0937</td>
+<td style="text-align: right;">99.3656</td>
+<td style="text-align: right;">8743400</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-05-01</td>
+<td style="text-align: right;">146.5625</td>
+<td style="text-align: right;">148.4843</td>
+<td style="text-align: right;">145.8437</td>
+<td style="text-align: right;">147.0625</td>
+<td style="text-align: right;">100.7139</td>
+<td style="text-align: right;">7328300</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-05-02</td>
+<td style="text-align: right;">145.5000</td>
+<td style="text-align: right;">147.1250</td>
+<td style="text-align: right;">144.1250</td>
+<td style="text-align: right;">144.1250</td>
+<td style="text-align: right;">98.7022</td>
+<td style="text-align: right;">9411900</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-05-03</td>
+<td style="text-align: right;">144.0000</td>
+<td style="text-align: right;">144.0000</td>
+<td style="text-align: right;">139.7812</td>
+<td style="text-align: right;">140.7500</td>
+<td style="text-align: right;">96.3909</td>
+<td style="text-align: right;">12630700</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-05-04</td>
+<td style="text-align: right;">142.0000</td>
+<td style="text-align: right;">142.3593</td>
+<td style="text-align: right;">140.7500</td>
+<td style="text-align: right;">141.8125</td>
+<td style="text-align: right;">97.1185</td>
+<td style="text-align: right;">5963600</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-05-05</td>
+<td style="text-align: right;">141.0625</td>
+<td style="text-align: right;">144.0000</td>
+<td style="text-align: right;">140.9375</td>
+<td style="text-align: right;">143.5312</td>
+<td style="text-align: right;">98.2956</td>
+<td style="text-align: right;">7862400</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">2000-05-08</td>
+<td style="text-align: right;">142.7500</td>
+<td style="text-align: right;">143.3750</td>
+<td style="text-align: right;">141.8437</td>
+<td style="text-align: right;">142.4531</td>
+<td style="text-align: right;">97.5572</td>
+<td style="text-align: right;">5064100</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2>Calculate overnight and intraday returns</h2>
+
+Now we calculate:
+
+<ul>
+<li>overnight returns as the % difference between the close price and the previous open</li>
+<li>intraday returns as the % difference between the open and the close.</li>
+</ul>
+<em>(I’ve also calculated close to close returns, which don’t get used in this analysis.)</em>
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">SPY_returns &lt;- SPY %&gt;% 
+  mutate(adjfactor = adjusted_close / close) %&gt;%
+  mutate(open = adjfactor * (open - close) + adjusted_close,
+         high = adjfactor * (high - close) + adjusted_close,
+         low = adjfactor * (low - close) + adjusted_close,
+         close = close * adjfactor) %&gt;%
+  mutate(c2c = close / lag(close) - 1) %&gt;%
+  mutate(intraday = close/open - 1) %&gt;% 
+  mutate(overnight = lead(open)/close - 1) %&gt;% 
+  mutate(overnightpremium = overnight - intraday) %&gt;%
+  na.omit()</pre>
+<h2>Cumulative overnight and intraday returns</h2>
+
+Now let’s plot the cumulative performance of two strategies:
+
+<ul>
+<li>“intraday” goes long at the open, and holds until the end of the day, and is flat overnight</li>
+<li>“overnight” goes long at the close, holds overnight, and closes on the open the next day</li>
+</ul>
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">SPY_returns %&gt;% 
+  pivot_longer(c(intraday, overnight), names_to = 'period', values_to = 'returns') %&gt;% 
+  group_by(period) %&gt;% 
+  mutate(cumreturns = cumprod(1+returns)) %&gt;% 
+  ggplot(aes(x=timestamp, y=cumreturns, color=period)) + 
+    geom_line() + 
+    ggtitle('Intraday and Overnight Cumulative SPY Returns')</pre>
+
+ 
+
+<img alt="" class="aligncenter size-full wp-image-23880 perfmatters-lazy" data-sizes="(max-width: 637px) 100vw, 637px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161859/intraday-vs-overnight-spy.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161859/intraday-vs-overnight-spy.png 637w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161859/intraday-vs-overnight-spy-600x377.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161859/intraday-vs-overnight-spy-300x188.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='637'%20height='400'%20viewBox='0%200%20637%20400'%3E%3C/svg%3E" width="637"/>
+<blockquote><em>What do we see?</em></blockquote>
+
+We see that most of our returns over the full cycle come from holding stock exposure overnight (the green line). In fact, the total return of SPY intraday since 2000 has actually been negative. This quite remarkable.
+
+We also see that most of the recent losses in the last two weeks have come overnight.
+
+And that most of the recent gains in the last few weeks have been intraday.
+
+<h2>Rolling average difference in intraday and overnight returns</h2>
+
+Let’s plot the rolling difference between overnight and intraday returns.
+
+We use the <code>slide_db</code>l function from the <code>slider</code> package to achieve this.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">SPY_returns %&gt;% 
+  mutate(diff = intraday - overnight) %&gt;% 
+  mutate(diff20 = slide_dbl(diff, mean, .before = 20, .complete = TRUE)) %&gt;% 
+  na.omit() %&gt;% 
+  ggplot(aes(x=timestamp, y=diff20)) + 
+    geom_line() + 
+    ggtitle('20 day moving average of difference between SPX intraday and overnight returns')</pre>
+
+ 
+
+<img alt="" class="aligncenter size-full wp-image-23881 perfmatters-lazy" data-sizes="(max-width: 645px) 100vw, 645px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161858/ma-spx-overnight-intraday.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161858/ma-spx-overnight-intraday.png 645w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161858/ma-spx-overnight-intraday-600x376.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161858/ma-spx-overnight-intraday-300x188.png 300w" decoding="async" height="404" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='645'%20height='404'%20viewBox='0%200%20645%20404'%3E%3C/svg%3E" width="645"/>
+
+You can see how historically anomalous the recent behaviour has been.
+
+Would we bet on that continuing for a while? I probably wouldn’t. I’d just expect this behaviour to revert to normal.
+
+Maybe we can get a little more insight by looking at the 5-day average since 2019:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">SPY_returns %&gt;% 
+  mutate(diff = intraday - overnight) %&gt;% 
+  mutate(diff5 = slide_dbl(diff, mean, .before = 5, .complete = TRUE)) %&gt;% 
+  filter(timestamp &gt;= '2019-01-01') %&gt;% 
+  na.omit() %&gt;% 
+  ggplot(aes(x=timestamp, y=diff5)) + 
+    geom_line() + 
+    ggtitle('5 day moving average of difference between SPX intraday and overnight returns')</pre>
+
+ 
+
+<img alt="" class="aligncenter size-full wp-image-23882 perfmatters-lazy" data-sizes="(max-width: 638px) 100vw, 638px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161857/5ma-spx-overnight-intraday.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161857/5ma-spx-overnight-intraday.png 638w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161857/5ma-spx-overnight-intraday-600x379.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161857/5ma-spx-overnight-intraday-300x189.png 300w" decoding="async" height="403" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='638'%20height='403'%20viewBox='0%200%20638%20403'%3E%3C/svg%3E" width="638"/>
+
+And that’s exactly what we seem to see. When viewed over a shorter window length, the average difference in overnight and intraday returns does seem to be reverting to its mean.
+
+<h2>The overnight drift</h2>
+<a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3546173">This paper</a> looks at the returns from equity index futures and suggests that nearly 100% of those returns have come in one hour between 2 am and 3 am.
+
+<em>This is an insane result, and something well worth looking into…</em>
+<div class="convertful-36233"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>intraday</span>, <span>seasonality</span>, <span>SPY</span>, <span>tidyverse</span>, <span>trading strategies</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130666 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/"><img alt="The Winter of our Pairs Trading Discontent: Problems, limitations, frustrations" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130667" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130276 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/moneyball-finding-undervalued-pairs-using-unconventional-metrics/"><img alt="Moneyball: Finding Undervalued Pairs Using Unconventional Metrics" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130277" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-1280x964.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-80x60.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-480x361.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-960x723.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features.webp 1456w" decoding="async" height="578" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='578'%20viewBox='0%200%20768%20578'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130275 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-tale-of-two-prices/"><img alt="A Tale of Two Prices" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="120744" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-1024x538.jpg 1024w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-768x403.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04.jpg 1200w" decoding="async" height="158" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='158'%20viewBox='0%200%20300%20158'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">16 thoughts on “Overnight and Intraday SPX returns”</h2>
+<ol class="comment-list">
+<li class="comment byuser comment-author-minshengw even thread-even depth-1" id="comment-14208">
+<article class="comment-body" id="div-comment-14208" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>The overnight drift paper looks very interesting. I wonder if other markets in Asia have these 2 am to 3 am (eastern time) effects too.</p>
+<span class="reply"><a aria-label="Reply to Minsheng Wu" class="comment-reply-link" data-belowelement="div-comment-14208" data-commentid="14208" data-postid="22766" data-replyto="Reply to Minsheng Wu" data-respondelement="respond" href="#comment-14208" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-14245">
+<article class="comment-body" id="div-comment-14245" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>is an insightful article…thanks</p>
+<span class="reply"><a aria-label="Reply to nayan savla" class="comment-reply-link" data-belowelement="div-comment-14245" data-commentid="14245" data-postid="22766" data-replyto="Reply to nayan savla" data-respondelement="respond" href="#comment-14245" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-danatrader even thread-even depth-1 parent" id="comment-14282">
+<article class="comment-body" id="div-comment-14282" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This is awesome, I just did see it and loved it.</p>
+<p>So I started to dive into it, with all the skills you did teach on the FX intrady bootcamp.</p>
+<p>Thank you James.</p>
+<span class="reply"><a aria-label="Reply to Jan Kellerhoff" class="comment-reply-link" data-belowelement="div-comment-14282" data-commentid="14282" data-postid="22766" data-replyto="Reply to Jan Kellerhoff" data-respondelement="respond" href="#comment-14282" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master odd alt depth-2" id="comment-14611">
+<article class="comment-body" id="div-comment-14611" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Nice one! Great to hear you’re getting stuck in, Jan. Glad to hear the Bootcamp was helpful too.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14611" data-commentid="14611" data-postid="22766" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14611" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-14292">
+<article class="comment-body" id="div-comment-14292" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello James, I’ve written a couple of posts with similar considerations too! It’s really huge the fall of the overnight returns in last March! <a href="http://www.nightlypatterns.blog" rel="nofollow ugc">http://www.nightlypatterns.blog</a></p>
+<span class="reply"><a aria-label="Reply to MARCO SIMIONI" class="comment-reply-link" data-belowelement="div-comment-14292" data-commentid="14292" data-postid="22766" data-replyto="Reply to MARCO SIMIONI" data-respondelement="respond" href="#comment-14292" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-14534">
+<article class="comment-body" id="div-comment-14534" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Marco, I just saw this page and was going to tell you about it….but I see you beat me to it! I’ve seen a few sites that attempt to apply your pattern trading concepts here, some rather successfully, but they cost a lot of money.</p>
+<span class="reply"><a aria-label="Reply to Terry" class="comment-reply-link" data-belowelement="div-comment-14534" data-commentid="14534" data-postid="22766" data-replyto="Reply to Terry" data-respondelement="respond" href="#comment-14534" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-robot-master even depth-2" id="comment-14612">
+<article class="comment-body" id="div-comment-14612" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Nice on Marco! Thanks for sharing your blog. Really interesting work.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14612" data-commentid="14612" data-postid="22766" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14612" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-14727">
+<article class="comment-body" id="div-comment-14727" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Your analysis is wrong because you need to use adjusted prices.<br/>
+For example, if you run your program on GASL, you will see a dramatic divergence of two lines, but it’s actually not the case.</p>
+<span class="reply"><a aria-label="Reply to Tony" class="comment-reply-link" data-belowelement="div-comment-14727" data-commentid="14727" data-postid="22766" data-replyto="Reply to Tony" data-respondelement="respond" href="#comment-14727" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-yuripd12 even depth-2 parent" id="comment-15630">
+<article class="comment-body" id="div-comment-15630" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>If adjusted prices were used, wouldn’t adjusted open prices need to be used as well as adjusted close prices? If that is the case, the adjusted open and adjusted close prices would be adjusted using the same factor, so the analysis should persist.</p>
+<span class="reply"><a aria-label="Reply to Yuri Douglas" class="comment-reply-link" data-belowelement="div-comment-15630" data-commentid="15630" data-postid="22766" data-replyto="Reply to Yuri Douglas" data-respondelement="respond" href="#comment-15630" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-jameshodges bypostauthor odd alt depth-3" id="comment-15640">
+<article class="comment-body" id="div-comment-15640" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Yeah, that’s right… This analysis does actually use dividend-adjusted prices – but you see this effect whether you account for dividends or not. In fact, not adjusting for dividends would have the impact of actually reducing overnight returns.</p>
+<span class="reply"><a aria-label="Reply to Robot James" class="comment-reply-link" data-belowelement="div-comment-15640" data-commentid="15640" data-postid="22766" data-replyto="Reply to Robot James" data-respondelement="respond" href="#comment-15640" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-17296">
+<div class="comment-body">
+				Pingback: What Assumptions Are You Making About "Time" In Your Trading? - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-danatrader odd alt thread-even depth-1" id="comment-25387">
+<article class="comment-body" id="div-comment-25387" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very nice, found this trade can be almmost perfectly excuted, with exception of corona crash.<br/>
+There seems to be a broad effect there, but there is signals shortly before market close, between 6 pm  and 9 pm CET, which indicates tthe most lukrative nights.</p>
+<span class="reply"><a aria-label="Reply to Jan Kellerhoff" class="comment-reply-link" data-belowelement="div-comment-25387" data-commentid="25387" data-postid="22766" data-replyto="Reply to Jan Kellerhoff" data-respondelement="respond" href="#comment-25387" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-38474">
+<div class="comment-body">
+				Pingback: Revisiting Overnight vs Intraday Equity Returns - GPTTradeAssist.com 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/overnight-and-intraday-spx-returns/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

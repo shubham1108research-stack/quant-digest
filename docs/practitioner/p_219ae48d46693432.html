@@ -1,0 +1,260 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How to Connect Google Colab to a Local Jupyter Runtime</title>
+<!-- source: https://robotwealth.com/how-to-connect-google-colab-to-a-local-jupyter-runtime/ -->
+<h1>How to Connect Google Colab to a Local Jupyter Runtime</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-31818 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-python tag-r pmpro-has-access" id="post-31818">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">November 17, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">How to Connect Google Colab to a Local Jupyter Runtime</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="How to Connect Google Colab to a Local Jupyter Runtime" class="ipa-media gb-media-81e19d89" data-media-id="32007" decoding="async" fetchpriority="high" height="536" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160919/BLOG-POST-Featured-Images-1-1024x536.png" srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160919/BLOG-POST-Featured-Images-1-1024x536.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160919/BLOG-POST-Featured-Images-1-600x314.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160919/BLOG-POST-Featured-Images-1-300x157.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160919/BLOG-POST-Featured-Images-1-768x402.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160919/BLOG-POST-Featured-Images-1-1000x523.png 1000w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160919/BLOG-POST-Featured-Images-1.png 1200w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Colaboratory, or Colab, is a hosted Jupyter notebook service requiring zero setup and providing free access to compute resources. It is a convenient and powerful way to share research, and we use it extensively in The Lab.
+
+<blockquote><em>What’s The Lab?</em></blockquote>
+
+The Lab is the RW Pro group’s portal for doing collaborative research together as a community. The key goals are:
+
+<ul>
+<li>To develop members’ quant research skills by getting them hands-on with the research process.</li>
+<li>To scale the research effort through community collaboration.</li>
+<li>To make the fruits of that research effort available to the entire community.</li>
+</ul>
+<em><strong>In short, we grow people’s research skills and the number of edges available to trade faster than an individual could grow them alone.</strong></em>
+<h2>Connecting Colab to a local Jupyter runtime</h2>
+
+Colab allows you to create, run, and share Jupyter notebooks without having to download or install anything. Integration with GitHub means that you can work entirely in the cloud:
+
+<img alt="" class="aligncenter wp-image-31820 size-large perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160958/open-in-colab-1024x349.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160958/open-in-colab-1024x349.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160958/open-in-colab-600x205.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160958/open-in-colab-300x102.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160958/open-in-colab-768x262.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160958/open-in-colab-1000x341.png 1000w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160958/open-in-colab.png 1155w" decoding="async" height="349" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='349'%20viewBox='0%200%201024%20349'%3E%3C/svg%3E" width="1024"/>
+
+While working in the cloud has benefits – such as no local setup – there are also limitations. For example:
+
+<ul>
+<li>Repeatedly setting up the research environment from scratch</li>
+<li>Session disconnection if idle for too long</li>
+<li>Memory limitations</li>
+</ul>
+
+To get around such constraints, you might consider connecting Colab to a Jupyter server running locally.
+
+<blockquote><em>But why run Colab locally, rather than working in a vanilla Jupyter notebook?</em></blockquote>
+
+Mainly for the sharing and collaboration tools: one-click loading and pushing to GitHub, easy access to cloud storage buckets, and “snippet notebooks.”
+
+Snippet notebooks contain chunks of self-contained code that can be injected into a working notebook. This is a great way to collaborate, ensure consistency and reproducibility, increase productivity, and share tools such that the code is visible in the notebook. We find this suits collaborative quant research more than say abstracting such functionality away in a package:
+
+<img alt="" class="aligncenter wp-image-31829 size-full perfmatters-lazy" data-sizes="(max-width: 1558px) 100vw, 1558px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160949/colab-snippets2.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160949/colab-snippets2.png 1558w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160949/colab-snippets2-600x353.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160949/colab-snippets2-300x176.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160949/colab-snippets2-1024x602.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160949/colab-snippets2-768x452.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160949/colab-snippets2-1536x903.png 1536w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160949/colab-snippets2-1000x588.png 1000w" decoding="async" height="916" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1558'%20height='916'%20viewBox='0%200%201558%20916'%3E%3C/svg%3E" width="1558"/>
+<h2>How to connect Colab to a local Jupyter runtime</h2>
+<h3>Step 1: Install Jupyter</h3>
+
+The easiest way is via Conda:
+
+<code>conda <span class="nb">install</span> <span class="nt">-c</span> conda-forge jupyterlab</code>
+
+or pip:
+
+<code>pip <span class="nb">install </span>jupyterlab</code>
+
+More detailed instructions can be found <a href="https://jupyter.org/install" rel="noopener noreferrer" target="_blank">here</a>.
+
+<h3>Step2: Install Jupyter server extension for using a WebSocket to proxy HTTP traffic</h3>
+
+The colab team authored the<code>jupyter_http_over_ws</code> extension. Install it by doing:
+
+<code><span style="font-family: Consolas, Monaco, monospace;">pip install jupyter_http_over_ws</span></code>
+
+Then enable it by doing:
+
+<code><span style="font-family: Consolas, Monaco, monospace;">jupyter serverextension enable --py jupyter_http_over_ws</span></code>
+
+You can read more detailed information about this extension on its <a href="https://github.com/googlecolab/jupyter_http_over_ws" rel="noopener noreferrer" target="_blank">GitHub repository</a>.
+
+<h3>Step 3: Start a local Jupyter server</h3>
+
+We need a local Jupyter server that trusts WebSocket connections from the Colab frontend. The following command and flags accomplish this:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">jupyter notebook \ 
+    --NotebookApp.allow_origin='https://colab.research.google.com' \ 
+    --port=8888 \ 
+    --NotebookApp.port_retries=0</pre>
+
+Once the server has started, it will print a message with the initial backend URL used for authentication. You’ll need a copy of this in the next step:
+
+<img alt="" class="size-full wp-image-31823 aligncenter perfmatters-lazy" data-sizes="(max-width: 1057px) 100vw, 1057px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160953/jupyter-local.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160953/jupyter-local.png 1057w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160953/jupyter-local-600x307.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160953/jupyter-local-300x153.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160953/jupyter-local-1024x523.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160953/jupyter-local-768x392.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160953/jupyter-local-1000x511.png 1000w" decoding="async" height="540" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1057'%20height='540'%20viewBox='0%200%201057%20540'%3E%3C/svg%3E" width="1057"/>
+<h3>Step 4: Connect</h3>
+
+In Colab, click the “Connect” button and select “Connect to local runtime”. Enter the URL you just copied and click “Connect”:
+
+<img alt="" class="size-full wp-image-31824 aligncenter perfmatters-lazy" data-sizes="(max-width: 520px) 100vw, 520px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160952/colab-connect-local.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160952/colab-connect-local.png 520w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160952/colab-connect-local-300x136.png 300w" decoding="async" height="235" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='520'%20height='235'%20viewBox='0%200%20520%20235'%3E%3C/svg%3E" width="520"/>
+
+That’s it! You now have the Colab research environment running on your local Jupyter server.
+
+<img alt="" class="size-full wp-image-31825 aligncenter perfmatters-lazy" data-sizes="(max-width: 446px) 100vw, 446px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160952/colab-connected-local.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160952/colab-connected-local.png 446w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160952/colab-connected-local-300x110.png 300w" decoding="async" height="164" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='446'%20height='164'%20viewBox='0%200%20446%20164'%3E%3C/svg%3E" width="446"/>
+<h3>Connecting again</h3>
+
+Next time you want to connect to a local runtime, you only need to run steps 3 and 4 above.
+
+<h2>Security considerations</h2>
+
+When you connect to a local Jupyter server, you allow the Colab frontend to execute code in the notebook using local resources, accessing the local file system.
+
+Before attempting to connect to a local runtime, make sure you trust the author of the notebook and ensure you understand the code that is being executed. Don’t run a notebook locally unless you understand the code!
+
+<h2>Accessing The Lab</h2>
+
+The Lab is available to RW Pro members. Want in? Access to RW Pro is via our Bootcamp program. <a href="https://robotwealth.com/closed/">Join the waitlist here.</a>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>python</span>, <span>R</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">7 thoughts on “How to Connect Google Colab to a Local Jupyter Runtime”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-18939">
+<div class="comment-body">
+				Pingback: Run Jupyter Lab on Google Colaboratory 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-28805">
+<article class="comment-body" id="div-comment-28805" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thank you so much Sir</p>
+<span class="reply"><a aria-label="Reply to Ali Raza Siddiqui" class="comment-reply-link" data-belowelement="div-comment-28805" data-commentid="28805" data-postid="31818" data-replyto="Reply to Ali Raza Siddiqui" data-respondelement="respond" href="#comment-28805" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-32546">
+<div class="comment-body">
+				Pingback: Интеграция Colab и локального Jupyter Notebook | Жизнь, бизнес и IT 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/how-to-connect-google-colab-to-a-local-jupyter-runtime/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

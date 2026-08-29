@@ -1,0 +1,831 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Trading 0DTE Options with the IBKR Native API</title>
+<!-- source: https://robotwealth.com/trading-0dte-options-with-the-ibkr-native-api/ -->
+<h1>Trading 0DTE Options with the IBKR Native API</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-91137 post type-post status-publish format-standard has-post-thumbnail hentry category-python category-quant-trading category-trading-strategies tag-0dte tag-ibkr tag-options pmpro-has-access" id="post-91137">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">March 24, 2024</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Trading 0DTE Options with the IBKR Native API</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Trading 0DTE Options with the IBKR Native API" class="ipa-media gb-media-81e19d89" data-media-id="91138" decoding="async" fetchpriority="high" height="585" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte-1024x585.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte.webp 1792w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<div id="notebook-holder"><div class="nb-notebook"><div class="nb-worksheet"><div class="nb-cell nb-markdown-cell">
+<p>Here’s a thing that I suspect will make money, but that I haven’t yet tested (for reasons that I will explain shortly):</p>
+<ul>
+<li>Every day, at the start of the trading day, get the SPX straddle price and convert it to an expected SPX price move. </li>
+<li>Then at the end of the trading day, take the SPX price and calculate if it moved more or less than the straddle implied. </li>
+<li>Aggregate this over a few days – the simplest way would be to take the average expected move and the average actual move. </li>
+<li>The trading signal for the next day’s open is as follows:<ul>
+<li>If SPX moved more than was implied by the straddle on average over the last few days, buy the straddle.</li>
+<li>If SPX moved less than implied on average, sell the straddle.</li>
+</ul>
+</li>
+</ul>
+<p>That is:</p>
+<pre><code>if mean(actual_move) &gt; mean(expected_move):
+  buy tomorrow's 0DTE ATM straddle
+else if mean(actual_move) &amp;lt; mean(expected_move):
+  sell tomorrow's 0DTE ATM straddle
+</code></pre>
+<p>It’s essentially fitting to how well the options market predicted spoos volatility in the very short term.</p>
+<p>I think there’s <em>probably</em> an edge here, but I’m also concerned about costs, since the cost of trading a 0DTE straddle will be a large percentage of its return, most of the time. </p>
+<h2>Why haven’t I tested this properly?</h2>
+<p>Because the data is hard to come by. I didn’t have it at hand, and I couldn’t get enough from the usual free sources to test it properly.  </p>
+<p>When I have a suspicion about a possible edge, or someone tells me about an edge they have a hunch about (which is where this idea came from), I like to move fast and test it out with minimal investment in time and money. Most of the time, these things don’t work out, and so I want to disprove ideas quickly and move on. To do that, you need ready access to data. </p>
+<p>But the data for this idea is a little awkward. Specifically, you need historical ATM SPXW options daily open and close prices (which I don’t have). And most of the usual sources (including IBKR) don’t provide data for expired contracts.</p>
+<h2>What to do instead?</h2>
+<p>You have some options. You could go and buy the data and test it properly. Or, you could just start trading it in small size and collect the data you need along the way. </p>
+<p>In this case, I’m thinking about doing the latter. I like this approach because I learn a lot about the strategy by actually executing it. And if it has no edge, then the expected costs are just the trading fees. </p>
+<p>Also, I promised I’d show you some 0DTE options stuff with the IB Native API! So here goes. </p>
+<p><em>In this article, I’ll show you how to calculate the signal for this strategy and place the appropriate trades via the IB Native API.</em></p>
+</div><div class="nb-cell nb-markdown-cell"><h2>Straddle prices and expected price moves</h2>
+<p>The price of the ATM straddle allows you to estimate the expected move in the underlying that the options are pricing in. The generally accepted formula, which is just an estimate, is:  </p>
+<p><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mi mathvariant="normal">Δ</mi><msub><mi>P</mi><mi>u</mi></msub><mo>=</mo><mn>0.85</mn><mo>∗</mo><msub><mi>P</mi><mi>s</mi></msub></mrow>\Delta P_u = 0.85 * P_s </math></span><span aria-hidden="true" class="katex-html"><span class="base"><span class="strut" style="height: 0.8333em; vertical-align: -0.15em;"></span><span class="mord">Δ</span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.1389em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span class="" style="top: -2.55em; margin-left: -0.1389em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">u</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">0.85</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.8333em; vertical-align: -0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.1389em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span class="" style="top: -2.55em; margin-left: -0.1389em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">s</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span></span></span></span></span></p>
+<p>where <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>P</mi><mi>u</mi></msub></mrow>P_u</math></span><span aria-hidden="true" class="katex-html"><span class="base"><span class="strut" style="height: 0.8333em; vertical-align: -0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.1389em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span class="" style="top: -2.55em; margin-left: -0.1389em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">u</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span></span></span></span></span> is the price of the unerlying, and <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><msub><mi>P</mi><mi>s</mi></msub></mrow>P_s</math></span><span aria-hidden="true" class="katex-html"><span class="base"><span class="strut" style="height: 0.8333em; vertical-align: -0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.1389em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span class="" style="top: -2.55em; margin-left: -0.1389em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">s</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span></span></span></span></span> is the price of the ATM straddle. </p>
+<p>For example say our underlying was priced at <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mn>100.</mn><mi>T</mi><mi>h</mi><mi>e</mi><mi>A</mi><mi>T</mi><mi>M</mi><mi>s</mi><mi>t</mi><mi>r</mi><mi>a</mi><mi>d</mi><mi>d</mi><mi>l</mi><mi>e</mi><mi>c</mi><mi>o</mi><mi>s</mi><mi>t</mi><mi>s</mi></mrow>100. The ATM straddle costs </math></span><span aria-hidden="true" class="katex-html"><span class="base"><span class="strut" style="height: 0.6944em;"></span><span class="mord">100.</span><span class="mord mathnormal" style="margin-right: 0.1389em;">T</span><span class="mord mathnormal">h</span><span class="mord mathnormal">e</span><span class="mord mathnormal">A</span><span class="mord mathnormal" style="margin-right: 0.109em;">TM</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mord mathnormal" style="margin-right: 0.0278em;">r</span><span class="mord mathnormal">a</span><span class="mord mathnormal">dd</span><span class="mord mathnormal" style="margin-right: 0.0197em;">l</span><span class="mord mathnormal">ecos</span><span class="mord mathnormal">t</span><span class="mord mathnormal">s</span></span></span></span></span>15. The expected move is therefore 0.85*15 = <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mn>12.75.</mn><mi>T</mi><mi>h</mi><mi>a</mi><mi>t</mi><mi>m</mi><mi>e</mi><mi>a</mi><mi>n</mi><mi>s</mi><mi>t</mi><mi>h</mi><mi>a</mi><mi>t</mi><mi>a</mi><mi>t</mi><mi>e</mi><mi>x</mi><mi>p</mi><mi>i</mi><mi>r</mi><mi>y</mi><mi>o</mi><mi>f</mi><mi>t</mi><mi>h</mi><mi>e</mi><mi>s</mi><mi>t</mi><mi>r</mi><mi>a</mi><mi>d</mi><mi>d</mi><mi>l</mi><mi>e</mi><mo separator="true">,</mo><mi>w</mi><mi>e</mi><mi>e</mi><mi>x</mi><mi>p</mi><mi>e</mi><mi>c</mi><mi>t</mi><mi>p</mi><mi>r</mi><mi>i</mi><mi>c</mi><mi>e</mi><mi>t</mi><mi>o</mi><mi>b</mi><mi>e</mi><mi>w</mi><mi>i</mi><mi>t</mi><mi>h</mi><mi>i</mi><mi>n</mi><mn>100</mn><mo>+</mo><mi mathvariant="normal">/</mi><mo>−</mo><mn>12.75</mn><mo separator="true">,</mo><mi>t</mi><mi>h</mi><mi>a</mi><mi>t</mi><mi>i</mi><mi>s</mi><mi>b</mi><mi>e</mi><mi>t</mi><mi>w</mi><mi>e</mi><mi>e</mi><mi>n</mi></mrow>12.75.</math></span></span></span></p>
+<p>That means that at expiry of the straddle, we expect price to be within 100 +/- 12.75, that is between <span aria-hidden="true" class="katex-html"><span class="base"><span class="strut" style="height: 0.8889em; vertical-align: -0.1944em;"></span><span class="mord">12.75.</span><span class="mord mathnormal" style="margin-right: 0.1389em;">T</span><span class="mord mathnormal">ha</span><span class="mord mathnormal">t</span><span class="mord mathnormal">m</span><span class="mord mathnormal">e</span><span class="mord mathnormal">an</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mord mathnormal">ha</span><span class="mord mathnormal">t</span><span class="mord mathnormal">a</span><span class="mord mathnormal">t</span><span class="mord mathnormal">e</span><span class="mord mathnormal">x</span><span class="mord mathnormal">p</span><span class="mord mathnormal">i</span><span class="mord mathnormal">ryo</span><span class="mord mathnormal" style="margin-right: 0.1076em;">f</span><span class="mord mathnormal">t</span><span class="mord mathnormal">h</span><span class="mord mathnormal">es</span><span class="mord mathnormal">t</span><span class="mord mathnormal" style="margin-right: 0.0278em;">r</span><span class="mord mathnormal">a</span><span class="mord mathnormal">dd</span><span class="mord mathnormal" style="margin-right: 0.0197em;">l</span><span class="mord mathnormal">e</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord mathnormal" style="margin-right: 0.0269em;">w</span><span class="mord mathnormal">ee</span><span class="mord mathnormal">x</span><span class="mord mathnormal">p</span><span class="mord mathnormal">ec</span><span class="mord mathnormal">tp</span><span class="mord mathnormal" style="margin-right: 0.0278em;">r</span><span class="mord mathnormal">i</span><span class="mord mathnormal">ce</span><span class="mord mathnormal">t</span><span class="mord mathnormal">o</span><span class="mord mathnormal">b</span><span class="mord mathnormal">e</span><span class="mord mathnormal" style="margin-right: 0.0269em;">w</span><span class="mord mathnormal">i</span><span class="mord mathnormal">t</span><span class="mord mathnormal">hin</span><span class="mord">100</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mord">/</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.8889em; vertical-align: -0.1944em;"></span><span class="mord">12.75</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord mathnormal">t</span><span class="mord mathnormal">ha</span><span class="mord mathnormal">t</span><span class="mord mathnormal">i</span><span class="mord mathnormal">s</span><span class="mord mathnormal">b</span><span class="mord mathnormal">e</span><span class="mord mathnormal" style="margin-right: 0.0269em;">tw</span><span class="mord mathnormal">ee</span><span class="mord mathnormal">n</span></span></span>87.25 and $112.75.</p>
+</div><div class="nb-cell nb-markdown-cell"><h2>Data requirements</h2>
+<p>For this strategy, we need the following data:</p>
+<ul>
+<li>Daily open and close SPX prices (the open price will be our straddle strike price, and the close will allow us to calculate the actual price move)</li>
+<li>Daily 0DTE ATM call and put option open prices</li>
+</ul>
+<p>Assuming we have the appropriate market data subscriptions, we can get daily SPX prices directly out of TWS.  </p>
+<p>Options data is more problematic. </p>
+<p>Even if you have the appropriate subscriptions, you won’t be able to get expired options contracts out of TWS. And we need a few days’ worth of expired contracts to calculate our trading signal. </p>
+<p>So we’ll get that data from Yahoo Finance instead. </p>
+<p>You can get XPSW options chains from Yahoo at this url: <a href="https://finance.yahoo.com/quote/%5ESPX/options/">https://finance.yahoo.com/quote/%5ESPX/options/</a></p>
+<p>And you can get price data for options that haven’t yet expired by selecting the expiry date from the dropdown:</p>
+<p><img alt="" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2024/03/21154832/yahoo_spx_option_chains.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></p>
+<p>I did some experimenting and found that you could also get price data for <em>recently</em> expired options using the following pattern for the URL:</p>
+<p><code>https://finance.yahoo.com/quote/SPXW{expiry}{contract_type}0{strike*1000}</code></p>
+<p>where <code>contract_type</code> is “C” or “P” for call and put respectively, and <code>expiry</code> is of the format yymmdd.</p>
+<p>Here’s an example of what’s available for an option that expired yesterday:</p>
+<p><img alt="" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2024/03/21154831/recently_expired_option.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></p>
+<p>We have the open price on expiry day in the table, and I <em>think</em> the number in large bold is the last traded price on expiry day. I don’t know whether the open price represents the mid price, the bid, the ask, the first trade, or something else.  </p>
+<p>Unfortunately it seems Yahoo only makes a few days’ worth of contracts available. I could find nothing older than about five days. So this data source won’t be useful for backtesting, but maybe we can use it for calculating our trade signal. </p>
+</div><div class="nb-cell nb-markdown-cell"><h2>A strategy architecture</h2>
+<p>Given our data requirements, we can craft a trading application using the IB Native API that consists of the following:</p>
+<ul>
+<li>Connect to TWS</li>
+<li>Request four (say) days of SPX price data from TWS</li>
+<li>Using SPX open prices as our strike prices, get SPXW call and put open and last traded prices on expiry day from Yahoo for the prior four days</li>
+<li>Calculate the ATM 0DTE straddle price and implied expected move for each of the four days</li>
+<li>Calculate the actual move from the open and close prices of SPX for each of the four days</li>
+<li>Calculate the mean expected and actual moves over the four days</li>
+<li>Calculate the trade signal</li>
+<li>Place the appropriate trades in TWS</li>
+</ul>
+</div><div class="nb-cell nb-markdown-cell"><h2>Strategy implementation</h2>
+<p>Following is some Python code for implementing this strategy.  </p>
+<p>The main purpose is to demonstrate how to trade options using the IB Native API. If you do trade this strategy, be aware of the following caveats:</p>
+<ul>
+<li>I don’t have confidence in it at the moment – it’s only based on a hunch </li>
+<li>The options data source is dubious (I don’t even have confidence that the data represents what I think it does)</li>
+</ul>
+<p>With that out of the way, here’s the code. I’ve heavily commented it so that you can follow along if this is new to you. </p>
+<p>For an introduction to the IB Native API, read <a href="https://robotwealth.com/getting-started-with-the-interactive-brokers-native-api/">this article</a> first.</p>
+<p>I ran this shortly after Friday’s open (22 March 2024). You would need to make some modifications to run it in the future (for example update the <code>start_date</code> and <code>end_date</code> parameters that control the SPX price data download) etc. </p>
+<p>Also, I’ve only included the bare minimum you need to get started with a strategy such as this. In particular, I’ve only included the minimum order handling logic required to trade a straddle using limit orders at the current bid/ask price. I’ve not made any attempt to handle cases where the order isn’t filled. I’ve also not included handling of any edge cases (for example, where an fails to be received by TWS). </p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="1"><pre class="language-python" tabindex="0"><code class="language-python" data-language="python"><span class="token comment"># Strategy for trading 0DTE straddles via the IBKR native API</span>
+<span class="token comment"># Buy/sell the 0DTE ATM straddle if recent 0DTE straddles under/over-predicted the day's spoos move</span>
+
+<span class="token keyword">from</span> threading <span class="token keyword">import</span> Thread<span class="token punctuation">,</span> Event
+<span class="token keyword">import</span> time
+<span class="token keyword">from</span> typing <span class="token keyword">import</span> Any
+<span class="token keyword">from</span> ibapi<span class="token punctuation">.</span>common <span class="token keyword">import</span> BarData
+<span class="token keyword">from</span> ibapi<span class="token punctuation">.</span>wrapper <span class="token keyword">import</span> EWrapper
+<span class="token keyword">from</span> ibapi<span class="token punctuation">.</span>client <span class="token keyword">import</span> EClient
+<span class="token keyword">from</span> ibapi<span class="token punctuation">.</span>contract <span class="token keyword">import</span> Contract<span class="token punctuation">,</span> ContractDetails
+<span class="token keyword">from</span> ibapi<span class="token punctuation">.</span>order <span class="token keyword">import</span> <span class="token operator">*</span>
+<span class="token keyword">from</span> ibapi<span class="token punctuation">.</span>common <span class="token keyword">import</span> <span class="token operator">*</span>
+<span class="token keyword">from</span> ibapi<span class="token punctuation">.</span>account_summary_tags <span class="token keyword">import</span> AccountSummaryTags
+<span class="token keyword">import</span> pandas <span class="token keyword">as</span> pd
+<span class="token keyword">import</span> requests
+<span class="token keyword">from</span> bs4 <span class="token keyword">import</span> BeautifulSoup
+
+
+<span class="token comment"># make url for 0DTE ATM option contracts from yahoo</span>
+<span class="token comment"># can only get approx 5 days' worth of expired contracts</span>
+<span class="token keyword">def</span> <span class="token function">make_url</span><span class="token punctuation">(</span>expiry<span class="token punctuation">,</span> contract_type<span class="token punctuation">,</span> strike<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> <span class="token string-interpolation"><span class="token string">f"https://finance.yahoo.com/quote/SPXW</span><span class="token interpolation"><span class="token punctuation">{</span>expiry<span class="token punctuation">}</span></span><span class="token interpolation"><span class="token punctuation">{</span>contract_type<span class="token punctuation">}</span></span><span class="token string">0</span><span class="token interpolation"><span class="token punctuation">{</span>strike<span class="token operator">*</span><span class="token number">1000</span><span class="token punctuation">}</span></span><span class="token string">"</span></span>
+
+<span class="token comment"># get 0dte options prices from yahoo</span>
+<span class="token comment"># use beautiful soup to parse the HTML and extract values from relevant tags</span>
+<span class="token keyword">def</span> <span class="token function">get_0dte_prices</span><span class="token punctuation">(</span>expiry<span class="token punctuation">,</span> contract_type<span class="token punctuation">,</span> strike<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    url <span class="token operator">=</span> make_url<span class="token punctuation">(</span>expiry<span class="token punctuation">,</span> contract_type<span class="token punctuation">,</span> strike<span class="token punctuation">)</span>
+
+    <span class="token comment"># headers to simulate browser request</span>
+    headers <span class="token operator">=</span> <span class="token punctuation">{</span>
+        <span class="token string">"User-Agent"</span><span class="token punctuation">:</span> <span class="token string">"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36"</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment"># get web page</span>
+    response <span class="token operator">=</span> requests<span class="token punctuation">.</span>get<span class="token punctuation">(</span>url<span class="token punctuation">,</span> headers<span class="token operator">=</span>headers<span class="token punctuation">)</span>
+
+    <span class="token comment"># parse</span>
+    soup <span class="token operator">=</span> BeautifulSoup<span class="token punctuation">(</span>response<span class="token punctuation">.</span>text<span class="token punctuation">,</span> <span class="token string">"html.parser"</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># extract last traded price (HTML specification is from inspection of Yahoo options data pages)</span>
+    last_traded_price_tag <span class="token operator">=</span> soup<span class="token punctuation">.</span>find<span class="token punctuation">(</span>
+        <span class="token string">"fin-streamer"</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">"data-test"</span><span class="token punctuation">:</span> <span class="token string">"qsp-price"</span><span class="token punctuation">,</span> <span class="token string">"data-field"</span><span class="token punctuation">:</span> <span class="token string">"regularMarketPrice"</span><span class="token punctuation">}</span>
+    <span class="token punctuation">)</span>
+    last_traded_price <span class="token operator">=</span> <span class="token punctuation">(</span>
+        <span class="token builtin">float</span><span class="token punctuation">(</span>last_traded_price_tag<span class="token punctuation">[</span><span class="token string">"value"</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token keyword">if</span> last_traded_price_tag <span class="token keyword">else</span> <span class="token string">"Not found"</span>
+    <span class="token punctuation">)</span>
+
+    <span class="token comment"># extract open price (HTML specification is from inspection of Yahoo options data pages)</span>
+    open_price_tag <span class="token operator">=</span> soup<span class="token punctuation">.</span>find<span class="token punctuation">(</span><span class="token string">"td"</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">"data-test"</span><span class="token punctuation">:</span> <span class="token string">"OPEN-value"</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+    open_price <span class="token operator">=</span> <span class="token builtin">float</span><span class="token punctuation">(</span>open_price_tag<span class="token punctuation">.</span>text<span class="token punctuation">)</span> <span class="token keyword">if</span> open_price_tag <span class="token keyword">else</span> <span class="token string">"Not found"</span>
+
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>open_price<span class="token punctuation">,</span> last_traded_price<span class="token punctuation">)</span>
+
+
+<span class="token comment"># class for trading the straddles strategy</span>
+<span class="token keyword">class</span> <span class="token class-name">ibStraddlesApp</span><span class="token punctuation">(</span>EClient<span class="token punctuation">,</span> EWrapper<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> ticker<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        EClient<span class="token punctuation">.</span>__init__<span class="token punctuation">(</span>self<span class="token punctuation">,</span> self<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>ticker <span class="token operator">=</span> ticker
+        self<span class="token punctuation">.</span>next_req_id <span class="token operator">=</span> <span class="token number">0</span>  <span class="token comment"># keep track of request ids</span>
+        self<span class="token punctuation">.</span>connection_ready <span class="token operator">=</span> Event<span class="token punctuation">(</span><span class="token punctuation">)</span>  <span class="token comment"># to signal the connection has been established</span>
+        self<span class="token punctuation">.</span>done <span class="token operator">=</span> <span class="token punctuation">(</span>
+            Event<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token punctuation">)</span>  <span class="token comment"># for signalling between threads when a message has been fully processed</span>
+        self<span class="token punctuation">.</span>historical_data <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>  <span class="token comment"># for storing historical data</span>
+        self<span class="token punctuation">.</span>price <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>  <span class="token comment"># for storing current option contract price data</span>
+
+    <span class="token keyword">def</span> <span class="token function">increment_req_id</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>next_req_id <span class="token operator">+=</span> <span class="token number">1</span>
+
+    <span class="token comment"># override Ewrapper.error</span>
+    <span class="token keyword">def</span> <span class="token function">error</span><span class="token punctuation">(</span>
+        self<span class="token punctuation">,</span> reqId<span class="token punctuation">:</span> TickerId<span class="token punctuation">,</span> errorCode<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span> errorString<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> contract<span class="token punctuation">:</span> Any <span class="token operator">=</span> <span class="token boolean">None</span>
+    <span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Error: "</span><span class="token punctuation">,</span> reqId<span class="token punctuation">,</span> <span class="token string">" "</span><span class="token punctuation">,</span> errorCode<span class="token punctuation">,</span> <span class="token string">" "</span><span class="token punctuation">,</span> errorString<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> errorCode <span class="token operator">==</span> <span class="token number">502</span><span class="token punctuation">:</span>
+            <span class="token comment"># not connected</span>
+            <span class="token comment"># set self.done (a threading.Event) to True</span>
+            self<span class="token punctuation">.</span>done<span class="token punctuation">.</span><span class="token builtin">set</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># override Ewrapper.nextValidID - used to signal that the connection between application and TWS is complete, and</span>
+    <span class="token comment"># returns the next valid orderID (for any future transactions).</span>
+    <span class="token comment"># if we send messages before the connection has been established, they can be lost</span>
+    <span class="token comment"># so wait for this method to be called</span>
+    <span class="token keyword">def</span> <span class="token function">nextValidId</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> orderId<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>nextorderId <span class="token operator">=</span> orderId
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Connection ready, next valid order ID: </span><span class="token interpolation"><span class="token punctuation">{</span>orderId<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>connection_ready<span class="token punctuation">.</span><span class="token builtin">set</span><span class="token punctuation">(</span><span class="token punctuation">)</span>  <span class="token comment"># signal that the connection is ready</span>
+
+    <span class="token comment"># override Ewrapper.contractDetails</span>
+    <span class="token comment"># gets back contract details</span>
+    <span class="token keyword">def</span> <span class="token function">contractDetails</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> reqId<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span> contractDetails<span class="token punctuation">:</span> ContractDetails<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>contractDetails<span class="token punctuation">(</span>reqId<span class="token punctuation">,</span> contractDetails<span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span>contractDetails<span class="token punctuation">)</span>
+
+    <span class="token comment"># override Ewraper.contractDetailsEnd</span>
+    <span class="token comment"># signals that the contract details request has completed</span>
+    <span class="token keyword">def</span> <span class="token function">contractDetailsEnd</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> reqId<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Contract details request </span><span class="token interpolation"><span class="token punctuation">{</span>reqId<span class="token punctuation">}</span></span><span class="token string"> complete"</span></span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>done<span class="token punctuation">.</span><span class="token builtin">set</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># override Ewrapper.historicalData</span>
+    <span class="token comment"># TWS sends data from reqHistoricalData to this callback</span>
+    <span class="token keyword">def</span> <span class="token function">historicalData</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> reqId<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span> bar<span class="token punctuation">:</span> BarData<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        d <span class="token operator">=</span> <span class="token punctuation">{</span>
+            <span class="token string">"Ticker"</span><span class="token punctuation">:</span> self<span class="token punctuation">.</span>ticker<span class="token punctuation">,</span>
+            <span class="token string">"Date"</span><span class="token punctuation">:</span> bar<span class="token punctuation">.</span>date<span class="token punctuation">,</span>
+            <span class="token string">"Open"</span><span class="token punctuation">:</span> bar<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">,</span>
+            <span class="token string">"High"</span><span class="token punctuation">:</span> bar<span class="token punctuation">.</span>high<span class="token punctuation">,</span>
+            <span class="token string">"Low"</span><span class="token punctuation">:</span> bar<span class="token punctuation">.</span>close<span class="token punctuation">,</span>
+            <span class="token string">"Close"</span><span class="token punctuation">:</span> bar<span class="token punctuation">.</span>close<span class="token punctuation">,</span>
+        <span class="token punctuation">}</span>
+        self<span class="token punctuation">.</span>historical_data<span class="token punctuation">.</span>append<span class="token punctuation">(</span>d<span class="token punctuation">)</span>
+
+    <span class="token comment"># override EWrapper.historicalDataEnd is received</span>
+    <span class="token comment"># signals that historical market data request is complete</span>
+    <span class="token comment"># (note only sent if reqHistoricalData invoked with keepUpToDate=False)</span>
+    <span class="token keyword">def</span> <span class="token function">historicalDataEnd</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> reqId<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span> start<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> end<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Historical data request complete"</span></span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>done<span class="token punctuation">.</span><span class="token builtin">set</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># callback for handling current price data requests</span>
+    <span class="token comment"># see https://ibkrcampus.com/ibkr-api-page/twsapi-doc/#available-tick-types for available tickTypes</span>
+    <span class="token keyword">def</span> <span class="token function">tickPrice</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> reqId<span class="token punctuation">,</span> tickType<span class="token punctuation">,</span> price<span class="token punctuation">,</span> attrib<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Key self.price with the reqId that made the request so that you can keep track of which item belongs to which contract.
+        See usage below for example.
+        """</span>
+        <span class="token keyword">if</span> <span class="token keyword">not</span> reqId <span class="token keyword">in</span> self<span class="token punctuation">.</span>price<span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>price<span class="token punctuation">[</span>reqId<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+
+        <span class="token comment"># handle bid price (tickType = 1)</span>
+        <span class="token keyword">if</span> tickType <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">:</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"The current bid price is: "</span><span class="token punctuation">,</span> price<span class="token punctuation">)</span>
+            self<span class="token punctuation">.</span>price<span class="token punctuation">[</span>reqId<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"bid"</span><span class="token punctuation">]</span> <span class="token operator">=</span> price
+
+        <span class="token comment"># handle ask price (tickType = 2)</span>
+        <span class="token keyword">if</span> tickType <span class="token operator">==</span> <span class="token number">2</span><span class="token punctuation">:</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"The current ask price is: "</span><span class="token punctuation">,</span> price<span class="token punctuation">)</span>
+            self<span class="token punctuation">.</span>price<span class="token punctuation">[</span>reqId<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"ask"</span><span class="token punctuation">]</span> <span class="token operator">=</span> price
+
+    <span class="token comment"># override Ewrapper.tickSnapshotEnd</span>
+    <span class="token comment"># signals snapshot request is complete</span>
+    <span class="token keyword">def</span> <span class="token function">tickSnapshotEnd</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> reqId<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Current price data request complete"</span></span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>done<span class="token punctuation">.</span><span class="token builtin">set</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># override Ewrapper order callbacks - just print execution and order status to screen</span>
+    <span class="token comment"># in practice, you would monitor these and handle appropriately (eg if order wasn't filled)</span>
+    <span class="token keyword">def</span> <span class="token function">orderStatus</span><span class="token punctuation">(</span>
+        self<span class="token punctuation">,</span>
+        orderId<span class="token punctuation">,</span>
+        status<span class="token punctuation">,</span>
+        filled<span class="token punctuation">,</span>
+        remaining<span class="token punctuation">,</span>
+        avgFullPrice<span class="token punctuation">,</span>
+        permId<span class="token punctuation">,</span>
+        parentId<span class="token punctuation">,</span>
+        lastFillPrice<span class="token punctuation">,</span>
+        clientId<span class="token punctuation">,</span>
+        whyHeld<span class="token punctuation">,</span>
+        mktCapPrice<span class="token punctuation">,</span>
+    <span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span>
+            <span class="token string">"orderStatus - orderid:"</span><span class="token punctuation">,</span>
+            orderId<span class="token punctuation">,</span>
+            <span class="token string">"status:"</span><span class="token punctuation">,</span>
+            status<span class="token punctuation">,</span>
+            <span class="token string">"filled"</span><span class="token punctuation">,</span>
+            filled<span class="token punctuation">,</span>
+            <span class="token string">"remaining"</span><span class="token punctuation">,</span>
+            remaining<span class="token punctuation">,</span>
+            <span class="token string">"lastFillPrice"</span><span class="token punctuation">,</span>
+            lastFillPrice<span class="token punctuation">,</span>
+        <span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">openOrder</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> orderId<span class="token punctuation">,</span> contract<span class="token punctuation">,</span> order<span class="token punctuation">,</span> orderState<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span>
+            <span class="token string">"openOrder id:"</span><span class="token punctuation">,</span>
+            orderId<span class="token punctuation">,</span>
+            contract<span class="token punctuation">.</span>symbol<span class="token punctuation">,</span>
+            contract<span class="token punctuation">.</span>secType<span class="token punctuation">,</span>
+            <span class="token string">"@"</span><span class="token punctuation">,</span>
+            contract<span class="token punctuation">.</span>exchange<span class="token punctuation">,</span>
+            <span class="token string">":"</span><span class="token punctuation">,</span>
+            order<span class="token punctuation">.</span>action<span class="token punctuation">,</span>
+            order<span class="token punctuation">.</span>orderType<span class="token punctuation">,</span>
+            order<span class="token punctuation">.</span>totalQuantity<span class="token punctuation">,</span>
+            orderState<span class="token punctuation">.</span>status<span class="token punctuation">,</span>
+        <span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">execDetails</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> reqId<span class="token punctuation">,</span> contract<span class="token punctuation">,</span> execution<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span>
+            <span class="token string">"Order Executed: "</span><span class="token punctuation">,</span>
+            reqId<span class="token punctuation">,</span>
+            contract<span class="token punctuation">.</span>symbol<span class="token punctuation">,</span>
+            contract<span class="token punctuation">.</span>secType<span class="token punctuation">,</span>
+            contract<span class="token punctuation">.</span>currency<span class="token punctuation">,</span>
+            execution<span class="token punctuation">.</span>execId<span class="token punctuation">,</span>
+            execution<span class="token punctuation">.</span>orderId<span class="token punctuation">,</span>
+            execution<span class="token punctuation">.</span>shares<span class="token punctuation">,</span>
+            execution<span class="token punctuation">.</span>lastLiquidity<span class="token punctuation">,</span>
+        <span class="token punctuation">)</span>
+
+
+<span class="token comment"># define our event loop - this will run in its own thread</span>
+<span class="token keyword">def</span> <span class="token function">run_loop</span><span class="token punctuation">(</span>app<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    app<span class="token punctuation">.</span>run<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+
+<span class="token comment">##### Instantiate a trading app and wait for a successful connection</span>
+
+<span class="token comment"># instantiate an ibStraddlesApp</span>
+<span class="token comment"># ticker of the underlying</span>
+app <span class="token operator">=</span> ibStraddlesApp<span class="token punctuation">(</span>ticker<span class="token operator">=</span><span class="token string">"SPX"</span><span class="token punctuation">)</span>
+
+<span class="token comment"># connect</span>
+<span class="token comment"># clientID identifies our application</span>
+app<span class="token punctuation">.</span>connect<span class="token punctuation">(</span><span class="token string">"127.0.0.1"</span><span class="token punctuation">,</span> <span class="token number">7496</span><span class="token punctuation">,</span> clientId<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span>
+
+<span class="token comment"># start the application's event loop in a thread</span>
+api_thread <span class="token operator">=</span> Thread<span class="token punctuation">(</span>target<span class="token operator">=</span>run_loop<span class="token punctuation">,</span> args<span class="token operator">=</span><span class="token punctuation">(</span>app<span class="token punctuation">,</span><span class="token punctuation">)</span><span class="token punctuation">,</span> daemon<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+api_thread<span class="token punctuation">.</span>start<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># wait until the Ewrapper.nextValidId callback is triggered, indicating a successful connection</span>
+app<span class="token punctuation">.</span>connection_ready<span class="token punctuation">.</span>wait<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment">##### Get SPX data required for trading signal</span>
+
+<span class="token comment"># required date range - will need to update this</span>
+start_date <span class="token operator">=</span> <span class="token string">"20240318"</span>
+end_date <span class="token operator">=</span> <span class="token string">"20240322"</span>
+date_range <span class="token operator">=</span> pd<span class="token punctuation">.</span>date_range<span class="token punctuation">(</span>start<span class="token operator">=</span>start_date<span class="token punctuation">,</span> end<span class="token operator">=</span>end_date<span class="token punctuation">)</span>
+num_days <span class="token operator">=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>date_range<span class="token punctuation">)</span>
+
+<span class="token comment"># get recent SPX data</span>
+spx <span class="token operator">=</span> Contract<span class="token punctuation">(</span><span class="token punctuation">)</span>
+spx<span class="token punctuation">.</span>symbol <span class="token operator">=</span> <span class="token string">"SPX"</span>
+spx<span class="token punctuation">.</span>secType <span class="token operator">=</span> <span class="token string">"IND"</span>
+spx<span class="token punctuation">.</span>currency <span class="token operator">=</span> <span class="token string">"USD"</span>
+spx<span class="token punctuation">.</span>exchange <span class="token operator">=</span> <span class="token string">"CBOE"</span>
+
+<span class="token comment"># request historical SPX data and increment request id</span>
+app<span class="token punctuation">.</span>reqHistoricalData<span class="token punctuation">(</span>
+    reqId<span class="token operator">=</span>app<span class="token punctuation">.</span>next_req_id<span class="token punctuation">,</span>
+    contract<span class="token operator">=</span>spx<span class="token punctuation">,</span>
+    <span class="token comment"># 8:30 chicago is 9:30 NY</span>
+    endDateTime<span class="token operator">=</span><span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>end_date<span class="token punctuation">}</span></span><span class="token string"> 16:00:00 US/Central"</span></span><span class="token punctuation">,</span>
+    durationStr<span class="token operator">=</span><span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>num_days<span class="token punctuation">}</span></span><span class="token string"> D"</span></span><span class="token punctuation">,</span>
+    whatToShow<span class="token operator">=</span><span class="token string">"TRADES"</span><span class="token punctuation">,</span>
+    barSizeSetting<span class="token operator">=</span><span class="token string">"1 day"</span><span class="token punctuation">,</span>
+    useRTH<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span>
+    formatDate<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span>
+    keepUpToDate<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span>
+    chartOptions<span class="token operator">=</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>increment_req_id<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># wait for historical data to come back before continuing</span>
+app<span class="token punctuation">.</span>done<span class="token punctuation">.</span>wait<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># reset event</span>
+app<span class="token punctuation">.</span>done<span class="token punctuation">.</span>clear<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># make dataframe from receieved SPX data</span>
+spx_prices <span class="token operator">=</span> pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>app<span class="token punctuation">.</span>historical_data<span class="token punctuation">)</span>
+
+<span class="token comment"># save to disk</span>
+<span class="token comment"># spx_prices.to_csv("./ibkr-api/spx_prices.csv")</span>
+
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"spx price data:"</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>spx_prices<span class="token punctuation">)</span>
+
+<span class="token comment"># check you have the expected data:</span>
+<span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>spx_prices<span class="token punctuation">[</span><span class="token string">"Date"</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">5</span><span class="token punctuation">:</span>
+    <span class="token keyword">raise</span> Exception<span class="token punctuation">(</span><span class="token string">"Missing SPX data, stopping"</span><span class="token punctuation">)</span>
+
+<span class="token comment">##### Get options data and calculate trading signal</span>
+
+<span class="token comment"># get historical ATM 0DTE XPSW options prices from Yahoo</span>
+expected_moves <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+actual_moves <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token keyword">for</span> d <span class="token keyword">in</span> spx_prices<span class="token punctuation">[</span><span class="token string">"Date"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">:</span>  <span class="token comment"># don't get today's data yet</span>
+    <span class="token comment"># get ATM strike from each day's SPX open price</span>
+    spx_open <span class="token operator">=</span> spx_prices<span class="token punctuation">.</span>loc<span class="token punctuation">[</span>spx_prices<span class="token punctuation">[</span><span class="token string">"Date"</span><span class="token punctuation">]</span> <span class="token operator">==</span> d<span class="token punctuation">,</span> <span class="token string">"Open"</span><span class="token punctuation">]</span><span class="token punctuation">.</span>iloc<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+
+    <span class="token comment"># round to nearest $5</span>
+    strike <span class="token operator">=</span> <span class="token builtin">round</span><span class="token punctuation">(</span>spx_open <span class="token operator">/</span> <span class="token number">5</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">5</span>
+
+    <span class="token comment"># get epxiry from date string</span>
+    expiry <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>d<span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">:</span><span class="token punctuation">]</span>
+
+    <span class="token comment"># get put open and last traded prices</span>
+    p_open<span class="token punctuation">,</span> p_close <span class="token operator">=</span> get_0dte_prices<span class="token punctuation">(</span>expiry<span class="token operator">=</span>expiry<span class="token punctuation">,</span> contract_type<span class="token operator">=</span><span class="token string">"P"</span><span class="token punctuation">,</span> strike<span class="token operator">=</span>strike<span class="token punctuation">)</span>
+
+    <span class="token comment"># if we didn't find an ATM strike:</span>
+    <span class="token comment"># a bit of hack to get the nearest existing strike</span>
+    <span class="token comment"># in reality you'd be more careful</span>
+    <span class="token keyword">while</span> p_open <span class="token operator">==</span> <span class="token string">"Not found"</span><span class="token punctuation">:</span>
+        strike <span class="token operator">-=</span> <span class="token number">5</span>
+        p_open<span class="token punctuation">,</span> p_close <span class="token operator">=</span> get_0dte_prices<span class="token punctuation">(</span>
+            expiry<span class="token operator">=</span>expiry<span class="token punctuation">,</span> contract_type<span class="token operator">=</span><span class="token string">"P"</span><span class="token punctuation">,</span> strike<span class="token operator">=</span>strike
+        <span class="token punctuation">)</span>
+
+    <span class="token comment"># get call open and last traded prices</span>
+    c_open<span class="token punctuation">,</span> c_close <span class="token operator">=</span> get_0dte_prices<span class="token punctuation">(</span>expiry<span class="token operator">=</span>expiry<span class="token punctuation">,</span> contract_type<span class="token operator">=</span><span class="token string">"C"</span><span class="token punctuation">,</span> strike<span class="token operator">=</span>strike<span class="token punctuation">)</span>
+
+    <span class="token comment"># calculate straddle open and last traded prices</span>
+    straddle_open_price <span class="token operator">=</span> p_open <span class="token operator">+</span> c_open
+
+    <span class="token comment"># calculate straddle-implied expected move and store</span>
+    expected_move <span class="token operator">=</span> <span class="token number">0.85</span> <span class="token operator">*</span> straddle_open_price
+    expected_moves<span class="token punctuation">.</span>append<span class="token punctuation">(</span>expected_move<span class="token punctuation">)</span>
+
+    <span class="token comment"># calculate actual move from SPX prices and store</span>
+    spx_close <span class="token operator">=</span> spx_prices<span class="token punctuation">.</span>loc<span class="token punctuation">[</span>spx_prices<span class="token punctuation">[</span><span class="token string">"Date"</span><span class="token punctuation">]</span> <span class="token operator">==</span> d<span class="token punctuation">,</span> <span class="token string">"Close"</span><span class="token punctuation">]</span><span class="token punctuation">.</span>iloc<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+    actual_move <span class="token operator">=</span> <span class="token builtin">abs</span><span class="token punctuation">(</span>spx_close <span class="token operator">-</span> spx_open<span class="token punctuation">)</span>
+    actual_moves<span class="token punctuation">.</span>append<span class="token punctuation">(</span>actual_move<span class="token punctuation">)</span>
+
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Expected move, actual move:"</span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span>expected_move<span class="token punctuation">,</span> actual_move<span class="token punctuation">)</span>
+
+<span class="token comment"># calculate recent average expected and actual moves</span>
+ave_expected_move <span class="token operator">=</span> <span class="token builtin">sum</span><span class="token punctuation">(</span>expected_moves<span class="token punctuation">)</span> <span class="token operator">/</span> <span class="token builtin">len</span><span class="token punctuation">(</span>expected_moves<span class="token punctuation">)</span>
+ave_actual_move <span class="token operator">=</span> <span class="token builtin">sum</span><span class="token punctuation">(</span>actual_moves<span class="token punctuation">)</span> <span class="token operator">/</span> <span class="token builtin">len</span><span class="token punctuation">(</span>actual_moves<span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Average expected move, average actual move"</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>ave_expected_move<span class="token punctuation">,</span> ave_actual_move<span class="token punctuation">)</span>
+
+<span class="token comment">##### Prepare contract objects and get current prices for trading</span>
+
+<span class="token comment"># get today's ATM strike and expiry</span>
+today_open <span class="token operator">=</span> spx_prices<span class="token punctuation">[</span><span class="token string">"Open"</span><span class="token punctuation">]</span><span class="token punctuation">.</span>iloc<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+strike <span class="token operator">=</span> <span class="token builtin">round</span><span class="token punctuation">(</span>today_open <span class="token operator">/</span> <span class="token number">5</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">5</span>
+expiry <span class="token operator">=</span> spx_prices<span class="token punctuation">[</span><span class="token string">"Date"</span><span class="token punctuation">]</span><span class="token punctuation">.</span>iloc<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Today's strike:</span><span class="token interpolation"><span class="token punctuation">{</span>strike<span class="token punctuation">}</span></span><span class="token string">, today's expiry: </span><span class="token interpolation"><span class="token punctuation">{</span>expiry<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+
+<span class="token comment"># create an options contract representing today's 0DTE ATM call</span>
+call <span class="token operator">=</span> Contract<span class="token punctuation">(</span><span class="token punctuation">)</span>
+call<span class="token punctuation">.</span>symbol <span class="token operator">=</span> <span class="token string">"SPXW"</span>
+call<span class="token punctuation">.</span>secType <span class="token operator">=</span> <span class="token string">"OPT"</span>
+call<span class="token punctuation">.</span>currency <span class="token operator">=</span> <span class="token string">"USD"</span>
+call<span class="token punctuation">.</span>exchange <span class="token operator">=</span> <span class="token string">"SMART"</span>
+call<span class="token punctuation">.</span>lastTradeDateOrContractMonth <span class="token operator">=</span> expiry
+call<span class="token punctuation">.</span>strike <span class="token operator">=</span> strike
+call<span class="token punctuation">.</span>right <span class="token operator">=</span> <span class="token string">"C"</span>
+call<span class="token punctuation">.</span>tradingClass <span class="token operator">=</span> <span class="token string">"SPXW"</span>
+
+<span class="token comment"># keep track of the reqId for the call</span>
+call_req_id <span class="token operator">=</span> app<span class="token punctuation">.</span>next_req_id
+
+<span class="token comment"># get the call's current bid-ask prices</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Current call prices:"</span><span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>reqMktData<span class="token punctuation">(</span>
+    reqId<span class="token operator">=</span>call_req_id<span class="token punctuation">,</span>
+    contract<span class="token operator">=</span>call<span class="token punctuation">,</span>
+    genericTickList<span class="token operator">=</span><span class="token string">""</span><span class="token punctuation">,</span>  <span class="token comment"># get all available data</span>
+    snapshot<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span>  <span class="token comment"># requires appropriate market data subscription</span>
+    regulatorySnapshot<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span>
+    mktDataOptions<span class="token operator">=</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>increment_req_id<span class="token punctuation">(</span><span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>done<span class="token punctuation">.</span>wait<span class="token punctuation">(</span><span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>done<span class="token punctuation">.</span>clear<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># call prices:</span>
+<span class="token comment"># note app.price is keyed by reqId</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>app<span class="token punctuation">.</span>price<span class="token punctuation">[</span>call_req_id<span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token comment"># create an options contract representing today's 0DTE ATM put</span>
+put <span class="token operator">=</span> Contract<span class="token punctuation">(</span><span class="token punctuation">)</span>
+put<span class="token punctuation">.</span>symbol <span class="token operator">=</span> <span class="token string">"SPXW"</span>
+put<span class="token punctuation">.</span>secType <span class="token operator">=</span> <span class="token string">"OPT"</span>
+put<span class="token punctuation">.</span>currency <span class="token operator">=</span> <span class="token string">"USD"</span>
+put<span class="token punctuation">.</span>exchange <span class="token operator">=</span> <span class="token string">"SMART"</span>
+put<span class="token punctuation">.</span>lastTradeDateOrContractMonth <span class="token operator">=</span> expiry
+put<span class="token punctuation">.</span>strike <span class="token operator">=</span> strike
+put<span class="token punctuation">.</span>right <span class="token operator">=</span> <span class="token string">"P"</span>
+put<span class="token punctuation">.</span>tradingClass <span class="token operator">=</span> <span class="token string">"SPXW"</span>
+
+<span class="token comment"># keep track of the reqId for the put</span>
+put_req_id <span class="token operator">=</span> app<span class="token punctuation">.</span>next_req_id
+
+<span class="token comment"># get the put's current bid-ask prices</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Current put prices:"</span><span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>reqMktData<span class="token punctuation">(</span>
+    reqId<span class="token operator">=</span>put_req_id<span class="token punctuation">,</span>
+    contract<span class="token operator">=</span>put<span class="token punctuation">,</span>
+    genericTickList<span class="token operator">=</span><span class="token string">""</span><span class="token punctuation">,</span>  <span class="token comment"># get all available data types</span>
+    snapshot<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span>  <span class="token comment"># requires appropriate market data subscription</span>
+    regulatorySnapshot<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span>
+    mktDataOptions<span class="token operator">=</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>increment_req_id<span class="token punctuation">(</span><span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>done<span class="token punctuation">.</span>wait<span class="token punctuation">(</span><span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>done<span class="token punctuation">.</span>clear<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># put prices:</span>
+<span class="token comment"># note app.price is keyed by reqId</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>app<span class="token punctuation">.</span>price<span class="token punctuation">[</span>put_req_id<span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token comment">##### Trade logic</span>
+
+<span class="token comment"># Now we have call and put prices for today, we can shoot off limit orders at these prices</span>
+<span class="token comment"># I prefer this to shooting off a market order into a potentially illiquid product</span>
+<span class="token comment"># You can even add a buffer to your limit order beyond the current top of book price to give you more chance of getting filled</span>
+<span class="token comment"># Many ways to do this - up to you.</span>
+<span class="token comment"># But in practice, you'll need to manage your orders and fills - you might end up chasing the market</span>
+
+<span class="token comment"># sell today's 0DTE ATM straddle if SPX has moved less than implied by recent straddle prices</span>
+<span class="token keyword">if</span> ave_actual_move <span class="token operator">&lt;</span> ave_expected_move<span class="token punctuation">:</span>
+    <span class="token comment"># sell today's 0DTE stradle</span>
+    <span class="token comment"># sell call:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Selling today's 0DTE ATM straddle"</span><span class="token punctuation">)</span>
+    order <span class="token operator">=</span> Order<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    order<span class="token punctuation">.</span>action <span class="token operator">=</span> <span class="token string">"SELL"</span>
+    order<span class="token punctuation">.</span>totalQuantity <span class="token operator">=</span> <span class="token number">1</span>  <span class="token comment"># note will be multiplied by contract multiplier</span>
+    order<span class="token punctuation">.</span>orderType <span class="token operator">=</span> <span class="token string">"LMT"</span>
+    order<span class="token punctuation">.</span>lmtPrice <span class="token operator">=</span> app<span class="token punctuation">.</span>price<span class="token punctuation">[</span>call_req_id<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"bid"</span><span class="token punctuation">]</span>  <span class="token comment"># limit sell the call at the bid</span>
+    order<span class="token punctuation">.</span>transmit <span class="token operator">=</span> <span class="token boolean">True</span>
+    app<span class="token punctuation">.</span>placeOrder<span class="token punctuation">(</span>app<span class="token punctuation">.</span>nextorderId<span class="token punctuation">,</span> call<span class="token punctuation">,</span> order<span class="token punctuation">)</span>
+    app<span class="token punctuation">.</span>nextorderId <span class="token operator">+=</span> <span class="token number">1</span>
+
+    <span class="token comment"># sell put:</span>
+    order <span class="token operator">=</span> Order<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    order<span class="token punctuation">.</span>action <span class="token operator">=</span> <span class="token string">"SELL"</span>
+    order<span class="token punctuation">.</span>totalQuantity <span class="token operator">=</span> <span class="token number">1</span>  <span class="token comment"># note will be multiplied by contract multiplier</span>
+    order<span class="token punctuation">.</span>orderType <span class="token operator">=</span> <span class="token string">"LMT"</span>
+    order<span class="token punctuation">.</span>lmtPrice <span class="token operator">=</span> app<span class="token punctuation">.</span>price<span class="token punctuation">[</span>put_req_id<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"bid"</span><span class="token punctuation">]</span>  <span class="token comment"># limit sell the put at the bid</span>
+    order<span class="token punctuation">.</span>transmit <span class="token operator">=</span> <span class="token boolean">True</span>
+    app<span class="token punctuation">.</span>placeOrder<span class="token punctuation">(</span>app<span class="token punctuation">.</span>nextorderId<span class="token punctuation">,</span> put<span class="token punctuation">,</span> order<span class="token punctuation">)</span>
+    app<span class="token punctuation">.</span>nextorderId <span class="token operator">+=</span> <span class="token number">1</span>
+<span class="token comment"># buy today's 0DTE ATM straddle if SPX has moved more than implied by recent straddle prices</span>
+<span class="token keyword">else</span><span class="token punctuation">:</span>
+    <span class="token comment"># buy today's 0DTE stradle</span>
+    <span class="token comment"># buy call:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Buying today's 0DTE ATM straddle"</span><span class="token punctuation">)</span>
+    order <span class="token operator">=</span> Order<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    order<span class="token punctuation">.</span>action <span class="token operator">=</span> <span class="token string">"BUY"</span>
+    order<span class="token punctuation">.</span>totalQuantity <span class="token operator">=</span> <span class="token number">1</span>  <span class="token comment"># note will be multiplied by contract multiplier</span>
+    order<span class="token punctuation">.</span>orderType <span class="token operator">=</span> <span class="token string">"LMT"</span>
+    order<span class="token punctuation">.</span>lmtPrice <span class="token operator">=</span> app<span class="token punctuation">.</span>price<span class="token punctuation">[</span>call_req_id<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"ask"</span><span class="token punctuation">]</span>  <span class="token comment"># limit buy the call at the ask</span>
+    order<span class="token punctuation">.</span>transmit <span class="token operator">=</span> <span class="token boolean">True</span>
+    app<span class="token punctuation">.</span>placeOrder<span class="token punctuation">(</span>app<span class="token punctuation">.</span>nextorderId<span class="token punctuation">,</span> call<span class="token punctuation">,</span> order<span class="token punctuation">)</span>
+    app<span class="token punctuation">.</span>nextorderId <span class="token operator">+=</span> <span class="token number">1</span>
+
+    <span class="token comment"># buy put:</span>
+    order <span class="token operator">=</span> Order<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    order<span class="token punctuation">.</span>action <span class="token operator">=</span> <span class="token string">"BUY"</span>
+    order<span class="token punctuation">.</span>totalQuantity <span class="token operator">=</span> <span class="token number">1</span>  <span class="token comment"># note will be multiplied by contract multiplier</span>
+    order<span class="token punctuation">.</span>orderType <span class="token operator">=</span> <span class="token string">"LMT"</span>
+    order<span class="token punctuation">.</span>lmtPrice <span class="token operator">=</span> app<span class="token punctuation">.</span>price<span class="token punctuation">[</span>put_req_id<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"ask"</span><span class="token punctuation">]</span>  <span class="token comment"># limit buy the put at the ask</span>
+    order<span class="token punctuation">.</span>transmit <span class="token operator">=</span> <span class="token boolean">True</span>
+    app<span class="token punctuation">.</span>placeOrder<span class="token punctuation">(</span>app<span class="token punctuation">.</span>nextorderId<span class="token punctuation">,</span> put<span class="token punctuation">,</span> order<span class="token punctuation">)</span>
+    app<span class="token punctuation">.</span>nextorderId <span class="token operator">+=</span> <span class="token number">1</span>
+
+<span class="token comment"># You'll want to handle the order as well - maybe cancel it if the market runs away for instance.</span>
+<span class="token comment"># When placing orders via the API and building a robust trading system, it is important to monitor for callback notifications,</span>
+<span class="token comment"># specifically for IBApi::EWrapper::error, IBApi::EWrapper::orderStatus changes, IBApi::EWrapper::openOrder warnings, and</span>
+<span class="token comment"># IBApi::EWrapper::execDetails to ensure proper operation.</span>
+<span class="token comment"># Here we just use these methods to print execution details to screen.</span>
+
+<span class="token comment"># disconnect once orders handled satisfactorily</span>
+<span class="token comment"># commented here for simplicity since we didn't do any order handling</span>
+<span class="token comment"># app.disconnect()</span></code></pre></div></div><div class="nb-cell nb-markdown-cell"><p>Here’s the output from running this code shortly after Friday’s open:</p>
+</div><div class="nb-cell nb-markdown-cell"><pre class="language-text" tabindex="0"><code class="language-text">Connection ready, next valid order ID: 16
+Error:  -1   2104   Market data farm connection is OK:usfarm.nj
+Error:  -1   2104   Market data farm connection is OK:usfuture
+Error:  -1   2104   Market data farm connection is OK:usopt
+Error:  -1   2104   Market data farm connection is OK:usfarm
+Error:  -1   2106   HMDS data farm connection is OK:euhmds
+Error:  -1   2106   HMDS data farm connection is OK:cashhmds
+Error:  -1   2106   HMDS data farm connection is OK:fundfarm
+Error:  -1   2106   HMDS data farm connection is OK:ushmds
+Error:  -1   2158   Sec-def data farm connection is OK:secdefnj
+Historical data request complete
+spx price data:
+  Ticker      Date     Open     High      Low    Close
+0    SPX  20240318  5154.77  5175.60  5149.42  5149.42
+1    SPX  20240319  5139.09  5180.31  5178.51  5178.51
+2    SPX  20240320  5181.69  5226.19  5224.62  5224.62
+3    SPX  20240321  5253.43  5261.10  5241.53  5241.53
+4    SPX  20240322  5242.48  5244.21  5241.18  5244.18
+Expected move, actual move:
+32.852500000000006 5.350000000000364
+Expected move, actual move:
+22.8905 39.42000000000007
+Expected move, actual move:
+31.517999999999997 42.93000000000029
+Expected move, actual move:
+21.504999999999995 11.900000000000546
+Average expected move, average actual move
+27.1915 24.90000000000032
+Today's strike:5240, today's expiry: 20240322
+Current call prices:
+The current bid price is:  16.43
+The current ask price is:  16.45
+Current price data request complete
+{'bid': 16.43, 'ask': 16.45}
+Current put prices:
+The current bid price is:  12.44
+The current ask price is:  12.49
+Current price data request complete
+{'bid': 12.44, 'ask': 12.49}
+Selling today's 0DTE ATM straddle
+openOrder id: 17 SPX OPT @ SMART : SELL LMT 1 PreSubmitted
+orderStatus - orderid: 17 status: PreSubmitted filled 0 remaining 1 lastFillPrice 0.0
+Order Executed:  -1 SPX OPT USD 00020057.65fd0c22.01.01 12 1 2
+openOrder id: 17 SPX OPT @ SMART : SELL LMT 1 Filled
+orderStatus - orderid: 17 status: Filled filled 1 remaining 0 lastFillPrice 16.43
+openOrder id: 17 SPX OPT @ SMART : SELL LMT 1 Filled
+orderStatus - orderid: 17 status: Filled filled 1 remaining 0 lastFillPrice 16.43
+openOrder id: 18 SPX OPT @ SMART : SELL LMT 1 Submitted
+orderStatus - orderid: 18 status: Submitted filled 0 remaining 1 lastFillPrice 0.0
+Order Executed:  -1 SPX OPT USD 00020057.65fd0c2b.01.01 13 1 1
+openOrder id: 18 SPX OPT @ SMART : SELL LMT 1 Filled
+orderStatus - orderid: 18 status: Filled filled 1 remaining 0 lastFillPrice 12.44
+openOrder id: 18 SPX OPT @ SMART : SELL LMT 1 Filled
+orderStatus - orderid: 18 status: Filled filled 1 remaining 0 lastFillPrice 12.44
+</code></pre>
+</div><div class="nb-cell nb-markdown-cell"><p>You can see that the strategy successfully connected to TWS, and received the SPX data for today and the previous 4 sessions. Note that today’s data is incomplete – the OHLC data only represents a short period after 8:30am Chicago time. But we only need today’s open price (for figuring out today’s ATM strike). </p>
+<p>It then calculated the last four days’ straddle-implied expected moves and the actual SPX moves, and then took the averages to get the trade signal. </p>
+<p>Next, it got today’s strike from today’s SPX open price.</p>
+<p>It then asked TWS for a current snapshot of top of book prices for the 0DTE ATM call and put, and used these prices to submit limit orders. </p>
+<p>In this case, shortly after the orders were sent, they were filled. In practice, you would need to handle this more carefully, for example dealing with cases where the market ran away from you and your limit order was unfilled. </p>
+</div><div class="nb-cell nb-markdown-cell"><h2>Conclusion</h2>
+<p>In this article, we saw a minimal implementation of a strategy that uses the recent SPX actual moves and straddle-implied moves to directionally trade 0DTE straddles. </p>
+<p>The main hurdle was obtaining data for expired SPXW options, but luckily the very recent contracts are available on Yahoo Finance. </p>
+<p>It would be nice to simulate this strategy, but it would require historical SPXW option opening and closing prices. Until then, I am considering trading this at very small size (using the minis) just to gain some insight into how it trades. </p>
+<p>Please note that this is only a minimal example. In particular, I’ve not included any order handling logic, other than to submit limit orders and print their status to screen. </p>
+</div></div></div></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>0dte</span>, <span>ibkr</span>, <span>options</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">10 thoughts on “Trading 0DTE Options with the IBKR Native API”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-37441">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 03/24/2024 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-37442">
+<article class="comment-body" id="div-comment-37442" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris, thanks for sharing the idea and the process you handle it. For me, the difference between “straddle” expected SPX move and realized SPX move is surprisingly high, which I think is in favor of the idea that the strangles are indeed “mispriced” and there is an edge. On the other hand, the variance of the difference is also very high, and to both side (two days overpriced, 2 days underpriced), which I think indicates the noise in the strategy results will be also high. I am a quant beginner; I really appreciate you share your ideas and experience.</p>
+<span class="reply"><a aria-label="Reply to Jaroslav" class="comment-reply-link" data-belowelement="div-comment-37442" data-commentid="37442" data-postid="91137" data-replyto="Reply to Jaroslav" data-respondelement="respond" href="#comment-37442" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-37538">
+<article class="comment-body" id="div-comment-37538" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I suspect you’re on the money here, but it’s hard to say anything much at all since we only have one data point in this example. Probably the hardest thing to overcome will be costs, since the strategy trades two 0DTE options positions, its costs will be a high proportion of its returns.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-37538" data-commentid="37538" data-postid="91137" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-37538" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-37445">
+<article class="comment-body" id="div-comment-37445" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris, I am not an Options expert but what is with GARCH forecasts compared to the implied volatility? When the IV is higher than the forecast = short.<br/>
+If the IV is lower than the forecast = long.<br/>
+What do you think about that?<br/>
+Alex</p>
+<span class="reply"><a aria-label="Reply to Alex" class="comment-reply-link" data-belowelement="div-comment-37445" data-commentid="37445" data-postid="91137" data-replyto="Reply to Alex" data-respondelement="respond" href="#comment-37445" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-37537">
+<article class="comment-body" id="div-comment-37537" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>That approach depends entirely on your forecast of IV being better than the market’s. You can test it by analysing how well your model predicted volatility in the past vs the market.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-37537" data-commentid="37537" data-postid="91137" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-37537" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-37648">
+<article class="comment-body" id="div-comment-37648" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Kris thanks for sharing this.</p>
+<p>Wouldn’t the straddle be on average overpriced (your trading signal would be most of the time negative)? People need to be rewarded for selling these options.</p>
+<p>Meaning most of the time you would be selling (naked) options. Ideally you would delta hedge this but the costs will be even higher…</p>
+<span class="reply"><a aria-label="Reply to Virgo" class="comment-reply-link" data-belowelement="div-comment-37648" data-commentid="37648" data-postid="91137" data-replyto="Reply to Virgo" data-respondelement="respond" href="#comment-37648" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-37686">
+<article class="comment-body" id="div-comment-37686" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Yeah I would expect it to be overprived on average. Personally I wouldn’t delta hedge, I’d just manage the variance through the position sizing. Will be too costly to delta hedge (assuming it even makes money, which I’m increasingly skeptical of…).</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-37686" data-commentid="37686" data-postid="91137" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-37686" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-37936">
+<article class="comment-body" id="div-comment-37936" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris, thanks for sharing the idea and the code.</p>
+<p>You mentioned the lack of data. If buying a straddle works – then it’s a good strategy. On the other hand, if we sell a straddle and don’t have a stop loss – once in a while (say once in 2-3 years), there could be some black swan event, which could offset any accumulated profits.</p>
+<p>So, I’d say it’s necessary to test this idea on a greater amount of historical data, which, as you mentioned, is not easy to obtain for options.</p>
+<span class="reply"><a aria-label="Reply to Alex" class="comment-reply-link" data-belowelement="div-comment-37936" data-commentid="37936" data-postid="91137" data-replyto="Reply to Alex" data-respondelement="respond" href="#comment-37936" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/trading-0dte-options-with-the-ibkr-native-api/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

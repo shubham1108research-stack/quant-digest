@@ -1,0 +1,464 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Neural Network Trading: A Getting Started Guide for Algo Trading</title>
+<!-- source: https://robotwealth.com/getting-started-neural-networks-algorithmic-trading/ -->
+<h1>Neural Network Trading: A Getting Started Guide for Algo Trading</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-3395 post type-post status-publish format-standard hentry category-backtesting category-machine-learning category-neural-networks category-quant-trading category-r category-zorro tag-activation-function tag-algorithmic-trading tag-machine-learning tag-neural-networks tag-perceptron tag-r pmpro-has-access" id="post-3395">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">September 6, 2017</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Neural Network Trading: A Getting Started Guide for Algo Trading</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Neural Network Trading: A Getting Started Guide for Algo Trading" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><em>This article is adapted from one of the units of Advanced Algorithmic Trading. If you like what you see, check out the entire curriculum <a href="https://robotwealth.com/adv-algo-trading-curriculum/" rel="noopener noreferrer" target="_blank">here</a>. Find out what Robot Wealth is all about <a href="https://robotwealth.com" rel="noopener noreferrer" target="_blank">here</a>.</em>
+<hr/>
+
+If you’re interested in using <strong>artificial neural networks</strong> (ANNs) for algorithmic trading, but don’t know where to start, then this article is for you. Normally if you want to learn about neural networks, you need to be reasonably well versed in matrix and vector operations – the world of linear algebra. <strong>This article is different.</strong> I’ve attempted to provide a starting point that doesn’t involve any linear algebra and have deliberately left out all references to vectors and matrices. <strong>If you’re not strong on linear algebra, but are curious about neural networks, then I think you’ll enjoy this introduction.</strong> In addition, if you decide to take your study of neural networks further, when you do inevitably start using linear algebra, it will probably make a lot more sense as you’ll have something of head start.
+The best place to start learning about neural networks is the <strong>perceptron</strong>. The perceptron is the simplest possible artificial neural network, consisting of just a single neuron and capable of learning a certain class of binary classification problems.<span class="inline-footnote" style="" title="Perceptrons can solve linearly separable binary classification problems – more on this below.">1<span class="footnoteContent" style="display:none;">Perceptrons can solve <em>linearly separable</em> binary classification problems – more on this below.</span></span> Perceptrons are the perfect introduction to ANNs and if you can understand how they work, the leap to more complex networks and their attendant issues will not be nearly as far. So we will explore their history, what they do, how they learn, where they fail. We’ll build our own perceptron from scratch and train it to perform different classification tasks which will provide insight into where they can perform well, and where they are hopelessly outgunned. Lastly, we’ll explore one way we might apply a perceptron in a trading system.<span class="inline-footnote" style="" title="While perceptrons are the best introduction to neural nets for the uninitiated, personally I have my doubts about using them in algorithmic trading systems – it’s difficult to imagine that the classification tasks for which they are suited have relevance to the markets. However, in the simple example below, my perceptron trading strategy returned a surprisingly good walk-forward result. Maybe they are worthy of a closer look after all.">2<span class="footnoteContent" style="display:none;">While perceptrons are the best introduction to neural nets for the uninitiated, personally I have my doubts about using them in algorithmic trading systems – it’s difficult to imagine that the classification tasks for which they are suited have relevance to the markets. However, in the simple example below, my perceptron trading strategy returned a surprisingly good walk-forward result. Maybe they are worthy of a closer look after all.</span></span>
+<h2>A Brief History of the Perceptron</h2>
+
+The perceptron has a long history, dating back to at least the mid 1950s. Following its discovery, the New York Times ran an article that claimed that the perceptron was the basis of an artificial intelligence (AI) that would be able to walk, talk, see and even demonstrate consciousness. Soon after, this was proven to be hyperbole on a staggering scale, when the perceptron was shown to be wholly incapable of classifying certain types of problems. The disillusionment that followed essentially led to the first AI winter, and since then we have seen a repeating pattern of hyperbole followed by disappointment in relation to artificial intelligence.<span class="inline-footnote" style="" title="As an aside, there are a lot of reasons to think that this time might be different (indeed, that’s probably not even in question any more), including the exponential growth in both compute resources and data availability, as well as advances in computer science that enable efficient training of large neural networks.">3<span class="footnoteContent" style="display:none;">As an aside, there are a lot of reasons to think that this time might be different (indeed, that’s probably not even in question any more), including the exponential growth in both compute resources and data availability, as well as advances in computer science that enable efficient training of large neural networks.</span></span>
+Still, the perceptron remains a useful tool for some classification problems and is the perfect place to start if you’re interested in learning more about neural networks. Before we demonstrate it in a trading application, let’s find out a little more about it.
+
+<h2>Artificial Neural Networks: Modelling Nature</h2>
+
+Algorithms modelled on biology are a fascinating area of computer science. Undoubtedly you’ve heard of the genetic algorithm, which is a powerful optimization tool modelled on evolutionary processes. Nature has been used as a model for other optimization algorithms, as well as the basis for various design innovations. In this same vein, ANNs attempt to learn relationships and patterns using a somewhat loose model of neurons in the brain. The perceptron is a model of a single neuron.<span class="inline-footnote" style="" title="Note the words loose model of the brain. I recently undertook some study in computational neuroscience, and one of the surprising take-aways was how little we know about how the brain actually works, not to mention the incredible research currently being undertaken to remedy that.">4<span class="footnoteContent" style="display:none;">Note the words <em>loose</em> <em>model of the brain</em>. I recently undertook some study in computational neuroscience, and one of the surprising take-aways was how little we know about how the brain actually works, not to mention the incredible research currently being undertaken to remedy that.</span></span>
+In an ANN, neurons receive a number of inputs, weight each of those inputs, sum the weights, and then transform that sum using a special function called an <em>activation function</em>, of which there are many possible types. The output of that activation function is then either used as the prediction (in a single neuron model) or is combined with the outputs of other neurons for further use in more complex models, which we’ll get to in another article.
+Here’s a sketch of that process in an ANN consisting of a single neuron:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/ANN_Overview.jpg"><img alt="" class="aligncenter size-large wp-image-3252 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/ANN_Overview-1024x560.jpg" decoding="async" height="409" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='409'%20viewBox='0%200%20748%20409'%3E%3C/svg%3E" width="748"/></a>
+Here, (x_1, x_2, etc) are the inputs. (b) is called the bias term, think of it like the intercept term in a linear model (y = mx + b). (w_1, w_2, etc) are the weights applied to each input. The neuron firstly sums the weighted inputs (and the bias term), represented by (S) in the sketch above. Then, (S) is passed to the activation function, which simply transforms (S) in some way. The output of the activation function, (z) is then the output of the neuron.
+The idea behind ANNs is that by selecting good values for the weight parameters (and the bias), the ANN can model the relationships between the inputs and some target. In the sketch above, (z) is the ANN’s prediction of the target given the input variables.
+In the sketch, we have a single neuron with four weights and a bias parameter to learn. It isn’t uncommon for modern neural networks to consist of <em>hundreds </em>of neurons across multiple <em>layers</em>, where the output of each neuron in one layer is input to all the neurons in the next layer. Such a <em>fully connected </em>network<em> </em>architecture can easily result in many thousands of weight parameters. This enables ANNs to approximate any arbitrary function, linear or nonlinear.
+The perceptron consists of just a single neuron, like in our sketch above. This greatly simplifies the problem of learning the best weights, but it also has implications for the class of problems that a perceptron can solve.
+
+<h3>What’s an Activation Function?</h3>
+
+The purpose of the activation function is to take the input signal (that’s the weighted sum of the inputs and the bias) and turn it into an output signal. There are many different activation functions that convert an input signal in a slightly different way, depending on the purpose of the neuron.
+Recall that the perceptron is a binary classifier. That is, it predicts either one or zero, on or off, up or down, etc. It follows then that our activation function needs to convert the input signal (which can be any real-valued number) into either a one or a zero<span class="inline-footnote" style="" title="or a 1 and a -1, or any other binary output">5<span class="footnoteContent" style="display:none;">or a 1 and a -1, or any other binary output</span></span>corresponding to the predicted class.
+In biological terms, think of this activation function as <em>firing</em> (activating)<i> </i>the neuron (telling it to pass the signal on to the next neuron) when it returns 1, and doing nothing when it returns 0.
+What sort of function accomplishes this? It’s called a step function, and its mathematical expression looks like this:
+[f(z) =\begin{cases} 1, &amp; \text{if $z$ &gt; 0} \ 0, &amp; \text{otherwise} \end{cases}]
+And when plotted, it looks like this:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/step.png"><img alt="" class="aligncenter size-full wp-image-3254 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/step.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='400'%20viewBox='0%200%20500%20400'%3E%3C/svg%3E" width="500"/></a>
+This function then transforms any weighted sum of the inputs (S) and converts it into a binary output (either 1 or 0). The trick to making this useful is finding (learning) a set of weights, (w), that lead to good predictions using this activation function.
+
+<h3>How Does a Perceptron Learn?</h3>
+
+We already know that the inputs to a neuron get multiplied by some weight value particular to each individual input. The sum of these weighted inputs is then transformed into an output via an activation function. In order to find the best values for our weights, we start by assigning them random values and then start feeding observations from our training data to the perceptron, one by one. Each output of the perceptron is compared with the actual target value for that observation, and, if the prediction was incorrect, the weights adjusted so that the prediction would have been closer to the actual target. This is repeated until the weights converge.
+In perceptron learning, the weight update function is simple: when a target is misclassified, we simply take the sign of the error and then add or subtract the inputs that led to the misclassifiction to the existing weights.
+If that target was -1 and we predicted 1, the error is (-1 -1 = -2). We would then subtract each input value from the current weights (that is, (w_i = w_i – x_i)). If the target was 1 and we predicted -1, the error is (1 – -1 = 2), so then add the inputs to the current weights (that is, (w_i = w_i + x_i)).<span class="inline-footnote" style="" title="That means that if the set of weights  \((w_1, w_2, w_3)\)  misclassified the observation \((x_1, x_2, x_3, y=1)\)  as  \(y=-1\),  we would update the weights as follows:  \((w_1 + x_1, w_2 + x_2, w_3 + x_3)\)">6<span class="footnoteContent" style="display:none;">That means that if the set of weights  \((w_1, w_2, w_3)\)  misclassified the observation \((x_1, x_2, x_3, y=1)\)  as  \(y=-1\),  we would update the weights as follows:  \((w_1 + x_1, w_2 + x_2, w_3 + x_3)\)</span></span>
+This has the effect of moving the classifier’s decision boundary (which we will see below) in the direction that would have helped it classify the last observation correctly. In this way, weights are gradually updated until they converge. Sometimes (in fact, often) we’ll need to iterate through each of our training observations more than once in order to get the weights to converge. Each sweep through the training data is called an <em>epoch</em>.
+
+<h2>Implementing a Perceptron from Scratch</h2>
+
+Next, we’ll code our own perceptron learning algorithm from scratch using R. We’ll train it to classify a subset of the iris data set.<span class="inline-footnote" style="" title="The iris data is a standard machine learning data set and consists of 150 observations of specimens of iris flowers. Each observation consists of four measurements (sepal length, sepal width, petal length and petal width) and the species of iris to which each observed flower belongs. Three different species are recorded in the data set (setosa, versicolor, and virginica). The problem of classifying the different species based on the measurements is not a particularly difficult task, and you’ll see this data set pop up time and again in demonstrations of machine learning.">7<span class="footnoteContent" style="display:none;">The iris data is a standard machine learning data set and consists of 150 observations of specimens of iris flowers. Each observation consists of four measurements (sepal length, sepal width, petal length and petal width) and the species of iris to which each observed flower belongs. Three different species are recorded in the data set (<em>setosa, versicolor, and virginica</em>). The problem of classifying the different species based on the measurements is not a particularly difficult task, and you’ll see this data set pop up time and again in demonstrations of machine learning.</span></span>
+In the full iris data set, there are three species. However, perceptrons are for binary classification (that is, for distinguishing between two possible outcomes). Therefore, for the purpose of this exercise, we remove all observations of one of the species (here, <em>virginica</em>), and train a perceptron to distinguish between the remaining two. We also need to convert the species classification into a binary variable: here we use 1 for the first species, and -1 for the other. Further, there are four variables in addition to the species classification: petal length, petal width, sepal length and sepal width.  For the purposes of illustration, we’ll train our perceptron using only petal length and width and drop the other two measurements. These data transformations result in the following plot of the remaining two species in the two-dimensional feature space of petal length and petal width:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/IrisBinary.png"><img alt="" class="aligncenter size-full wp-image-3255 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/IrisBinary.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='400'%20viewBox='0%200%20600%20400'%3E%3C/svg%3E" width="600"/></a>
+The plot suggests that petal length and petal width are strong predictors of species – at least in our training data set. Can a perceptron learn to tell them apart?
+Training our perceptron is simply a matter of initializing the weights (here we initialize them to zero) and then implementing the perceptron learning rule, which just updates the weights based on the error of each observation with the current weights. We do that in a <span class="lang:c decode:true crayon-inline">for()</span>  loop which iterates over each observation, making a prediction based on the values of petal length and petal width of each observation, calculating the error of that prediction and then updating the weights accordingly.
+In this example we perform five sweeps through the entire data set, that is, we train the perceptron for five epochs. At the end of each epoch, we calculate the total number of misclassified training observations, which we hope will decrease as training progresses. Here’s the code:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Peceptron learning algorithm"># perceptron initial weights
+w1 = 0
+w2 = 0
+b = 0
+# perceptron learning
+epochs &lt;- 5
+errors &lt;- vector()
+for(j in c(1:epochs))
+{
+  for(i in c(1:nrow(iris)))
+  {
+    yhat &lt;- ifelse(w1*iris$Petal.Length[i] + w2*iris$Petal.Width[i] + b &gt; 0, 1, -1) #prediction of current observation
+    error = iris$Species[i] - yhat #will be either 0, 2 or -2
+    w1 &lt;- w1 + error*iris$Petal.Length[i]
+    w2 &lt;- w2 + error*iris$Petal.Width[i]
+    b &lt;- b + error
+  }
+  # end of epoch
+  preds &lt;- ifelse(w1*iris$Petal.Length + w2*iris$Petal.Width + b &gt; 0, 1, -1) #predict on whole training set
+  errors[j] &lt;- sum(abs(iris$Species - preds))/2 # calculate errors
+}
+plot(c(1:epochs), errors, type='l', xlab='epoch') # plot error rate at each epoch</pre>
+
+Here’s the plot of the error rate:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/ErrorRate.png"><img alt="" class="aligncenter size-full wp-image-3256 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/ErrorRate.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='400'%20viewBox='0%200%20500%20400'%3E%3C/svg%3E" width="500"/></a>
+We can see that it took two epochs to train the perceptron to correctly classify the entire dataset. After the first epoch, the weights hadn’t been sufficiently updated. In fact, after epoch 1, the perceptron predicted the same class for every observation! Therefore it misclassified 50 out of the 100 observations (there are 50 observations of each species in the data set). However after two epochs, the perceptron was able to correctly classify the entire data set by learning appropriate weights.
+Another, perhaps more intuitive way, to view the weights that the perceptron learns is in terms of its <em>decision boundary</em>. In geometric terms, for the two-dimensional feature space in this example, the decision boundary is the a straight line separating the perceptron’s predictions. On one side of the line, the perceptron always predicts -1, and on the other, it always predicts 1.<span class="inline-footnote" style="" title="In three-dimensional feature space, we would have a decision plane, and likewise in higher dimensions the corresponding decision boundary is in \(N-1\) dimensions, where \(N\) is the number of features or predictors.">8<span class="footnoteContent" style="display:none;">In three-dimensional feature space, we would have a decision <em>plane</em>, and likewise in higher dimensions the corresponding decision boundary is in \(N-1\) dimensions, where \(N\) is the number of features or predictors.</span></span>
+We can derive the decision boundary from the perceptron’s activation function:
+[f(z) =\begin{cases} 1, &amp; \text{if $z$ &gt; 0} \ 0, &amp; \text{otherwise} \end{cases}]
+where (z = w_1x_1 + w_2x_2 + b)
+The decision boundary is simply the line that defines the location of the step in the activation function. That step occurs at (z=0), so our decision boundary is given by
+[w_1x_1 + w_2x_2 + b\ = 0 ]
+Equivalently [x_2 = -\frac{w_1}{w_2}x_1 – \frac{b}{w_2}]
+which defines a straight line in (x_1, x_2) feature space.
+In our iris example, the perceptron learned the following decision boundary:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/IrisDecsinBndry.png"><img alt="" class="aligncenter size-full wp-image-3257 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/IrisDecsinBndry.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='400'%20viewBox='0%200%20500%20400'%3E%3C/svg%3E" width="500"/></a>
+Here’s the complete code for training this perceptron and producing the plots shown above:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Iris Perceptron from Scratch">### PERCEPTRON FROM SCRATCH ####
+# load data
+data(iris)
+# transform data to binary classification problem using two inputs
+iris &lt;- iris[iris$Species != 'virginica', c('Petal.Length', 'Petal.Width', 'Species')]
+iris$Species &lt;- ifelse(iris$Species=='versicolor', 1, -1)
+# plot data
+plot(iris[, c(1,2)],pch=ifelse(iris$Species&gt;0,"-","+"),
+     col=ifelse(iris$Species&gt;0,"blue","red"), cex=2,
+     main = 'Iris Classifications')
+legend("bottomright", c("species1", "species2"), col=c("blue", "red"), pch=c("-","+"), cex=1.1)
+# perceptron initial weights
+w1 = 0
+w2 = 0
+b = 0
+# perceptron learning
+epochs &lt;- 5
+errors &lt;- vector()
+for(j in c(1:epochs))
+{
+  for(i in c(1:nrow(iris)))
+  {
+    yhat &lt;- ifelse(w1*iris$Petal.Length[i] + w2*iris$Petal.Width[i] + b &gt; 0, 1, -1)
+    error = iris$Species[i] - yhat #will be either 0, 2 or -2
+    w1 &lt;- w1 + error*iris$Petal.Length[i]
+    w2 &lt;- w2 + error*iris$Petal.Width[i]
+    b &lt;- b + error
+  }
+  # end of epoch
+  preds &lt;- ifelse(w1*iris$Petal.Length + w2*iris$Petal.Width + b &gt; 0, 1, -1)
+  errors[j] &lt;- sum(abs(iris$Species - preds))/2
+}
+slope &lt;- -w1/w2
+intercept &lt;- -b/w2
+abline(intercept, slope)
+plot(c(1:epochs), errors, type='l', xlab='epoch')</pre>
+<strong>Congratulations! You just built and trained your first neural network.</strong>
+Let’s now ask our perceptron to learn a slightly more difficult problem. Using the same iris data set, this time we remove the <em>setosa </em>species and train a perceptron to classify <em>virginica</em> and <em>versicolor</em> on the basis of their petal lengths and petal widths. When we plot these species in their feature space, we get this:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/virginica-and-versicolor.png">
+<img alt="" class="aligncenter size-full wp-image-3259 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/virginica-and-versicolor.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='400'%20viewBox='0%200%20500%20400'%3E%3C/svg%3E" width="500"/></a>
+This looks a slightly more difficult problem, as this time the difference between the two classifications is not as clear cut. Let’s see how our perceptron performs on this data set.
+This time, we introduce the concept of the <em>learning rate</em>, which is important to understand if you decide to pursue neural networks beyond the perceptron. The learning rate controls the speed with which weights are adjusted during training. We simply scale the adjustment by the learning rate: a high learning rate means that weights are subject to bigger adjustments. Sometimes this is a good thing, for example when the weights are far from their optimal values. But sometimes this can cause the weights to oscillate back and forth between two high-error states without ever finding a better solution. In that case, a smaller learning rate is desirable, which can be thought of as fine tuning of the weights.
+Finding the best learning rate is largely a trial and error process, but a useful approach is to reduce the learning rate as training proceeds. In the example below, we do that by scaling the learning rate by the inverse of the epoch number.
+Here’s a plot of our error rate after training in this manner for 400 epochs:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/ErrorRate2.png"><img alt="" class="aligncenter size-full wp-image-3260 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/ErrorRate2.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='400'%20viewBox='0%200%20600%20400'%3E%3C/svg%3E" width="600"/></a>
+You can see that training proceeds much less smoothly and takes a lot longer than last time, which is a consequence of the classification problem being more difficult. Also note that the error rate is never reduced to zero, that is, the perceptron is never able to perfectly classify this data set. Here’s a plot of the decision boundary, which demonstrates where the perceptron makes the wrong predictions:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/decisionBoundary2.png"><img alt="" class="aligncenter size-full wp-image-3261 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/decisionBoundary2.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='400'%20viewBox='0%200%20600%20400'%3E%3C/svg%3E" width="600"/></a>
+Here’s the code for this perceptron:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="A harder classification problem"># load data
+data(iris)
+# transform data to binary classification problem using two inputs
+iris &lt;- iris[iris$Species != 'setosa', c('Petal.Length', 'Petal.Width', 'Species')]
+iris$Species &lt;- ifelse(iris$Species=='versicolor', 1, -1)
+# plot data
+plot(iris[, c(1,2)],pch=ifelse(iris$Species&gt;0,"-","+"),
+     col=ifelse(iris$Species&gt;0,"blue","red"), cex=2,
+     main = 'Iris Classifications')
+legend("bottomright", c("species1", "species2"), col=c("blue", "red"), pch=c("-","+"), cex=1.1)
+# perceptron initial weights
+w1 = 0
+w2 = 0
+b = 0
+# perceptron learning
+epochs &lt;- 400
+errors &lt;- vector()
+for(j in c(1:epochs))
+{
+  learn.rate &lt;- 1/j # set learning rate
+  for(i in c(1:nrow(iris)))
+  {
+    yhat &lt;- ifelse(w1*iris$Petal.Length[i] + w2*iris$Petal.Width[i] + b &gt; 0, 1, -1)
+    error = iris$Species[i] - yhat #will be either 0, 2 or -2
+    w1 &lt;- w1 + learn.rate*error*iris$Petal.Length[i]
+    w2 &lt;- w2 + learn.rate*error*iris$Petal.Width[i]
+    b &lt;- b + learn.rate*error
+  }
+  # end of epoch
+  preds &lt;- ifelse(w1*iris$Petal.Length + w2*iris$Petal.Width + b &gt; 0, 1, -1)
+  errors[j] &lt;- sum(abs(iris$Species - preds))/2
+}
+slope &lt;- -w1/w2
+intercept &lt;- -b/w2
+abline(intercept, slope)
+plot(c(1:epochs), errors, type='l', xlab='epoch')</pre>
+<h1></h1>
+<h2>Where Do Perceptrons Fail?</h2>
+
+In the first example above, we saw that our <em>versicolor</em> and <i>setosa </i>iris species could be perfectly separated by a straight line (the decision boundary) in their feature space. Such a classification problem is said to be <em>linearly separable</em> and (spoiler alert) is where perceptrons excel. In the second example, we saw that <em>versicolor</em> and <em>virginica</em> were <strong><em>almost</em> </strong>linearly separable, and our perceptron did a reasonable job, but could never perfectly classify the whole data set. In this next example, we’ll see how they perform on a problem that isn’t linearly separable at all.
+Using the same iris data set, this time we classify our iris species as either <em>versicolor</em> or <em>other</em> (that is <em>setosa</em> and <em>virginica </em>get the same classification) on the basis of their petal lengths and petal widths. When we plot these species in their feature space, we get this:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/Not-Linearly-Separable.png"><img alt="" class="aligncenter size-full wp-image-3258 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/Not-Linearly-Separable.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='400'%20viewBox='0%200%20500%20400'%3E%3C/svg%3E" width="500"/></a>
+This time, there is no straight line that can perfectly separate the two species. Let’s see how our perceptron performs now. Here’s the error rate over 400 epochs and the decision boundary:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/errorRate3.png"><img alt="" class="aligncenter size-full wp-image-3263 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/errorRate3.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='400'%20viewBox='0%200%20600%20400'%3E%3C/svg%3E" width="600"/></a>
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/decisionBoundary3.png"><img alt="" class="aligncenter size-full wp-image-3264 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/decisionBoundary3.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='400'%20viewBox='0%200%20600%20400'%3E%3C/svg%3E" width="600"/></a>We can see that the perceptron fails to distinguish between the two classes. This is typical of the performance of the perceptron on any problem that isn’t linearly separable. Hence my comment at the start of this unit (see footnote 2) that I’m skeptical that perceptrons can find practical application in trading. Maybe you can find a use case in trading, but even if not, they provide an excellent foundation for exploring more complex networks which <em>can </em>model more complex relationships.
+
+<h2>A Perceptron Implementation for Algorithmic Trading</h2>
+<a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">The Zorro trading automation platform</a> includes a flexible perceptron implementation. If you haven’t heard of Zorro, it is a fast, accurate and powerful backtesting/execution platform that abstracts a lot of tedious programming tasks so that the user is empowered to concentrate on efficient research. It uses a simple C-based scripting language that takes almost no time to learn if you already know C, and a week or two if you don’t (although of course mastery can take much longer). This makes it an excellent choice for independent traders and those getting started with algorithmic trading. While the software sacrifices little for the abstraction that enables efficient research, experienced quant developers or those with an abundance of spare time might take issue with that aspect of the software, as it’s not open source, so it isn’t for everyone. But it’s a great choice for beginners and DIY traders who maintain a day job. If you want to learn to use Zorro, even if you’re not a programmer, we can <a href="https://robotwealth.com/" rel="noopener noreferrer" target="_blank">help</a>.
+Zorro’s perceptron implementation allows us to define any features we think are pertinent, and to specify any target we like, which Zorro automatically converts it to a binary variable (by default, positive values are given one class; negative values the other). After training, Zorro’s perceptron predicts either a positive or negative value corresponding to the positive and negative classes respectively.
+Here’s the Zorro code for implementing a perceptron that tries to predict whether the 5-day price change in the EUR/USD exchange rate will be greater than 200 pips, based on recent returns and volatility, whose predictions are tested under a walk-forward framework:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Perceptron Trading">/* PERCEPTRON
+*/
+function run()
+{
+    set(RULES|PEEK|PLOTNOW|OPENEND);
+    StartDate = 20100101;
+    EndDate = 20161231;
+    BarPeriod = 1440;
+    LookBack = 100;
+    BarZone = WET;
+    BarOffset = 9*60;
+    asset("EUR/USD");
+    if(Train) Hedge = 2; //needed for training trade results
+    // set up walk-forward parameters
+    int TST = 50*1440/BarPeriod; //number of bars in test period
+    int TRN = 500*1440/BarPeriod; //number of bars in training period
+    DataSplit = 100*TRN/(TST+TRN);
+    WFOPeriod = TST+TRN;
+    //data
+    vars Close = series(priceClose());
+    //signals
+    var Sig1 = scale(ATR(10)-ATR(50), 100);
+    var Sig2 = (Close[0]-Close[1])/Close[1];
+    var Sig3 = (Close[0]-Close[5])/Close[5];
+    var Sig4 = (Close[0]-Close[10])/Close[10];
+    var ObjLong;
+    var ObjShort;
+    if(priceClose(-5) - priceClose(0) &gt; 200*PIP) ObjLong = 1;
+    else ObjLong = -1;
+    if(priceClose(-5) - priceClose(0) &lt; -200*PIP) ObjShort = 1;
+    else ObjShort = -1;
+    LifeTime = 5;
+    var l = adviseLong(PERCEPTRON+BALANCED, ObjLong, Sig1, Sig2, Sig3, Sig4);
+    var s = adviseShort(PERCEPTRON+BALANCED, ObjShort, Sig1, Sig2, Sig3, Sig4);
+    if(!Train)
+    {
+        if(l &gt; 0 and s &lt; 0) reverseLong(1);
+        else if(s &gt; 0 and l &lt; 0) reverseShort(1);
+    }
+    plot("l", l, NEW, GREEN);
+    plot("s", s, NEW, RED);
+}</pre>
+
+Zorro firstly outputs a trained perceptron for predicting long and short 5-day price moves greater than 200 pips for each walk-forward period, and then tests their out-of-sample predictions.
+Here’s the walk-forward equity curve of our example perceptron trading strategy:
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/PerceptronEqCurve.png"><img alt="" class="aligncenter size-full wp-image-3267 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/PerceptronEqCurve.png" decoding="async" height="585" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='585'%20viewBox='0%200%20879%20585'%3E%3C/svg%3E" width="879"/></a>
+I find this result particularly interesting because I expected the perceptron to perform poorly on market data, which I find it hard to imagine falling into the linearly separable category. However, sometimes simplicity is not a bad thing, it seems.
+
+<h2>Conclusions</h2>
+
+I hope this article not only whet your appetite for further exploration of neural networks, but facilitated your understanding of the basic concepts, without getting too hung up on the math.
+I intended for this article to be an introduction to neural networks where the perceptron was to be nothing more than a learning aid. However, given the surprising walk-forward result from our simple trading model, I’m now going to experiment with this approach a little further. If this interests you too, some ideas you might consider include extending the backtest, experimenting with different signals and targets, testing the algorithm on other markets and of course considering data mining bias. I’d love to hear about your results in the comments.
+Thanks for reading!
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>activation function</span>, <span>algorithmic trading</span>, <span>Machine Learning</span>, <span>neural networks</span>, <span>Perceptron</span>, <span>R</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">11 thoughts on “Neural Network Trading: A Getting Started Guide for Algo Trading”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-793">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 09/05/2017 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-794">
+<article class="comment-body" id="div-comment-794" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>The line :<br/>
+<span class="crayon-e">asset</span><span class="crayon-sy">(</span><span class="crayon-s">“EUR/USD”</span><span class="crayon-sy">)</span><span class="crayon-sy">;</span><br/>
+might be in the wrong place.<br/>
+I had to move it then the script worked.<br/>
+J</p>
+<span class="reply"><a aria-label="Reply to Jason R" class="comment-reply-link" data-belowelement="div-comment-794" data-commentid="794" data-postid="3395" data-replyto="Reply to Jason R" data-respondelement="respond" href="#comment-794" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-795">
+<article class="comment-body" id="div-comment-795" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Jason!</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-795" data-commentid="795" data-postid="3395" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-795" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-796">
+<article class="comment-body" id="div-comment-796" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Zorro fails to compile the script if these lines are present in this shape:<br/>
+var l = adviseLong(PERCEPTRON+BALANCED, ObjLong, Sig1, Sig2, Sig3, Sig4);<br/>
+var s = adviseShort(PERCEPTRON+BALANCED, ObjShort, Sig1, Sig2, Sig3, Sig4);<br/>
+They seem to be fine with the function syntax yet it doesn’t like it throwing series of:<br/>
+Error 062: Can’t open test_nn_from_web_24.c [t:]<br/>
+Commenting the adviseLong and adviseShort helps but then it doesn’t make any sense.</p>
+<span class="reply"><a aria-label="Reply to tedjack" class="comment-reply-link" data-belowelement="div-comment-796" data-commentid="796" data-postid="3395" data-replyto="Reply to tedjack" data-respondelement="respond" href="#comment-796" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-797">
+<article class="comment-body" id="div-comment-797" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Error 062 occurs when Zorro can’t find a file it needs. It could be that you didn’t train your perceptrons before trying to run a backtest? During the train process, Zorro outputs the perceptron as a .c file, which is of course required before running a simulation. If that’s the case, simply hit the [Train] button on the Zorro GUI, wait for training to finish, then hit [Test].<br/>
+This error can also arise when Zorro doesn’t have the correct permissions to access the files it needs. In that case, try running Zorro with Admin privileges.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-797" data-commentid="797" data-postid="3395" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-797" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-798">
+<article class="comment-body" id="div-comment-798" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>” It could be that you didn’t train your perceptrons before trying to run a backtest?”<br/>
+Agrh stupid me I didn’t press the button… it’s working now 😉<br/>
+However it looks good only till the end of Jan 2015 – by the end the next year it lost everything.<br/>
+BTW: ATR it very sensitive to the starting point of the time series: bars as old as 2000 ago can affect today results. It’s enough to shorten or lengthen the series to get different atr(10) at the end. What daily volatility almost six years ago has to today volatility? Yet it affects the atr outcome. So the dataset starting point may affect the results – did you try to move it backward or forward by a year or two?</p>
+<span class="reply"><a aria-label="Reply to tedjack" class="comment-reply-link" data-belowelement="div-comment-798" data-commentid="798" data-postid="3395" data-replyto="Reply to tedjack" data-respondelement="respond" href="#comment-798" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-7720">
+<article class="comment-body" id="div-comment-7720" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello. Can we be in touch to learn more about the module</p>
+<span class="reply"><a aria-label="Reply to Bassem" class="comment-reply-link" data-belowelement="div-comment-7720" data-commentid="7720" data-postid="3395" data-replyto="Reply to Bassem" data-respondelement="respond" href="#comment-7720" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-10135">
+<div class="comment-body">
+				Pingback: Fighting Overfitting - Deep Learning for Trading Part 4 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/getting-started-neural-networks-algorithmic-trading/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,2943 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Working with Tidy Financial Data in tidyr</title>
+<!-- source: https://robotwealth.com/working-with-tidy-financial-data-in-tidyr/ -->
+<h1>Working with Tidy Financial Data in tidyr</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-21505 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading category-r tag-data tag-quantitative-analysis tag-quantitative-trading tag-r tag-tidyverse pmpro-has-access" id="post-21505">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">June 2, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Working with Tidy Financial Data in tidyr</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Working with Tidy Financial Data in tidyr" class="ipa-media gb-media-81e19d89" data-media-id="23689" decoding="async" fetchpriority="high" height="1024" sizes="(max-width: 883px) 100vw, 883px" src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161912/tidyr-883x1024.png" srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161912/tidyr-883x1024.png 883w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161912/tidyr-600x695.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161912/tidyr-259x300.png 259w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161912/tidyr-768x890.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161912/tidyr-1325x1536.png 1325w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161912/tidyr-1767x2048.png 1767w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161912/tidyr-518x600.png 518w" width="883"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Holding data in a tidy format works wonders for one’s productivity.
+
+Here we will explore the <code>tidyr</code> package, which is all about creating tidy data.
+
+In particular, let’s develop an understanding of the <code>tidyr::pivot_longer</code> and <code>tidyr::pivot_wider</code> functions for switching between different formats of tidy data.
+
+In this video, you’ll learn:
+
+<ul>
+<li>What tidy data looks like</li>
+<li>Why it’s a sensible approach</li>
+<li>The difference between long and wide tidy data</li>
+<li>How to efficiently switch between the two format</li>
+<li>When and why you’d use each of the two formats</li>
+</ul>
+<div style="position: relative; padding-bottom: 56.25%; height: 0;"></div>
+
+ 
+
+<h2>What’s tidy data?</h2>
+
+Tidy data is data where:
+
+<ul>
+<li>Every column is variable.</li>
+<li>Every row is an observation.</li>
+<li>Every cell is a single value.</li>
+</ul>
+<h2>Why do we care?</h2>
+
+It turns out there are huge benefits to thinking about the “shape” of your data and the best way to structure and manipulate it for your problem.
+
+Tidy data is a standard way of shaping data that facilitates analysis. In particular, tidy data works very well with the tidyverse tools. Which means less time spent transforming and cleaning data and more time spent solving problems. In short, structuring data to facilitate analysis is an enormous productivity hack.
+
+Thinking in these terms has had a MASSIVE impact on the effectiveness and speed of our research. We’re going to cover this in some detail in the Armageddon bootcamp, along with some specific patterns for doing trading analysis.
+
+<h2>Wide vs Long Data</h2>
+
+Let’s take a look at some long-format data. This code loads a long dataframe of daily returns for various indexes and prints the observations from the beginning of March 2020:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, here, knitr, kableExtra)
+load(here('data', 'indexreturns.RData'))
+
+dailyindex_df &lt;- dailyindex_df %&gt;%
+  filter(date &gt;= '2020-03-01') 
+
+dailyindex_df %&gt;%
+  kable() %&gt;%
+  kable_styling(full_width = FALSE, position = 'center') %&gt;%
+  scroll_box(width = '800px', height = '300px')
+</pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px; overflow-x: scroll; width: 800px;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0460048</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0111621</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0114468</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0008475</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0073579</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0051502</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0179376</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0280740</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0097820</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0106093</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0093299</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0154987</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0093937</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0311450</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0422302</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0062777</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0097196</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0016807</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0099536</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0059222</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0008743</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0336854</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">-0.0014521</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0014743</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0050505</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0227882</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0067283</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0151949</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0170369</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">-0.0232132</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">-0.0262282</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0041876</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0498034</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0076207</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0026644</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0761665</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0041701</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0262172</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0018757</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0494037</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0091362</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0486618</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0477816</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0091271</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0487713</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0025147</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0108696</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0206093</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0107857</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0949084</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0008403</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0155139</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0317549</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0931900</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0058774</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0216678</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0439158</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0462765</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.1197921</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0126689</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0510067</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0325359</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0203396</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0597801</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0133445</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0587484</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0197824</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0265681</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0517360</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0067625</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0434193</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0544904</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0311081</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0047010</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0017021</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0007092</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0234792</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0011498</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0431907</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0144435</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0652020</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0142077</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0039756</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0292942</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">-0.2532532</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0083752</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0419162</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0215517</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0568462</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0939740</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0041528</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0051086</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0121145</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0575354</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0115569</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0008340</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0064185</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0315560</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0174002</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0624207</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0016667</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0064599</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0295359</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0159455</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0336616</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0049917</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0237484</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0081967</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0037858</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0336403</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0008278</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0050157</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0144628</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0065711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0159221</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0016570</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0144928</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0115304</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0283711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0441380</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0008299</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0147059</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0124352</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0032808</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0230223</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0008292</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0056711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0291310</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+Long data is presented with one or more columns containing a key and another containing all the values.
+
+In this example, the key, or so-called “unit of analysis: is date-ticker. That is, each value (in the returns column) is uniquely associated with a date-ticker joint key.
+
+The joint key date-ticker would be the starting point of any analysis we’d want to do on this data set.
+
+This is often easier to manage and process. However, if you’re used to looking at spreadsheets, it can be harder to understand intuitively. <em>(I think that this difficulty evaporates fairly quickly once you start using the tools).</em>
+
+While structuring data as key-value pairs might seem odd if you’re not used to it, it does actually facilitate your conceptual clarity of the problem at hand.
+
+For example, in the example above, it is clear that the unique identifier of each return is the date-ticker joint key.
+
+With that clarity, it becomes much simpler to imagine the steps in an analysis workflow. You get quite productive and effective at this with a little practice.
+
+Let’s compare this with the same data in wide format:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">dailyindex_df %&gt;%
+  pivot_wider(names_from = ticker, values_from = returns) %&gt;%
+  kable() %&gt;%
+  kable_styling(position = 'center') %&gt;%
+  scroll_box(width = '800px', height = '300px')
+</pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px; overflow-x: scroll; width: 800px;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_NONUS_DEV</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_EMER</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">TN_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">TB_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">BOND_EMER</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">GOLD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: right;">0.0460048</td>
+<td style="text-align: right;">0.0111621</td>
+<td style="text-align: right;">0.0114468</td>
+<td style="text-align: right;">-0.0008475</td>
+<td style="text-align: right;">-0.0073579</td>
+<td style="text-align: right;">0.0051502</td>
+<td style="text-align: right;">0.0179376</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: right;">-0.0280740</td>
+<td style="text-align: right;">0.0097820</td>
+<td style="text-align: right;">0.0106093</td>
+<td style="text-align: right;">0.0093299</td>
+<td style="text-align: right;">0.0154987</td>
+<td style="text-align: right;">0.0093937</td>
+<td style="text-align: right;">0.0311450</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: right;">0.0422302</td>
+<td style="text-align: right;">0.0062777</td>
+<td style="text-align: right;">0.0097196</td>
+<td style="text-align: right;">-0.0016807</td>
+<td style="text-align: right;">-0.0099536</td>
+<td style="text-align: right;">0.0059222</td>
+<td style="text-align: right;">-0.0008743</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: right;">-0.0336854</td>
+<td style="text-align: right;">-0.0014521</td>
+<td style="text-align: right;">0.0014743</td>
+<td style="text-align: right;">0.0050505</td>
+<td style="text-align: right;">0.0227882</td>
+<td style="text-align: right;">-0.0067283</td>
+<td style="text-align: right;">0.0151949</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: right;">-0.0170369</td>
+<td style="text-align: right;">-0.0232132</td>
+<td style="text-align: right;">-0.0262282</td>
+<td style="text-align: right;">0.0041876</td>
+<td style="text-align: right;">0.0498034</td>
+<td style="text-align: right;">-0.0076207</td>
+<td style="text-align: right;">0.0026644</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: right;">-0.0761665</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0041701</td>
+<td style="text-align: right;">0.0262172</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0018757</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: right;">0.0494037</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0091362</td>
+<td style="text-align: right;">-0.0486618</td>
+<td style="text-align: right;">-0.0477816</td>
+<td style="text-align: right;">-0.0091271</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: right;">-0.0487713</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0025147</td>
+<td style="text-align: right;">-0.0108696</td>
+<td style="text-align: right;">-0.0206093</td>
+<td style="text-align: right;">-0.0107857</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: right;">-0.0949084</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008403</td>
+<td style="text-align: right;">-0.0155139</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0317549</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: right;">0.0931900</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0058774</td>
+<td style="text-align: right;">-0.0216678</td>
+<td style="text-align: right;">-0.0439158</td>
+<td style="text-align: right;">-0.0462765</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: right;">-0.1197921</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0126689</td>
+<td style="text-align: right;">0.0510067</td>
+<td style="text-align: right;">-0.0325359</td>
+<td style="text-align: right;">-0.0203396</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: right;">0.0597801</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0133445</td>
+<td style="text-align: right;">-0.0587484</td>
+<td style="text-align: right;">-0.0197824</td>
+<td style="text-align: right;">0.0265681</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: right;">-0.0517360</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0067625</td>
+<td style="text-align: right;">-0.0434193</td>
+<td style="text-align: right;">-0.0544904</td>
+<td style="text-align: right;">-0.0311081</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: right;">0.0047010</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0017021</td>
+<td style="text-align: right;">0.0007092</td>
+<td style="text-align: right;">-0.0234792</td>
+<td style="text-align: right;">0.0011498</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: right;">-0.0431907</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0144435</td>
+<td style="text-align: right;">0.0652020</td>
+<td style="text-align: right;">0.0142077</td>
+<td style="text-align: right;">0.0039756</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: right;">-0.0292942</td>
+<td style="text-align: right;">-0.2532532</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0083752</td>
+<td style="text-align: right;">0.0419162</td>
+<td style="text-align: right;">-0.0215517</td>
+<td style="text-align: right;">0.0568462</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: right;">0.0939740</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0041528</td>
+<td style="text-align: right;">-0.0051086</td>
+<td style="text-align: right;">0.0121145</td>
+<td style="text-align: right;">0.0575354</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: right;">0.0115569</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008340</td>
+<td style="text-align: right;">-0.0064185</td>
+<td style="text-align: right;">0.0315560</td>
+<td style="text-align: right;">-0.0174002</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: right;">0.0624207</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0016667</td>
+<td style="text-align: right;">0.0064599</td>
+<td style="text-align: right;">0.0295359</td>
+<td style="text-align: right;">0.0159455</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: right;">-0.0336616</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0049917</td>
+<td style="text-align: right;">0.0237484</td>
+<td style="text-align: right;">-0.0081967</td>
+<td style="text-align: right;">-0.0037858</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: right;">0.0336403</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0008278</td>
+<td style="text-align: right;">-0.0050157</td>
+<td style="text-align: right;">-0.0144628</td>
+<td style="text-align: right;">-0.0065711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: right;">-0.0159221</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0016570</td>
+<td style="text-align: right;">-0.0144928</td>
+<td style="text-align: right;">0.0115304</td>
+<td style="text-align: right;">-0.0283711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: right;">-0.0441380</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008299</td>
+<td style="text-align: right;">0.0147059</td>
+<td style="text-align: right;">-0.0124352</td>
+<td style="text-align: right;">-0.0032808</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: right;">0.0230223</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008292</td>
+<td style="text-align: right;">0.0056711</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0291310</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+This might look more familiar. Here we have a row for each date and a column for the return corresponding to each index. The unique values in the ticker column are actual columns in this wide format.
+
+Data in this format is probably more amenable human consumption.
+
+<h2>So which is better – wide or long format?</h2>
+
+It depends!
+
+You’ll find that storing your data in long format facilitates exploration and analysis, particularly if you use the <code>tidyverse</code> tools. We highly recommend that you do all your tidy analysis in long format unless you have a good reason not to.
+
+Long format data is also easy to maintain – adding a new variable<em> (a new ticker, say)</em> is as simple as appending rows to the bottom of the existing data frame (and maybe sorting it by date, if you wanted to).
+
+One use case that you see all the time is using ggplot to visualise a variable for more than one member of some organising category, for example, a time series plot of a bunch of different price curves where the organising category is ticker.
+
+On the other hand, wide-format data might be a better choice if you intend for a human to consume the data.
+
+You will also find certain functions and algorithms that expect data in this format, for example <code>stats::cor</code>.
+
+<h2>The practical reality</h2>
+
+A good rule of thumb (and one that we follow) is to keep your data in long format whenever you’re doing any data manipulation or processing and save wide format for displaying it.
+
+Of course, there are exceptions and sometimes you have a reason not to do your processing in long format, for instance when a function requires a wide data frame.
+
+That means that in reality, you’ll often find yourself wanting to switch between long and wide format. Fortunately, Fortunately, using the <code>tidyr</code> package, it is very simple to convert from long to wide format and back again.
+
+<h3>Pivoting from long to wide</h3>
+
+We’ve already seen an example of pivoting from long to wide format. Let’s explore that in a little more detail.
+
+We use <code>tidyr::pivot_wider</code> to go from long to wide.
+
+The most important arguments to the function are <code>id_cols</code>, <code>names_from</code> and <code>values_from</code>, and they each specify a column in our long dataframe.
+
+<ul>
+<li>The <code>id_cols</code> column specifies the unique identifier of each observation in our wide data frame.</li>
+<li>The unique values in the <code>names_from</code> column become the column names in the wide data frame.</li>
+<li>The values in the <code>values_from</code> column gets populated into the cells of the wide data frame.</li>
+</ul>
+
+In our example:
+
+<ul>
+<li>We want to index our wide dataframe by date, so we specify <code>id_cols = date</code></li>
+<li>We want the tickers to form columns in the wide dataframe, so we specify <code>names_from = ticker</code></li>
+<li>We want to populate our wide dataframe with returns values, so we specify <code>values_from = returns</code></li>
+</ul>
+
+Here’s what that looks like:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">dailyindex_df %&gt;%
+  pivot_wider(id_cols = date, names_from = ticker, values_from = returns) %&gt;%
+  kable() %&gt;%
+  kable_styling(position = 'center') %&gt;%
+  scroll_box(width = '800px', height = '300px')
+</pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px; overflow-x: scroll; width: 800px;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_NONUS_DEV</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_EMER</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">TN_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">TB_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">BOND_EMER</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">GOLD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: right;">0.0460048</td>
+<td style="text-align: right;">0.0111621</td>
+<td style="text-align: right;">0.0114468</td>
+<td style="text-align: right;">-0.0008475</td>
+<td style="text-align: right;">-0.0073579</td>
+<td style="text-align: right;">0.0051502</td>
+<td style="text-align: right;">0.0179376</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: right;">-0.0280740</td>
+<td style="text-align: right;">0.0097820</td>
+<td style="text-align: right;">0.0106093</td>
+<td style="text-align: right;">0.0093299</td>
+<td style="text-align: right;">0.0154987</td>
+<td style="text-align: right;">0.0093937</td>
+<td style="text-align: right;">0.0311450</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: right;">0.0422302</td>
+<td style="text-align: right;">0.0062777</td>
+<td style="text-align: right;">0.0097196</td>
+<td style="text-align: right;">-0.0016807</td>
+<td style="text-align: right;">-0.0099536</td>
+<td style="text-align: right;">0.0059222</td>
+<td style="text-align: right;">-0.0008743</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: right;">-0.0336854</td>
+<td style="text-align: right;">-0.0014521</td>
+<td style="text-align: right;">0.0014743</td>
+<td style="text-align: right;">0.0050505</td>
+<td style="text-align: right;">0.0227882</td>
+<td style="text-align: right;">-0.0067283</td>
+<td style="text-align: right;">0.0151949</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: right;">-0.0170369</td>
+<td style="text-align: right;">-0.0232132</td>
+<td style="text-align: right;">-0.0262282</td>
+<td style="text-align: right;">0.0041876</td>
+<td style="text-align: right;">0.0498034</td>
+<td style="text-align: right;">-0.0076207</td>
+<td style="text-align: right;">0.0026644</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: right;">-0.0761665</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0041701</td>
+<td style="text-align: right;">0.0262172</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0018757</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: right;">0.0494037</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0091362</td>
+<td style="text-align: right;">-0.0486618</td>
+<td style="text-align: right;">-0.0477816</td>
+<td style="text-align: right;">-0.0091271</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: right;">-0.0487713</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0025147</td>
+<td style="text-align: right;">-0.0108696</td>
+<td style="text-align: right;">-0.0206093</td>
+<td style="text-align: right;">-0.0107857</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: right;">-0.0949084</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008403</td>
+<td style="text-align: right;">-0.0155139</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0317549</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: right;">0.0931900</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0058774</td>
+<td style="text-align: right;">-0.0216678</td>
+<td style="text-align: right;">-0.0439158</td>
+<td style="text-align: right;">-0.0462765</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: right;">-0.1197921</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0126689</td>
+<td style="text-align: right;">0.0510067</td>
+<td style="text-align: right;">-0.0325359</td>
+<td style="text-align: right;">-0.0203396</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: right;">0.0597801</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0133445</td>
+<td style="text-align: right;">-0.0587484</td>
+<td style="text-align: right;">-0.0197824</td>
+<td style="text-align: right;">0.0265681</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: right;">-0.0517360</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0067625</td>
+<td style="text-align: right;">-0.0434193</td>
+<td style="text-align: right;">-0.0544904</td>
+<td style="text-align: right;">-0.0311081</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: right;">0.0047010</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0017021</td>
+<td style="text-align: right;">0.0007092</td>
+<td style="text-align: right;">-0.0234792</td>
+<td style="text-align: right;">0.0011498</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: right;">-0.0431907</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0144435</td>
+<td style="text-align: right;">0.0652020</td>
+<td style="text-align: right;">0.0142077</td>
+<td style="text-align: right;">0.0039756</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: right;">-0.0292942</td>
+<td style="text-align: right;">-0.2532532</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0083752</td>
+<td style="text-align: right;">0.0419162</td>
+<td style="text-align: right;">-0.0215517</td>
+<td style="text-align: right;">0.0568462</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: right;">0.0939740</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0041528</td>
+<td style="text-align: right;">-0.0051086</td>
+<td style="text-align: right;">0.0121145</td>
+<td style="text-align: right;">0.0575354</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: right;">0.0115569</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008340</td>
+<td style="text-align: right;">-0.0064185</td>
+<td style="text-align: right;">0.0315560</td>
+<td style="text-align: right;">-0.0174002</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: right;">0.0624207</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0016667</td>
+<td style="text-align: right;">0.0064599</td>
+<td style="text-align: right;">0.0295359</td>
+<td style="text-align: right;">0.0159455</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: right;">-0.0336616</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0049917</td>
+<td style="text-align: right;">0.0237484</td>
+<td style="text-align: right;">-0.0081967</td>
+<td style="text-align: right;">-0.0037858</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: right;">0.0336403</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0008278</td>
+<td style="text-align: right;">-0.0050157</td>
+<td style="text-align: right;">-0.0144628</td>
+<td style="text-align: right;">-0.0065711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: right;">-0.0159221</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0016570</td>
+<td style="text-align: right;">-0.0144928</td>
+<td style="text-align: right;">0.0115304</td>
+<td style="text-align: right;">-0.0283711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: right;">-0.0441380</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008299</td>
+<td style="text-align: right;">0.0147059</td>
+<td style="text-align: right;">-0.0124352</td>
+<td style="text-align: right;">-0.0032808</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: right;">0.0230223</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008292</td>
+<td style="text-align: right;">0.0056711</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0291310</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+Could that be any easier?
+
+Actually, yes!
+
+<code>id_cols</code> defaults to any column or columns that aren’t specified by the <code>names_from</code> and <code>values_from</code> arguments. So in our case, we could actually not even bother with the <code>id_cols</code> argument:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">dailyindex_df_wide &lt;- dailyindex_df %&gt;%
+  pivot_wider(names_from = ticker, values_from = returns)
+
+dailyindex_df_wide %&gt;%
+  kable() %&gt;%
+  kable_styling(position = 'center') %&gt;%
+  scroll_box(width = '800px', height = '300px')
+</pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px; overflow-x: scroll; width: 800px;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_NONUS_DEV</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_EMER</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">TN_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">TB_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">BOND_EMER</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">GOLD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: right;">0.0460048</td>
+<td style="text-align: right;">0.0111621</td>
+<td style="text-align: right;">0.0114468</td>
+<td style="text-align: right;">-0.0008475</td>
+<td style="text-align: right;">-0.0073579</td>
+<td style="text-align: right;">0.0051502</td>
+<td style="text-align: right;">0.0179376</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: right;">-0.0280740</td>
+<td style="text-align: right;">0.0097820</td>
+<td style="text-align: right;">0.0106093</td>
+<td style="text-align: right;">0.0093299</td>
+<td style="text-align: right;">0.0154987</td>
+<td style="text-align: right;">0.0093937</td>
+<td style="text-align: right;">0.0311450</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: right;">0.0422302</td>
+<td style="text-align: right;">0.0062777</td>
+<td style="text-align: right;">0.0097196</td>
+<td style="text-align: right;">-0.0016807</td>
+<td style="text-align: right;">-0.0099536</td>
+<td style="text-align: right;">0.0059222</td>
+<td style="text-align: right;">-0.0008743</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: right;">-0.0336854</td>
+<td style="text-align: right;">-0.0014521</td>
+<td style="text-align: right;">0.0014743</td>
+<td style="text-align: right;">0.0050505</td>
+<td style="text-align: right;">0.0227882</td>
+<td style="text-align: right;">-0.0067283</td>
+<td style="text-align: right;">0.0151949</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: right;">-0.0170369</td>
+<td style="text-align: right;">-0.0232132</td>
+<td style="text-align: right;">-0.0262282</td>
+<td style="text-align: right;">0.0041876</td>
+<td style="text-align: right;">0.0498034</td>
+<td style="text-align: right;">-0.0076207</td>
+<td style="text-align: right;">0.0026644</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: right;">-0.0761665</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0041701</td>
+<td style="text-align: right;">0.0262172</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0018757</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: right;">0.0494037</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0091362</td>
+<td style="text-align: right;">-0.0486618</td>
+<td style="text-align: right;">-0.0477816</td>
+<td style="text-align: right;">-0.0091271</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: right;">-0.0487713</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0025147</td>
+<td style="text-align: right;">-0.0108696</td>
+<td style="text-align: right;">-0.0206093</td>
+<td style="text-align: right;">-0.0107857</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: right;">-0.0949084</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008403</td>
+<td style="text-align: right;">-0.0155139</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0317549</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: right;">0.0931900</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0058774</td>
+<td style="text-align: right;">-0.0216678</td>
+<td style="text-align: right;">-0.0439158</td>
+<td style="text-align: right;">-0.0462765</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: right;">-0.1197921</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0126689</td>
+<td style="text-align: right;">0.0510067</td>
+<td style="text-align: right;">-0.0325359</td>
+<td style="text-align: right;">-0.0203396</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: right;">0.0597801</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0133445</td>
+<td style="text-align: right;">-0.0587484</td>
+<td style="text-align: right;">-0.0197824</td>
+<td style="text-align: right;">0.0265681</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: right;">-0.0517360</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0067625</td>
+<td style="text-align: right;">-0.0434193</td>
+<td style="text-align: right;">-0.0544904</td>
+<td style="text-align: right;">-0.0311081</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: right;">0.0047010</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0017021</td>
+<td style="text-align: right;">0.0007092</td>
+<td style="text-align: right;">-0.0234792</td>
+<td style="text-align: right;">0.0011498</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: right;">-0.0431907</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0144435</td>
+<td style="text-align: right;">0.0652020</td>
+<td style="text-align: right;">0.0142077</td>
+<td style="text-align: right;">0.0039756</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: right;">-0.0292942</td>
+<td style="text-align: right;">-0.2532532</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0083752</td>
+<td style="text-align: right;">0.0419162</td>
+<td style="text-align: right;">-0.0215517</td>
+<td style="text-align: right;">0.0568462</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: right;">0.0939740</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0041528</td>
+<td style="text-align: right;">-0.0051086</td>
+<td style="text-align: right;">0.0121145</td>
+<td style="text-align: right;">0.0575354</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: right;">0.0115569</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008340</td>
+<td style="text-align: right;">-0.0064185</td>
+<td style="text-align: right;">0.0315560</td>
+<td style="text-align: right;">-0.0174002</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: right;">0.0624207</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0016667</td>
+<td style="text-align: right;">0.0064599</td>
+<td style="text-align: right;">0.0295359</td>
+<td style="text-align: right;">0.0159455</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: right;">-0.0336616</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0049917</td>
+<td style="text-align: right;">0.0237484</td>
+<td style="text-align: right;">-0.0081967</td>
+<td style="text-align: right;">-0.0037858</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: right;">0.0336403</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0008278</td>
+<td style="text-align: right;">-0.0050157</td>
+<td style="text-align: right;">-0.0144628</td>
+<td style="text-align: right;">-0.0065711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: right;">-0.0159221</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">-0.0016570</td>
+<td style="text-align: right;">-0.0144928</td>
+<td style="text-align: right;">0.0115304</td>
+<td style="text-align: right;">-0.0283711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: right;">-0.0441380</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008299</td>
+<td style="text-align: right;">0.0147059</td>
+<td style="text-align: right;">-0.0124352</td>
+<td style="text-align: right;">-0.0032808</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: right;">0.0230223</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008292</td>
+<td style="text-align: right;">0.0056711</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0291310</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+Same result as above. Brilliant.
+
+<h3>Pivoting from wide to long</h3>
+
+For pivoting from wide to long, we use <code>tidry::pivot_longer</code>.
+
+The most important arguments to the function are <code>cols</code>, <code>names_to</code> and <code>values_to</code>. You can probably guess at their relationship to the arguments to <code>pivot_wider</code>.
+
+<ul>
+<li><code>cols</code> specifies the columns that we want to take from wide to long.</li>
+<li><code>names_to</code> specifies a name for the column in our long data frame that will hold the column names from the wide data frame.</li>
+<li><code>values_to</code> specifies a name for the column in our long data frame that will hold the values in the cells of the wide data frame.</li>
+</ul>
+
+In our example:
+
+<ul>
+<li>We want to take the columns holding the returns for each ticker from wide to long, so we want <code>cols</code> to take all the columns except date. We can do that by specifying <code>cols = -date</code></li>
+<li>We want the names of the <code>cols</code> to be held in a long variable called <code>tickers</code>, so we specify <code>names_to = "ticker"</code>. Note that <code>"ticker"</code> here is a string variable.</li>
+<li>We want to hold the values from our wide columns in a long column called <code>"returns"</code> so we specify <code>values_to = "returns"</code>. Again note the string variable.</li>
+</ul>
+
+Here’s what that looks like:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">dailyindex_df_wide %&gt;%
+  pivot_longer(cols = -date, names_to = 'ticker', values_to= 'returns') %&gt;%
+  kable() %&gt;%
+  kable_styling(full_width = FALSE, position = 'center') %&gt;%
+  scroll_box(width = '800px', height = '300px')
+</pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px; overflow-x: scroll; width: 800px;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">date</th>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;">ticker</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0460048</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0111621</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0114468</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0008475</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0073579</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0051502</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-02</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0179376</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0280740</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0097820</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0106093</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0093299</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0154987</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0093937</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-03</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0311450</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0422302</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0062777</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0097196</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0016807</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0099536</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0059222</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-04</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0008743</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0336854</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">-0.0014521</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0014743</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0050505</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0227882</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0067283</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-05</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0151949</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0170369</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">-0.0232132</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">-0.0262282</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0041876</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0498034</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0076207</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-06</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0026644</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0761665</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0041701</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0262172</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-09</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0018757</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0494037</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0091362</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0486618</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0477816</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-10</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0091271</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0487713</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0025147</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0108696</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0206093</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-11</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0107857</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0949084</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0008403</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0155139</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-12</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0317549</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0931900</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0058774</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0216678</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0439158</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-13</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0462765</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.1197921</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0126689</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0510067</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0325359</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-16</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0203396</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0597801</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0133445</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0587484</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0197824</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-17</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0265681</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0517360</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0067625</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0434193</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0544904</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-18</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0311081</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0047010</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0017021</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0007092</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0234792</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-19</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0011498</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0431907</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0144435</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0652020</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0142077</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-20</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0039756</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0292942</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">-0.2532532</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0083752</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0419162</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0215517</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-23</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0568462</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0939740</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0041528</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0051086</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0121145</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-24</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0575354</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0115569</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0008340</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0064185</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0315560</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-25</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0174002</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0624207</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0016667</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0064599</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0295359</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-26</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0159455</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0336616</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0049917</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0237484</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0081967</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-27</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0037858</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0336403</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0008278</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0050157</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0144628</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-30</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0065711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0159221</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.0016570</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.0144928</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0115304</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-03-31</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0283711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">-0.0441380</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0008299</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0147059</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">-0.0124352</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-01</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">-0.0032808</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">0.0230223</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">0.0008292</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">0.0056711</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.0000000</td>
+</tr>
+<tr>
+<td style="text-align: left;">2020-04-02</td>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.0291310</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+And you can see that we’ve recovered our original long form dataframe.
+
+<h2>An example</h2>
+
+One example where you’d be forced to pivot you long returns data frame to wide would be to calculate a correlation matrix:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">dailyindex_df %&gt;%
+  pivot_wider(names_from = ticker, values_from = returns) %&gt;%
+  select(-date) %&gt;%
+  cor(use = "pairwise.complete.obs", method='pearson') %&gt;%
+  kable() %&gt;%
+  kable_styling(position = 'center') %&gt;%
+  scroll_box(width = '800px', height = '300px')
+</pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height: 300px; overflow-x: scroll; width: 800px;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align: left; position: sticky; top: 0; background-color: #ffffff;"></th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_NONUS_DEV</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">EQ_EMER</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">TN_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">TB_US</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">BOND_EMER</th>
+<th style="text-align: right; position: sticky; top: 0; background-color: #ffffff;">GOLD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">EQ_US</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: right;">0.1045511</td>
+<td style="text-align: right;">0.1219745</td>
+<td style="text-align: right;">-0.5935488</td>
+<td style="text-align: right;">-0.4827843</td>
+<td style="text-align: right;">0.1064579</td>
+<td style="text-align: right;">0.2741258</td>
+</tr>
+<tr>
+<td style="text-align: left;">EQ_NONUS_DEV</td>
+<td style="text-align: right;">0.1045511</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: right;">0.1216288</td>
+<td style="text-align: right;">-0.2460011</td>
+<td style="text-align: right;">-0.2961201</td>
+<td style="text-align: right;">0.1418452</td>
+<td style="text-align: right;">-0.4301298</td>
+</tr>
+<tr>
+<td style="text-align: left;">EQ_EMER</td>
+<td style="text-align: right;">0.1219745</td>
+<td style="text-align: right;">0.1216288</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: right;">-0.0362846</td>
+<td style="text-align: right;">-0.2751978</td>
+<td style="text-align: right;">0.1345682</td>
+<td style="text-align: right;">0.1158572</td>
+</tr>
+<tr>
+<td style="text-align: left;">TN_US</td>
+<td style="text-align: right;">-0.5935488</td>
+<td style="text-align: right;">-0.2460011</td>
+<td style="text-align: right;">-0.0362846</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: right;">0.9324163</td>
+<td style="text-align: right;">0.3326693</td>
+<td style="text-align: right;">0.1643955</td>
+</tr>
+<tr>
+<td style="text-align: left;">TB_US</td>
+<td style="text-align: right;">-0.4827843</td>
+<td style="text-align: right;">-0.2961201</td>
+<td style="text-align: right;">-0.2751978</td>
+<td style="text-align: right;">0.9324163</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: right;">0.3107047</td>
+<td style="text-align: right;">0.2451740</td>
+</tr>
+<tr>
+<td style="text-align: left;">BOND_EMER</td>
+<td style="text-align: right;">0.1064579</td>
+<td style="text-align: right;">0.1418452</td>
+<td style="text-align: right;">0.1345682</td>
+<td style="text-align: right;">0.3326693</td>
+<td style="text-align: right;">0.3107047</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: right;">0.3305851</td>
+</tr>
+<tr>
+<td style="text-align: left;">GOLD</td>
+<td style="text-align: right;">0.2741258</td>
+<td style="text-align: right;">-0.4301298</td>
+<td style="text-align: right;">0.1158572</td>
+<td style="text-align: right;">0.1643955</td>
+<td style="text-align: right;">0.2451740</td>
+<td style="text-align: right;">0.3305851</td>
+<td style="text-align: right;">1.0000000</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+You can see that we’ve also used the <code>select</code> function from <code>dplyr</code> to drop the date column before passing the wide data frame of returns to the <code>cor</code> function for calculating the correlation matrix.
+
+<h2>Plotting long format data</h2>
+
+When you want to plot more than one variable on a single chart, long data is most definitely your friend:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">dailyindex_df %&gt;%
+  ggplot(aes(x = date, y = returns, colour = ticker)) +
+    geom_line()
+</pre>
+<img alt="plot of chunk returns_coloured" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162432/returns_coloured-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk returns_coloured"/>
+Plotting each returns series in a grid is equally simple:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">dailyindex_df %&gt;%
+  ggplot(aes(x = date, y = returns)) +
+    geom_line() +
+    facet_wrap(~ticker)
+</pre>
+<img alt="plot of chunk returns_faceted" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162431/returns_faceted-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk returns_faceted"/>
+
+Using wide-format data to make a similar plot would require repeated calls to <code>geom_line</code> for each variable, which is quite painstaking and brittle.
+
+For example, if something changes upstream, such as the addition of a new ticker to the data set, your code will also need to change in order to plot it. That’s not the case if we use long data with a column holding the ticker variable.
+
+<div class="convertful-36233"></div>
+<h2>If you liked this you’ll probably like these too…</h2>
+<blockquote class="wp-embedded-content" data-secret="Y53ukPxo4h"><a href="https://robotwealth.com/financial-data-manipulation-in-dplyr-for-quant-traders/">Financial Data Manipulation in dplyr for Quant Traders</a></blockquote>
+<blockquote class="wp-embedded-content" data-secret="O1iM71zTyY"><a href="https://robotwealth.com/rolling-mean-correlations-in-the-tidyverse/">How to Calculate Rolling Pairwise Correlations in the Tidyverse</a></blockquote>
+<blockquote class="wp-embedded-content" data-secret="T8vw7jSZA2"><a href="https://robotwealth.com/how-to-fill-gaps-in-large-stock-data-universes-using-tidyr-and-dplyr/">How to Fill Gaps in Large Stock Data Universes Using tidyr and dplyr</a></blockquote>
+
+ 
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>data</span>, <span>quantitative analysis</span>, <span>quantitative trading</span>, <span>R</span>, <span>tidyverse</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/working-with-tidy-financial-data-in-tidyr/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

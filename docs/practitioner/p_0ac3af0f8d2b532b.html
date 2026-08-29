@@ -1,0 +1,391 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How Elm Invests</title>
+<!-- source: https://elmwealth.com/elm-whitepaper/ -->
+<h1>How Elm Invests</h1>
+
+<!-- Google Tag Manager (noscript) -->
+
+<!-- End Google Tag Manager (noscript) -->
+<div class="has-topbar-btn" id="app">
+<a class="skip-to-content visually-hidden-focusable" href="#main">
+  Skip to content
+</a>
+
+<main class="main position-relative" id="main">
+<article class="container-fluid single-post bg-alpha-color tif-pt-md-155 tif-pt-80 tif-pb-md-140 tif-pb-60">
+<div class="container">
+<div class="featured-image offset-lg-1 offset-xl-2 col-lg-22 col-xl-20 tif-mb-md-50 tif-mb-20" style="background: url('/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1536x731.jpg.webp') center/cover;"></div>
+<div class="offset-md-3 offset-lg-4 offset-xl-5 col-md-18 col-lg-16 col-xl-14">
+<div class="d-flex justify-content-between align-items-md-start align-items-center tif-mb-md-65 tif-mb-25">
+<p class="published-date tif-mb-0 fst-italic">August 1, 2025</p>
+<p class="category tif-font-secondary text-uppercase tif-mb-0">How Elm Works</p>
+</div>
+<h1 class="tif-h2 title tif-mb-md-20 tif-mb-30">How Elm Invests</h1>
+<div class="content">
+
+
+<p style="font-size: 1rem; font-style: italic;">
+<a href="https://elm.docsend.com/view/cagq5ncrxhbh472b" target="_blank">Click here to download this page as a PDF.</a></p>
+<h3>Introduction<span class="easy-footnote-margin-adjust" id="easy-footnote-1-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-1-13599" title=" The content on this page is being provided for educational purposes only. It does not constitute any form of investment advice, or any form of recommendation to buy or sell any securities or adopt any investment strategy mentioned herein. This material does not have regard to specific investment objectives, financial situation and the particular needs of any specific reader. Any views regarding future prospects may or may not be realized. Past performance is no guarantee of future results.&lt;br /&gt;"><sup>1</sup></a></span></h3>
+<p>
+This paper is meant to provide a comprehensive overview of Elm’s investment process for Separately Managed Account clients.<span class="easy-footnote-margin-adjust" id="easy-footnote-2-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-2-13599" title=" The investment process for clients in Elm&amp;#8217;s legacy US private fund EPP LLC and Cayman private fund EPP Ltd for non-US investors is grounded in the same philosophy, but many specific implementation details differ.&lt;br /&gt;"><sup>2</sup></a></span> Our investment process is entirely rules-based and is intended to be understood by our investors with no “black box.” The philosophical foundations of our approach are laid out in our book <em>The Missing Billionaires: A Guide to Better Financial Decisions,</em> and we’ll reference passages from the book as we go along for those interested in additional information and detail.</p>
+<p>
+The goal of <em>The Missing Billionaires</em> is to give modern investors a framework for making their own principled financial decisions pertaining to both investing and spending. The goal of Elm is to help you efficiently implement a portfolio to harvest the long-term returns available from broad public markets. We want your Elm portfolio to be consistent with the core ideas in the book, in sync with how you’d like to be investing, and appropriate for your individual financial situation.</p>
+<p>
+One of the foundational concepts we discuss in <em>The Missing Billionaires</em> is called the Merton Share, for determining the optimal amount of wealth to invest in a risky asset or portfolio. [Ch. 2,3] The Merton Share is a “rule of thumb” which, subject to a variety of assumptions,<span class="easy-footnote-margin-adjust" id="easy-footnote-3-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-3-13599" title=" Specifically that you&amp;#8217;re trying to maximize CRRA utility, you can only invest in the risky asset or risk-free asset, returns are normally distributed, and you can continuously rebalance.&lt;br /&gt;"><sup>3</sup></a></span> reflects that: if you can invest in a risky asset with excess return \(\mu\) and volatility \(\sigma\), then the optimal wealth fraction to invest is proportional to \(\mu / \sigma^2\).</p>
+<p>
+The Merton Share is a more flexible relative of the well-known Kelly Criterion. It’s derived from the theory of financial decision-making under uncertainty, and is more natural for sizing investments like stocks and bonds. [p. 37] As a rule of thumb, it isn’t appropriate to use directly in every situation, but it nonetheless provides an important core intuition: that we should want more of a risky asset when we’re getting more <em>excess</em> return relative to a safe asset (and vice versa), and also that we should want more of the risky asset when it has less risk (and vice versa).</p>
+<p>
+Conceptually, Elm’s rules-based asset-allocation is designed to provide a practical, intuitive implementation of this principle across a universe of global asset classes which can be held through highly liquid, low-cost index ETFs.
+</p>
+<h3>Building Your Elm Portfolio</h3>
+<p class="sub-header">Elm Investment Universe</p>
+<p>
+We divide the investment universe into the following categories and asset classes, then use ETFs to invest in each asset class. We only use broad-market, low-cost index ETFs which are market-cap weighted. The weighted-average expense ratio across a typical portfolio is currently about 0.06% per annum. We’ve listed one of our preferred instruments after each asset class:</p>
+<ul>
+<li><b>US Risk Assets:</b> US Broad Equities (VTI), US Value Equities (VTV), US Small-cap Equities (VB), US Real Estate (SCHH)</li>
+<li><b>Non-US Risk Assets:</b> European Equities (VGK),<span class="easy-footnote-margin-adjust" id="easy-footnote-4-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-4-13599" title=" Including UK&lt;br /&gt;"><sup>4</sup></a></span> Emerging Markets Equities (VWO), Developed Asia Equities (VPL), Canadian Equities (BBCA)</li>
+<li><b>Safe Assets:</b> US TIPS (SCHP), US T-Bills (SGOV), US High-grade Nominal Bonds (BND), US Muni Bonds (MUB)<span class="easy-footnote-margin-adjust" id="easy-footnote-5-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-5-13599" title=" In taxable accounts&lt;br /&gt;"><sup>5</sup></a></span></li>
+</ul>
+<p>
+A note on “Safe” Assets: No assets are perfectly safe, but we require holdings in the Safe Assets bucket to be as safe as possible, measured in terms of the spending over time the assets would support. For US investors, that generally means US Treasury obligations – particularly Treasury Bills and Treasury Inflation-Protected Securities (TIPS) – but we also include small allocations (≤ 2.5%) to US Treasury and investment grade nominal bonds, and for US taxable accounts, high grade municipal bonds.</p>
+<p>
+To learn more about how Elm determines what constitutes a Risky or Safe Asset, see <a href="https://elmwealth.com/about-elm/faq/#how-elm-works" target="_blank">How does Elm determine which asset classes to use in portfolios?</a> in our FAQ.</p>
+<h3>The Three Dials: Personalizing Your Portfolio</h3>
+<p class="sub-header">Baseline Selection</p>
+<p>
+Elm’s investment process begins by constructing your Baseline Portfolio which is intended to reflect your personal risk aversion, preferences, and non-Elm investments.</p>
+<p>
+This is the portfolio you’d want to hold in the Baseline Environment, where every major risk asset class has a 4% Risk Premium and a “neutral” risk level which is neither high nor low, but somewhere in between. Risk Premium is defined as the excess long-term return expected from the asset class above a safe asset return.</p>
+<p>
+There are two Dials which you can use to choose the Baseline appropriate for you:
+
+</p><ol>
+<li><b>Risk Level Dial:</b> The percentage of Risk Assets to hold in the Baseline Environment, with the rest held in Safe Assets. For example, a baseline level of 75% Risk Assets / 25% Safe Assets is a common choice. [See Ch. 5, 12 in <em>The Missing Billionaires.</em>] This baseline represents your long-term strategic allocation in the Baseline Environment, which would be the equity exposure you’re comfortable maintaining over many years and market cycles assuming a Risk Premium on average of 4%.</li>
+<li><b>Global Mix Dial:</b> This determines how to divide the Baseline Risk Asset weight between US and non-US assets in the Baseline Environment. The neutral setting, 0% on the dial, is an adjusted market-cap-weight mix.<span class="easy-footnote-margin-adjust" id="easy-footnote-6-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-6-13599" title=" We start with the global market cap weights, then modestly adjust for US home-bias, and regional GDP and Earnings weights. The latter adjustments can help mitigate extreme valuations such as those seen in &amp;#8217;80s Japan equities, causing one market to implausibly dominate the baseline.&lt;br /&gt;"><sup>6</sup></a></span> Tilting the dial towards US represents a bias toward US equities: for example, +50% is halfway in-between the adjusted market-cap weights (which change over time) and 100% US equities. Similarly, -50% to Non-US is halfway towards 100% non-US equities. Any setting between -100% and +100% is possible. In theory, a neutral setting of 0% represents the most diversified, risk-efficient portfolio to hold, but you may also want to take into account the distribution of assets held outside your Elm portfolio or express some degree of personal home bias.</li>
+</ol>
+<p>
+There are no dial settings which are objectively optimal for all clients – the best settings for you will depend on your personal risk preferences and financial situation. You can tell us what settings you want, or we can help you figure out the settings most appropriate for you.</p>
+<p class="sub-header">Dynamic Asset Allocation</p>
+<p>
+The third dial determines how responsive your Elm portfolio is to changing market conditions.</p>
+<p>
+Your Baseline Portfolio represents your ideal allocation in a “neutral” market environment, one where all major asset classes offer a 4% risk premium above safe assets with moderate risk levels. This isn’t a prediction of future returns, just a reference point for calibrating your preferences in one state of the market.<span class="easy-footnote-margin-adjust" id="easy-footnote-7-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-7-13599" title=" Under the hood, it&amp;#8217;s not exactly 4% for each asset class to &amp;#8220;even out&amp;#8221; differences between the markets, but the 4% thought experiment is still valid.&lt;br /&gt;"><sup>7</sup></a></span> But actual risk premiums and market risk levels change constantly. Elm’s asset allocation adjusts to these changing conditions by moving each asset class from its Baseline Weight to its Target Weight based on current expected returns and risk levels.</p>
+<p>
+Portfolio weights must add up to 100%, with no leverage or shorting allowed. Whatever isn’t allocated to risky assets gets distributed among safe assets.</p>
+<ol start="3">
+<li><b>Dynamic Scaling Dial</b> allows you to specify how dynamically Elm responds to changes in the market environment. With 100% Dynamic Scaling, Risk Premium deviations cause the Target weight to vary from the Baseline by the same proportion as the Risk Premium varies,<span class="easy-footnote-margin-adjust" id="easy-footnote-8-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-8-13599" title=" This is the variation most consistent with the Merton Share.&lt;br /&gt;"><sup>8</sup></a></span> with a maximum variation of ±\(2/3\) the Baseline Weight. Changes in market Risk Level will cause the Target Weight to vary by either ±\(1/3\) the Baseline Weight.<span class="easy-footnote-margin-adjust" id="easy-footnote-9-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-9-13599" title=" With a narrow transition zone in-between for when Risk Level is close to neutral&lt;br /&gt;"><sup>9</sup></a></span> Setting the Dynamic Scaling Dial to a lower level will cause all the variations to reduce correspondingly, until at 0% Dynamic Scaling the Target Weights will always equal the Baseline Weights.</li>
+</ol>
+<img decoding="async" src="https://elmwealth.com/wp-content/uploads/2025/08/SMA-whitepaper-082025-image01.png"/>
+<p class="sub-header">Stock Market Risk Premium</p>
+<p>
+Risk Premia deviations cause the Target weight to vary from the Baseline by the same proportion as the Risk Premium varies from 4%,<span class="easy-footnote-margin-adjust" id="easy-footnote-10-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-10-13599" title=" This is the variation most consistent with the Merton Share.&lt;br /&gt;"><sup>10</sup></a></span> with a maximum variation of ±\(2/3\) the Baseline Weight. Changes in market risk level will cause the Target Weight to vary by either +\(1/3\) (when the equity market is in a low-risk state) or -\(1/3\) (when in a high-risk state) of the Baseline Weight.<span class="easy-footnote-margin-adjust" id="easy-footnote-11-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-11-13599" title=" With a narrow transition zone in-between for when risk level is close to neutral&lt;br /&gt;"><sup>11</sup></a></span></p>
+<p>
+In implementing Elm’s dynamic scaling, our Risk Premium metric for a broad equity market is 1/PCAPE minus the 10-year TIPS<span class="easy-footnote-margin-adjust" id="easy-footnote-12-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-12-13599" title=" TIPS, or Treasury Inflation-Protected Securities, are U.S. government bonds designed to protect investors from inflation, as their principal value increases with inflation.&lt;br /&gt;"><sup>12</sup></a></span> real yield. CAPE is the Cyclically-Adjusted Price Earnings Ratio popularized by Robert Shiller and John Campbell. PCAPE is a slightly adjusted measure that we use at Elm which accounts for the impact of companies paying out less than all their earnings as dividends. You can read about PCAPE and CAPE in more detail <a href="https://elmwealth.com/p-cape/" target="_blank">here</a>. 1/PCAPE is a forecast for the long-term real return of equities, and the 10-year TIPS real yield is our preferred proxy for the long-term safe asset real return.</p>
+<p class="sub-header">Market Risk Level</p>
+<p>
+For the market risk level, instead of measuring this directly, practical considerations have led us to use as a proxy a one-year momentum signal. If the current market level is above its one-year moving average, we consider the market to be in a low-risk state, and in a high-risk state when below.<span class="easy-footnote-margin-adjust" id="easy-footnote-13-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-13-13599" title=" Adjusted for inflation, dividends, and risk premium&lt;br /&gt;"><sup>13</sup></a></span> Using momentum as a proxy for market risk level is consistent with momentum-scaling and volatility-scaling, producing very similar results when applied to equity markets.<span class="easy-footnote-margin-adjust" id="easy-footnote-14-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-14-13599" title=' See our note &lt;a href="https://elmwealth.com/steadfast-greedy-or-fearful/" target="_blank"&gt;Steadfast, Greedy, or Fearful&lt;/a&gt; for more on this topic.&lt;br /&gt;'><sup>14</sup></a></span> We use a momentum signal to vary the mix of Safe Assets as well. For example, if TIPS’ price momentum is positive, we’d hold 60% of Safe Assets in TIPS (vs. the 40% Baseline mix), or 20% if TIPS price momentum is negative.</p>
+<p>
+Below, we show as an example an Elm SMA’s asset allocation as of 6/30/25, which we will use to illustrate exactly how we arrive at Target Weights for a given broad equity market. In this case, we will focus on the allocation to the US stock market, with relevant numbers in the red box:</p>
+<img decoding="async" src="https://elmwealth.com/wp-content/uploads/2025/08/SMA-whitepaper-082025-table01-scaled.png"/>
+<p>
+In this example, the baseline weight for Broad US equities is 35.6% and the Target Weight is an underweight allocation of 23.5%, because:</p>
+<ul>
+<li>The current risk premium is 1.3%. This is the difference between the Payout-and-Cyclically-Adjusted Earnings Yield (1/PCAPE) of the US equity market (3.27%) and the 10-year TIPS real yield (2.02%). This 1.3% is 67.5% lower than the Baseline level of 4% which is at the ±\(2/3\) maximum variation bound for our risk premium signal. The resulting Risk Premium adjustment of −23.7% = -67% ∗ 36% is in the third column of numbers.</li>
+<li>The US stock market at the end of June 2025 was in a low risk state because momentum was positive, so we adjust the target weight by +\(1/3\) the Baseline Weight. This results in a Risk Level adjustment in the fourth column of numbers of +12% = (\(1/3\)) * 36%.</li>
+<li>Putting the two adjustments for risk premium and risk level together brings us to the target allocation for US equities (in the second column of numbers) of: 23.5% = 35.6% − 23.7% + 11.7%.</li>
+</ul>
+<p>
+At the extremes, 100% Dynamic Scaling can result in dramatic departures from the Baseline Portfolio, with as much as 100% or 0% in equities. For example, from 1990-2023, the total equity allocation would have varied from a low of 10% to a high of 100%, given a 75% Baseline Risk Level and neutral global mix. With 100% Dynamic Scaling, we expect a relative return variability of portfolio returns vs. the Baseline Portfolio of about 5% per annum over long periods of time.<span class="easy-footnote-margin-adjust" id="easy-footnote-15-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-15-13599" title=" By relative return variability, we specifically mean the standard deviation of the difference between annual portfolio and baseline returns. For any particular year or period, differences significantly larger than the expected relative return variability are quite possible, as we do believe the distribution of relative return variability is not well-represented by the normal distribution.&lt;br /&gt;"><sup>15</sup></a></span></p>
+<p>
+With 50% Dynamic Scaling, the dynamic deviation from the Baseline Portfolio will typically be half as large as that above, given the same state of the world.<span class="easy-footnote-margin-adjust" id="easy-footnote-16-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-16-13599" title=" The exception being in periods where the no-leverage constraint is binding.&lt;br /&gt;"><sup>16</sup></a></span> The relative return variability vs. Baseline will also be roughly half as large. If you have sensitivity to extreme allocations, or to under-performance relative to the Baseline Portfolio, a Dynamic Scaling of 50% may be a good choice – it preserves many of the attractive benefits of a dynamic asset allocation, while resulting in less extreme portfolios with less relative return variability. You can set the Dynamic Scaling Dial anywhere between 0-100%, but we suspect 50% or 100% will be the right choice for most individual clients. For clients who want a managed portfolio with a static asset allocation, we’re happy to accommodate that as well with a 0% Dynamic Scaling setting.</p>
+<p>
+While not a literal implementation of the Merton Share in a multi-asset world, Elm’s dynamic scaling is clearly recognizable as being generally consistent with the Merton Share’s call for asset allocations to scale proportionally with risk premia, and inversely with market risk level. We think Elm’s implementation of dynamic scaling strikes a reasonable balance between simplicity, robustness, and theoretical consistency.</p>
+<p>
+Here is the 1998-2025 history of the Target allocation, for a 75% equity baseline, neutral global mix, and 50% Dynamic Scaling:<span class="easy-footnote-margin-adjust" id="easy-footnote-17-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-17-13599" title=" 1998 is the first full year for which TIPS real yields are available. We begin the TIPS/T-Bills/Nominals/Munis Safe Asset mix in 2007.&lt;br /&gt;"><sup>17</sup></a></span></p>
+<img decoding="async" src="https://elmwealth.com/wp-content/uploads/2025/08/SMA-whitepaper-082025-chart01.png"/>
+<p>
+And here we show as an example Elm’s asset allocation as of 6/30/2025, for a 75% equity baseline, neutral global mix, and 50% Dynamic Scaling:</p>
+<img decoding="async" src="https://elmwealth.com/wp-content/uploads/2025/08/SMA-whitepaper-082025-chart02.png"/>
+<p>
+We don’t update the tables in this document; we instead provide a “live” online tool which can be used to track the history of Elm asset allocations and their underlying details, for any combination of Dial settings: <a href="https://elmwealth.com/allocation-viewer/" target="_blank">Asset Allocation Viewer</a>.</p>
+<h3>Execution</h3>
+<p class="sub-header">Fees</p>
+<p>
+Elm’s Investment Management Fee is 0.12% per annum, charged monthly in arrears on the average account balance over the month.</p>
+<h3>Funding Your Account</h3>
+<p>
+You can add new funds to Elm-managed accounts and we’ll typically get them invested next business day,<span class="easy-footnote-margin-adjust" id="easy-footnote-18-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-18-13599" title=" If greater than $50k, or on our weekly rebalancing cycle otherwise&lt;br /&gt;"><sup>18</sup></a></span> and you can remove funds anytime with two business-days notice. There are no lock-ups and you can remove Elm as a third-party manager on your account at any time.</p>
+<p class="sub-header">Cash</p>
+<p>
+Elm accounts can be funded with cash or cash-like instruments and be invested at the next business day, all at once or using an averaging program of the investor’s choosing.</p>
+<p class="sub-header">In-Kind Transfers</p>
+<p>
+We can also handle in-kind transfers. Clients can elect to transfer existing portfolios/assets at any time to be re-invested and aligned with Elm’s strategy. In the event of an in-kind transfer, we’ll work with you to determine the most effective way to integrate holdings – finding an attractive balance between minimizing the realization of gains while still implementing Elm’s overall investment strategy.</p>
+<h3>Custody</h3>
+<p>
+Your assets can be custodied at Fidelity or Schwab in a Separately Managed Account (SMA), or in certain circumstances, JP Morgan Private Bank. Your assets will always stay in your own name, and we set up client accounts so that only you have money and asset movement authority. We only have trading authority on the account, and we can be removed from the account at any time.</p>
+<p>
+We can manage a wide variety of account types, including Individual, Joint, Trust, IRA, UTMA, LLC, LTD, Non-prototype Retirement, and certain self-directed 401(k) accounts. We can also manage accounts tax-efficiently for clients who are both US and UK taxpayers.</p>
+<h3>Rebalancing</h3>
+<p>
+We divide each account into four sub-portfolios, and rebalance one sub-portfolio each week. This means that new market conditions take four weeks to fully filter though to the portfolio, but begin filtering through within a week. This significantly reduces the idiosyncratic risk associated with when we choose to rebalance.</p>
+<p>
+Every week when we rebalance the sub-portfolio, we don’t just go right to the Target Weight for each asset class – that would generate an unnecessary trade volume, and would be tax-inefficient for taxable accounts. Instead, we run an execution optimizer which tries to find a parsimonious set of trades which mutually:</p>
+<ul>
+<li>Minimizes deviations from Target Weights</li>
+<li>Minimizes realized gains</li>
+<li>Maximizes realized losses</li>
+<li>Minimizes transaction costs</li>
+<li>Strictly avoids wash-sales from taxable to non-taxable accounts, and minimizes wash sales between taxable accounts<span class="easy-footnote-margin-adjust" id="easy-footnote-19-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-19-13599" title=" We allow small wash sales between taxable accounts if they help with another element of the trade optimization, as the loss is not permanently lost.&lt;br /&gt;"><sup>19</sup></a></span></li>
+</ul>
+<p>
+On any given week, we could do several trades or no trades. At Fidelity and Schwab, ETF trading commissions are $0,<span class="easy-footnote-margin-adjust" id="easy-footnote-20-13599"></span><span class="easy-footnote"><a href="#easy-footnote-bottom-20-13599" title=" Up to 10,000 shares at Fidelity&lt;br /&gt;"><sup>20</sup></a></span> and we execute either market-on-close or VWAP over most of the trading day, so we believe that market-impact costs are de minimis.</p>
+<h3>Tax Efficiency and Tax-loss Harvesting</h3>
+<p>
+Elm’s dynamic asset allocation has the potential for high turnover, but this isn’t necessarily tax-inefficient as the turnover can generate realized losses roughly as often as realized gains, and we also perform regular Tax-loss Harvesting. In <a href="https://elmwealth.com/tax-efficiency-and-dynamic-asset-allocation-can-we-have-our-cake-and-eat-it-too/" target="_blank">this note</a>, we take a five-year period in which there were high market returns, and – while this is not what we’d typically expect to see – Elm’s dynamic asset allocation resulted in a slightly lower effective tax rate compared to a static asset allocation.</p>
+<p>
+Elm automatically checks for and executes suitable Tax-loss Harvesting opportunities weekly. Harvesting using ETFs is highly efficient, as for most asset classes there are multiple high-quality, low-cost ETFs which are an acceptable replacement for one another. There is real tracking error between the replacement ETFs, otherwise replacing would trigger a wash sale, but the added risk from harvesting with ETFs is significantly less than from tax loss harvesting with individual stocks.</p>
+<p>
+For those desiring additional expected harvesting, there is an account option to split the US Broad Equities asset class into subsidiary sectors and hold an ETF for each sector. This roughly doubles the number of instruments and trades in the account, and will result in a modestly higher amount of expected harvesting, because the dispersion across sectors is higher than that of the total market index.</p>
+<h3>Evaluating Elm</h3>
+<p>
+We expect that using Elm’s dynamic asset allocation will in the long run result in modestly higher expected risk-adjusted returns, compared to the Baseline Portfolio. However, due to the intrinsic noisiness of financial markets, it can be very challenging to accurately measure investment quality differences over the typical one-to-ten year holding periods for which most people look at their account performance. We explore this in detail in our note <a href="https://elmwealth.com/whats-past-is-not-prologue/" target="_blank">What’s Past is NOT Prologue</a>, in which we see that it takes vastly more than 10 years of data to reliably distinguish between two strategies of modestly different quality. Theory, reason, and history have combined to give us a strong prior belief about the merits of Elm’s approach, and Bayesian analysis can be used to update our beliefs in light of new information. Here are a few additional suggestions for how you can evaluate your Elm portfolio:</p>
+<ul>
+<li>Is your Elm portfolio making it easier for you to achieve and stick with diversified, broad public markets exposure?</li>
+<li>Is your portfolio aligned with your personal preferences and financial situation? Are there different dial settings which would make it better aligned?</li>
+<li>Is your portfolio improving the diversification and efficiency of your overall investing?</li>
+<li>Are your portfolio’s asset allocation, activity, and costs consistent with what you’d expect based on this paper and your discussions with us?</li>
+</ul>
+<p>
+We note that one of Elm’s goals is <em>not</em> to generate higher returns compared to the S&amp;P500 or whichever market index is doing the best over a given period. Setting aside whether this can be consistently achieved net of fees and risk costs, attempting to do this generally involves some combination of taking more risk and accepting less diversification, and all of Elm’s choices are going in the <em>other</em> direction. The benefits of lower risk levels and greater diversification are harvested primarily through being able to maintain larger fractions of your wealth invested in risky assets [p. 59], through avoiding high fees and other costs, and through your spending policy [p. 132-141].</p>
+<h3>Account Options</h3>
+<p>
+In addition to the Dials described above, clients can specify the following options for SMA accounts:</p>
+<ul>
+<li>Non-taxable: The account will be rebalanced without regard to realized gains/losses, will not conduct tax-loss harvesting, and will not hold Muni bond ETFs.</li>
+<li>US Sectors: Instead of holding Broad US Equities through a single ETF like VTI, your portfolio will hold each of the component sector funds which add up to the Broad US index. This somewhat increases account complexity and transaction volume, while also creating the potential for greater tax-loss harvesting, because the sectors typically have greater dispersion than the total-market index.</li>
+<li>US/UK: For dual US/UK taxpayers. The account will only hold HMRC-reporting ETFs.</li>
+</ul>
+<p>
+For clients who are not US taxpayers, we also have a Cayman fund, Elm Partners Portfolio Ltd, which has a Baseline of 70% Global Equities and 30% Global Fixed Income. The Fund generally uses the same type of asset allocation rules described in this paper, and the prospectus is available upon request.</p>
+<h3>Getting Started</h3>
+<p>
+The easiest way to get started with Elm is through our <a href="https://elmwealth.com/signup/invest-with-us/" target="_blank">Online Onboarding</a>. For information related to account onboarding, you can contact Elm’s client inbox at <a href="mailto:clients@elmwealth.com">clients@elmwealth.com</a>. For more information or other questions about investing with Elm, please contact Elm at <a href="mailto:info@elmwealth.com">info@elmwealth.com</a>.</p>
+<hr/>
+<ol class="easy-footnotes-wrapper"><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-1-13599"></span> The content on this page is being provided for educational purposes only. It does not constitute any form of investment advice, or any form of recommendation to buy or sell any securities or adopt any investment strategy mentioned herein. This material does not have regard to specific investment objectives, financial situation and the particular needs of any specific reader. Any views regarding future prospects may or may not be realized. Past performance is no guarantee of future results.<br/><a class="easy-footnote-to-top" href="#easy-footnote-1-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-2-13599"></span> The investment process for clients in Elm’s legacy US private fund EPP LLC and Cayman private fund EPP Ltd for non-US investors is grounded in the same philosophy, but many specific implementation details differ.<br/><a class="easy-footnote-to-top" href="#easy-footnote-2-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-3-13599"></span> Specifically that you’re trying to maximize CRRA utility, you can only invest in the risky asset or risk-free asset, returns are normally distributed, and you can continuously rebalance.<br/><a class="easy-footnote-to-top" href="#easy-footnote-3-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-4-13599"></span> Including UK<br/><a class="easy-footnote-to-top" href="#easy-footnote-4-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-5-13599"></span> In taxable accounts<br/><a class="easy-footnote-to-top" href="#easy-footnote-5-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-6-13599"></span> We start with the global market cap weights, then modestly adjust for US home-bias, and regional GDP and Earnings weights. The latter adjustments can help mitigate extreme valuations such as those seen in ’80s Japan equities, causing one market to implausibly dominate the baseline.<br/><a class="easy-footnote-to-top" href="#easy-footnote-6-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-7-13599"></span> Under the hood, it’s not exactly 4% for each asset class to “even out” differences between the markets, but the 4% thought experiment is still valid.<br/><a class="easy-footnote-to-top" href="#easy-footnote-7-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-8-13599"></span> This is the variation most consistent with the Merton Share.<br/><a class="easy-footnote-to-top" href="#easy-footnote-8-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-9-13599"></span> With a narrow transition zone in-between for when Risk Level is close to neutral<br/><a class="easy-footnote-to-top" href="#easy-footnote-9-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-10-13599"></span> This is the variation most consistent with the Merton Share.<br/><a class="easy-footnote-to-top" href="#easy-footnote-10-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-11-13599"></span> With a narrow transition zone in-between for when risk level is close to neutral<br/><a class="easy-footnote-to-top" href="#easy-footnote-11-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-12-13599"></span> TIPS, or Treasury Inflation-Protected Securities, are U.S. government bonds designed to protect investors from inflation, as their principal value increases with inflation.<br/><a class="easy-footnote-to-top" href="#easy-footnote-12-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-13-13599"></span> Adjusted for inflation, dividends, and risk premium<br/><a class="easy-footnote-to-top" href="#easy-footnote-13-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-14-13599"></span> See our note <a href="https://elmwealth.com/steadfast-greedy-or-fearful/" target="_blank">Steadfast, Greedy, or Fearful</a> for more on this topic.<br/><a class="easy-footnote-to-top" href="#easy-footnote-14-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-15-13599"></span> By relative return variability, we specifically mean the standard deviation of the difference between annual portfolio and baseline returns. For any particular year or period, differences significantly larger than the expected relative return variability are quite possible, as we do believe the distribution of relative return variability is not well-represented by the normal distribution.<br/><a class="easy-footnote-to-top" href="#easy-footnote-15-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-16-13599"></span> The exception being in periods where the no-leverage constraint is binding.<br/><a class="easy-footnote-to-top" href="#easy-footnote-16-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-17-13599"></span> 1998 is the first full year for which TIPS real yields are available. We begin the TIPS/T-Bills/Nominals/Munis Safe Asset mix in 2007.<br/><a class="easy-footnote-to-top" href="#easy-footnote-17-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-18-13599"></span> If greater than $50k, or on our weekly rebalancing cycle otherwise<br/><a class="easy-footnote-to-top" href="#easy-footnote-18-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-19-13599"></span> We allow small wash sales between taxable accounts if they help with another element of the trade optimization, as the loss is not permanently lost.<br/><a class="easy-footnote-to-top" href="#easy-footnote-19-13599"></a></li><li class="easy-footnote-single"><span class="easy-footnote-margin-adjust" id="easy-footnote-bottom-20-13599"></span> Up to 10,000 shares at Fidelity<br/><a class="easy-footnote-to-top" href="#easy-footnote-20-13599"></a></li></ol>
+</div>
+</div>
+<div class="pagination d-md-none d-flex justify-content-between tif-mt-80">
+<a class="btn-secondary" href="https://elmwealth.com/us-stock-market-earnings/"><img src="https://elmwealth.com/wp-content/themes/elm-wealth/public/images/btn-arrow-white-sm.4e080c.svg"/> Previous</a>
+<a class="btn-secondary" href="https://elmwealth.com/how-i-learned-to-love-the-market/">Next <img src="https://elmwealth.com/wp-content/themes/elm-wealth/public/images/btn-arrow-white-sm.4e080c.svg"/></a>
+</div>
+</div>
+<button data-bs-target="#subscribeModal" data-bs-toggle="modal" id="subscribe-btn"><u>Subscribe</u> <span>to elm research</span></button>
+</article>
+<div class="container-fluid related-articles bg-alpha-color">
+<div class="container">
+<div class="row">
+<div class="col-24 col-lg-22 offset-lg-1">
+<div class="title-wrap tif-mb-md-50 tif-mb-40 row justify-content-between align-items-end">
+<h2 class="tif-mb-0 col-24 col-sm">Related Articles</h2>
+<div class="link-wrap col-24 col-sm-auto tif-mt-30 tif-mt-sm-0">
+<a class="nonary-btn" href="/research">See All Research</a>
+</div>
+</div>
+<div class="swiper">
+<div class="swiper-wrapper">
+<div class="swiper-slide position-relative">
+<div class="swiper-image overflow-hidden tif-mb-30">
+<div class="ratio" style="--bs-aspect-ratio: 54%;">
+<img alt="Pencil sketch illustration comparing a classic Timex analog wristwatch with a modern Apple Watch smartwatch side by side symbolizing value investing versus growth investing" class="attachment-large size-large wp-post-image" decoding="async" height="487" loading="lazy" sizes="auto, (max-width: 1024px) 100vw, 1024px" src="/wp-content/uploads-webpc/uploads/2024/06/112-p-cape-banner-1024x487.png.webp" srcset="/wp-content/uploads-webpc/uploads/2024/06/112-p-cape-banner-1024x487.png.webp 1024w, /wp-content/uploads-webpc/uploads/2024/06/112-p-cape-banner-300x143.png.webp 300w, /wp-content/uploads-webpc/uploads/2024/06/112-p-cape-banner-768x366.png.webp 768w, /wp-content/uploads-webpc/uploads/2024/06/112-p-cape-banner-1536x731.png.webp 1536w, /wp-content/uploads-webpc/uploads/2024/06/112-p-cape-banner.png.webp 2000w" width="1024"/>
+<div class="overlay"></div>
+</div>
+</div>
+<p class="title tif-h5 tif-mb-15 tif-font-primary">
+<a class="stretched-link bravo-color" href="https://elmwealth.com/p-cape/">
+                                        Introducing P-CAPE: Incorporating the Dividend Payout Ratio Improves Our Favorite Estimator of Stock Market Returns
+                                    </a>
+</p>
+<p class="category text-uppercase tif-font-xs tif-font-secondary tif-ls-07 charlie-color tif-mb-0">
+                                        Featured Insights
+                                    </p>
+</div>
+<div class="swiper-slide position-relative">
+<div class="swiper-image overflow-hidden tif-mb-30">
+<div class="ratio" style="--bs-aspect-ratio: 54%;">
+<img alt='Dark teal gradient background featuring a subtle circular gear-and-spiral logo watermark, with the text "ELM ORIGINAL RESEARCH" centered in light gray uppercase letters.' class="attachment-large size-large wp-post-image" decoding="async" height="487" loading="lazy" sizes="auto, (max-width: 1024px) 100vw, 1024px" src="/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1024x487.jpg.webp" srcset="/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1024x487.jpg.webp 1024w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-300x143.jpg.webp 300w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-768x366.jpg.webp 768w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1536x731.jpg.webp 1536w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder.jpg.webp 2000w" width="1024"/>
+<div class="overlay"></div>
+</div>
+</div>
+<p class="title tif-h5 tif-mb-15 tif-font-primary">
+<a class="stretched-link bravo-color" href="https://elmwealth.com/tax-efficiency-and-dynamic-asset-allocation-can-we-have-our-cake-and-eat-it-too-2/">
+                                        Tax Efficiency and Dynamic Asset Allocation: Can We Have Our Cake and Eat It Too?
+                                    </a>
+</p>
+<p class="category text-uppercase tif-font-xs tif-font-secondary tif-ls-07 charlie-color tif-mb-0">
+                                        Whitepapers and Publications
+                                    </p>
+</div>
+<div class="swiper-slide position-relative">
+<div class="swiper-image overflow-hidden tif-mb-30">
+<div class="ratio" style="--bs-aspect-ratio: 54%;">
+<img alt='Dark teal gradient background featuring a subtle circular gear-and-spiral logo watermark, with the text "ELM ORIGINAL RESEARCH" centered in light gray uppercase letters.' class="attachment-large size-large wp-post-image" decoding="async" height="487" loading="lazy" sizes="auto, (max-width: 1024px) 100vw, 1024px" src="/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1024x487.jpg.webp" srcset="/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1024x487.jpg.webp 1024w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-300x143.jpg.webp 300w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-768x366.jpg.webp 768w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1536x731.jpg.webp 1536w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder.jpg.webp 2000w" width="1024"/>
+<div class="overlay"></div>
+</div>
+</div>
+<p class="title tif-h5 tif-mb-15 tif-font-primary">
+<a class="stretched-link bravo-color" href="https://elmwealth.com/a-case-study-for-using-value-and-momentum-at-the-asset-class-level/">
+                                        A Case Study for Using Value and Momentum at the Asset Class Level
+                                    </a>
+</p>
+<p class="category text-uppercase tif-font-xs tif-font-secondary tif-ls-07 charlie-color tif-mb-0">
+                                        Whitepapers and Publications
+                                    </p>
+</div>
+<div class="swiper-slide position-relative">
+<div class="swiper-image overflow-hidden tif-mb-30">
+<div class="ratio" style="--bs-aspect-ratio: 54%;">
+<img alt='Dark teal gradient background featuring a subtle circular gear-and-spiral logo watermark, with the text "ELM ORIGINAL RESEARCH" centered in light gray uppercase letters.' class="attachment-large size-large wp-post-image" decoding="async" height="487" loading="lazy" sizes="auto, (max-width: 1024px) 100vw, 1024px" src="/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1024x487.jpg.webp" srcset="/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1024x487.jpg.webp 1024w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-300x143.jpg.webp 300w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-768x366.jpg.webp 768w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1536x731.jpg.webp 1536w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder.jpg.webp 2000w" width="1024"/>
+<div class="overlay"></div>
+</div>
+</div>
+<p class="title tif-h5 tif-mb-15 tif-font-primary">
+<a class="stretched-link bravo-color" href="https://elmwealth.com/return-chasing-and-trend-following-superficial-similarities-mask-fundamental-differences/">
+                                        Return Chasing and Trend Following: Superficial Similarities Mask Fundamental Differences
+                                    </a>
+</p>
+<p class="category text-uppercase tif-font-xs tif-font-secondary tif-ls-07 charlie-color tif-mb-0">
+                                        Whitepapers and Publications
+                                    </p>
+</div>
+<div class="swiper-slide position-relative">
+<div class="swiper-image overflow-hidden tif-mb-30">
+<div class="ratio" style="--bs-aspect-ratio: 54%;">
+<img alt='Dark teal gradient background featuring a subtle circular gear-and-spiral logo watermark, with the text "ELM ORIGINAL RESEARCH" centered in light gray uppercase letters.' class="attachment-large size-large wp-post-image" decoding="async" height="487" loading="lazy" sizes="auto, (max-width: 1024px) 100vw, 1024px" src="/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1024x487.jpg.webp" srcset="/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1024x487.jpg.webp 1024w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-300x143.jpg.webp 300w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-768x366.jpg.webp 768w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1536x731.jpg.webp 1536w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder.jpg.webp 2000w" width="1024"/>
+<div class="overlay"></div>
+</div>
+</div>
+<p class="title tif-h5 tif-mb-15 tif-font-primary">
+<a class="stretched-link bravo-color" href="https://elmwealth.com/back-in-the-hunt/">
+                                        Back in the Hunt
+                                    </a>
+</p>
+<p class="category text-uppercase tif-font-xs tif-font-secondary tif-ls-07 charlie-color tif-mb-0">
+                                        Whitepapers and Publications
+                                    </p>
+</div>
+<div class="swiper-slide position-relative">
+<div class="swiper-image overflow-hidden tif-mb-30">
+<div class="ratio" style="--bs-aspect-ratio: 54%;">
+<img alt='Dark teal gradient background featuring a subtle circular gear-and-spiral logo watermark, with the text "ELM ORIGINAL RESEARCH" centered in light gray uppercase letters.' class="attachment-large size-large wp-post-image" decoding="async" height="487" loading="lazy" sizes="auto, (max-width: 1024px) 100vw, 1024px" src="/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1024x487.jpg.webp" srcset="/wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1024x487.jpg.webp 1024w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-300x143.jpg.webp 300w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-768x366.jpg.webp 768w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder-1536x731.jpg.webp 1536w, /wp-content/uploads-webpc/uploads/2025/01/Elm_OriginalResearchPosts_Placeholder.jpg.webp 2000w" width="1024"/>
+<div class="overlay"></div>
+</div>
+</div>
+<p class="title tif-h5 tif-mb-15 tif-font-primary">
+<a class="stretched-link bravo-color" href="https://elmwealth.com/should-all-real-estate-investors-be-value-investors-an-exploration-of-momentum-investing-in-real-estate-markets/">
+                                        Should All Real Estate Investors be Value Investors? An exploration of momentum investing in real estate markets
+                                    </a>
+</p>
+<p class="category text-uppercase tif-font-xs tif-font-secondary tif-ls-07 charlie-color tif-mb-0">
+                                        Whitepapers and Publications
+                                    </p>
+</div>
+</div>
+<div class="row no-gutters align-items-center tif-mt-50">
+<div class="swiper-btns d-flex col-auto tif-mr-25">
+<div class="related-prev related-btn position-relative tif-mr-30"></div>
+<div class="related-next related-btn position-relative"></div>
+</div>
+<div class="pagination col"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container-fluid subscribe-cta bg-alpha-color tif-pt-md-65 tif-pt-50 tif-pb-md-200 tif-pb-140">
+<div class="container text-center">
+<h2 class="title tif-mb-md-15 tif-mb-10">Interested in more like this?</h2>
+<p class="tif-mb-md-45 tif-mb-35">Subscribe to our mailing list and get notified about new Elm news and research.</p>
+<a class="cta-button btn-secondary" href="#subscribe-modal">Subscribe</a>
+</div>
+</div>
+<div aria-hidden="true" aria-labelledby="popupModalLabel" class="modal" data-bs-backdrop="false" data-modal="single-post" data-show-modal="once" id="popupModal" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered single-post-modal" style="align-items: flex-end;">
+<div class="modal-content">
+<div class="modal-header">
+<button aria-label="Close" class="close" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body p-0">
+<h3 class="modal-title text-center">Not Advice</h3>
+</div>
+<div class="modal-footer col-22 mx-auto text-center px-0">
+<p>This page is for educational purposes only. It does not constitute any form of investment advice, and is intended only to provide the views of the author(s) at the time of writing. Past performance is no guarantee of future results.<br/>
+<a href="#full-disclaimer">For more information, click here.</a></p>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+<div aria-hidden="true" aria-labelledby="subscribeModalLabel" class="modal fade" id="subscribeModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header flex-column tif-pt-15 tif-px-15 tif-pb-25 border-0">
+<button aria-label="Close" class="btn-close opacity-100 tif-p-0" data-bs-dismiss="modal" type="button"></button>
+<h5 class="modal-title tif-h4 fw-light text-center echo-color" id="subscribeModalLabel">Subscribe to Elm Research</h5>
+<p class="modal-description text-center tif-font-sm tif-my-15 tif-px-sm-55">Investing research, insights, and tools delivered right to your inbox</p>
+</div>
+<div class="modal-body tif-pt-0 tif-px-40 tif-pb-45">
+<div class="hs-form-deferred hbspt-form" data-hs-form-id="a3f7ef2e-1555-4121-81f8-0819fba234f7" data-hs-portal-id="20616465" data-hs-region="na1"></div>
+</div>
+</div>
+</div>
+</div>
+<div aria-hidden="true" aria-labelledby="audiobookCompanionModalLabel" class="modal fade" id="audiobookCompanionModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header flex-column tif-pt-15 tif-px-15 tif-pb-25 border-0">
+<button aria-label="Close" class="btn-close opacity-100 tif-p-0" data-bs-dismiss="modal" type="button"></button>
+<h5 class="modal-title tif-h3 text-center echo-color" id="audiobookCompanionModalLabel">Download Audiobook Companion</h5>
+</div>
+<div class="modal-body tif-pt-0 tif-px-40 tif-pb-45">
+<div class="hs-form-deferred hbspt-form" data-hs-form-id="f92cf02b-059f-47c3-b380-31eb11bc9a61" data-hs-portal-id="20616465" data-hs-region="na1"></div>
+</div>
+</div>
+</div>
+</div>
+<div aria-hidden="true" aria-labelledby="investorPresentationModalLabel" class="modal fade" id="investorPresentationModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header flex-column tif-pt-15 tif-px-15 tif-pb-25 border-0">
+<button aria-label="Close" class="btn-close opacity-100 tif-p-0" data-bs-dismiss="modal" type="button"></button>
+<h5 class="modal-title tif-h3 text-center echo-color" id="investorPresentationModalLabel">Download Elm's<br/> Investor Presentation</h5>
+</div>
+<div class="modal-body tif-pt-0 tif-px-40 tif-pb-45">
+<div class="hs-form-deferred hbspt-form" data-hs-form-id="ba3b37d7-66f6-4a3a-a72d-f7c6d775bfdc" data-hs-portal-id="20616465" data-hs-region="na1"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

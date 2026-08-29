@@ -1,0 +1,202 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How to Create a Trading Algorithm: So You Want to Build Your Own Algo Trading System?</title>
+<!-- source: https://robotwealth.com/so-you-want-to-build-your-own-algo-trading-system/ -->
+<h1>How to Create a Trading Algorithm: So You Want to Build Your Own Algo Trading System?</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1520 post type-post status-publish format-standard hentry category-backtesting category-quant-trading tag-algorithmic-trading tag-quantitative-analysis tag-quantitative-trading pmpro-has-access" id="post-1520">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">October 14, 2016</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">How to Create a Trading Algorithm: So You Want to Build Your Own Algo Trading System?</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="How to Create a Trading Algorithm: So You Want to Build Your Own Algo Trading System?" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><em>This post comes to you from Dr Tom Starke, a good friend of Robot Wealth. Tom is a physicist, quant developer and experienced algo trader with keen interests in machine learning and quantum computing. I am thrilled that Tom is sharing his knowledge and expertise with the Robot Wealth community. Over to you, Tom.</em>
+<hr/>
+
+Unlike most other businesses, algorithmic trading has the advantage of giving you almost instant feedback on how good you are in your business. For anyone who is numerically inclined this is a very attractive proposition. I have seen articles written about this subject but they have never really addressed a lot of the issues I have come across on my journey. In this post I would like to talk about this a little as an inspiration or perhaps a deterrent for all the people who read this and consider making money that way.
+
+Nothing could be more amazing, a system that runs by itself and consistently spits out cash to finance prolonged stays in Bali, South America or with your mom if that’s what you’re after.
+
+However, as you may have guessed, it ain’t that simple, even for the most hardened trade-savvy – math-wiz or programming genius. First of all, algo-trading is the multi-disciplinary by nature. This makes it both a lot of fun and challenging at the same time. You have to be fairly clued up in areas such as computer science, maths, data analysis, and some finance although I found that people who understand the first few subjects usually learn the finance bit very quickly.
+<h2>So you want to build your own algo trading system?</h2>
+Perhaps you might think that a lack of knowledge in some of these areas can be resolved by knowing the right people and teaming up with them. It may, but from my experience the odds of success aren’t great. I have personally met three guys with extensive computer knowledge that have teamed up with institutional traders to develop trading ideas into automated systems – none of them worked out.
+
+Why is this so? In my experience, traders often work with technical analysis and respond to trading signals, which to them are “obvious” buys and sells and they often make good money from that. The problem here is that their awareness is very fine-tuned to see the relevant signals that have potential and they are almost blind to the ones that are there but obviously make no sense. In their view, the signals they use work 100%. A computer, however, does not have the ability to discern signals that make sense and the ones that don’t, it just executes regardless. As a result, the trader thinks that his computer guy made mistakes in the program and the programmer thinks that the strategies of the trader are no good, and finally they go their own way.
+
+Take a typical institution, a quant develops a prototype of his system in, say MATLAB, and the IT guy converts it into C++ to be executed on the fund’s platform. A well-designed algo contains a lot of subtleties that the developer probably won’t understand exactly and tiny mistakes can completely kill the performance of the system.
+
+These are common scenarios and I have had my fair share of that too. I’m all up for team work but the reality is that before you can outsource parts of your project you have to understand it yourself really well.
+
+Now, say you come from a quantitative background and you read all the books, did the exercises, ran a bunch of backtests and you are ready to go. You start to build your own platform and realise that there are a number of show-stoppers such as getting good market data, historical data, broker connections and the like. These problems are more significant than you think. The easiest solution is to get a Bloomberg connection but it comes at a significant cost. Also, a typical Bloomberg terminal is not really built to run sophisticated number-crunching algos. How about Interactive Brokers? Yes, it can work but their API is far from perfect and their historical data are annoyingly full of errors and their market data have a lot of false signals too, which can be detrimental to your strategy. All this can be sorted out but trust me, it’s not easy. The little details create the complexity and it takes time to even learn about all the pitfalls that may come up.
+
+But here’s the thing: <strong>if this stuff was easy, I would have never got into it because complexity creates opportunity.</strong> I like learning and I enjoy solving problems so this is a lot of fun. In the process I learned more than during my entire physics PhD … how cool is that?
+<h2>How to start depends on your skills and experience, but here are some recommendations.</h2>
+First of all, find the lowest commission broker you can. Commissions are the single biggest killer of an otherwise good strategy. One basis point (1 percent of 1 percent) does not sound like much but each extra basis point of commission that is added to your trade brings you into entirely different trading regimes. More commission means you have to wait longer to exit, your strategies are riskier and less consistent.
+
+Second, don’t try to automate everything right away. Semi-automated strategies are actually really cool. What that means is that your machine supplies you with the signals and you carry out the execution by hand (provided that you are not executing 46 trades per second). To implement good automated execution strategies is actually quite tricky. What do you do when your trade does not get filled? Or it gets partially filled? Or you cannot exit at the price you want? Or you see that it might get filled soon, so is it ok to wait for a little while? Or do you want to cancel straight away. If you have done this by hand before it is much easier to develop something that accounts for all the scenarios you might encounter.
+
+With semi-automated systems, if you stoically follow what your strategy tells you to do, it can work well, since you don’t have to worry about also watching the market at the same time. We all know the guys with 6 screens in front of them trying to make sense of what happens in the market – I have never seen a more anxious, sleep-deprived and adrenaline-ridden group of people than those. Often, they don’t even have a strategy and just react to what they think is rational.
+
+Whilst developing your system you will realise that even the best fully automated system in the world will not allow you to lie on the beach, sip cool drinks, and relax while the trades tick away and make you money. Say, your strategy does actually run well and generates profit, but suddenly your internet cuts out or your server has a power surge. Does your system stall or smoothly reconnect and carry on? Do you have a backup server that runs in sync and can take over (not trivial)? Can you somehow close all your open positions through an alternative internet connection? Or maybe you do it the Warren Buffet way and leave your positions open for the next 24 years. What if your strategy experiences a large drawdown? Is it expected or does it go beyond the acceptable limit and you have to cut losses? Have you pre-determined at what point you do that?
+
+This takes us to considerations in how you design your system. My journey and probably yours, will start with a simple design that just does what it’s meant to do but quite slowly and inefficiently. You move on to run bits in parallel, introduce complex event processing and end up running the different parts of your trader via sockets on external servers that exchange messages asynchronously. I’ve iterated through all of those myself and learned a decent amount of computer science along the way. If you are not already an experienced developer I highly recommend starting simple, rather than building a big system right away. By the way, that was one of my first humbling mistakes – oh well, we all learn. By now, I’ve built a wide variety of different systems from simple to complex and each one helped me to understand different aspects of the field.
+
+It is also handy to backtest simulated execution, since some strategies significantly suffer when slippage, market impact and other factors are taken into account. Often, the tests for trading signals, portfolio and execution can be run separately, which simplifies the process and makes it easier to analyse and understand.
+
+A big stumbling block, especially for people coming from computer science and finance, is the processing and statistical interpretation of the backtest data they have gathered. It isn’t trivial and it can take years of experience to get good at that. Data tell stories, learn to find those stories in the numbers.
+
+If you have made it all the way to here and you are at the beginning of your journey you may feel a bit overwhelmed but think about it this way: there are all those amazing things you can learn on your way that will eventually enlighten you. If it was easy, everyone would do it.
+<h2>Conclusion</h2>
+If you ask me what is the most important aspect you need in order to get this to work, I’d say it’s vision. Vision of what you actually want to achieve. This, more than anything else will pull you in the right direction. In my honest opinion, it’s not the smartest people that succeed with this, it’s the visionaries. If you’re not sure what I’m talking about I suggest you have a look at the books by the likes of Charles Haanel, Napoleon Hill and Wallace D. Wattles. Whether you are a scientist, financial analyst, software engineer or hairdresser, you will have large gaps in your knowledge and it takes determination to fill them. So, go ahead, build you vision, put your sleeves up and get started!
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>algorithmic trading</span>, <span>quantitative analysis</span>, <span>quantitative trading</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">2 thoughts on “How to Create a Trading Algorithm: So You Want to Build Your Own Algo Trading System?”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-708">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 10/14/2016 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-709">
+<article class="comment-body" id="div-comment-709" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great post, thanks Tom! Truly motivating.</p>
+<span class="reply"><a aria-label="Reply to Luis" class="comment-reply-link" data-belowelement="div-comment-709" data-commentid="709" data-postid="1520" data-replyto="Reply to Luis" data-respondelement="respond" href="#comment-709" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/so-you-want-to-build-your-own-algo-trading-system/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

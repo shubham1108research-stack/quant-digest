@@ -1,0 +1,333 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Solved: Errors Downloading Stock Price Data from Yahoo Finance</title>
+<!-- source: https://robotwealth.com/solved-errors-downloading-stock-price-data-yahoo-finance/ -->
+<h1>Solved: Errors Downloading Stock Price Data from Yahoo Finance</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-2754 post type-post status-publish format-standard hentry category-quant-trading category-r category-tools-of-the-trade tag-data tag-r tag-yahoo-finance pmpro-has-access" id="post-2754">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 21, 2017</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Solved: Errors Downloading Stock Price Data from Yahoo Finance</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Solved: Errors Downloading Stock Price Data from Yahoo Finance" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Recently, <strong>Yahoo Finance</strong> – a popular source of free end-of-day price data – made some changes to their server which wreaked a little havoc on anyone relying on it for their algos or simulations. Specifically, Yahoo Finance switched from HTTP to HTTPS and changed the data download URLs. No doubt this is a huge source of frustration, as many backtesting and trading scripts that relied on such data will no longer work.
+Users of the excellent R package <span class="lang:r decode:true crayon-inline">quantmod</span>  however are in luck! The package’s author, Joshua Ulrich, has already addressed the change in a development version of <span class="lang:c decode:true crayon-inline">quantmod</span>. You can update your <span class="lang:c decode:true crayon-inline">quantmod</span>  package to the development version that addresses this issue using this command in R:
+<span class="lang:r decode:true crayon-inline">devtools::install_github(“joshuaulrich/quantmod”, ref=”157_yahoo_502″)</span>
+Of course, you need the <span class="lang:c decode:true crayon-inline">devtools</span>  package installed, so do <span class="lang:c decode:true crayon-inline">install.packages(“devtools”)</span>  first if you don’t already have it installed.
+Once the package updates, <span class="lang:c decode:true crayon-inline">quantmod::getSymbols(src = “yahoo”)</span>  should work just as it did prior to the updates on the Yahoo Finance server. I can verify that this worked for me.
+Of course, if you don’t want to update quantmod to a version that lives on a Git branch, you can wait until the changes are merged into master and do
+<span class="lang:r decode:true crayon-inline">devtools::install_github(“joshuaulrich/quantmod”)</span>
+I don’t know when that will happen, but I have been using the branch version for a few days now, and all appears to be working as expected.
+<strong>Update: </strong>A user suggested making use of the <code>quantmod::adjustOHLC()</code> function as the adjusted close of Yahoo data is currently incomplete, and doesn’t account for dividends. Example usage:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">adjustOHLC(x,
+    adjust = c(“split”,”dividend”),
+    use.Adjusted = FALSE,
+    ratio = NULL,
+    symbol.name=deparse(substitute(x)))</pre>
+
+ 
+
+<hr/>
+
+First time here? Check out our posts on<a href="https://robotwealth.com/machine-learning-financial-prediction-david-aronson/" rel="noopener noreferrer" target="_blank"> machine learning in finance</a> and our recent review of <a href="https://robotwealth.com/dual-momentum-review/" rel="noopener noreferrer" target="_blank">dual momentum as an investment strategy</a>. Enjoy!
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>data</span>, <span>R</span>, <span>yahoo finance</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">16 thoughts on “Solved: Errors Downloading Stock Price Data from Yahoo Finance”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-751">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 05/20/2017 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-752">
+<article class="comment-body" id="div-comment-752" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Kris, thanks very much for this! Been struggling massively with this for a while now.</p>
+<span class="reply"><a aria-label="Reply to Jeff" class="comment-reply-link" data-belowelement="div-comment-752" data-commentid="752" data-postid="2754" data-replyto="Reply to Jeff" data-respondelement="respond" href="#comment-752" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-753">
+<article class="comment-body" id="div-comment-753" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>My pleasure, Jeff. I’m only the messenger here though, all credit to Josh Ulrich, the quantmod package developer.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-753" data-commentid="753" data-postid="2754" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-753" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-761">
+<article class="comment-body" id="div-comment-761" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+when running the install_github function I got the following error:<br/>
+&gt; install_github(“joshuaulrich/quantmod”, ref=”157_yahoo_502″)<br/>
+Installation failed: Couldn’t connect to server<br/>
+Any advice? was the Git branch deactivated?<br/>
+Thanks!<br/>
+Tom</p>
+<span class="reply"><a aria-label="Reply to Thomas" class="comment-reply-link" data-belowelement="div-comment-761" data-commentid="761" data-postid="2754" data-replyto="Reply to Thomas" data-respondelement="respond" href="#comment-761" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-762">
+<article class="comment-body" id="div-comment-762" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Tom, I just had a look at the Github repo. It looks like the updates have been merged into the master branch. You can install the master branch direct from the repo by doing <code>devtools::install_github("joshuaulrich/quantmod")</code><br/>
+Obviously make sure you do <code>install.packages('devtools')</code> first if you don’t already have it installed.<br/>
+Some users have reported having to restart R Studio if using that platform as your IDE.<br/>
+Hope that helps!</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-762" data-commentid="762" data-postid="2754" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-762" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-754">
+<article class="comment-body" id="div-comment-754" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the method – it works.<br/>
+Unfortunately, old good Yahoo is not that good anymore – dividend adjustments absent for some tickers, so backtests of all my systems got worse due to that. Need to find new better data source… =(</p>
+<span class="reply"><a aria-label="Reply to Sergey Vedernikov" class="comment-reply-link" data-belowelement="div-comment-754" data-commentid="754" data-postid="2754" data-replyto="Reply to Sergey Vedernikov" data-respondelement="respond" href="#comment-754" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-755">
+<article class="comment-body" id="div-comment-755" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+Thank you for posting this.  My R code that used quantmod and getSymbols no longer worked, so a solution would be welcome.<br/>
+I use RStudio.  I updated devtools, and then executed the R command you suggested:<br/>
+<span class="crayon-syntax crayon-syntax-inline crayon-theme-classic crayon-theme-classic-inline crayon-font-monaco"><span class="crayon-pre crayon-code"><span class="crayon-v">devtools</span><span class="crayon-o">::</span><span class="crayon-e">install_github</span><span class="crayon-sy">(</span><span class="crayon-s">“joshuaulrich/quantmod”</span><span class="crayon-sy">,</span> <span class="crayon-v">ref</span><span class="crayon-o">=</span><span class="crayon-s">“157_yahoo_502”</span><span class="crayon-sy">), which ran without error.<br/>
+</span></span></span><br/>
+However here is the result:<br/>
+library(quantmod)<br/>
+getSymbols(‘F’)<br/>
+Error in curl::curl_download(paste0(yahoo.URL, Symbols.name, “?period1=”,  :<br/>
+  HTTP error 401.<br/>
+I am an R novice, so surely I did something wrong.  Any clues?<br/>
+Thank you.</p>
+<span class="reply"><a aria-label="Reply to Peter Jacobson" class="comment-reply-link" data-belowelement="div-comment-755" data-commentid="755" data-postid="2754" data-replyto="Reply to Peter Jacobson" data-respondelement="respond" href="#comment-755" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-757">
+<article class="comment-body" id="div-comment-757" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I couldn’t reproduce this error. <code>quantmod::getSymbols('F')</code> worked fine for me.<br/>
+Try restarting R Studio after updating quantmod.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-757" data-commentid="757" data-postid="2754" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-757" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3" id="comment-759">
+<article class="comment-body" id="div-comment-759" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thank you Kris!  It worked after restarting R studio.</p>
+<span class="reply"><a aria-label="Reply to Peter Jacobson" class="comment-reply-link" data-belowelement="div-comment-759" data-commentid="759" data-postid="2754" data-replyto="Reply to Peter Jacobson" data-respondelement="respond" href="#comment-759" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-756">
+<article class="comment-body" id="div-comment-756" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>But it reflects only splits, not dividend as Google..</p>
+<span class="reply"><a aria-label="Reply to Minjae Lee" class="comment-reply-link" data-belowelement="div-comment-756" data-commentid="756" data-postid="2754" data-replyto="Reply to Minjae Lee" data-respondelement="respond" href="#comment-756" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1" id="comment-758">
+<article class="comment-body" id="div-comment-758" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Indeed for me too I can confirm that for some assets we have splits but no dividends.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-758" data-commentid="758" data-postid="2754" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-758" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-760">
+<article class="comment-body" id="div-comment-760" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>One user suggested using <span class="lang:c decode:true crayon-inline">quantmod::adjustOHCL()</span> to get adjustments for dividends and splits, which seems now to be missing for yahoo data. Example usage as follows;<br/>
+adjustOHLC(x,<br/>
+           adjust = c(“split”,”dividend”),<br/>
+           use.Adjusted = FALSE,<br/>
+           ratio = NULL,<br/>
+           symbol.name=deparse(substitute(x)))<br/>
+I haven’t tested this.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-760" data-commentid="760" data-postid="2754" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-760" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-763">
+<div class="comment-body">
+				Pingback: Yahoo Finance Quant | bv 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-764">
+<article class="comment-body" id="div-comment-764" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+thank you for your help, I am still struggling with this issue. I am getting this error. Can you help please ?<br/>
+options(“getSymbols.yahoo.warning”=FALSE).<br/>
+Error in curl::curl_download(cu, tmp, handle = h) :<br/>
+Failed to connect to finance.yahoo.com port 443: Timed out</p>
+<span class="reply"><a aria-label="Reply to Caryl" class="comment-reply-link" data-belowelement="div-comment-764" data-commentid="764" data-postid="2754" data-replyto="Reply to Caryl" data-respondelement="respond" href="#comment-764" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-765">
+<article class="comment-body" id="div-comment-765" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Caryl, sorry for the slow response! This should be solved from version 0.4-9 of quantmod. The current version on CRAN should work, so maybe try updating to the latest version and retesting.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-765" data-commentid="765" data-postid="2754" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-765" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-13701">
+<div class="comment-body">
+				Pingback: We Love Free Data: Replacing Yahoo Finance Market Data - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/solved-errors-downloading-stock-price-data-yahoo-finance/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

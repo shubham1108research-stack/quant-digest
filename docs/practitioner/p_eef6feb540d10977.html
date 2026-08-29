@@ -1,0 +1,564 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Unsupervised candlestick classification for fun and profit – part 2</title>
+<!-- source: https://robotwealth.com/unsupervised-candlestick-classification-for-fun-and-profit-part-2/ -->
+<h1>Unsupervised candlestick classification for fun and profit – part 2</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-909 post type-post status-publish format-standard hentry category-backtesting category-fx category-k-means-clustering category-machine-learning category-quant-trading category-r tag-forex tag-k-means-clustering tag-machine-learning tag-performanceanalytics tag-quantitative-analysis tag-quantitative-trading tag-quantmod tag-r tag-statistical-learning pmpro-has-access" id="post-909">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">November 15, 2015</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Unsupervised candlestick classification for fun and profit – part 2</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Unsupervised candlestick classification for fun and profit – part 2" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><a href="https://robotwealth.com/unsupervised-candlestick-classification-for-fun-and-profit-part-1/" rel="noopener noreferrer" target="_blank">In the last article</a>, I described an application of the k-means clustering algorithm for classifying candlesticks based on the relative position of their open, high, low and close. This was a simple enough exercise, but now I tackle something more challenging: isolating information that is both useful and practical to real trading. I’ll initially try two approaches:
+
+<ol>
+<li>Investigate whether there are any statistically significant patterns in certain clusters following others</li>
+<li>Investigate the distribution of next day returns following the appearance of a candle from each cluster</li>
+</ol>
+
+The insights gained from this analysis will hopefully inform the next direction of this research.
+
+<h2>Data preliminaries</h2>
+
+In the last article, I classified twelve months of daily candles (June 2014 – July 2015) into eight clusters. To simplify the analysis and ensure that enough instances of each cluster are observed, I’ll reduce the number of clusters to four and extend the history to cover 2008-2015. I’ll exclude my 2015 data for now in case I need a final, unseen test set at some point in the future.
+Here’s a subset of the candles over the entire price history (2008-2014, 2015 is held out) grouped by cluster:
+<a href="https://robotwealth.com/wp-content/uploads/2015/11/4-cluster-subset.png"><img alt="4-cluster subset" class="aligncenter size-full wp-image-933 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/11/4-cluster-subset.png" decoding="async" height="690" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='737'%20height='690'%20viewBox='0%200%20737%20690'%3E%3C/svg%3E" width="737"/></a>
+Roughly speaking, cluster one corresponds to a significant up day, cluster two to a significant down day, cluster three to a small up day (although there are a few instances of small down days and neutral days), and cluster four to a small down day (although again there are a few instances of small up days and doji-type candles).
+The clusters are not visually perfectly homogeneous. For example, in cluster two there are one or two instances of candles with a large range, but whose overall downwards movement is small. These candles resemble what we know as ‘hammers’ or ‘pins’ in traditional candlestick parlance. Cluster three, while dominated by small up candles, also includes many small down days and hammers/pins. Cluster four is similarly imperfect. My trading experience tells me however that theoretical perfection, while interesting, is an indulgence best left to academic practitioners. I am much more interested in whether the information my research brings to light holds up enough to make a profit.
+
+<h2>Part 1 – Clustering patterns</h2>
+
+For part one of the analysis, I need a baseline for comparative purposes. The obvious baseline is simply the proportional occurrence of each cluster across the data set. Below is a bar plot describing this (excluding the 2015 data). I’ve added a line graph showing the same information as this will be used for comparative purposes below.
+<a href="https://robotwealth.com/wp-content/uploads/2015/11/prop-clusters-whole-dataset.png"><img alt="prop clusters whole dataset" class="aligncenter size-full wp-image-935 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/11/prop-clusters-whole-dataset.png" decoding="async" height="485" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='518'%20height='485'%20viewBox='0%200%20518%20485'%3E%3C/svg%3E" width="518"/></a>
+Any lagged clustering patterns will need to be statistically significantly different from these baseline occurrences to be of interest.
+To start with, let’s look at the lagged proportional cluster occurrences across the entire data set. In the table below, the columns represent the percentage proportion of each cluster that immediately follows the cluster in the rows (rounded for viewing purposes). This information is reproduced as a series of line graphs in the figure below.
+
+<table border="0" cellpadding="0" cellspacing="0" class="aligncenter" style="border-collapse: collapse; width: 333px; height: 133px;" width="320"><colgroup> <col span="5" style="width: 48pt;" width="64"/> </colgroup>
+<tbody>
+<tr style="height: 14.4pt;">
+<td class="xl65" height="19" style="height: 14.4pt; width: 48pt;" width="64"></td>
+<td align="right" class="xl66" style="width: 48pt;" width="64"><strong>1</strong></td>
+<td align="right" class="xl66" style="width: 48pt;" width="64"><strong>2</strong></td>
+<td align="right" class="xl66" style="width: 48pt;" width="64"><strong>3</strong></td>
+<td align="right" class="xl66" style="width: 48pt;" width="64"><strong>4</strong></td>
+</tr>
+<tr style="height: 14.4pt;">
+<td align="right" class="xl67" height="19" style="height: 14.4pt;"><strong>1</strong></td>
+<td align="right">17</td>
+<td align="right">15</td>
+<td align="right">34</td>
+<td align="right">34</td>
+</tr>
+<tr style="height: 14.4pt;">
+<td align="right" class="xl67" height="19" style="height: 14.4pt;"><strong>2</strong></td>
+<td align="right">20</td>
+<td align="right">29</td>
+<td align="right">24</td>
+<td align="right">28</td>
+</tr>
+<tr style="height: 14.4pt;">
+<td align="right" class="xl67" height="19" style="height: 14.4pt;"><strong>3</strong></td>
+<td align="right">6</td>
+<td align="right">2</td>
+<td align="right">57</td>
+<td align="right">35</td>
+</tr>
+<tr style="height: 14.4pt;">
+<td align="right" class="xl67" height="19" style="height: 14.4pt;"><strong>4</strong></td>
+<td align="right">10</td>
+<td align="right">3</td>
+<td align="right">54</td>
+<td align="right">33</td>
+</tr>
+</tbody>
+</table>
+<img alt="Clusters following clusters - whole data set" class="wp-image-934 aligncenter perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/11/Clusters-following-clusters-whole-data-set.png" decoding="async" height="538" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='574'%20height='538'%20viewBox='0%200%20574%20538'%3E%3C/svg%3E" width="574"/>
+Looking at these results, what can we infer? Some observations that stand out are:
+
+<ul>
+<li>A big down candle (cluster 2) is repeated in 29% of instances. It is followed by a smaller down candle in 28% of cases. Adding these, we can say that a big down day is followed by another down day 57% of the time.</li>
+<li>A big move in either direction is more often that not preceded by a big move.</li>
+<li>Neutral days or relatively smaller moves also tend to follow each other.</li>
+<li>The patterns of next-cluster proportions are different enough from the sample proportions to warrant further investigation.</li>
+</ul>
+
+I considered investigating the stability of these results with respect to time. For example, it would be possible to set up a moving window on the data set and look at whether these relationships vary across time. However, I’m not sure it would reveal any great insight that is actionable in a practical way. I might come back to this later. For now, lets jump into something more interesting that is more likely to reveal the information I am interested in: returns associated with individual clusters.
+
+<h2>Part 2: Returns series analysis</h2>
+
+For the second part of the analysis I’ll simply construct a cumulative returns series for a holding period of one day for each cluster. If anything interesting turns up in this analysis, I willl attempt to validate it using my 2015 out of sample data before using it in a trading system. Transaction costs are not included in this analysis.
+Here is a chart of the cumulative next day returns for each cluster as well as the cumulative daily returns of the underlying instrument.
+<a href="https://robotwealth.com/wp-content/uploads/2015/11/Cumulative-returns-all-clusters.png"><img alt="Cumulative returns - all clusters" class="aligncenter size-full wp-image-937 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/11/Cumulative-returns-all-clusters.png" decoding="async" height="690" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='736'%20height='690'%20viewBox='0%200%20736%20690'%3E%3C/svg%3E" width="736"/></a>
+These returns are nothing to get excited about, but a few things stand out. Firstly, the next day returns associated with cluster four significantly out-perform the underlying. More interestingly, it seems to be agnostic to the prevailing trend in the underlying, except for the GFC period. Cluster one also outperforms the underlying, but is somewhat correlated. Cluster two does not contain enough instances to make any useful judgements, and cluster three is highly correlated with the underlying.
+Below is the chart of cumulative next day returns for cluster four in the post GFC period from September 2009 (the time when the US government stepped in to rescue Fannie Mae and Freddie Mac). I realise that I am cherry picking from my results, however it does appear that there is value in investigating the performance of cluster four as financial markets adjusted to a new regime.
+<a href="https://robotwealth.com/wp-content/uploads/2015/11/cluster-4-post-GFC-returns.png"><img alt="cluster 4 post GFC returns" class="aligncenter size-full wp-image-938 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/11/cluster-4-post-GFC-returns.png" decoding="async" height="690" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='736'%20height='690'%20viewBox='0%200%20736%20690'%3E%3C/svg%3E" width="736"/></a>
+Performance is encouraging. Cluster four out-performs the underlying and does so with a much lower drawdown. However, it would have been impossible to trade this as a system during the period shown since the clusters were identified using that very data. Next, I will investigate cluster four on my out of sample data, which was not used in the cluster identification process.
+<a href="https://robotwealth.com/wp-content/uploads/2015/11/OOS-returns-cluster-41.png"><img alt="OOS returns cluster 4" class="aligncenter size-full wp-image-954 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/11/OOS-returns-cluster-41.png" decoding="async" height="690" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='736'%20height='690'%20viewBox='0%200%20736%20690'%3E%3C/svg%3E" width="736"/></a>
+Cluster four out-performs the underlying by a small margin, but it does so with a much more benign drawdown, although its trend-agnosticism seems to have disappeared. The evidence suggests that cluster four has a small but useful predictive utility.
+
+<h2>Conclusions and future research directions</h2>
+
+I’ve presented a simple application of the k-means clustering algorithm to the prediction of a single financial instrument. I found that the relative values of the daily open, high, low and close appear to have a degree of predictive power for this instrument, particularly in the post-GFC period. These results were validated in an out of sample test. Although gross returns were not spectacular, they were achieved with a much lower drawdown.
+A benefit of using an unsupervised learner is that it reduces the chances of over-fitting since there is no optimization on some target value. The trade off is that the information discovered by the learner may have little or no intrinsic utility. In this case, the number of clusters could be an optimization parameter if we varied it and selected the value that resulted in the best returns series.
+I used only a small amount of data, made a number of assumptions and applied the approach to just one instrument, chosen at random. There are numerous potential future research directions to take this idea further, including:
+
+<ul>
+<li>The forex market trades on a 24-hour basis, therefore the choice of daily closing time is somewhat arbitrary. The time used in this analysis was set at 17:00 EST, however a more sensible choice for this particularly market (GBP/JPY) might be 17:00 UTC.</li>
+<li>The approach could be tested on intra-day data, although this would be subject to the vagaries of intra-day volatility cycles which would likely need to be accounted for.</li>
+<li>Other data containing potentially predictive information could also be supplied to the algorithm, for example trend and volatility indicators.</li>
+<li>The analysis could be extended from single candles to two- and three-candle patterns.</li>
+<li>The k-means algorithm is limited in that it requires the user to input the number of clusters before any classification occurs. We could investigate the effect of varying the number of clusters, however hierarchical clustering may provide a better alternative as it does not require any <em>a priori</em> knowledge about the number of clusters into which the data naturally groups.</li>
+<li><a href="https://intelligenttradingtech.blogspot.com.au/2010/06/quantitative-candlestick-pattern.html" rel="noopener noreferrer" target="_blank">Others </a>have suggested the application of a Markov Chain Monte Carlo model in order to build a predictive model based on joint probability tables. This is new territory for me and would require some research into the methodology before I attempted it, however I assume it would require that the joint probabilities were somewhat stable with respect to time, or at least include some means to account for any instability.</li>
+<li>Other markets may or may not be more amenable to this approach.</li>
+<li>Transaction costs should be incorporated into the model.</li>
+</ul>
+
+Here’s the complete R code used in this analysis:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="k-means clustering analysis">library(fpc)
+library(cluster)
+library(quantmod)
+library(ggplot2)
+library(PerformanceAnalytics)
+# read in data
+data &lt;- read.csv("GBP_JPY.csv", stringsAsFactors = F)
+colnames(data) &lt;- c("Date", "GBP_JPY.Open", "GBP_JPY.High", "GBP_JPY.Low", "GBP_JPY.Close") # quantmod requires these names
+data$Date &lt;- as.POSIXct(data$Date, format = "%d/%m/%Y")
+data &lt;- as.xts(data[, -1], order.by = data[, 1])
+data &lt;- data["2008::2014", 1:4] # in-sample data set
+chart_Series(data)
+# create HLC relative to O
+data$HO &lt;- data[,2]-data[,1]
+data$LO &lt;- data[,3]-data[,1]
+data$CO &lt;- data[,4]-data[,1]
+# # K-Means Clustering with clusters based on HO, LO, CO
+class_factors &lt;- data[, 5:7]
+set.seed(123) # required in order to reproduce results
+fit &lt;- kmeans(class_factors,4)
+m &lt;- fit$cluster # vector of the cluster assigned to each candle
+# which canldes were classifed into each cluster?
+cluster &lt;- as.xts(m)
+index(cluster) &lt;- index(data) #coerce index of cluster series to match data's index
+new_data &lt;- merge.xts(data, cluster)
+# plot candles by cluster
+chart_Series(xts(coredata(sample_data)[order(sample_data$cluster),],type="candlesticks", order.by = index(sample_data),  theme = chartTheme('black',up.col='green',dn.col='red')))
+# count and proportion of each cluster's occurrence in training data
+library(plyr)
+cluster_count &lt;- count(new_data, vars = "cluster")
+cluster_count$prop_percent &lt;- cluster_count$freq*100/sum(cluster_count$freq)
+ggplot(cluster_count, aes(x = cluster, y= prop_percent)) + geom_bar(stat = 'identity', fill = 'blue') + geom_line(stat = 'identity', colour = 'black') # plot as bars
+# proportaional probability table for next candle
+count_table &lt;- table(new_data$cluster , lag(new_data$cluster, 1))
+prop_table &lt;- prop.table(table(new_data$cluster , lag(new_data$cluster, 1)), 1) * 100
+round(prop_table)
+prop_df &lt;- data.frame(round(prop_table))
+colnames(prop_df) &lt;- c("Following_Cluster", "Cluster", "Proportion_percent")
+ggplot(prop_df, aes(x=Cluster, y=Proportion_percent, group=Following_Cluster)) + geom_line(aes(colour = Following_Cluster))
+# returns analysis
+new_data$daily_returns &lt;- dailyReturn(new_data)
+new_data$cluster1 &lt;- ifelse(new_data$cluster == 1, 1, 0)
+new_data$cluster2 &lt;- ifelse(new_data$cluster == 2, 1, 0)
+new_data$cluster3 &lt;- ifelse(new_data$cluster == 3, 1, 0)
+new_data$cluster4 &lt;- ifelse(new_data$cluster == 4, 1, 0)
+cluster1_returns &lt;- lag(new_data$cluster1, 1) * new_data$daily_returns
+cluster2_returns &lt;- lag(new_data$cluster2, 1) * new_data$daily_returns
+cluster3_returns &lt;- lag(new_data$cluster3, 1) * new_data$daily_returns
+cluster4_returns &lt;- lag(new_data$cluster4, 1) * new_data$daily_returns
+# comparitive performance of each cluster vs buy and hold
+chart.CumReturns(cbind(dailyReturn(new_data), cluster1_returns[-1,], cluster2_returns[-1,], cluster3_returns[-1,], cluster4_returns[-1,]), legend.loc = "bottomright", main = "Cumulative Returns")
+# cluster 4 post-GFC
+chart.CumReturns(cbind(dailyReturn(new_data["200909::"]), cluster4_returns["200909::",]), legend.loc = "bottomright", main = "Cumulative Returns")
+###### apply k-menas to test set (2015)
+test_data &lt;- read.csv("GBP_JPY.csv", stringsAsFactors = F)
+colnames(test_data) &lt;- c("Date", "GBP_JPY.Open", "GBP_JPY.High", "GBP_JPY.Low", "GBP_JPY.Close") # quantmod requires these names
+test_data$Date &lt;- as.POSIXct(test_data$Date, format = "%d/%m/%Y")
+test_data &lt;- as.xts(test_data[, -1], order.by = test_data[, 1])
+test_data &lt;- test_data["2015", 1:4] #nrow(data), 1:4]
+# create HLC relative to O
+test_data$HO &lt;- test_data[,2]-test_data[,1]
+test_data$LO &lt;- test_data[,3]-test_data[,1]
+test_data$CO &lt;- test_data[,4]-test_data[,1]
+test_data_kmeans &lt;- data.frame(test_data[, 5:7]) # predict.kmeans seems to be incompatible with xts object
+library(DeducerExtras)
+test_clusters &lt;- predict.kmeans(fit, data = test_data_kmeans)
+test_data$cluster &lt;- test_clusters
+test_data$daily_returns &lt;- dailyReturn(test_data)
+test_data$cluster4 &lt;- ifelse(test_data$cluster == 4, 1, 0)
+cluster4_test_returns &lt;- lag(test_data$cluster4, 1) * test_data$daily_returns
+# comparitive performance of cluster 4 vs buy and hold
+chart.CumReturns(cbind(dailyReturn(test_data), cluster4_test_returns[-1, ]), legend.loc = "bottomright", main = "Cumulative Returns")
+</pre>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>forex</span>, <span>k-means clustering</span>, <span>Machine Learning</span>, <span>PerformanceAnalytics</span>, <span>quantitative analysis</span>, <span>quantitative trading</span>, <span>quantmod</span>, <span>R</span>, <span>statistical learning</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">23 thoughts on “Unsupervised candlestick classification for fun and profit – part 2”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-456">
+<article class="comment-body" id="div-comment-456" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Regarding cluster 4: you picked a good time to start your “outperformance” test, which is basically right after it had its worst drawdown. Yes, the asset did too, I suppose, but nevertheless, I feel like there’s a lot here that’s inconclusive simply due to how little data you used. The GBP_JPY exchange rate should be available for much longer than this period, so I’m hoping you can pursue a way to get another decade of data.<br/>
+Regarding the findings, it seems that indeed, a massive down day (as defined by the K-means clustering algorithm) seems to have an edge. I suppose intuitively, it’s the idea that right after a major panic sell-off, that the price will take a bounce, and there won’t be as many bad days the next day. Not a particularly bad line of thinking without transaction costs.<br/>
+Also, regarding “one day after” trading strategies, these sorts of things are the most vulnerable strategies to get hurt by transaction costs, as you might imagine.<br/>
+Glad to see you using R, but I hope you can find some more data!</p>
+<span class="reply"><a aria-label="Reply to Ilya Kipnis" class="comment-reply-link" data-belowelement="div-comment-456" data-commentid="456" data-postid="909" data-replyto="Reply to Ilya Kipnis" data-respondelement="respond" href="#comment-456" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-457">
+<article class="comment-body" id="div-comment-457" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Ilya<br/>
+Thanks for reading and commenting. Yes of course there’s a lot that’s inconclusive. In fact, my “conclusions” section raises more questions and ideas for further research than it draws conclusions!<br/>
+So you think an additional decade of daily data would be required in order to make any conclusive statements? Is that a rule of thumb or based on some quantitative measure of confidence? In general, I agree that more data is better, with the caveat that any analysis is cognizant of significant market shifts. Obviously, most market inefficiencies seem to have an expiry date, and for this reason I prefer a rolling walk forward analysis to one large training set followed by a single out of sample test. That way, it is possible to observe how a strategy’s edge changes over time. However, it is not my intent to present a robust, complete trading system; rather it is to share some research, garner feedback and hopefully get some new ideas.<br/>
+In my mind, simply using as much data as possible without the caveat mentioned above is interesting from an academic perspective, but it ignores the practicalities of trading these mostly ephemeral inefficiencies. For example, rather than searching for a universal market truth that holds up in perpetuity (does this even exist?), I would prefer to exploit a shorter-lived inefficiency and use appropriate quantitative risk management to pull out in a timely manner.<br/>
+Finally, regarding transaction costs. Yes, I know it was remiss of me to exclude these as they are likely to be significant. In your opinion, what’s a simple yet robust way to account for transaction costs in R? I was thinking of simply deducting a fixed amount from the return associated with each trade that mirrors my broker’s average spread and commission, plus an assumption about slippage.<br/>
+Thanks for the critique. I’m always glad to receive constructive feedback.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-457" data-commentid="457" data-postid="909" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-457" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-459">
+<article class="comment-body" id="div-comment-459" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Nice article again.<br/>
+Regarding the need for more data in similar analysis, I like to use proxies to increase the universe available to train the data. For example, it seems reasonable to say that the candle patterns should hold among assets classes in a similar fashion. Take equities for example.<br/>
+One could train the algorithm on features generated from a bunch of different equity assets. Can we expect the candlestick reaction to a given cluster to be radically different between US and say German equities? I don’t think so, just an avenue to explore.<br/>
+Personally I am fine with little data when the experiment is carefully crafted and the conclusion drawn are not overly hopeful. I think this passion for large dataset is somewhat restrictive. Sure more data is nice but you have to look at the system. Do you really need a 10 year backtest to be confidant in a system that trades 100x per day? On the other side of the spectrum, would you consider a monthly system for which you see a 3 year backtest? It all depends how long the edge takes to pan out. I think in terms of pattern recognition, it is more important to look at the number of prediction made and accuracy versus length of the backtest.<br/>
+I apologize for the rant, I just have problems with academic types saying show me more data or your conclusions are invalid. In the real world where people need to make money the hurdle rate is much lower. Much money has been made being the first mover on an anomaly. Why wait for everybody to agree that it’s a good investment opportunity? By that time it’s not nearly as good. Like everything there is tremendous risk/rewards to being the first ones to find something potentially profitable. Concretely, people that found the VXX/XIV trades back in 2007 made an absolute killing in 2008. Back then there was no history to speak of. Look at it now, not a single blog hasn’t proposed a way to capture it. Including the original comment’s author.<br/>
+Keep up the good work<br/>
+QF</p>
+<span class="reply"><a aria-label="Reply to QF" class="comment-reply-link" data-belowelement="div-comment-459" data-commentid="459" data-postid="909" data-replyto="Reply to QF" data-respondelement="respond" href="#comment-459" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4 parent" id="comment-460">
+<article class="comment-body" id="div-comment-460" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Fair point regarding VXX/XIV, JP. That said, just about all those methods leave much wanting, including my own methodology (well, that I got from someone else) that completely missed a 27% move in October in XIV.<br/>
+When you’re using more frequent data, then yes, I agree. But essentially, how do you know the conclusion isn’t simply an artifact of curve-fitting? My issue stems with the fact that this backtest (cluster 4) was started right after it suffered a massive drawdown. Essentially, I like to see longer backtests to see just how bad things can get. For instance, if someone started a backtest on SPY after the GFC and said “look how good this equity curve is! More than a 1 Calmar Ratio just from buying and holding!”<br/>
+Also, to your point, many XIV/VXX strategies did NOT make a killing in 2008! Quite a few of the ones posted on Volatility Made Simple’s blog actually took obscene drawdowns in 2008 that would have put any fund manager out of business multiple times.<br/>
+Also, speaking of VXX/XIV trading strategies, I’m wondering if you have anything to add–not necessarily in public. I’m all ears if you wish to collaborate on one.</p>
+<span class="reply"><a aria-label="Reply to Ilya Kipnis" class="comment-reply-link" data-belowelement="div-comment-460" data-commentid="460" data-postid="909" data-replyto="Reply to Ilya Kipnis" data-respondelement="respond" href="#comment-460" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-5" id="comment-462">
+<article class="comment-body" id="div-comment-462" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Ilya, why do you have an issue with the chart showing cluster four’s performance following its drawdown period? In the previous chart, I also show that very drawdown. I am not trying to hold up cluster four as some sort of all powerful predictor of market direction – in fact, I even stated that I am cherry picking the results simply to highlight the interesting observation that its relationship to the underlying appeared to change at around the same time as the world emerged from the GFC. Is my logic in highlighting these observations somehow flawed?<br/>
+It was not my intention to come across as saying “Look how great this equity curve is!”, and if that’s the way it was interpreted then maybe I need to work on my style. I do however suspect that you are seeking opportunities to inflate your reputation by discrediting the analysis of others. I have no problem with you discrediting my work or the work of others if it is justified. In fact, I welcome the learning opportunity it presents. In this instance however, I feel that you are attributing conclusions to me that I never drew, and then discrediting them. I do have a problem with this as it adds little to the discussion and is something of a waste of time to deal with.</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-4" id="comment-461">
+<article class="comment-body" id="div-comment-461" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the suggestions QF. I hadn’t considered training the algorithm on a bunch of different assets together. Another item to add to the do-do list. It would also be interesting to note any differences between asset classes. For instance, I wonder if currencies would show significantly different behaviour to equities, having accounted for the upwards bias in the latter.<br/>
+It sounds like we are on the same page regarding the practicalities of market research and systems development. I completely agree that a ‘fit for purpose’ approach is much more useful in designing a system that is intended to be traded. Would I expect my results to be published in a journal of statistical learning? Of course not. And I never intended that. But they do seem to have highlighted a potentially profitable phenomenon. In that sense, the analysis thus far is fit for purpose as far as I’m concerned.<br/>
+Thanks again for your comments and insights. Always very much appreciated.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-461" data-commentid="461" data-postid="909" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-461" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-458">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 11/15/2015 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-463">
+<article class="comment-body" id="div-comment-463" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Mmm, I did feel that there was a bit of saying “look how good the performance is” regarding the out-of-sample equity curve, or that it even was investigated. I’m highly skeptical of, well, just about any strategy posted online (or anywhere else, for that matter), and try to find the fly in the ointment ASAP. I’ve done this for other authors on my own blog, as well. If you weren’t making a conclusion about outperformance but simply were investigating the OOS equity curve for fun, then mea culpa, but I interpreted it as giving possible praise to a system that may not have warranted it.<br/>
+Just differences in tolerance, I suppose.</p>
+<span class="reply"><a aria-label="Reply to Ilya Kipnis" class="comment-reply-link" data-belowelement="div-comment-463" data-commentid="463" data-postid="909" data-replyto="Reply to Ilya Kipnis" data-respondelement="respond" href="#comment-463" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-464">
+<article class="comment-body" id="div-comment-464" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for that comment Ilya, it was very gracious of you. Regarding the posting of strategies online, rest assured that it is highly unlikely that I’ll post anything that I am actually trading or intend to trade or believe consists of a complete and viable trading system. But please go ahead and pick holes in the methods, results and conclusions that I do post. I welcome the learning opportunity and any robust discussion that comes along with it. I just ask that the discussion is balanced, objective and relevant to the actual content of the post. I’ll work on delivering my conclusions such that they are less open to interpretation.<br/>
+Anyway, I hope that you keep visiting my blog and commenting on my work. I’ll definitely be an avid reader of yours.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-464" data-commentid="464" data-postid="909" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-464" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-465">
+<article class="comment-body" id="div-comment-465" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Oh, definitely. I mean, the idea of applying machine-learning methodologies to finance is something that I find highly interesting (as I’ve never seen it done successfully, despite taking Andrew Ng’s machine learning course, and Hastie’s statistical learning). As for not posting complete trading systems, again, respected. That said, my philosophy (at least until recently) has been that anything I think of are things that the institutional investors already know how to do better by virtue of employing multiple PhDs and people with the capability to absorb “write-only” professorially-written theoretical math papers a LOT more quickly than I can, and I’m hoping something I post can be used for inspiration by someone else in the blogosphere to create a better trading system.<br/>
+Frankly, I’m of the opinion that if the best bloggers on quantocracy worked together, they could probably outperform quite a large amount of the real hedge funds.</p>
+<span class="reply"><a aria-label="Reply to Ilya Kipnis" class="comment-reply-link" data-belowelement="div-comment-465" data-commentid="465" data-postid="909" data-replyto="Reply to Ilya Kipnis" data-respondelement="respond" href="#comment-465" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-466">
+<article class="comment-body" id="div-comment-466" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>That is a fantastic idea. Have you floated it with any of the Quantocracy bloggers? That’s the sort of collaboration I’d be extremely interested in. Have you had much to do with hedge funds and larger institutions? I’ve only had very brief and shallow contact, but what I saw didn’t impress me much at all. I was exposed to a firm that trades using elementary statistics with flawed assumptions combined with technical analysis, and another that trades via discretionary support/resistance/channel type technical analysis. The one thing that did impress me however was how switched on both of these outfits were to risk management. From what I could tell, they spend more time managing risk than analysing the markets. I certainly feel that combining a similar level of risk management with a more robust, statistical approach would lead to significant outperformance – at least of those firms that I referred to.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-466" data-commentid="466" data-postid="909" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-466" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-467">
+<article class="comment-body" id="div-comment-467" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Interesting read Mr Robot including the debate on when is enough data enough..<br/>
+From my manual trading experience I would say that sometimes people can focus on perfection when it’s simply not like that and most of the clever people I know fail miserably. Of course there is some science behind this and if your career  is maths it will be critical to your success. There are many paths 🙂<br/>
+Now back to the article. I love the simplicity of kmeans. I  am less of a quant and more of a pragmatic programmer with some interests machine learning and fx. I’m only now beginning to attempt to apply ML to fx with a primary focus on evolutionary algorithms and symbolic regression. In part because they are simple…like me :).<br/>
+I can see a hybrid approach of kmeans to perform simple one bar feature detection and a genetic programming approach to build a multi bar classification or maybe I’ll try some kmeans by itself…<br/>
+I very much enjoyed the tone of the post and found a quants approach to determining significance enlightening.<br/>
+Cheers.</p>
+<span class="reply"><a aria-label="Reply to sven" class="comment-reply-link" data-belowelement="div-comment-467" data-commentid="467" data-postid="909" data-replyto="Reply to sven" data-respondelement="respond" href="#comment-467" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-468">
+<article class="comment-body" id="div-comment-468" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the comments Sven. I totally agree with your comments about perfection! It recently dawned on me that you don’t need a ‘perfect’ model of the markets in order to make money. A huge part of the art of quantitative development is knowing when to stop developing and start trading. I am still very much getting my head around this.<br/>
+The simplicity of k-means attracts me to this approach too. Your idea of stacking k-means for feature detection with another supervised learner is an interesting one – another item to add to the ever-expanding to-do list. Would you be interested in collaborating on that idea? In the next few days, I’m going to post a framework for efficiently exploring k-means ideas that I think could be useful in building the first part of the stack.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-468" data-commentid="468" data-postid="909" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-468" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3" id="comment-469">
+<article class="comment-body" id="div-comment-469" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Mr R,<br/>
+I’m a complete stranger to R and its magic being heavily Python and traditional c/c++ /web focussed (although I find it increasingly difficult to avoid it as I delve into numpy and scikit/pandas and all the python based R rip offs. )<br/>
+I’m not sure I can offer much to your stack in knowledge or time but look forward to your next post!  You probably have my email feel free to ping me as I’ve always got an opinion and happy to chatter. Cheers.</p>
+<span class="reply"><a aria-label="Reply to Sven" class="comment-reply-link" data-belowelement="div-comment-469" data-commentid="469" data-postid="909" data-replyto="Reply to Sven" data-respondelement="respond" href="#comment-469" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-470">
+<div class="comment-body">
+				Pingback: A framework for rapid and robust system development based on k-means clustering | Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-471">
+<div class="comment-body">
+				Pingback: Best Links of the Week | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-472">
+<article class="comment-body" id="div-comment-472" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi,<br/>
+I had a close look at it and found the results quiet interesting. Great article! However, there is one clarification that I would like to make:<br/>
+In the line number 65 of the code, you have used:<br/>
+chart.CumReturns(cbind(dailyReturn(new_data), cluster1_returns[-1,], cluster2_returns[-1,], cluster3_returns[-1,], cluster4_returns[-1,]), legend.loc = “bottomright”, main = “Cumulative Returns”)<br/>
+In relation to this, I believe that an extra argument setting “geometric=FALSE” , should be used because the function chart.CumReturns() internally uses geometric sum and not arithmetic. I suppose, setting it to arithmetic is what will imply a better market analysis rather than calculating geometric sum. And, obviously adding this extra parameter would definitely change the shape of the cumulative curve.<br/>
+Please clarify this. Thanks!</p>
+<span class="reply"><a aria-label="Reply to Amar Kumar" class="comment-reply-link" data-belowelement="div-comment-472" data-commentid="472" data-postid="909" data-replyto="Reply to Amar Kumar" data-respondelement="respond" href="#comment-472" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-473">
+<article class="comment-body" id="div-comment-473" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Amar<br/>
+Well spotted, thanks for pointing that out!<br/>
+Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-473" data-commentid="473" data-postid="909" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-473" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-474">
+<article class="comment-body" id="div-comment-474" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris:  Are you still exploring the concepts you shared in this post? Or did you reach a deadend and moved on?  I ask because I had a couple of questions for you but if the ultimate result is that the concepts are unproductive, I won’t waste your time.  Please let me know.  Thanks  David</p>
+<span class="reply"><a aria-label="Reply to David" class="comment-reply-link" data-belowelement="div-comment-474" data-commentid="474" data-postid="909" data-replyto="Reply to David" data-respondelement="respond" href="#comment-474" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-475">
+<article class="comment-body" id="div-comment-475" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi David, to be honest, I never actually gave this the attention it deserved. I didn’t see the research through, because at the time I became distracted with something or other, and I’ve yet to find my way back to it. It’s been on my to-do list for a while. So the short answer is that I never reached a deadend, but I didn’t do enough research to conclude anything positive either.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-475" data-commentid="475" data-postid="909" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-475" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-9687">
+<article class="comment-body" id="div-comment-9687" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Team,</p>
+<p>I’m new to K-means clustering, is the table shown below the same as the follow-on matrix as mentioned in this tutorial? <a href="https://www.quantstart.com/articles/k-means-clustering-of-daily-ohlc-bar-data" rel="nofollow ugc">https://www.quantstart.com/articles/k-means-clustering-of-daily-ohlc-bar-data</a></p>
+<p>          1	  2	 3	 4<br/>
+1	17	15	34	34<br/>
+2	20	29	24	28<br/>
+3	6	2	57	35<br/>
+4	10	3	54	33</p>
+<p>Thanks!<br/>
+Joe</p>
+<span class="reply"><a aria-label="Reply to Joe" class="comment-reply-link" data-belowelement="div-comment-9687" data-commentid="9687" data-postid="909" data-replyto="Reply to Joe" data-respondelement="respond" href="#comment-9687" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-9859">
+<article class="comment-body" id="div-comment-9859" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Joe, thanks for reading. I haven’t read that particular article so couldn’t comment. Perhaps another reader could help you out.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-9859" data-commentid="9859" data-postid="909" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-9859" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/unsupervised-candlestick-classification-for-fun-and-profit-part-2/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

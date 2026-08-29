@@ -1,0 +1,240 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Ideas for Crypto Stat Arb Features</title>
+<!-- source: https://robotwealth.com/ideas-for-crypto-stat-arb-features/ -->
+<h1>Ideas for Crypto Stat Arb Features</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-88580 post type-post status-publish format-standard has-post-thumbnail hentry category-factors category-trading-strategies pmpro-has-access" id="post-88580">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">January 28, 2024</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Ideas for Crypto Stat Arb Features</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Ideas for Crypto Stat Arb Features" class="ipa-media gb-media-81e19d89" data-media-id="88596" decoding="async" fetchpriority="high" height="628" src="https://media.robotwealth.com/wp-content/uploads/2024/01/21154913/crypto-stat-arb-image-e1706412148281.png" width="628"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">This article continues our recent articles on stat arb:</p>
+<ul class="wp-block-list">
+<li><a href="https://robotwealth.com/a-short-take-on-real-world-pairs-trading/" rel="noreferrer noopener" target="_blank">A short take on stat arb trading in the real world</a></li>
+<li><a href="https://robotwealth.com/a-general-approach-for-exploiting-statistical-arbitrage-alphas/" rel="noreferrer noopener" target="_blank">A general approach for exploiting stat arb alphas</a></li>
+</ul>
+<p class="wp-block-paragraph">In this article, I’ll brainstorm some ideas for predictive features that you could potentially use in a crypto stat arb model. </p>
+<p class="wp-block-paragraph">The ideas draw insights from recent discussions and market observations, but of course, you should do your own research. </p>
+<p class="wp-block-paragraph">In future articles, I’ll pick some of these features and seek to quantify and combine them, and finally demonstrate how to navigate the return-risk trade-offs using heuristics and explicit optimisation. </p>
+<p class="wp-block-paragraph">But first, let’s brainstorm some ideas.</p>
+<h3 class="wp-block-heading">Understanding Relative Movements</h3>
+<p class="wp-block-paragraph">The classic stat arb approach capitalises on relative movements between similar assets. </p>
+<p class="wp-block-paragraph">In particular, fading price-insensitive buying or selling that pushes an asset’s price away from fair value tends to be a good bet. </p>
+<h3 class="wp-block-heading">Trend Effects and Momentum</h3>
+<p class="wp-block-paragraph">Apart from relative movements, identifying predictable short-term and long-term trend effects can be useful, particularly in less efficient markets. </p>
+<p class="wp-block-paragraph">An interesting example is the concept of crowded spreads breaking. When many traders occupy a spread, and it diverges further and further, it can lead to violent momentum as everyone gets forced out of it. </p>
+<p class="wp-block-paragraph">If you’re skilled, you can build these effects into your stat arb models.</p>
+<h3 class="wp-block-heading">Lead-Lag Relationships</h3>
+<p class="wp-block-paragraph">The crypto market sometimes exhibits specific lead-lag relationships, where the price movement of one asset is predicted by the movement of another. </p>
+<p class="wp-block-paragraph">An interesting example was the lead-lag relationship between Bitcoin and the S&amp;P 500.</p>
+<p class="wp-block-paragraph">I don’t know if this still exists, but when I last looked in 2022, it was observable in the data.</p>
+<p class="wp-block-paragraph">If you look at the intraday correlations of those things, you’ll see that what probably happened was that someone put SPX returns into their market-making fair value algorithm, which ended up creating a structural lead-lag correlation effect between these two assets.</p>
+<p class="wp-block-paragraph">You can imagine that if you’ve got people moving quotes on the basis of recent moves in some asset, then you’ve effectively physically generated a lead-lag relationship between those things – because a big part of price movement is quote revision.</p>
+<h3 class="wp-block-heading">Volume and Price Movement</h3>
+<p class="wp-block-paragraph">Another important idea, especially in less liquid markets, is understanding the volume required to move price. </p>
+<p class="wp-block-paragraph">By analyzing the relationship between the historical volume of aggressive buying or selling and the resultant price change, you may be able to infer the presence of invisible supply or demand. </p>
+<p class="wp-block-paragraph">For example, you might look at the historical data and find that, on average, $100k of aggressive buying over the last minute created a price change of 0.2% (those numbers don’t mean anything; they’re just to make the example more real). </p>
+<p class="wp-block-paragraph">Now, imagine you see $1 million of aggressive buying, and it only moves price 0.2% over the next minute. That would suggest that there is an invisible supply in the market that’s being reloaded as an iceberg order or similar.</p>
+<p class="wp-block-paragraph">All things being equal, you’d rather fade that move – because unless more demand comes in,  you infer that there’s an imbalance.</p>
+<p class="wp-block-paragraph">On the other hand, we did some analysis back in 2022 that suggested that, <em>on average</em>, crypto price moves on larger volumes were more likely to continue. </p>
+<p class="wp-block-paragraph">Often, these trend/reversion effects play out over different time horizons, and how you incorporate them into your model requires some careful analysis. </p>
+<h3 class="wp-block-heading">Carry</h3>
+<p class="wp-block-paragraph">Carry is also very interesting in crypto.</p>
+<p class="wp-block-paragraph">You would naively expect that futures trading at a premium to spot are, on average, more likely to go down, while those trading at a discount tend to go up. </p>
+<p class="wp-block-paragraph">However, when we looked at carry in crypto, we found that total returns (price change plus funding) were correlated with the futures premium, with some potentially interesting and different dynamics in the tails.</p>
+<p class="wp-block-paragraph">So, carry is potentially an interesting feature to include in your crypto stat arb models. </p>
+<p class="wp-block-paragraph">In addition, <em>changes </em>in carry might be worth looking at. </p>
+<p class="wp-block-paragraph">For example, say you’re looking at a certain crypto spot market and its perpetual contract. The perpetual gets bid up 1%. You go and check what’s happened in the spot market. You’d probably think differently about the continuation of that move if the spot hadn’t moved than if they’d both been bid up together. </p>
+<h3 class="wp-block-heading">Seasonal Patterns</h3>
+<p class="wp-block-paragraph">Lastly, seasonal patterns can be interesting, especially in less liquid assets. These can be due to cultural factors or known trading activities like rebalance trades. These patterns can be useful inputs to stat arb models.</p>
+<h3 class="wp-block-heading">Conclusion</h3>
+<p class="wp-block-paragraph">In this article, we brainstormed some potential predictive features for a crypto stat arb model. </p>
+<p class="wp-block-paragraph">We came up with:</p>
+<ul class="wp-block-list">
+<li>Relative price moves</li>
+<li>Predictable trend effects</li>
+<li>Lead-lag relationships</li>
+<li>Volume and price change</li>
+<li>Carry </li>
+<li>Seasonal patterns</li>
+</ul>
+<p class="wp-block-paragraph">The next step would be to do some data analysis that attempts to understand these features in detail, ideally quantifying their historical strength and decay characteristics. We’ll tackle this in a future article. </p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8"></div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130666 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/"><img alt="The Winter of our Pairs Trading Discontent: Problems, limitations, frustrations" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130667" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130276 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/moneyball-finding-undervalued-pairs-using-unconventional-metrics/"><img alt="Moneyball: Finding Undervalued Pairs Using Unconventional Metrics" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130277" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-1280x964.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-80x60.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-480x361.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-960x723.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features.webp 1456w" decoding="async" height="578" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='578'%20viewBox='0%200%20768%20578'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130275 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-tale-of-two-prices/"><img alt="A Tale of Two Prices" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="120744" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-1024x538.jpg 1024w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-768x403.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04.jpg 1200w" decoding="async" height="158" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='158'%20viewBox='0%200%20300%20158'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">8 thoughts on “Ideas for Crypto Stat Arb Features”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-36622">
+<article class="comment-body" id="div-comment-36622" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Interesting. May I know what are the tools you apply on the data that is transformed to information. For instance, I am interested to understand what tools you use on the data to find statistical arbitrage opportunity</p>
+<span class="reply"><a aria-label="Reply to Vamsi" class="comment-reply-link" data-belowelement="div-comment-36622" data-commentid="36622" data-postid="88580" data-replyto="Reply to Vamsi" data-respondelement="respond" href="#comment-36622" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-36680">
+<article class="comment-body" id="div-comment-36680" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Good question. Let’s talk equity pairs to start with. Our equity pairs approach focuses on identifying pairs that we think are likely to see divergence and convergence. Identifying a good pairs universe is pretty much the whole game… then its just a matter of trading the divergences and convergences and managing your risk.  </p>
+<p>We do this universe selection a little differently to what you see in most stat arb articles/papers/etc, which tend to use things like cointegration tests. We like to look a little more directly at the effect – which fundamentally is just pairs of assets diverging and converging. For equities, our approach is to create features that directly quantify this effect for pairs of assets. We run these over a broad universe of pairs. Since there are loads of pairwise combinations, you can imagine that this takes quite a lot of compute resources. But the problem as farily tractable with big data and cloud tools such as Big Query. In addition to directly looking at convergence/divergence, we also apply some simple filters that sanity check that a particular pair of assets might indeed by exposed to similar risk factors. Finally, we also look at pairwise partial correlations via the graphical lasso as a final filter.  </p>
+<p>For the more general long-short crypto stat arb stuff that I mentioned in the article, it’s mostly a matter of quantifying the relationship between the feature and future (relative) returns. Nothing complex – just simple data analysis will do (scatterplots, correleations, etc). I’ll do a follow up article with an example.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-36680" data-commentid="36680" data-postid="88580" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-36680" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-36650">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 01/28/2024 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-36834">
+<div class="comment-body">
+				Pingback: Quantifying and Combining Crypto Alphas - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-36863">
+<div class="comment-body">
+				Pingback: A Simple, Effective Way to Manage Turnover and Not Get Killed by Costs - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-36933">
+<div class="comment-body">
+				Pingback: How to Model Features as Expected Returns - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-37288">
+<div class="comment-body">
+				Pingback: Building Intuition for Trading with Convex Optimisation with CVXR - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/ideas-for-crypto-stat-arb-features/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

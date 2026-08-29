@@ -1,0 +1,115 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How Does Barclays’ XVZ ETN Work?</title>
+<!-- source: https://www.sixfigureinvesting.com/2011/09/under-the-hood-of-xvz/ -->
+<h1>How Does Barclays’ XVZ ETN Work?</h1>
+
+<table border="1">
+<tbody>
+<tr>
+<td><strong>IVTS = VIX/VIX3M</strong></td>
+<td><strong>Set</strong></td>
+<td><strong>Actual Short Term Alloc.</strong></td>
+<td><strong>Actual Medium Term Alloc.</strong></td>
+<td><strong>Backtest Days</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr>
+<td>IVTS &lt; 0.9</td>
+<td>1-E</td>
+<td>-0.3</td>
+<td>0.7</td>
+<td>307</td>
+<td>Contango mode, very low fear</td>
+</tr>
+<tr>
+<td>0.9 &lt;= IVTS &lt; 1.0</td>
+<td>2-E</td>
+<td>-0.2</td>
+<td>0.8</td>
+<td>402</td>
+<td>Contango mode, moderate fear</td>
+</tr>
+<tr>
+<td></td>
+<td>3</td>
+<td>-0.175</td>
+<td>0.825</td>
+<td>2</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>4</td>
+<td>-0.125</td>
+<td>0.875</td>
+<td>24</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>5</td>
+<td>-0.075</td>
+<td>0.925</td>
+<td>29</td>
+<td></td>
+</tr>
+<tr>
+<td>1.0 &lt; IVTS &lt;= 1.05</td>
+<td>6-E</td>
+<td>0</td>
+<td>1</td>
+<td>80</td>
+<td>Transition</td>
+</tr>
+<tr>
+<td></td>
+<td>7</td>
+<td>0.05</td>
+<td>0.95</td>
+<td>4</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>8</td>
+<td>0.125</td>
+<td>0.875</td>
+<td>20</td>
+<td></td>
+</tr>
+<tr>
+<td>1.05 &lt;= IVTS &lt;= 1.15</td>
+<td>9-E</td>
+<td>0.25</td>
+<td>0.75</td>
+<td>43</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>10</td>
+<td>0.375</td>
+<td>0.625</td>
+<td>10</td>
+<td></td>
+</tr>
+<tr>
+<td>IVTS &gt; 1.15</td>
+<td>11=E</td>
+<td>0.5</td>
+<td>0.5</td>
+<td>26</td>
+<td>Backwardation,very high fear</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>947</td>
+<td>Total days</td>
+</tr>
+</tbody>
+</table>
+

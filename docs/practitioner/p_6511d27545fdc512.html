@@ -1,0 +1,355 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Exploiting The Non-Farm Payrolls Drift</title>
+<!-- source: https://robotwealth.com/exploiting-the-non-farm-payrolls-drift/ -->
+<h1>Exploiting The Non-Farm Payrolls Drift</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-23728 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-fx category-quant-trading category-zorro tag-algorithmic-trading tag-backtesting tag-fx tag-trading-strategies tag-zorro pmpro-has-access" id="post-23728">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">June 1, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Exploiting The Non-Farm Payrolls Drift</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Exploiting The Non-Farm Payrolls Drift" class="ipa-media gb-media-81e19d89" data-media-id="23903" decoding="async" fetchpriority="high" height="288" sizes="(max-width: 512px) 100vw, 512px" src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161854/non-farm-payrolls.jpg" srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161854/non-farm-payrolls.jpg 512w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161854/non-farm-payrolls-300x169.jpg 300w" width="512"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Anyone that’s been around the markets knows that the monthly release of the United States Department of Labor’s Non-Farm Payrolls (NFP) data can have a <strong>tremendous impact</strong>, <em>especially</em> in the short term.
+
+NFP is a snapshot of the state of the employment situation in the US, representing the total number of paid workers, excluding farm employees and public servants.
+
+<img alt="" class="aligncenter wp-image-8818 perfmatters-lazy" data-sizes="(max-width: 577px) 100vw, 577px" data-src="https://media.robotwealth.com/wp-content/uploads/2018/07/21165635/Screenshot-2019-08-05-at-11.35.32.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2018/07/21165635/Screenshot-2019-08-05-at-11.35.32.png 800w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165635/Screenshot-2019-08-05-at-11.35.32-600x335.png 600w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165635/Screenshot-2019-08-05-at-11.35.32-300x167.png 300w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165635/Screenshot-2019-08-05-at-11.35.32-768x428.png 768w" decoding="async" height="322" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='577'%20height='322'%20viewBox='0%200%20577%20322'%3E%3C/svg%3E" width="577"/>
+<p style="text-align: center;"><em><span style="font-size: 12pt;"><strong>We know your barn is hiding a giant mining station, Rick</strong></span></em></p>
+
+The release of the monthly NFP data typically causes large swings in the currency markets, <em>even when the results are in line with estimates.</em>
+
+Here, we are interested in exploring potential seasonal effects around the release of this data. For example, does price tend to drift prior to the release? If so, which way?
+
+ 
+
+<strong>For this analysis, we’ll explore the EUR/USD exchange rate.</strong>
+
+To set up this research problem, we need to know that NFP is released on the first Friday of the month at 8:30am ET – usually. If the first Friday is a holiday, NFP is released the following Friday.
+
+These sorts of details can make seasonal analysis tedious, but we have to know about them… Here we will just analyse the months when NFP is released on the first Friday.
+
+We’ll use Zorro for this. Zorro contains pre-defined seasonality functions for this kind of work… but unfortunately  <em>“the time around the first Friday of the month at 8:30 am ET” </em>isn’t one of the things they considered!
+
+In the script below, we plot a histogram of the average cumulative returns, and their standard deviation, at five-minute intervals prior to and post-NFP release:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c">/* NFP DRIFT
+
+NFP data is released first Friday of the month at 8:30 ET
+
+*/
+
+function run()
+{
+    set(PLOTNOW);
+    StartDate = 2009;
+    EndDate = 2018;
+    BarPeriod = 5;
+    asset("EUR/USD");
+
+    int StartSeason = 600; //time of day to commence season
+    int EndSeason = 1100; //time of day to end season
+    
+    vars Closes = series(priceClose());
+    vars Returns = series((Closes[0]-Closes[1])/Closes[1]);
+    
+    // set up cumulative returns series to track returns over the whole season
+    vars CumReturns = series();
+    CumReturns[0] = (Returns[0]+1)*(CumReturns[1]+1)-1;
+    
+    // at StartSeason, reset CumReturn to zero
+    if(ldow(ET) == 5 and day() &lt;= 7 and ltod(ET) == StartSeason)
+    {
+        CumReturns[0] = 0;
+    }
+    // plot histogram
+    static int i;
+    if(is(INITRUN)) i = 0;  
+    if(ldow(ET) == 5 and day() &lt;= 7 and between(ltod(ET), StartSeason, EndSeason))
+    {
+        plotBar("SD_CumRet", i, ltod(ET), CumReturns[0]*100, DEV|BARS|LBL2, LIGHTBLUE);
+        plotBar("Avg_CumRet", i, ltod(ET), CumReturns[0]*100, AVG|BARS|LBL2, BLUE);
+//      plotBar("SD (x4)", i, ltod(ET), Returns[0]*100/4, DEV|BARS|LBL2, LIGHTBLUE);
+//      plotBar("Avg", i, ltod(ET), Returns[0]*100, AVG|BARS|LBL2, BLUE);
+        i++;    
+    }
+    
+    if(ltod(ET) &gt; EndSeason) i = 0;  
+}</pre>
+
+Note we need to ensure that our cumulative returns from the start of the season are zero, hence we set the current value of the cumulative returns series to zero at 6:00 am ET on the first Friday of the month.
+
+That means that we are comparing price evolution on different days from the same starting point. We can also comment lines 35-36 and uncomment lines 37-38 in order to plot bar-by-bar (as opposed to cumulative) returns and standard deviations (the latter scaled by a factor of four).
+
+Here’s the resulting histogram:
+
+<img alt="" class="alignnone size-full wp-image-8752 perfmatters-lazy" data-sizes="(max-width: 929px) 100vw, 929px" data-src="https://media.robotwealth.com/wp-content/uploads/2018/07/21165649/NFP_drift.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2018/07/21165649/NFP_drift.png 929w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165649/NFP_drift-600x307.png 600w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165649/NFP_drift-300x154.png 300w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165649/NFP_drift-768x394.png 768w" decoding="async" height="476" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='929'%20height='476'%20viewBox='0%200%20929%20476'%3E%3C/svg%3E" width="929"/>
+
+That doesn’t really tell us much:
+
+<ul>
+<li>prior to the release, the price goes nowhere on average</li>
+<li>after the release, the price went down a little on average</li>
+<li>that negative return is likely representative of little more than the overall bias of the EUR/USD market over the simulation period.</li>
+</ul>
+
+So we haven’t really learned anything of value, other than perhaps the obvious increase in volatility after the release, here represented by the standard deviation of bar-by-bar returns.
+
+<h2>What if we also consider the direction of the market following the announcement?</h2>
+
+For example, we plot separate histograms for price evolution for markets that went up following the NFP release, and for markets that went down.
+
+<blockquote><em>But wouldn’t that involve looking into the future?</em></blockquote>
+
+Yes, it would, at least from the perspective of the individual periods being analyzed.
+
+But here we can use this future-peeking to our advantage to uncover some hopefully useful insights about the relationships between pre- and post-NFP price evolution.
+
+Future-peeking is fine in this exercise because we are not (yet) designing a trading system  – we are merely seeking to unravel some interesting relationships from past data.
+
+To do that, we need to know whether, on a particular day, the NFP release caused the markets to go up, or to go down.
+
+Our trading system might be based on the <em>insights</em> gained through this exercise, but it will not be based on knowledge of the future. If this is confusing, I hope it becomes clear after seeing an example.
+
+Here’s the code for separating our price evolution histograms on the basis of a bullish or bearish market post-NFP:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c">/* NFP DRIFT
+
+NFP data is released first Friday of the month at 8:30 ET
+
+*/
+
+function run()
+{
+    set(PEEK|PLOTNOW);
+    StartDate = 2009;
+    EndDate = 2018;
+    BarPeriod = 5;
+    asset("EUR/USD");
+    
+    int StartSeason = 600; //time of day to commence season
+    int EndSeason = 1100; //time of day to end season
+    
+    vars Closes = series(priceClose());
+    vars Returns = series((Closes[0]-Closes[1])/Closes[1]);
+    
+    // set up cumulative returns series to track returns over the whole season
+    vars CumReturns = series();
+    CumReturns[0] = (Returns[0]+1)*(CumReturns[1]+1)-1;
+    
+    static int i;
+    if(is(INITRUN)) i = 0;
+    
+    // at StartSeason, get first hour's return post NFP, and reset CumReturn to zero
+    static var NFP_Return;
+    if(ldow(ET) == 5 and day() &lt;= 7 and ltod(ET) == StartSeason)
+    {
+        // calculate number of BarPeriods to use for future peeking post-NFP returns
+        int timeDiff = 830 - StartSeason;
+        var minutes = floor(timeDiff/100)*60 + timeDiff % 100;
+        int offset = minutes/BarPeriod; //number of bars to NFP release
+        
+        // calculate post-NFP returns (1 hour)
+        NFP_Return = (priceClose(-(offset+60/BarPeriod))-priceClose(-offset))/priceClose(-offset);
+        CumReturns[0] = 0;
+    }
+        
+    if(ldow(ET) == 5 and day() &lt;= 7 and between(ltod(ET), StartSeason, EndSeason) and NFP_Return &gt; 0)
+    {
+        plotBar("SD_CumRet", i, ltod(ET), CumReturns[0]*100, DEV|BARS|LBL2, LIGHTBLUE);
+        plotBar("Avg_CumRet", i, ltod(ET), CumReturns[0]*100, AVG|BARS|LBL2, BLUE);
+//      plotBar("SD (x4)", i, ltod(ET), Returns[0]*100/4, DEV|BARS|LBL2, LIGHTBLUE);
+//      plotBar("Avg", i, ltod(ET), Returns[0]*100, AVG|BARS|LBL2, BLUE);
+        i++;    
+    }
+    
+    if(ltod(ET) &gt; EndSeason) i = 0;  
+}</pre>
+
+Here we set the <code>PEEK</code>  flag, which enables the <code>price()</code> functions to access data from the future.
+
+Now, when we reset our cumulative returns to zero at <code>StartSeason</code> , we also calculate the number of <code>BarPeriods</code> into the future, we need in order to calculate the first hour’s return post-NFP (lines 33-35, calculation of first hour’s return post-NFP is in line 38).
+
+We then use that return’s sign to filter certain NFP days from our histogram (line 42). Just change the greater-than or less-than sign to get the direction you want.
+
+Here’s the histogram for price evolution on days when NFP produces a bullish reaction:
+
+<img alt="" class="alignnone size-full wp-image-8753 perfmatters-lazy" data-sizes="(max-width: 929px) 100vw, 929px" data-src="https://media.robotwealth.com/wp-content/uploads/2018/07/21165648/NFP_drift_directional_long.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2018/07/21165648/NFP_drift_directional_long.png 929w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165648/NFP_drift_directional_long-600x307.png 600w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165648/NFP_drift_directional_long-300x154.png 300w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165648/NFP_drift_directional_long-768x394.png 768w" decoding="async" height="476" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='929'%20height='476'%20viewBox='0%200%20929%20476'%3E%3C/svg%3E" width="929"/>
+
+And here’s the histogram for the negative NFP reaction:
+
+<img alt="" class="alignnone size-full wp-image-8754 perfmatters-lazy" data-sizes="(max-width: 929px) 100vw, 929px" data-src="https://media.robotwealth.com/wp-content/uploads/2018/07/21165647/NFP_drift_directional_short.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2018/07/21165647/NFP_drift_directional_short.png 929w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165647/NFP_drift_directional_short-600x307.png 600w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165647/NFP_drift_directional_short-300x154.png 300w, https://media.robotwealth.com/wp-content/uploads/2018/07/21165647/NFP_drift_directional_short-768x394.png 768w" decoding="async" height="476" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='929'%20height='476'%20viewBox='0%200%20929%20476'%3E%3C/svg%3E" width="929"/>
+<blockquote><em>Well, that’s a little more interesting!</em></blockquote>
+
+We can see that prior to a bullish NFP release (bullish for the Euro in this case, bearish for the dollar), the EUR/USD market drifts upwards, on average.
+
+Conversely, prior to a bearish NFP release, the EUR/USD market drifts downward, on average.
+
+<h2>What’s going on here?</h2>
+
+Are there people out there who have prior knowledge of the release and are positioning themselves accordingly?
+
+The former, at least, is entirely possible, and it doesn’t have to be due to any criminal leaking of sensitive data.
+
+No doubt there are innovative and well-resourced organizations out there that gather their own data and build their own predictive models for forecasting the NFP numbers (which are probably easier to forecast than the markets themselves).
+
+Could the drift we identified above simply be these well-informed traders positioning themselves? If so, would we want to trade with them?
+
+Also, note the significant variation in price evolution pre-NFP release as evidenced by the <em><strong>large standard deviation of bar-by-bar returns</strong></em>.
+
+This implies that sometimes<em> (often, probably),</em> you’ll see behaviour that is not at all representative of the average behaviour, which of course will confound any attempt to act on pre-NFP price evolution.
+
+But still, I find this an interesting insight into a very specific seasonal effect, and the intent is that you will be able to adapt the research framework presented here to investigate other events or effects you deem interesting.
+
+<div class="convertful-36233"></div>
+<h2>If you liked this you’ll probably like these too…</h2>
+<blockquote class="wp-embedded-content" data-secret="vhGHeoBUw5"><a href="https://robotwealth.com/systematic-trading-zorro/">A Review of Zorro for Systematic Trading</a></blockquote>
+<blockquote class="wp-embedded-content" data-secret="LoEab4JFPr"><a href="https://robotwealth.com/parameter-optimisation-for-systematic-trading/">Parameter Optimisation for Systematic Trading</a></blockquote>
+<blockquote class="wp-embedded-content" data-secret="WnzcRbNtYJ"><a href="https://robotwealth.com/pairs-trading-zorro/">Pairs Trading in Zorro</a></blockquote>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>algorithmic trading</span>, <span>backtesting</span>, <span>fx</span>, <span>trading strategies</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">3 thoughts on “Exploiting The Non-Farm Payrolls Drift”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1" id="comment-14777">
+<article class="comment-body" id="div-comment-14777" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great post as usual!</p>
+<span class="reply"><a aria-label="Reply to Paul" class="comment-reply-link" data-belowelement="div-comment-14777" data-commentid="14777" data-postid="23728" data-replyto="Reply to Paul" data-respondelement="respond" href="#comment-14777" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/exploiting-the-non-farm-payrolls-drift/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

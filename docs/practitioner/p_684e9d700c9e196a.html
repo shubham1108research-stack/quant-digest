@@ -1,0 +1,95 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Towards the Development of an ESG Scoring Framework for Derivatives</title>
+<!-- source: https://www.welton.com/towards-the-development-of-an-esg-scoring-framework-for-derivatives/ -->
+<h1>Towards the Development of an ESG Scoring Framework for Derivatives</h1>
+
+<div id="page-container">
+<div class="et-boc" id="et-boc">
+<div id="top-header">
+<div class="container clearfix">
+<div id="et-secondary-menu">
+<ul class="menu" id="et-secondary-nav"><li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-51"><a href="https://citcoone.citco.com" target="_blank">Client Login</a></li>
+</ul> </div>
+</div>
+</div>
+ <!-- #main-header -->
+<div id="et-main-area">
+<div id="main-content">
+<div class="container">
+<div class="clearfix" id="content-area">
+<div id="left-area">
+<article class="et_pb_post post-49898 post type-post status-publish format-standard has-post-thumbnail hentry category-insights tag-dr-francois-chevallier-gravezat tag-insights" id="post-49898">
+<div class="et_post_meta_wrapper">
+<h1 class="entry-title">Towards the Development of an ESG Scoring Framework for Derivatives</h1>
+<p class="post-meta"> by <span class="author vcard"><a href="https://www.welton.com/author/welton-fchevallier/" rel="author" title="Posts by Dr. François Chevallier-Gravezat">Dr. François Chevallier-Gravezat</a></span> | <span class="published">Jun 8, 2021</span> | <a href="https://www.welton.com/insights/" rel="category tag">Insights</a></p><img alt="" class="" height="675" src="https://www.welton.com/wp-content/uploads/2021/08/Wood_Puzzle1.jpg" width="1080"/>
+</div>
+<div class="entry-content">
+<div class="wp-caption alignleft" id="attachment_49684" style="width: 160px"><img alt="Francois Chevallier" aria-describedby="caption-attachment-49684" class="wp-image-49684 size-thumbnail" decoding="async" height="150" loading="lazy" src="https://www.welton.com/wp-content/uploads/2020/11/Francois-Chevallier-150x150.jpg" width="150"/><p class="wp-caption-text" id="caption-attachment-49684">Dr. Francois Chevallier, PhD, Portfolio Manager, Machine Learning Strategies </p></div>
+<p>As the appetite for sustainable investing grows, investors are increasingly seeking investment options that go beyond the commonly available long-only equity ESG funds. Welton has written elsewhere, <a href="https://www.welton.com/solving-the-esg-dilemma-how-to-advance-ones-values-while-also-improving-performance/">(“Solving the ESG Dilemma: How to Advance One’s Values While Also Improving Performance”)</a>, about how building in multi-asset class strategies into an ESG framework can improve performance.</p>
+<p>But if we truly want to allocate our investment dollars in ways that solve some of our greatest environmental and social challenges and that gain wider adoption by the investment marketplace, we need to develop multi-asset ESG products that can help us build more sophisticated ESG portfolios. To do this we must first develop ESG scoring frameworks for these other asset types that can build adherents to these methods.</p>
+<p>For consideration, I propose a framework that we have developed at Welton for measuring the ESG scores for derivatives instruments. Despite the fact that financial derivatives represent a very large proportion of the investment world, there have only been very limited attempts to study these instruments in an ESG context. It is our hope that by sharing this with the field, we can encourage others to weigh in and possibly improve upon this framework so that we can ultimately drive more widespread adoption of multi-strategy ESG products.</p>
+<p>In the spirit of encouraging others to develop and share their own frameworks for scoring ESG derivatives, I think it is worth drawing out here in a bit more detail some of the challenges I encountered in developing this work.</p>
+<p>But this is just one of many ways a more holistic portfolio construction can improve outcomes for ESG investors.</p>
+<p><strong>Back to the drawing board – and then back again</strong></p>
+<p>The primary goals of any such scoring methodology must be credibility, so that the measure can be trusted, and consistency, so that scores can be compared across instruments. In coming up with the proposed ESG methodology, I went down a number of different paths that proved unworkable.</p>
+<p>In the context of my work at Welton, my initial interest was to be able to measure an ESG scores for Futures and Forwards instruments. Initial research quickly highlighted that it would not be possible to obtain ESG scores from a third party the same way one can for cash Equities. Part of the reason, at least, lies in that it is far easier to quantify the impact of a company than one of, say, agricultural futures. For example, consider the case of corn futures. While it seems pretty straightforward to consider the “E” (environmental) impact of corn production by measuring usage of factors like pesticide and water or carbon footprint, how would you go about measuring the “S” (social) or the “G” (governance)? And even if you could come up with a framework, it is unlikely that it would apply across the board to US Treasury Futures by virtue of the fact that the factors that drive sustainability are very different. For example, pesticide and water use are relevant for corn production, but not for Treasuries.</p>
+<p>One way to develop a consistent methodology for derivatives is to look at the issuing entity of the underlying instrument (such as a commodity), as this data is reasonably easy to find and this approach is consistent with corporate ESG scoring. The most accessible common denominator across most derivative instrument are countries, for which data can be obtained from multiple sources. However, for this analysis to be credible, the source of the data needs to be credible and consequently, research for this project was limited to recognized international institutions.</p>
+<p>We initially went down the path of using the UN Sustainable Development Goals (SDGs) as a unifying framework. But I realized that this became complicated very quickly because of the many overlaps between the S and the G characteristics. For example, government spending on healthcare and education (SDG 17) certainly sounds like a G factor, but what about the social outcomes of these policies, such as life expectancy at birth (SDG 3), which sounds like an S factor. But they are clearly very related.</p>
+<p>In short, I realized that not only are there 17 different SDGs and that mapping these accurately would be complex, but that making determinations about the “E” “S” and “G” characteristics opened up the door to discretionary judgements – exactly what we wanted to avoid.</p>
+<p>Ultimately our research led us to a Sovereign ESG data portal that has recently been developed by the World Bank. The World Bank ESG data framework classifies a set of 68 indicators relevant to the 17 SDGs into the three E, S and G pillars. We found the data coverage was to be impressive both in terms of geography and historical depth and the data can be easily accessed via a dedicated API.</p>
+<p>Having selected a data source, all we then had to do was develop a weighting score for the production of whatever was underlying each derivative, which required collecting more data from international institutions. Once the data had been collected and normalized, the sustainability scores were trivial to compute. Figure 1 below illustrates the evolution of the ESG scores and their sub-components for selected Futures markets.</p>
+<div class="wp-caption alignnone" id="attachment_49902" style="width: 710px"><a href="https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig01.png"><img alt="" aria-describedby="caption-attachment-49902" class="wp-image-49902" decoding="async" fetchpriority="high" height="528" sizes="(max-width: 700px) 100vw, 700px" src="https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig01.png" srcset="https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig01.png 818w, https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig01-300x226.png 300w, https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig01-768x579.png 768w, https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig01-500x377.png 500w, https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig01-800x603.png 800w" width="700"/></a><p class="wp-caption-text" id="caption-attachment-49902">Figure 1 (Click to enlarge)</p></div>
+<p> </p>
+<p>The framework we developed is dynamic and is applicable to any ﬁnancial instrument And the resulting ESG scores can easily be used to measure the sustainability of cross-asset portfolios.</p>
+<p><strong>Where we need to go from here?</strong></p>
+<p>However, this framework also has two important limitations: the first one that the input data is only published annually, which limits its responsiveness to underlying shifts taking place over this period, so this is not ideal. This limitation could be remediated, however, by incorporating higher frequency indicators based on news or social media (which are currently an area of active research for Welton). The other important limitation of the current framework is that it tends to penalize commodities as highlighted in Figure 2 below.</p>
+<p> </p>
+<div class="wp-caption alignnone" id="attachment_49901" style="width: 710px"><a href="https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig02.png"><img alt="" aria-describedby="caption-attachment-49901" class="wp-image-49901" decoding="async" height="436" loading="lazy" sizes="(max-width: 700px) 100vw, 700px" src="https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig02.png" srcset="https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig02.png 1036w, https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig02-300x187.png 300w, https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig02-1024x638.png 1024w, https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig02-768x478.png 768w, https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig02-500x311.png 500w, https://www.welton.com/wp-content/uploads/2021/06/ESG_Scoring_Framework_Fig02-800x498.png 800w" width="700"/></a><p class="wp-caption-text" id="caption-attachment-49901">Figure 2 (Click to enlarge)</p></div>
+<p> </p>
+<p>Further inspection reveals that this bias is caused by the sustainability indicators themselves which tend to favor developed economies (especially the ones belonging to the S and G pillars) which tend to be issuer/producer of Financial instruments rather than commodities. Conversely, developed economies, which tend to have lower sovereign ESG scores, are more likely to be produce commodities. This bias needs to be acknowledged when making direct comparison between instruments’ ESG scores.</p>
+<p>We invite others to share with us your thoughts on our framework as well as any efforts you have made down this path. We are convinced that ESG is perhaps the most significant and important shifts in investing in more than a generation. To fully realize its potential, we must come together as an industry to develop the methodologies that can help it gain broader acceptance among institutional investors.</p>
+</div>
+<div class="et_post_meta_wrapper">
+</div>
+</article>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<a href="https://www.welton.com/?blackhole=1e25952611" rel="nofollow" style="display:none" title="Do NOT follow this link or you will be banned from the site!">Welton Investment Partners</a>
+
+<!-- Default Popup Modal -->
+<div class="simple-exit-notifier-modal chrssen-animation-fade" id="simple-exit-notifier-modal" style="display: none;">
+<div class="simple-exit-notifier-overlay"></div>
+<div aria-labelledby="simple-exit-notifier-title" aria-modal="true" class="simple-exit-notifier-content" role="dialog">
+<div class="simple-exit-notifier-header">
+<h2 id="simple-exit-notifier-title">Leaving Our Site</h2>
+</div>
+<div class="simple-exit-notifier-message">
+<p>You are now leaving Welton’s website and will be redirected to a third‑party website. The material on that site is prepared by an independent third party that is not affiliated with or controlled by Welton. Welton does not endorse or assume responsibility for the accuracy or completeness of any information on that site. This link is provided for informational purposes only and should not be construed as a recommendation or solicitation.</p>
+</div>
+<div class="simple-exit-notifier-actions">
+<a class="simple-exit-notifier-proceed" href="#" rel="noopener noreferrer" target="_blank">Proceed</a>
+<button class="simple-exit-notifier-cancel" type="button">Cancel</button>
+</div>
+</div>
+</div>
+
+
+
+<!-- Google Tag Manager (noscript) -->
+
+<!-- End Google Tag Manager (noscript) -->
+
+
+
+
+
+
+

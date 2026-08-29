@@ -1,0 +1,275 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Deep Learning for Trading Part 2: Configuring TensorFlow and Keras to run on GPU</title>
+<!-- source: https://robotwealth.com/deep-learning-trading-tensorflow-keras-gpu/ -->
+<h1>Deep Learning for Trading Part 2: Configuring TensorFlow and Keras to run on GPU</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-3766 post type-post status-publish format-standard has-post-thumbnail hentry category-deep-learning category-keras category-neural-networks category-r category-tools-of-the-trade tag-deep-learning tag-gpu tag-keras tag-r tag-tensorflow pmpro-has-access" id="post-3766">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">January 7, 2018</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Deep Learning for Trading Part 2: Configuring TensorFlow and Keras to run on GPU</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Deep Learning for Trading Part 2: Configuring TensorFlow and Keras to run on GPU" class="ipa-media gb-media-81e19d89" decoding="async" src=""/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><blockquote>This is the second in a multi-part series in which we<strong> </strong><strong>explore and compare various deep learning tools and techniques for market forecasting using Keras and TensorFlow</strong>.
+In <a href="https://robotwealth.com/deep-learning-trading-part-1/" rel="noopener noreferrer" target="_blank">Part 1</a>, we introduced Keras and discussed some of the major obstacles to using deep learning techniques in trading systems, including a warning about attempting to extract meaningful signals from historical market data. If you haven’t read that article, it is highly recommended that you do so before proceeding, as the context it provides is important. <a href="https://robotwealth.com/deep-learning-trading-part-1/" rel="noopener noreferrer" target="_blank">Read Part 1 here</a>.
+Part 2 provides a walk-through of setting up <strong>Keras and Tensorflow for R</strong> using either the default <strong>CPU-based configuration</strong>, or the more complex and involved (but well worth it) <strong>GPU-based configuration </strong>under the Windows environment<strong>.</strong>
+Stay tuned for Part 3 of this series which will be published next week.</blockquote>
+<h2>CPU vs GPU for Deep Learning</h2>
+<p class="graf graf--p graf-after--p" id="9e3f">No doubt you know that a computer’s Central Processing Unit (CPU) is its primary computation module. CPUs are designed and optimized for rapid computation on small amounts of data and as such, elementary arithmetic operations on a few numbers is blindingly fast. However, CPUs tend to struggle when asked to operate on larger amounts of data, for example performing matrix operations on large arrays. And guess what: <strong>the computational nuts and bolts of deep learning is all about such matrix operations.</strong> That’s bad news for a CPU.</p>
+
+The rendering of computer graphics relies on these same types of operations, and Graphical Processing Units (GPUs) were developed to optimize and accelerate them. GPUs typically consist of hundreds or even thousands of cores, enabling massive parallelization. <strong>This makes GPUs a far more suitable hardware for deep learning than the CPU.</strong>
+Of course, you can do deep learning on a CPU. And this is fine for small scale research projects or just getting a feel for the technique. But for doing any serious deep learning research, access to a GPU will provide an enormous boost in productivity and shorten the feedback loop considerably. Instead of waiting days for a model to train, you might only have to wait hours. Instead of waiting hours, you’ll only have to wait minutes.
+When selecting a GPU for deep learning, the most important characteristic is the <strong>memory bandwidth</strong> of the unit, not the number of cores as one might expect. That’s because it typically takes more time to read the data from memory than to perform the actual computations on that data! So if you want to do fast deep learning research, be sure to check the memory bandwidth of your GPU. By way of comparison, my (slightly outdated) NVIDIA GTX 970M has a memory bandwidth of around 120 GB/s. The GTX 980Ti clocks in at around 330 GB/s!
+
+<h2>Baby Steps: Configuring Keras and TensorFlow to Run on the CPU</h2>
+
+If you don’t have access to a GPU, or if you just want to try out some deep learning in Keras before committing to a full-blown deep learning research project, then the CPU installation is the right one for you. It will only take a couple of minutes and a few lines of code, as opposed to an hour or so and a deep dive into your system for the GPU option.
+Here’s how to install Keras to run TensorFlow on the CPU.
+At the time of writing, the Keras R package could be installed from CRAN, but I preferred to install directly from GitHub. To do so, you need to first install the <span class="lang:r highlight:0 decode:true crayon-inline">devtools</span> package, and then do
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">devtools::install_github("rstudio/keras")
+</pre>
+
+Then, load the Keras package and make use of the convenient <span class="lang:r decode:true crayon-inline">install_keras()</span>  function to install both Keras and TensorFlow:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">library(keras)
+install_keras()</pre>
+
+That’s it! You now have the CPU-based versions of Keras and TensorFlow ready to go, which is fine if you are just starting out with deep learning and want to explore it at a high level. If you don’t want the GPU-based versions just yet, then I’m afraid that’s all we have for you until the next post!
+
+<h2>Serious Deep Learning: Configuring Keras and TensorFlow to run on a GPU</h2>
+
+Installing versions of Keras and TensorFlow compatible with NVIDIA GPUs is a little more involved, but is certainly worth doing if you have the appropriate hardware and intend to do a decent amount of deep learning research. The speed up in model training is<i> really</i> significant.
+Here’s how to install and configure the NVIDIA GPU-compatible version of Keras and TensorFlow for R under Windows.
+
+<h3>Step 1: What hardware do you have?</h3>
+
+First, you need to work out if you have a compatible NVIDIA GPU installed on your Windows machine. To do so, open your NVIDIA Control Panel. Typically, it’s located under <span class="lang:c highlight:0 decode:true crayon-inline">C:\Program Files\NVIDIA Corporation\Control Panel Client</span> , but on recent Windows versions you can also find it by right-clicking on the desktop and selecting ‘NVIDIA Control Panel’, like in the screenshot below:
+
+<h2><a href="https://robotwealth.com/wp-content/uploads/2018/01/NVIDIA_cp_screenshot.png"><img alt="" class="aligncenter size-full wp-image-3975" decoding="async" fetchpriority="high" height="264" src="https://robotwealth.com/wp-content/uploads/2018/01/NVIDIA_cp_screenshot.png" width="239"/></a></h2>
+
+When the control panel opens, click on the System Information link in the lower left corner, circled in the screenshot below:
+<a href="https://robotwealth.com/wp-content/uploads/2018/01/2018-01-07-12_25_52-NVIDIA-Control-Panel.png"><img alt="" class="aligncenter size-full wp-image-3976 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/01/2018-01-07-12_25_52-NVIDIA-Control-Panel.png" decoding="async" height="711" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='960'%20height='711'%20viewBox='0%200%20960%20711'%3E%3C/svg%3E" width="960"/></a>
+This will bring up the details of your NVIDIA GPU. Note your GPU’s model name (here mine is a GeoForce GTX 970M, which you can see under the ‘Items’ column): While you’re at it, check how your GPU’s memory bandwidth stacks up (remember this parameter is the limiting factor of the GPU’s speed on deep learning tasks).
+
+<h2><a href="https://robotwealth.com/wp-content/uploads/2018/01/2018-01-07-12_41_43-System-Information.png"><img alt="" class="aligncenter size-full wp-image-3977 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/01/2018-01-07-12_41_43-System-Information.png" decoding="async" height="511" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='558'%20height='511'%20viewBox='0%200%20558%20511'%3E%3C/svg%3E" width="558"/></a></h2>
+<h3>Step 2: Is your hardware compatible with TensorFlow?</h3>
+
+Next, head over to NVIDIA’s GPU documentation, located at <a href="https://developer.nvidia.com/cuda-gpus" rel="noopener noreferrer" target="_blank">https://developer.nvidia.com/cuda-gpus</a>. You’ll need to find your GPU model on this page and work out its Compute Capability Number. This needs to be 3.0 or higher to be compatible with TensorFlow. You can see in the screenshot below that my particular GPU model has a Compute Capability of 5.2, which means that I can use it to train deep learning models in TensorFlow. Hooray for productivity.
+<a href="https://robotwealth.com/wp-content/uploads/2018/01/2018-01-07-12_46_45-CUDA-GPUs-_-NVIDIA-Developer.png"><img alt="" class="aligncenter size-full wp-image-3978 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/01/2018-01-07-12_46_45-CUDA-GPUs-_-NVIDIA-Developer.png" decoding="async" height="637" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='883'%20height='637'%20viewBox='0%200%20883%20637'%3E%3C/svg%3E" width="883"/></a>
+In practice, my GPU model is now a few years old and there are much better ones available today. But still, using this GPU provides far superior model training times than using a CPU.
+
+<h3>Step 3: Get CUDA</h3>
+
+Next, you’ll need to download and install NVIDIA’s CUDA Toolkit. CUDA is NVIDIA’s parallel computing API that enables programming on the GPU. Thus, it provides the framework for harnessing the massive parallel processing capabilities of the GPU. At the time of writing, the release version of TensorFlow (1.4) was compatible with version 8 of the CUDA Toolkit (<strong>NOT version 9</strong>, which is the current release), which you’ll need to download via the CUDA archives <a href="https://developer.nvidia.com/cuda-80-ga2-download-archive" rel="noopener noreferrer" target="_blank">here</a>.<span class="inline-footnote" style="" title="The compatible versions of CUDA and cuDNN may change as new versions of TensorFlow are released. It is worth double checking the correct versions at tensorflow.org.">1<span class="footnoteContent" style="display:none;">The compatible versions of CUDA and cuDNN may change as new versions of TensorFlow are released. It is worth double checking the correct versions at <a href="https://www.tensorflow.org/" rel="noopener noreferrer" target="_blank">tensorflow.org</a>.</span></span>
+<h3>Step 4: Get your latest driver</h3>
+<div class="u-serif-font-main--large">
+<div class="ui_qtext_expanded"></div>
+</div>
+
+You’ll also need to get the latest drivers for your particular GPU from NVIDIA’s <a href="https://www.nvidia.com/Download/index.aspx?lang=en-us" rel="noopener noreferrer" target="_blank">driver download page</a>. Download the correct driver for your GPU and then install it.
+
+<h3>Step 5: Get cuDNN</h3>
+
+Finally, you’ll need to get NVIDIA’s CUDA Deep Neural Network library (cuDNN). cuDNN is essentially a library for deep learning built using the CUDA framework and enables computational tools like TensorFlow to access GPU acceleration. You can read all about cuDNN <a href="https://devblogs.nvidia.com/parallelforall/accelerate-machine-learning-cudnn-deep-neural-network-library/" rel="noopener noreferrer" target="_blank">here</a>. In order to download it, you will need to sign up for an <a href="https://developer.nvidia.com/" rel="noopener noreferrer" target="_blank">NVIDIA developers account</a>.
+Having activated your NVIDIA developers account, you’ll need to download the correct version of cuDNN. <strong>The current release of TensorFlow (version 1.4) requires cuDNN version 6</strong>. However, the latest version of cuDNN is 7, and it’s not immediately obvious how to acquire version 6. You’ll need to head over to<a href="https://developer.nvidia.com/cudnn" rel="noopener noreferrer" target="_blank"> this page</a>, and under the text on ‘What’s New in cuDNN 7?’ click the Download button. After agreeing to some terms and conditions, you’ll then be able to select from numerous versions of cuDNN. Make sure to get the version of cuDNN that is compatible with your version of CUDA (version 8), as there are different sub-versions of cuDNN for each version of CUDA.<span class="inline-footnote" style="" title="The compatible versions of CUDA and cuDNN may change as new versions of TensorFlow are released. It is worth double checking the correct versions at tensorflow.org.">2<span class="footnoteContent" style="display:none;">The compatible versions of CUDA and cuDNN may change as new versions of TensorFlow are released. It is worth double checking the correct versions at <a href="https://www.tensorflow.org/" rel="noopener noreferrer" target="_blank">tensorflow.org</a>.</span></span>
+Confusing, no? I’ve circled the correct (at the time of writing) cuDNN version in the screenshot below (click for a clearer image):
+<a href="https://robotwealth.com/wp-content/uploads/2018/01/cuDNN-version.png"><img alt="" class="aligncenter size-large wp-image-3979 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/01/cuDNN-version-1024x700.png" decoding="async" height="511" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='511'%20viewBox='0%200%20748%20511'%3E%3C/svg%3E" width="748"/></a>
+Once you’ve downloaded the cuDNN zipped file, extract the contents to a directory of your choice.
+
+<h3 id="LaTdMC">Step 6: Modify the Windows <span class="font-size:15 line-height:18 lang:c highlight:0 decode:true crayon-inline">%PATH%</span>  variable</h3>
+
+We also need to add the paths to the CUDA and cuDNN libraries to the Windows <span class="lang:c highlight:0 decode:true crayon-inline">%PATH%</span>  variable so that TensorFlow can find them.  To do so, open the Windows Control Panel, then click on <strong>System and Security</strong>, then <strong>System</strong>, then <strong>Advanced System Settings</strong> like in the screenshot below:
+<a href="https://robotwealth.com/wp-content/uploads/2018/01/2018-01-07-13_53_05-System.png"><img alt="" class="aligncenter size-full wp-image-3980 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/01/2018-01-07-13_53_05-System.png" decoding="async" height="415" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='797'%20height='415'%20viewBox='0%200%20797%20415'%3E%3C/svg%3E" width="797"/></a>
+Then, when the System Properties window opens, click on <strong>Environment Variables</strong>. In the new window, under <strong>System Variables</strong>, select <strong>Path</strong> and click <strong>Edit</strong>. Then click <strong>New</strong> in the Edit Environment Variable window and add the paths to the CUDA and cuDNN libraries. On my machine, I added the following paths (but yours will depend on where they were installed):
+
+<ul>
+<li><span class="lang:c highlight:0 decode:true crayon-inline">C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin</span></li>
+<li><span class="lang:c highlight:0 decode:true crayon-inline">C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\libnvvp</span></li>
+<li><span class="lang:c highlight:0 decode:true crayon-inline">C:\ProgramData\cuDNN_6_8\bin</span></li>
+</ul>
+<div class="section level3" id="windows"></div>
+<div class="section level3" id="ubuntu">
+<div data-unique="ubuntu">Here’s a screenshot of the three windows and the relevant buttons involved in this process (click for a larger image):</div>
+</div>
+<a href="https://robotwealth.com/wp-content/uploads/2018/01/add_to_path.png"><img alt="" class="aligncenter size-large wp-image-3981 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/01/add_to_path-1024x385.png" decoding="async" height="281" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='281'%20viewBox='0%200%20748%20281'%3E%3C/svg%3E" width="748"/></a>
+<h3>Step 7: Install GPU-enabled Keras</h3>
+
+Having followed those steps, you’re finally in a position to install Keras and configure it to run TensorFlow on the GPU. From a fresh R or R-Studio session, install the Keras package if you haven’t yet done so, then load it and run <span class="lang:r decode:true crayon-inline">install_keras()</span>  with the argument<span class="lang:r decode:true crayon-inline"> tensorflow = ‘gpu’</span> :
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">devtools::install_github("rstudio/keras")
+library(keras)
+install_keras(tensorflow = 'gpu')</pre>
+
+The installation process might take quite some time, but don’t worry, you’ll get that time back and a whole lot more in faster training of your deep learning experiments.
+
+<p style="text-align: center;"><b>That’s it! Congratulations! You are now ready to perform efficient deep learning research on your GPU! We’ll dive into that in the next unit.</b></p>
+<h3>A troubleshooting tip</h3>
+
+When I first set this up, I found that Keras was throwing errors that it couldn’t find certain TensorFlow modules. Eventually I worked out that it was because I already had a version of TensorFlow installed in my main conda environment thanks to some Python work I’d done previously. If you have the same problem, explicitly setting the conda environment immediately after loading the Keras package should resolve it:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">library(keras)
+use_condaenv("r-tensorflow")</pre>
+
+Also note that the compatible versions of CUDA and cuDNN may change as new versions of TensorFlow are released. It is worth double checking the correct versions at <a href="https://www.tensorflow.org/" rel="noopener noreferrer" target="_blank">tensorflow.org</a>.
+
+<hr/>
+<em><strong>Where to from here?</strong></em>
+<ul>
+<li><em>If this <strong>walk-through</strong> was useful for you, you might like to check out another how-to article on <a href="https://robotwealth.com/run-trading-algorithms-google-cloud-platform-6-easy-steps/" rel="noopener noreferrer" target="_blank">running trading algorithms on Google Cloud Platform</a></em></li>
+<li><em>If the <strong>technical details of neural networks</strong> are interesting for you, you might like our <a href="https://robotwealth.com/getting-started-neural-networks-algorithmic-trading/" rel="noopener noreferrer" target="_blank">introductory article</a> </em></li>
+<li><em>To find out <strong>why AI is taking off in finance</strong>, check out <a href="https://robotwealth.com/potential-proven-ai-taking-off-finance-world/" rel="noopener noreferrer" target="_blank">these insights</a> from my days as an AI consultant to the finance industry </em></li>
+</ul>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>Deep learning</span>, <span>GPU</span>, <span>Keras</span>, <span>R</span>, <span>TensorFlow</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-111077 post type-post status-publish format-standard hentry category-excel category-think-like-a-trader category-tools-of-the-trade tag-excel tag-gld tag-research tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110579 post type-post status-publish format-standard hentry category-data-analysis category-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110175 post type-post status-publish format-standard has-post-thumbnail hentry category-excel category-quant-trading tag-data tag-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/quick-fix-yahoo-finance-data-access-with-excel/"><img alt="Quick fix: Yahoo Finance data access with Excel" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="110222" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">8 thoughts on “Deep Learning for Trading Part 2: Configuring TensorFlow and Keras to run on GPU”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-807">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 01/07/2018 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-2850">
+<article class="comment-body" id="div-comment-2850" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello!<br/>
+While trying to install keras, i got this error:<br/>
+————————————————————————————————————————————————<br/>
+&gt; install_keras(tensorflow = ‘gpu’)<br/>
+Error in install_keras(tensorflow = “gpu”) :<br/>
+  You should call install_keras() only in a fresh R session that has not yet initialized Keras and TensorFlow (this is to avoid DLL in use errors during installation)<br/>
+——————————————————————————————————————————————–<br/>
+Thanks!</p>
+<span class="reply"><a aria-label="Reply to CripteD" class="comment-reply-link" data-belowelement="div-comment-2850" data-commentid="2850" data-postid="3766" data-replyto="Reply to CripteD" data-respondelement="respond" href="#comment-2850" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/deep-learning-trading-tensorflow-keras-gpu/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

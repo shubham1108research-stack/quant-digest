@@ -1,0 +1,520 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Time Series Analysis: Fitting ARIMA/GARCH predictions profitable for FX?</title>
+<!-- source: https://robotwealth.com/fitting-time-series-models-to-the-forex-market-are-arimagarch-predictions-profitable/ -->
+<h1>Time Series Analysis: Fitting ARIMA/GARCH predictions profitable for FX?</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1103 post type-post status-publish format-standard hentry category-backtesting category-fx category-r category-time-series-modelling category-trading-strategies tag-forex tag-garch tag-r tag-time-series tag-trading-strategies pmpro-has-access" id="post-1103">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">February 4, 2016</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Time Series Analysis: Fitting ARIMA/GARCH predictions profitable for FX?</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Time Series Analysis: Fitting ARIMA/GARCH predictions profitable for FX?" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">Recently, I wrote about using mean-reversion time series models to analyze financial data and build trading strategies based on their predictions. Continuing our exploration of time series analysis and modelling, let’s turn our attention to the autoregressive and conditionally heteroskedastic family of models. Specifically, we’ll look into the Autoregressive Integrated Moving Average (<a href="https://www.investopedia.com/terms/a/autoregressive-integrated-moving-average-arima.asp" rel="noreferrer noopener" target="_blank">ARIMA</a>) and Generalized Autoregressive Conditional Heteroskedasticity (GARCH) models.</p>
+<p class="wp-block-paragraph">Why these two? They’re frequently cited in quantitative finance literature, and it’s time I got better acquainted—so why not bring you along for the ride?</p>
+<p class="wp-block-paragraph">Below is a summary of what I’ve learned about these models, how to fit them, and how their forecasts can be used to construct a simple trading strategy.</p>
+<p class="wp-block-paragraph">Let’s dive in.</p>
+<h3 class="wp-block-heading">What Are These Time Series Models?</h3>
+<p class="wp-block-paragraph">Before we go further, it helps to clarify a few foundational ideas. I won’t repeat all the dense theory I’ve encountered—rather, here’s a high-level overview of what I’ve learned about ARIMA and GARCH models, and how they relate to their component parts:</p>
+<p class="wp-block-paragraph">At a basic level, fitting ARIMA and GARCH models means identifying how past values, random noise, and variance in a time series influence future values. When fitted well, these models can offer predictive insights—assuming the underlying process remains relatively stable over time.</p>
+<h3 class="wp-block-heading">ARIMA</h3>
+<p class="wp-block-paragraph">An <strong>ARMA model</strong> (note: not ARIMA just yet) is a combination of two simpler models:</p>
+<ul class="wp-block-list">
+<li>The <strong>Autoregressive (AR)</strong> model, where future values are predicted using past values of the series.</li>
+<li>The <strong>Moving Average (MA)</strong> model, where past errors (or “noise”) are used as predictors.</li>
+</ul>
+<p class="wp-block-paragraph">An <strong>ARMA(p, q)</strong> model combines both elements in a linear form:</p>
+<p class="wp-block-paragraph">\begin{equation} \label{eq:poly}<br/>X_{t} = a_{1}X_{t-1} + a_{2}X_{t-2} + … + a_{p}X_{t-p} + w_{t} + b_{1}w_{t-1} + b_{2}w_{t-2} + … + b_{q}w_{t-q}<br/>\end{equation}</p>
+<p class="wp-block-paragraph">where wtw_twt​ represents white noise, and aia_iai​ and bib_ibi​ are model coefficients.</p>
+<p class="wp-block-paragraph">To extend this to an <strong>ARIMA(p, d, q)</strong> model, we first difference the original time series ddd times to achieve stationarity. The resulting stationary series is then modelled using ARMA.</p>
+<h3 class="wp-block-heading">GARCH</h3>
+<p class="wp-block-paragraph">While ARIMA models capture the behavior of the series’ mean, <strong>GARCH models</strong> go further by modelling its variance—specifically, its <em>conditional heteroskedasticity</em>, or the tendency for volatility to cluster over time.</p>
+<p class="wp-block-paragraph">GARCH models add another layer by making the variance itself dynamic: they use past variances and past squared errors to model how volatility evolves. In essence, GARCH captures the serial dependency not just in the values of the time series, but in its volatility too.</p>
+<h3 class="wp-block-heading">How Do We Apply These Models?</h3>
+<p class="wp-block-paragraph">With that context out of the way, I next fit an ARIMA/GARCH model to the EUR/USD exchange rate and use it as the basis for a directional trading system. Here’s the high-level approach:</p>
+<ul class="wp-block-list">
+<li>Each day, the model is fit to a rolling window of past returns.</li>
+<li>The fitted model forecasts the next day’s return.</li>
+<li>Based on the sign of the prediction, a long or short position is entered and held for one day.</li>
+<li>If the prediction does not change from the previous day, the current position is maintained.</li>
+<li></li>
+</ul>
+<h4 class="wp-block-heading">Model Estimation</h4>
+<p class="wp-block-paragraph">A <strong>rolling window of 1000 daily log returns</strong> is used to fit the model. For each window:</p>
+<ul class="wp-block-list">
+<li>A <strong>brute-force grid search</strong> finds the ARIMA(p,0,q) model that minimizes the <strong>Akaike Information Criterion (AIC)</strong>.</li>
+<li>A <strong>GARCH(1,1)</strong> model is then fit on the residuals of the selected ARIMA model.</li>
+<li>Forecasts are made one step ahead using the combined ARIMA-GARCH model.</li>
+<li>If the GARCH model fails to converge, a forecast of 0 is assigned.</li>
+</ul>
+<p class="wp-block-paragraph">This approach is based on <strong>Michael Halls-Moore’s</strong> ARIMA+GARCH strategy for the S&amp;P 500, and I’ve adapted parts of his code.</p>
+<p class="wp-block-paragraph">While a 1000-day window works well in this case, this is a tunable parameter. Longer windows may provide more stable parameter estimates but may lag in adapting to regime shifts. It would be worth testing model performance across various lookback window lengths.</p>
+<h4 class="wp-block-heading">R Code: ARIMA/GARCH Forecasting Strategy</h4>
+<pre class="wp-block-code"><code>### ARIMA/GARCH trading model
+library(quantmod)
+library(timeSeries)
+library(rugarch)
+# get data and initialize objects to hold forecasts
+EURUSD &lt;- read.csv('EURUSD.csv', header = T)
+EURUSD[, 1] &lt;- as.Date(as.character(EURUSD[, 1]), format="%d/%m/%Y")
+returns &lt;- diff(log(EURUSD$C)) ## ttr::ROC can also be used: calculates log returns by default
+window.length &lt;- 1000
+forecasts.length &lt;- length(returns) - window.length
+forecasts &lt;- vector(mode="numeric", length=forecasts.length)
+directions &lt;- vector(mode="numeric", length=forecasts.length)
+p.val &lt;- vector(mode="numeric", length=forecasts.length)
+# loop through every trading day, estimate optimal model parameters from rolling window
+# and predict next day's return
+for (i in 0:forecasts.length) {
+  roll.returns &lt;- returns[(1+i):(window.length + i)] # create rolling window
+  final.aic &lt;- Inf
+  final.order &lt;- c(0,0,0)
+  # estimate optimal ARIMA model order
+  for (p in 0:5) for (q in 0:5) { # limit possible order to p,q &lt;= 5
+    if (p == 0 &amp;&amp; q == 0) next # p and q can't both be zero
+    arimaFit &lt;- tryCatch( arima(roll.returns, order = c(p,0,q)),
+                          error = function( err ) FALSE,
+                          warning = function( err ) FALSE )
+    if (!is.logical( arimaFit)) {
+      current.aic &lt;- AIC(arimaFit)
+      if (current.aic &lt; final.aic) { # retain order if AIC is reduced
+        final.aic &lt;- current.aic
+        final.order &lt;- c(p,0,q)
+        final.arima &lt;- arima(roll.returns, order = final.order)
+      }
+    }
+    else next
+  }
+  # specify and fit the GARCH model
+  spec = ugarchspec(variance.model &lt;- list(garchOrder=c(1,1)),
+                    mean.model &lt;- list(
+                      armaOrder &lt;- c(final.order[1], final.order[3]), include.mean = T),
+                    distribution.model = "sged")
+  fit = tryCatch(ugarchfit(spec, roll.returns, solver = 'hybrid'), error = function(e) e, warning = function(w) w)
+  # calculate next day prediction from fitted mode
+  # model does not always converge - assign value of 0 to prediction and p.val in this case
+  if (is(fit, "warning")) {
+    forecasts[i+1] &lt;- 0
+    print(0)
+    p.val[i+1] &lt;- 0
+  }
+  else {
+    next.day.fore = ugarchforecast(fit, n.ahead = 1)
+    x = next.day.fore@forecast$seriesFor
+    directions[i+1] &lt;- ifelse(x[1] &gt; 0, 1, -1) # directional prediction only
+    forecasts[i+1] &lt;- x[1] # actual value of forecast
+    print(forecasts[i])
+    # analysis of residuals
+    resid &lt;- as.numeric(residuals(fit, standardize = TRUE))
+    ljung.box &lt;- Box.test(resid, lag = 20, type = "Ljung-Box", fitdf = 0)
+    p.val[i+1] &lt;- ljung.box$p.value
+  }
+}
+dates &lt;- EURUSD[, 1]
+forecasts.ts &lt;- xts(forecasts, dates[(window.length):length(returns)])
+# create lagged series of forecasts and sign of forecast
+ag.forecasts &lt;- Lag(forecasts.ts, 1)
+ag.direction &lt;- ifelse(ag.forecasts &gt; 0, 1, ifelse(ag.forecasts &lt; 0, -1, 0))
+# Create the ARIMA/GARCH returns for the directional system
+ag.direction.returns &lt;- ag.direction * returns[(window.length):length(returns)]
+ag.direction.returns[1] &lt;- 0 # remove NA
+# Create the backtests for ARIMA/GARCH and Buy &amp; Hold
+ag.curve &lt;- cumsum( ag.direction.returns)
+buy.hold.ts &lt;- xts(returns[(window.length):length(returns)], dates[(window.length):length(returns)])
+buy.hold.curve &lt;- cumsum(buy.hold.ts))
+both.curves &lt;- cbind(ag.curve, buy.hold.curve)
+names(both.curves) &lt;- c("Strategy returns", "Buy and hold returns")
+# plot both curves together
+myColors &lt;- c( "darkorange", "blue")
+plot(x = both.curves[,"Strategy returns"], xlab = "Time", ylab = "Cumulative Return",
+     main = "Cumulative Returns", ylim = c(-0.25, 0.4), major.ticks= "quarters",
+     minor.ticks = FALSE, col = "darkorange")
+lines(x = both.curves[,"Buy and hold returns"], col = "blue")
+legend(x = 'bottomleft', legend = c("Strategy", "B&amp;H"),
+       lty = 1, col = myColors)</code></pre>
+<h4 class="wp-block-heading">Signal Construction and Backtesting</h4>
+<p class="wp-block-paragraph">You might have noticed that in the model fitting procedure above, I retained the actual forecast return values as well as the direction of the forecast return. I want to investigate the predictive power of the magnitude of the forecast return value. Specifically, does filtering trades when the magnitude of the forecast return is below a certain threshold improve the performance of the strategy? The code below performs this analysis for a small return threshold. For simplicity, I converted the forecast log returns to simple returns to enable manipulation of the sign of the forecast and easy implementation.</p>
+<pre class="wp-block-code"><code># Test entering a trade only when prediction exceeds a threshold magnitude
+simp.forecasts &lt;- exp(ag.forecasts) - 1
+threshold &lt;- 0.000025
+ag.threshold &lt;- ifelse(simp.forecasts &gt; threshold, 1, ifelse(simp.forecasts &lt; -threshold, -1, 0))
+ag.threshold.returns &lt;- ag.threshold * returns[(window.length):length(returns)]
+ag.threshold.returns[1] &lt;- 0 # remove NA
+ag.threshold.curve &lt;- cumsum(ag.threshold.returns))
+both.curves &lt;- cbind(ag.threshold.curve, buy.hold.curve)
+names(both.curves) &lt;- c("Strategy returns", "Buy and hold returns")
+# plot both curves together
+plot(x = both.curves[,"Strategy returns"], xlab = "Time", ylab = "Cumulative Return",
+     main = "Cumulative Returns",  major.ticks= "quarters", #
+     minor.ticks = FALSE, ylim = c(-0.2, 0.45), col = "darkorange")
+lines(x = both.curves[,"Buy and hold returns"], col = "blue")
+legend(x = 'bottomleft', legend = c("Strategy", "B&amp;H"),
+       lty = 1, col = myColors)</code></pre>
+<h3 class="wp-block-heading">Results and Interpretation</h3>
+<p class="wp-block-paragraph">In this implementation, we take <strong>directional signals only</strong>: we go long if the model predicts a positive return and short if it predicts a negative return. We <strong>do not model the magnitude</strong> of returns, and <strong>no transaction costs</strong> are included. As the final plot shows, the ARIMA/GARCH strategy is able to adapt to some extent and differentiate itself from a simple buy-and-hold approach.</p>
+<h3 class="wp-block-heading">1. Magnitude of Forecast Return</h3>
+<p class="wp-block-paragraph">You’re asking: <em>Does filtering out trades when the forecast return (converted from log to simple return) is very small improve strategy performance?</em></p>
+<ul class="wp-block-list">
+<li>You implement this by setting a <strong>threshold</strong> (0.000025) and only taking positions when the absolute forecast return exceeds it.</li>
+<li>You calculate:
+<ul class="wp-block-list">
+<li><code>simp.forecasts</code>: simple returns from log forecasts.</li>
+<li><code>ag.threshold</code>: directional trade signal (1, -1, or 0 based on threshold).</li>
+<li><code>ag.threshold.returns</code>: the filtered strategy return series.</li>
+<li><code>ag.threshold.curve</code>: cumulative return of this strategy.</li>
+</ul>
+</li>
+</ul>
+<p class="wp-block-paragraph">Then, you compare it with a buy-and-hold strategy by plotting both.</p>
+<p class="wp-block-paragraph"><strong>Conclusion</strong>: Filtering on <em>magnitude</em> acts as a noise-reduction technique, helping avoid overtrading on weak signals. This often leads to better Sharpe ratios even if total return drops slightly—less noise, fewer false positives.</p>
+<h3 class="wp-block-heading">2. Model Confidence via Residual Analysis (Ljung-Box Test)</h3>
+<p class="wp-block-paragraph">Here, you’re exploring whether <strong>model goodness-of-fit</strong> can help improve trade filtering.</p>
+<ul class="wp-block-list">
+<li>You propose using the <strong>Ljung-Box test</strong> to check for autocorrelation in residuals.</li>
+<li>If the <strong>p-value is low</strong>, it means residuals <em>are</em> autocorrelated → model might be poor.</li>
+<li>If the <strong>p-value is high</strong>, residuals <em>are not</em> autocorrelated → model fit is good.</li>
+</ul>
+<p class="wp-block-paragraph">Example:</p>
+<pre class="wp-block-preformatted">ljung.box &lt;- Box.test(resid, lag = 20, type = "Ljung-Box", fitdf = 0)<br/>ljung.box<br/>Box-Ljung test<br/>data: resid<br/>X-squared = 23.099, df = 20, p-value = 0.284</pre>
+<ul class="wp-block-list">
+<li>In your example, <code>p = 0.284</code> → high p-value → good model fit.</li>
+</ul>
+<p class="wp-block-paragraph"><strong>Key Insight</strong>: While this is a sound statistical idea, your daily fits rarely reject the null. So, the Ljung-Box filter would rarely eliminate any trades. Therefore, it adds <strong>little incremental benefit</strong> in practice.</p>
+<h3 class="wp-block-heading">Suggestions Going Forward</h3>
+<p class="wp-block-paragraph">If you’re looking for other ways to evaluate confidence or filter trades:</p>
+<ul class="wp-block-list">
+<li><strong>Forecast variance</strong>: If you’re using GARCH, forecast variance can serve as a proxy for model certainty.</li>
+<li><strong>Prediction intervals</strong>: Narrower intervals = higher confidence.</li>
+<li><strong>Ensemble agreement</strong>: If using multiple models, only trade when they agree.</li>
+</ul>
+<h2 class="wp-block-heading">Time Series Analysis: Conclusions and Future Work</h2>
+<p class="wp-block-paragraph">The ARIMA/GARCH-based trading strategy applied to EUR/USD outperformed the buy-and-hold approach during the backtest period. However, the excess performance was modest. The analysis suggests that filtering trades based on the <strong>magnitude of the forecast</strong> improves strategy outcomes, while filtering based on <strong>model fit diagnostics</strong> (e.g. the Ljung-Box test) adds limited value in this dataset.</p>
+<p class="wp-block-paragraph">Additional filtering ideas — such as acting only when both bounds of the 95% forecast confidence interval share the same sign — may improve forecast reliability but significantly reduce the number of trades taken, which can impact overall profitability.</p>
+<p class="wp-block-paragraph">There is considerable scope for model enhancement. Alternative GARCH variants — including exponential, threshold, integrated, structural, and regime-switching models — may better capture volatility dynamics than the standard GARCH(1,1) used here. For a broader view, see Bollerslev et al. (1994).</p>
+<p class="wp-block-paragraph">A promising direction involves <strong>model ensembling</strong> — combining the predictions of diverse models to improve forecast accuracy. For instance, aggregating signals from ARIMA/GARCH and machine learning models such as artificial neural networks could allow the ARIMA/GARCH component to capture linear structure while the neural net models non-linearities. Though speculative, this hybrid approach aligns with findings in the literature and merits further exploration.</p>
+<p class="wp-block-paragraph">If you have ideas for improving the forecast accuracy of time series models — particularly through hybrid approaches or regime-switching filters — I’d be glad to hear them.</p>
+<h3 class="wp-block-heading">Acknowledgements</h3>
+<p class="wp-block-paragraph">This work was inspired by multiple sources on financial time series modeling. In particular, I found Michael Halls-Moore’s posts indispensable for their clarity and progression through increasingly complex models. The ARIMA+GARCH strategy design and the AIC-based parameter selection approach were adapted from his work. The concepts of filtering trades by Ljung-Box p-values and forecast magnitude were original contributions to this adaptation.</p>
+<p class="wp-block-paragraph">Found this post useful? Chances are you’ll love <a href="https://robotwealth.com/demystifying-the-hurst-exponent-part-1/" rel="noreferrer noopener" target="_blank">our exploration of the Hurst Exponent</a>.</p>
+<h4 class="wp-block-heading">Further Reading and References:</h4>
+<ul class="wp-block-list">
+<li>Bollerslev, T. (2001). <em>Financial Econometrics: Past Developments and Future Challenges</em>, <em>Journal of Econometrics</em>, 100, 41–51.</li>
+<li>Bollerslev, T., Engle, R.F., &amp; Nelson, D.B. (1994). <em>GARCH Models</em>, in Engle &amp; McFadden (Eds.), <em>Handbook of Econometrics</em>, Vol. 4, Elsevier.</li>
+<li>Engle, R. (2002). <em>New Frontiers for ARCH Models</em>, <em>Journal of Applied Econometrics</em>, 17, 425–466.</li>
+<li>Qi, M., &amp; Zhang, G.P. (2008). <em>Trend Time Series Modeling and Forecasting with Neural Networks</em>, <em>IEEE Transactions on Neural Networks</em>, 19(5), 808–816.</li>
+<li>Tsay, R. (2010). <em>Conditional Heteroscedastic Models</em>, in <em>Analysis of Financial Time Series</em> (3rd Ed.), Wiley, pp. 109–174.</li>
+</ul>
+<p class="wp-block-paragraph"><strong>Download the full code and dataset used in this analysis</strong>: <code>arima_garch</code></p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>forex</span>, <span>garch</span>, <span>R</span>, <span>time series</span>, <span>trading strategies</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130666 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/"><img alt="The Winter of our Pairs Trading Discontent: Problems, limitations, frustrations" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130667" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130276 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/moneyball-finding-undervalued-pairs-using-unconventional-metrics/"><img alt="Moneyball: Finding Undervalued Pairs Using Unconventional Metrics" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130277" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-1280x964.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-80x60.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-480x361.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-960x723.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features.webp 1456w" decoding="async" height="578" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='578'%20viewBox='0%200%20768%20578'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130275 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-tale-of-two-prices/"><img alt="A Tale of Two Prices" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="120744" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-1024x538.jpg 1024w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-768x403.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04.jpg 1200w" decoding="async" height="158" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='158'%20viewBox='0%200%20300%20158'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">24 thoughts on “Time Series Analysis: Fitting ARIMA/GARCH predictions profitable for FX?”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-609">
+<article class="comment-body" id="div-comment-609" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I was literally struggling through  a bunch of ARMA ARIMA GARCH box test reading and then took a break to read your blog post. “Yes!” I shouted (in my head) when I read about you pondering all those big words and acronyms I’ve been struggling with. And then I realized you were also basing your work off Michaels writings. Damn stuff hurts my head. But I’m slowly getting it. You’re about 4 parsecs ahead of me so I’m going to have to keep an eye on your work as well.  ? Thanks.</p>
+<span class="reply"><a aria-label="Reply to Matt haines" class="comment-reply-link" data-belowelement="div-comment-609" data-commentid="609" data-postid="1103" data-replyto="Reply to Matt haines" data-respondelement="respond" href="#comment-609" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-610">
+<article class="comment-body" id="div-comment-610" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Matt, thanks for the comment! I hope my article was useful for you. Yes, I learned a lot from Michael’s posts on this subject. He’s heavy on the detail and presents it in a logical way that continuously builds on the previous information. I recently purchased the rough cut of his latest book and refer to it often. Very much looking forward to the final release. In my article, I was aiming to succinctly summarise the theory and focus on some trading ideas that seem a fairly natural extension. Hopefully it was helpful!</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-610" data-commentid="610" data-postid="1103" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-610" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-611">
+<article class="comment-body" id="div-comment-611" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for your post. Could you say what the Sharpe ratios of the tested strategies were?</p>
+<span class="reply"><a aria-label="Reply to Beliavsky" class="comment-reply-link" data-belowelement="div-comment-611" data-commentid="611" data-postid="1103" data-replyto="Reply to Beliavsky" data-respondelement="respond" href="#comment-611" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-612">
+<article class="comment-body" id="div-comment-612" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I didn’t calculate Sharpe ratios when I ran these strategies. You could easily do this yourself by running the script (available via the download link, along with the data I used) and using the performanceAnalytics package in R.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-612" data-commentid="612" data-postid="1103" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-612" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-613">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 02/04/2016 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-614">
+<div class="comment-body">
+				Pingback: Build Better Strategies! Part 2: Model-Based Systems – The Financial Hacker 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-615">
+<div class="comment-body">
+				Pingback: The Best Links While I Was Away | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="trackback odd alt thread-odd thread-alt depth-1" id="comment-616">
+<div class="comment-body">
+				Pingback: URL 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-617">
+<div class="comment-body">
+				Pingback: Build Better Strategies! Part 2: Model-Based Systems | Trade Signal Machine Hub 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-618">
+<article class="comment-body" id="div-comment-618" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello, I am new to time series fitting and found your article very interesting. My question is: Is there not a random value involved in the prediction of the price per definition of a GARCH series ? If so, would it not make sense to calculate the probability for the forecast to be long or short by using the ARMA value as mean and the standard deviation and maybe apply a filter then by accepting only values above a certain threshold ?</p>
+<span class="reply"><a aria-label="Reply to KAFEBR" class="comment-reply-link" data-belowelement="div-comment-618" data-commentid="618" data-postid="1103" data-replyto="Reply to KAFEBR" data-respondelement="respond" href="#comment-618" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-619">
+<article class="comment-body" id="div-comment-619" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey, thanks for reading my blog. I think you are referring to the noise term in the GARCH definition? You could certainly experiment with an ARMA model – I’d love to hear about the results – but I’m not sure how that relates to the noise term in the GARCH model?</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-619" data-commentid="619" data-postid="1103" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-619" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-620">
+<article class="comment-body" id="div-comment-620" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the tutorial. What line(s) of code would we need to account for transaction costs?</p>
+<span class="reply"><a aria-label="Reply to Infinity" class="comment-reply-link" data-belowelement="div-comment-620" data-commentid="620" data-postid="1103" data-replyto="Reply to Infinity" data-respondelement="respond" href="#comment-620" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-621">
+<article class="comment-body" id="div-comment-621" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>There’s a few ways to do it, depending on how accurate or complex a transaction cost model you want. If a fixed transaction cost model would suffice, you could simply subtract this fixed transaction cost from each of your returns. For example, if a round turn on the EUR/USD costs you 1.5 pips, you simply do <code>returns &lt;- returns - 0.00015</code><br/>
+Of course, in reality you would get variable spread and variable slippage depending on factors such as real-time volatility and liquidity, so this may or may not be accurate enough for your purposes.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-621" data-commentid="621" data-postid="1103" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-621" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-622">
+<article class="comment-body" id="div-comment-622" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Polar<br/>
+In this example, I first fit an ARMA model of order (p,q) where (p,q) ∈ {0,1,2,3,4,5} and (p,q) are chosen such that they minimzie the Aikake Information Criterion. Then we fit a model using GARCH (1,1) for the variance and ARMA(p,q) for the mean. A new model is constructed for each period in the simulation using the previous 1,000 periods. Each model is used once (to predict the next period’s return) and then discarded. So to answer your question, the approach used here doesn’t look for parameters that ‘work’ generally, rather we find the best parameters from our lookback window and assume they will hold for the next period.<br/>
+This assumption may or may not be valid. And if this assumption is valid, while time series modeling is super interesting from a theoretical perspective, it may or may not be of practical use in a trading strategy. At the very least, there are certainly other considerations beyond the optimal model parameters. For example, from my own experience building trading models for the forex markets, I can share that the choice of sampling time (that is, the time you choose as the open/close of your daily bars) is of critical significance in the success or otherwise of the model.<br/>
+Your comment is actually very timely! I recently built a GARCH backtesting framework for a client that enables efficient experimentation with these and other parameters, such as exit conditions and capital allocation. An efficient experimentation framework is really important for effective and practical research. If you are interested in something similar, ping me at kris[at]robotwealth.com<br/>
+Hope that helps</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-622" data-commentid="622" data-postid="1103" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-622" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-623">
+<article class="comment-body" id="div-comment-623" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>The price data EURUSD.csv… How is the data structure in the file? Can you display the headers/first few rows so I can parse my data accordingly.</p>
+<span class="reply"><a aria-label="Reply to Ron" class="comment-reply-link" data-belowelement="div-comment-623" data-commentid="623" data-postid="1103" data-replyto="Reply to Ron" data-respondelement="respond" href="#comment-623" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-624">
+<article class="comment-body" id="div-comment-624" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Sorry. After posting my question I saw the download link for the file. Doooh!</p>
+<span class="reply"><a aria-label="Reply to Ron" class="comment-reply-link" data-belowelement="div-comment-624" data-commentid="624" data-postid="1103" data-replyto="Reply to Ron" data-respondelement="respond" href="#comment-624" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-625">
+<article class="comment-body" id="div-comment-625" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello<br/>
+Regarding your code how did you handle negative values for the returns? Because you are using the log for the ag.curve and with negative values you will have NaN<br/>
+Thanks<br/>
+Regis</p>
+<span class="reply"><a aria-label="Reply to Regis" class="comment-reply-link" data-belowelement="div-comment-625" data-commentid="625" data-postid="1103" data-replyto="Reply to Regis" data-respondelement="respond" href="#comment-625" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-627">
+<article class="comment-body" id="div-comment-627" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I honestly don’t remember…I’d have to re-run the code. But yes, you are correct – it makes more sense to use log returns which are additive. Multiplying simple returns is problematic in creating an equity curve when you have neutral positions. I’ve updated the post. </p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-627" data-commentid="627" data-postid="1103" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-627" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-626">
+<article class="comment-body" id="div-comment-626" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>you can use this : ag.curve &lt;- cumsum( ag.direction.returns)</p>
+<span class="reply"><a aria-label="Reply to Regis" class="comment-reply-link" data-belowelement="div-comment-626" data-commentid="626" data-postid="1103" data-replyto="Reply to Regis" data-respondelement="respond" href="#comment-626" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-628">
+<article class="comment-body" id="div-comment-628" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I have studied Time Series Econometrics as part of my PhD specialization and I have found that simply drawing trends and patterns on a chart is a far superior approach than the most advanced statistical techniques such as Markov Switching Multivariate GARCH or Multivariate Autoregressive State Space Models.  I feel kind of uneasy that all my efforts and sleepless nights were for nothing. But at least I know what the best approaches are.</p>
+<span class="reply"><a aria-label="Reply to Kal Mal" class="comment-reply-link" data-belowelement="div-comment-628" data-commentid="628" data-postid="1103" data-replyto="Reply to Kal Mal" data-respondelement="respond" href="#comment-628" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-629">
+<article class="comment-body" id="div-comment-629" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great to hear that you’ve found something that works for you. I agree, sometimes simpler can be better.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-629" data-commentid="629" data-postid="1103" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-629" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-631">
+<div class="comment-body">
+				Pingback: Are ARIMA/GARCH Forecasts Successful for Forex Trading Models? – World Stock Market News 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/fitting-time-series-models-to-the-forex-market-are-arimagarch-predictions-profitable/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

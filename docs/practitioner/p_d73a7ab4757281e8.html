@@ -1,0 +1,547 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Shannon Entropy: A Genius Gambler’s Guide to Market Randomness</title>
+<!-- source: https://robotwealth.com/shannon-entropy/ -->
+<h1>Shannon Entropy: A Genius Gambler’s Guide to Market Randomness</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-6395 post type-post status-publish format-standard hentry category-quant-trading category-zorro tag-entropy tag-shannon tag-zorro pmpro-has-access" id="post-6395">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">June 19, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Shannon Entropy: A Genius Gambler’s Guide to Market Randomness</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Shannon Entropy: A Genius Gambler’s Guide to Market Randomness" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Before you commit your precious time to read this post on Shannon Entropy, I need to warn you that this is one of those posts that market nerds like myself will get a kick out of, but which probably won’t add much of practical value to your trading.
+
+The purpose of this post is to scratch the surface of the markets from an information theoretic perspective, using tools developed by none other than the father of the digital age, Claude Shannon. Specifically, we’re going to tinker with the concept of Shannon Entropy.
+
+Shannon (the man, not the entropy) was one of those annoying people that excels at everything he touches. Most notably, he was the first to describe the theory of electrical circuit design (in his Master’s thesis at the age of 21, no less). Later, around 1948, he discovered Information Theory, which leverages his unique-at-the-time understanding that computers could express numbers, words, pictures, even audio and video as strings of binary digits.
+
+Not being one to let his genius go to waste, he and his buddy Ed Thorpe secretly used wearable computers to beat roulette in Vegas casinos by synchronising their computers with the spins of the wheel. They also beat the casinos by counting cards at Blackjack.
+
+Between Information Theory and digital circuit design (and less so his gambling escapades), Shannon’s work essentially ushered in the digital world we find ourselves in today.
+
+<h2>What is Shannon Entropy?</h2>
+
+Measured in bits, Shannon Entropy is a measure of the information content of data, where <em>information content</em> refers more to what the data <em>could</em> contain, as opposed to what it <em>does</em> contain. In this context, information content is really about quantifying predictability, or conversely, randomness.
+
+This concept of information is somewhat counter-intuitive. In everyday usage, we equate the word <em>information</em> with <em>meaning. </em>Information has some meaning, otherwise it’s not really information. In Shannon’s Information Theory, <em>information </em>relates to the effort or cost to describe some variable, and Shannon Entropy is the minimum number of bits that are needed to do so, on average.
+
+This sounds a bit whacky, but will become clearer as we introduce some equations and examples. The key is to divorce the information theoretical definition of <em>information</em> from our everyday concept of <em>meaning</em>.
+
+<h2>Illustrating the Concept of Shannon Entropy</h2>
+
+Say we have some random variable, like a coin toss. Your friend tosses the coin and hides the result from you. You can discern the outcome of any individual coin toss by asking just one binary (yes-no) question: <em>was the outcome a head </em>?<span class="inline-footnote" style="" title="Equally, we can ask whether it was a tail and still end up with the same knowledge.">1<span class="footnoteContent" style="display:none;">Equally, we can ask whether it was a tail and still end up with the same knowledge.</span></span>
+
+The number of binary questions we need to ask to describe each outcome is one. Here and in the examples below, consider that ‘the cost of encapsulating information’ is analogous to ‘the number of questions required to describe a random variable’.
+
+Next, consider a deck of cards with the jokers removed. Our friend shuffles the deck, draws a card and records its suit without showing us. Our friend then replaces the card, reshuffles the deck and repeats. Our friend’s record of the suits drawn from the deck is then a random variable with four equally probable outcomes. What is the minimum number of binary questions we must now ask, on average, to ascertain the suit of each draw?
+
+Our first question could be <em>is the suit red?</em> Then, if the answer was <em>yes</em>, we might ask <em>is the suit a diamond? </em> Otherwise, we might ask <em>is the suit a spade? </em>If you think about it, regardless of the suit and the binary questions asked, we always need two questions to arrive at the correct answer.
+
+Now consider a deck stacked with one suit and with some cards of the other suits removed. Say we have 26 hearts, 10 diamonds, 8 spades and 8 clubs. The outcome of a card draw is no longer completely random in the sense that the outcomes are no longer equally likely. We can use that knowledge to reduce the number of questions we need, on average, to arrive at the correct suit.
+
+The probability of a card being a heart, diamond, spade or club is now 0.5, 0.19, 0.15 and 0.15 respectively. If our first question is <em>Is the suit a heart?</em> in 50% of cases, we will have arrived at the correct suit after a single question. If the answer is <em>No</em>, our next question would be <em>Is the suit a diamond?</em> Now, in almost 70% of cases, we will have our answer within two questions. In 30% of cases, we’ll need a third question.
+
+Now, the average number of questions is simply the sum of the probabilities associated with each possible number of questions, that is
+
+[\frac{26}{52} * 1 + \frac{10}{52} * 2 + \frac{8+8}{52}*3  \approx 1.81]
+
+Recall that when all suits had an equal probability of occurrence, we always needed to ask two questions to ascertain any particular draw’s suit. This equal weight case corresponds to the system that <em>maximizes randomness and minimizes order</em>. When we add some order to the system by making one outcome more likely, we reduce the average number of questions to ascertain the suit, in this case to 1.81.<span class="inline-footnote" style="" title="How can you have 1.81 questions? Remember that this is an average value. Sometimes you only need one question, sometimes you need 2, and sometimes 3. But on average, you need only 1 more often than you need 2 or 3.">2<span class="footnoteContent" style="display:none;">How can you have 1.81 questions? Remember that this is an average value. Sometimes you only need one question, sometimes you need 2, and sometimes 3. But on average, you need only 1 more often than you need 2 or 3.</span></span>
+<h2>Defining Shannon Entropy</h2>
+
+The phenomenon we’ve just seen is analogous to Shannon Entropy, which measures the cost or effort required to describe a variable. Like the number of questions we need to arrive at the correct suit, Shannon Entropy decreases when order is imposed on a system and increases when the system is more random. <strong>Entropy is maximized (and predictability minimized) when all outcomes are equally likely.</strong>
+
+Shannon Entropy, (H) is given by the following equation:
+
+[H = -\sum_{i=1}^np_i\log_2 p_i]
+
+Where (n) is the number of possible outcomes, and (p_i) is the probability of the (i^{th}) outcome occurring.
+
+Why did Shannon choose to use the logarithm in his equation? Surely there are more intuitive ways to measure information and randomness? Certainly when I first looked at this equation, I wondered where it came from. It turns out that randomness is a tricky thing to quantify, and there are several approaches in addition to Shannon’s. The choice of measure is really informed by the properties we wish our measure to take on, rather than the properties of the phenomenon being measured. In this case, it is partially to do with how we might perceive the measure of information to change (for example, to double the number of possible states of a binary string, we simply add a bit, which is equivalent to incrementing the base 2 logarithm of the number of possible states).
+
+More than that, using the logarithm also means that a very likely outcome does not contribute much to the randomness measure (since in this case the (log_2 p_i) term approaches zero), and that a very unlikely outcome also does not contribute much (since in this case the (p_i) term approaches zero). In addition, the additive property of logarithms simplifies combining entropies from different systems.
+
+<h2>Shannon Entropy in Zorro</h2>
+<a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro</a> implements a Shannon Entropy indicator, but it’s tucked away in the <em>Indicators</em> section of the manual, one of dozens of functions listed on that page, and it’s easy to miss it.
+
+Zorro’s is quite a clever implementation that works by converting a price curve into binary information: either the current value is higher than the previous one, or it is not. The function then detects and counts every combination of price changes in the curve of a given length. For example, we can check for patterns of two consecutive price changes, of which there are four possible binary combinations (up-up, down-down, up-down, down-up). Zorro then determines the relative frequency of these binary combinations, which are of course the empirically determined (p) values for use in the Shannon Entropy equation.
+
+Once the (p)’s are known, Zorro simply implements the Shannon Entropy equation and returns the calculated value for (H), in bits. That means that the maximum (H), which corresponds to a perfectly random system, is equal to the pattern size. In our example of analyzing patterns of length 2, (H = 2) implies that all the patterns were equally likely to occur, and thus the system is purely random.
+
+Of course, deviations from randomness are of interest to traders, because less randomness implies more predictability.
+
+Before we dive into some examples, let’s take a look at the arguments of the <span class="lang:c decode:true crayon-inline">ShannonEntropy()</span>  function:
+
+<ol>
+<li>The function’s first argument is a data series, usually a price curve. Remember, the function differences this series for us so we can simply supply raw prices.</li>
+<li>Next, we supply an integer time period over which to analyze the price curve for randomness.</li>
+<li>Finally, we supply the length of the patterns that we are interested in, from 2 to 8, remembering that there are \(2^x\) possible patterns, where \(x\) is the pattern length.</li>
+</ol>
+
+Here’s a simple implementation that plots the Shannon Entropy for the SPY ETF from 2000 to 2016 for all pattern sizes from 2 to 5 measured at the daily time scale (the script gets its data from the Alpha Vantage API; if you don’t have access,  comment out lines 16-17 and select an asset from your Zorro GUI):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Shannon Entropy">/* SHANNON ENTROPY
+
+*/
+
+function run()
+{
+    set(PLOTNOW);
+    StartDate = 2000;
+    EndDate = 2016;
+    BarPeriod = 1440;
+    LookBack = 80;
+    PlotHeight1 = 250;
+    PlotHeight2 = 125;
+    PlotWidth = 800;
+    
+    if(is(INITRUN)) assetHistory("SPY", FROM_AV);
+    asset("SPY");
+    
+    int period = LookBack;
+    vars Closes = series((priceClose()));   
+    int patterns;
+    for(patterns=2;patterns&lt;=5;patterns++)
+    {
+        var H = ShannonEntropy(Closes, period, patterns);
+        plot(strf("H_%d", patterns), H, NEW|BARS, BLUE);
+    }
+}</pre>
+
+And the resulting plot:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/SPY_Entropy.png"><img alt="the resulting plot - shannon entropy" class="aligncenter wp-image-3227 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/SPY_Entropy.png" decoding="async" height="619" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='619'%20viewBox='0%200%20879%20619'%3E%3C/svg%3E" width="879"/></a>
+
+While the markets are clearly highly random, we can see regular departures from perfect randomness across multiple pattern sizes. That’s good news! If the markets aren’t completely random, then there is hope for us traders!
+
+The next obvious question is how could we apply this measure of randomness in our trading? In reality, you’re unlikely to derive a trading strategy from the calculation of (H) in isolation (more on this below), but perhaps there is merit in applying it as an additional trade filter. For example, if you’ve found an edge in a particular market, perhaps it makes sense to apply it selectively during periods of predictability. Like all backwards-looking measures however, we need to consider that the past may not be like the future, and we need to be careful about optimizing the lookback period used in our analysis.
+
+<h2>The Principle of Maximum Entropy</h2>
+
+While the past may not be like the future, there is a principle related to entropy that may provide clues about the future state of a system. This principle states that complex systems tend to evolve so as to maximize entropy production under present constraints. This principle of maximum entropy has found application in physics, biology, statistics and other fields. Perhaps we can apply it to the markets too.
+
+If the principle of maximum entropy does indeed apply to the markets, we would expect that given an existent series of price changes, the next value in the series should tend to maximize the entropy of the system. That means that if we know the market direction that maximizes its entropy, we have a clue as to which way the market is more likely to move. To test this, we can simulate possible future price movements and work out which scenarios tend to maximize the system’s entropy at any given time.
+
+Below is some code to accomplish this. Firstly, we need to set the <span class="lang:c decode:true crayon-inline">PEEK</span>  flag (line 8), which enables the <span class="lang:c decode:true crayon-inline">price()</span>  functions to access future data. We calculate Shannon Entropy of our price series as before (lines 30-31). But this time, we need to create two additional arrays that correspond to the two possible entropy states at the next time period (line 19). That is, one array corresponds to an up move, and the other corresponds to a down move. We fill these arrays in a <span class="lang:c decode:true crayon-inline">for()</span>  loop where we copy across the existing series into our new arrays, starting from index 1 (lines 21-25). Then, we place either a higher or lower price compared to the current price at index 0 of each array (lines 26-27).
+
+Now we’ve got arrays from which we can calculate the two possible entropy states at the next time period (remember that entropy is calculated from binary price patterns, therefore only the direction of the next move is important, not its magnitude). Then, we simply calculate the entropy of both states, and the one that returns the higher value is our prediction (lines 30-31).
+
+I’m going to apply this idea to one of the most efficient (and therefore random) markets around: the foreign exchange markets. Rather than run a traditional backtest, in this case I just want to count the number of correct and incorrect forecasts made by our maximum entropy predictor, and sum the total number of pips that would be collected in the absence of the realities of trading (slippage, commission and the like). Lines 33-41 accomplish this.
+
+Here’s the code:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Entropy Experiments">/* SHANNON ENTROPY
+
+*/
+
+
+function run()
+{
+    set(PLOTNOW|PEEK);
+    StartDate = 2004;
+    EndDate = 2016;
+    BarPeriod = 1;
+    LookBack = 100;
+    
+    int patterns = 2;
+    int period = LookBack;
+    vars Closes = series((priceClose()));       
+    
+    // create possible future entropy states
+    var up[501], down[501]; //set these large to enable experimenting with lookback - can't be set by variable
+    int i;
+    for(i=1;i&lt;period+1;i++)
+    {
+        up[i] = Closes[i];
+        down[i] = Closes[i];    
+    }
+    up[0] = Closes[0] + 1;
+    down[0] = Closes[0] - 1;
+    
+    // get entropy of next state
+    var entropyUp = ShannonEntropy(up, period+1, patterns);
+    var entropyDn = ShannonEntropy(down, period+1, patterns);   
+    
+    // idealized backtest
+    static int win, loss;
+    static var winTot, lossTot;
+    if(is(INITRUN)) win = loss = winTot = lossTot = 0;
+    
+    if(entropyUp &gt; entropyDn and priceClose(-1) &gt; priceClose(0)) {win++; winTot+=priceClose(-1)-priceClose(0);}
+    else if(entropyUp &lt; entropyDn and priceClose(-1) &lt; priceClose(0)) {win++; winTot+=priceClose(0)-priceClose(-1);}
+    else if(entropyUp &gt; entropyDn and priceClose(-1) &lt; priceClose(0)) {loss++; lossTot+=priceClose(0)-priceClose(-1);}
+    else if(entropyUp &lt; entropyDn and priceClose(-1) &gt; priceClose(0)) {loss++; lossTot+=priceClose(-1)-priceClose(0);}
+        
+    if(is(EXITRUN))
+        printf("\n\n%W: %.2f%%\nWins: %d Losses: %d\nWinTot: %.0f LossTot: %.2f\nPips/Trade: %.1f", 
+        100.*win/(win + loss), win, loss, winTot/PIP, lossTot/PIP, (winTot-lossTot)/PIP/(win+loss));
+    
+    ColorUp = ColorDn = 0;
+    plot("PipsWon", (winTot-lossTot)/PIP, MAIN|BARS, BLUE);
+    PlotWidth = 1000;
+}</pre>
+
+You can have some fun experimenting with this script. Try some different assets, different bar periods and different pattern sizes. You’ll see some interesting things in relation to randomness – some of which may go against the existing common wisdom.
+
+As an example, when we run this script using 1-minute bars, we nearly always get a very slightly positive result, usually on the order of 51% correct predictions. The plot of pips collected for the major currency pairs from 2004-2016 are shown below (from left to right, top to bottom, AUD/USD, USD/JPY, USD/CAD, EUR/USD, NZD/USD, GBP/USD):
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/1minShannon.png"><img alt="running the script using 1 minute bars" class="aligncenter wp-image-3228 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/1minShannon.png" decoding="async" height="427" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='427'%20viewBox='0%200%20600%20427'%3E%3C/svg%3E" width="600"/></a>
+
+While there is very likely a tiny edge here, it is just that: tiny. In reality, you’ll never make money by predicting the direction of the next minute’s price change correctly 51% of the time! However, what if you could predict the direction over a longer time frame and improve the accuracy of your prediction? Could you make money from that?
+
+Here’s an idea for extending our directional forecast based on maximum entropy to two time steps into the future. Now we have four possible scenarios (up-up, down-down, up-down, down-up) to assess. In the idealized backtester, we now go long when the two-ahead entropy is maximized by the up-up case, and short when it is maximized by the down-down case.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Multi-Step Ahead Shannon Forecast">/* SHANNON MULTI-STEP AHEAD FORECAST
+
+*/
+
+function run()
+{
+    set(PLOTNOW|PEEK);
+    StartDate = 2010;
+    EndDate = 2019;
+    BarPeriod = 1;
+    LookBack = 100;
+
+    int patterns = 3;
+    int period = LookBack;
+    vars Closes = series((priceClose()));   
+
+    var upup[501], dndn[501], updn[501], dnup[501];
+    int i;
+    for(i=1;i&lt;period+1;i++)
+    {
+        upup[i] = Closes[i];
+        dndn[i] = Closes[i];
+        updn[i] = Closes[i];
+        dnup[i] = Closes[i];    
+    }
+    upup[1] = Closes[0] + 1;
+    upup[0] = upup[1] + 1;
+    dndn[1] = Closes[0] - 1;
+    dndn[0] = dndn[1] - 1;
+    updn[1] = Closes[0] + 1;
+    updn[0] = updn[1] - 1;
+    dnup[1] = Closes[0] - 1;
+    dnup[0] = dnup[1] + 1;
+    
+    var entropyUpUp = ShannonEntropy(upup, period+2, patterns);
+    var entropyDnDn = ShannonEntropy(dndn, period+2, patterns);
+    var entropyUpDn = ShannonEntropy(updn, period+2, patterns);
+    var entropyDnUp = ShannonEntropy(dnup, period+2, patterns);
+    
+    static int win, loss;
+    static var winTot, lossTot;
+    if(is(INITRUN)) win = loss = winTot = lossTot = 0;
+        
+    if(max(max(max(entropyUpUp, entropyDnDn), entropyUpDn), entropyDnUp) == entropyUpUp and priceClose(-2) &gt; priceClose(0)) {win++; winTot+=priceClose(-2)-priceClose(0);}
+    else if(max(max(max(entropyUpUp, entropyDnDn), entropyUpDn), entropyDnUp) == entropyDnDn and priceClose(-2) &lt; priceClose(0)) {win++; winTot+=priceClose(0)-priceClose(-2);}
+    else if(max(max(max(entropyUpUp, entropyDnDn), entropyUpDn), entropyDnUp) == entropyUpUp and priceClose(-2) &lt; priceClose(0)) {loss++; lossTot+=priceClose(0)-priceClose(-2);}
+    else if(max(max(max(entropyUpUp, entropyDnDn), entropyUpDn), entropyDnUp) == entropyDnDn and priceClose(-2) &gt; priceClose(0)) {loss++; lossTot+=priceClose(-2)-priceClose(0);}
+
+    if(is(EXITRUN)) printf("\n\n%W: %.2f%%\nWins: %d Losses: %d\nWinTot: %.0f LossTot: %.0f\nPips/Trade: %.1f", 100.*win/(win + loss), win, loss, winTot/PIP, lossTot/PIP, (winTot-lossTot)/PIP/(win+loss));
+    
+    ColorUp = ColorDn = 0;
+    plot("pips", (winTot-lossTot)/PIP, MAIN|BARS, BLUE);
+    PlotWidth = 1000;
+    
+}</pre>
+
+And here’s a plot of the number of pips collected over the past few years, excluding trading frictions, on EUR/USD:
+
+<img alt="the number of pips collected over the last few years - shannon entropy" class="alignnone wp-image-6402 size-full perfmatters-lazy" data-sizes="(max-width: 682px) 100vw, 682px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/06/21170033/entorpy_1min_eurusd.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/06/21170033/entorpy_1min_eurusd.png 682w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170033/entorpy_1min_eurusd-600x319.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/06/21170033/entorpy_1min_eurusd-300x160.png 300w" decoding="async" height="363" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='682'%20height='363'%20viewBox='0%200%20682%20363'%3E%3C/svg%3E" width="682"/>
+<h2>Conclusions</h2>
+
+In this post, we looked at the markets from a slightly different perspective, through the lens of Information Theory. In particular, we saw how Shannon Entropy is a measure of the degree of order or predictability within a system, with increasing entropy corresponding to more randomness and maximum entropy occurring when all outcomes are equally likely. We saw that financial markets are highly random (in general displaying a Shannon Entropy close to that of a perfectly random system), but that they do depart from randomness regularly. They may even do so differently depending on the time horizon and granularity over which they are analyzed.
+
+We also saw an attempt to use Shannon Entropy in a standalone trading system via the principle of maximum entropy production. While such a system does appear to have a small edge, in reality, it will be difficult to make a consistent trading system from these predictions alone as transaction costs will usually swamp the edge.
+
+While this is all very interesting from an academic perspective, if you can think of a practical application to trading, we’d love to hear about it in the comments.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>entropy</span>, <span>Shannon</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">18 thoughts on “Shannon Entropy: A Genius Gambler’s Guide to Market Randomness”</h2>
+<ol class="comment-list">
+<li class="comment byuser comment-author-vivekrao4yahoo-com even thread-even depth-1 parent" id="comment-5055">
+<article class="comment-body" id="div-comment-5055" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the article. The Shannon Entropy calculated from a binary time series looks similar to “permutation entropy”, discussed in </p>
+<p><a href="https://ideas.repec.org/a/gam/jecnmx/v7y2019i1p10-d213039.html" rel="nofollow ugc">https://ideas.repec.org/a/gam/jecnmx/v7y2019i1p10-d213039.html</a><br/>
+Permutation Entropy and Information Recovery in Nonlinear Dynamic Economic Time Series<br/>
+Miguel Henry and George Judge</p>
+<p>But I think the ordinal time series in levels preserves more information from the original time series than the binary time series of returns. From the ordinal time series you can still tell whether a prices is higher or lower than the price on any previous date.</p>
+<span class="reply"><a aria-label="Reply to vivekrao4@yahoo.com" class="comment-reply-link" data-belowelement="div-comment-5055" data-commentid="5055" data-postid="6395" data-replyto="Reply to vivekrao4@yahoo.com" data-respondelement="respond" href="#comment-5055" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-5092">
+<article class="comment-body" id="div-comment-5092" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Nice! Thanks for sharing that paper.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-5092" data-commentid="5092" data-postid="6395" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-5092" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-5063">
+<article class="comment-body" id="div-comment-5063" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Awesome blog post Kris, loving the insight. </p>
+<p>I work in a scientific data collection field and you’ve highlighted some great crossover here that really resonated with me. </p>
+<p>Thanks</p>
+<span class="reply"><a aria-label="Reply to Glen" class="comment-reply-link" data-belowelement="div-comment-5063" data-commentid="5063" data-postid="6395" data-replyto="Reply to Glen" data-respondelement="respond" href="#comment-5063" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-5093">
+<article class="comment-body" id="div-comment-5093" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Glen, great to hear you got something out of the post.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-5093" data-commentid="5093" data-postid="6395" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-5093" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-5073">
+<article class="comment-body" id="div-comment-5073" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Kris, I was actually working with SE before and I was curious to see your perspective.</p>
+<p>Well done.</p>
+<span class="reply"><a aria-label="Reply to Yury" class="comment-reply-link" data-belowelement="div-comment-5073" data-commentid="5073" data-postid="6395" data-replyto="Reply to Yury" data-respondelement="respond" href="#comment-5073" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-5094">
+<article class="comment-body" id="div-comment-5094" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Nice one Yury. Did you apply SE to the markets previously? Find anything interesting?</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-5094" data-commentid="5094" data-postid="6395" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-5094" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-5079">
+<article class="comment-body" id="div-comment-5079" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I did a project on using the NMI form of the mutual information to compare with correlation coefficient. This research is truly remarkable, and I am glad that more and more people are looking into Entropy in finance!</p>
+<span class="reply"><a aria-label="Reply to ubaid haroon" class="comment-reply-link" data-belowelement="div-comment-5079" data-commentid="5079" data-postid="6395" data-replyto="Reply to ubaid haroon" data-respondelement="respond" href="#comment-5079" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-5095">
+<article class="comment-body" id="div-comment-5095" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Ubaid, glad you liked the post. It’s a fascinating field of study, that’s for sure.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-5095" data-commentid="5095" data-postid="6395" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-5095" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-5080">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 06/18/2019 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-5113">
+<article class="comment-body" id="div-comment-5113" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>An inferior, shorter explanation here: <a href="https://eranraviv.com/intuitive-explanation-of-entropy/" rel="nofollow ugc">https://eranraviv.com/intuitive-explanation-of-entropy/</a></p>
+<p>With a short discussion on the relation with the field of robust statistics</p>
+<span class="reply"><a aria-label="Reply to E" class="comment-reply-link" data-belowelement="div-comment-5113" data-commentid="5113" data-postid="6395" data-replyto="Reply to E" data-respondelement="respond" href="#comment-5113" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-5128">
+<article class="comment-body" id="div-comment-5128" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for linking this – great article! There are some really neat insights there that help the reader understand the intuition behind the concept of entropy. I particularly liked the entropy comparison of the various distributions. </p>
+<p>The point about robust statistics is a good one too. Often the decision to treat a data point as an outlier is far from obvious, particularly in financial data. And there’s invariably a trade off – neater model or more information?</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-5128" data-commentid="5128" data-postid="6395" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-5128" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-5458">
+<article class="comment-body" id="div-comment-5458" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>How about using the probability distribution of the patterns itself, rather than the related entropy?</p>
+<p>Suppose the last four data points are (1010)  (up, down , up, down) and the probaility for the pattern (10101) is p1 and that for (10100) is p2. If p1 &gt; p2 you go long, otherwise you go short. You could also set a treshold, say, if  p1 / p2 &gt; 1.2, then go long, and if  p1 / p2 &lt; 0.8,  then go short.</p>
+<span class="reply"><a aria-label="Reply to Tim Vidmar" class="comment-reply-link" data-belowelement="div-comment-5458" data-commentid="5458" data-postid="6395" data-replyto="Reply to Tim Vidmar" data-respondelement="respond" href="#comment-5458" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1" id="comment-15325">
+<article class="comment-body" id="div-comment-15325" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I think while Shannon Entropy is interesting, one thought I had reading this (in relation to the first suited cards example, the number of binary questions needed being 2).</p>
+<p>The interesting thing is that if we wrote a computer program for this example, we’d actually need 3 binary questions because the 2nd question is an if/else dependency on the first question.</p>
+<p>1: Is the suit red?<br/>
+    if No:<br/>
+        2: Is the suit a spade?<br/>
+    else:<br/>
+        3: Is the suit a heart?</p>
+<p>In other words, we always need more information storage than is theoretically necessary describe variable.</p>
+<span class="reply"><a aria-label="Reply to John R" class="comment-reply-link" data-belowelement="div-comment-15325" data-commentid="15325" data-postid="6395" data-replyto="Reply to John R" data-respondelement="respond" href="#comment-15325" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-17734">
+<article class="comment-body" id="div-comment-17734" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>you said”And here’s a plot of the number of pips collected over the past few years, excluding trading frictions, on EUR/USD:”<br/>
+you showed 44602 pips, at $10 a pip=446020$, over 10.5 years or 2738 trading days=avg trade of $162 (446020/2738).<br/>
+Now are my simple calculations in error above? if not, then $162 is more than enough to cover transaction cost and slippage, wouldn’t you agree? Please correct me.</p>
+<p>                          Ashley Hedges</p>
+<span class="reply"><a aria-label="Reply to ashley" class="comment-reply-link" data-belowelement="div-comment-17734" data-commentid="17734" data-postid="6395" data-replyto="Reply to ashley" data-respondelement="respond" href="#comment-17734" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-18223">
+<article class="comment-body" id="div-comment-18223" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This thing makes a trading decision every minute – so the denominator in your calculation should be closer to 2738*1440, not 2738. This results in a positive, but vanishingly small, average profit per trade.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-18223" data-commentid="18223" data-postid="6395" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-18223" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/shannon-entropy/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

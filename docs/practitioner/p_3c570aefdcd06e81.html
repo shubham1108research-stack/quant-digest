@@ -1,0 +1,367 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Momentum Is Dead! Long Live Momentum!</title>
+<!-- source: https://robotwealth.com/momentum-dead-alive/ -->
+<h1>Momentum Is Dead! Long Live Momentum!</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-5797 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-r category-think-like-a-trader tag-momentum tag-quantitative-analysis pmpro-has-access" id="post-5797">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">April 29, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Momentum Is Dead! Long Live Momentum!</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Momentum Is Dead! Long Live Momentum!" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><strong>In our inaugural <a href="https://robotwealth.com/bootcamp" rel="noopener noreferrer" target="_blank">Algo Bootcamp</a>, we teamed up with our super-active community of traders and developed a long-only, always-in-the-market strategy for harvesting risk premia. It holds a number of different ETFs, varying their relative weighting on a monthly basis. We’re happy with it. However, the perennial question remains: <em>can we do better?</em></strong>
+
+As you might expect, we found evidence suggesting that risk premia are time-varying. If we could somehow predict this variation, we could use that prediction to adjust the weightings of our portfolio and quite probably improve the strategy’s performance.
+
+This might sound simple enough, but we actually found compelling evidence both <em>for</em> and <em>against</em> our ability to time risk premia returns.
+
+We’re always telling our Bootcamp participants that developing trading and investment strategies requires the considered balancing of evidence in the face of uncertainty. In this case, we decided that there was enough evidence to suggest that we could weakly predict time-varying risk premia returns, at least to the extent that slight weight adjustments in accordance with these predictions might provide value.
+
+The strategy was already decent enough, so we were loath to add additional complexity that could bite us later. There was compelling evidence that our predictions could add value. But there was also a troubling deterioration in the quality of these predictions over time. In the end, we added only a very slight weight adjustment on the basis of these predictions.
+
+Why am I telling you all this?
+
+Well, I am <em>really</em> curious as to whether you would have made the same decision as we did. In this post, I’ll provide a bunch of our findings and let you make up your own mind. The best decision for us at the time was to only incorporate a very small timing aspect in our risk premia strategy and move on to something else. But I don’t think everyone would agree. This stuff is always context-dependent, and we all have a different context, but still, I’d love to hear what you would have done in the comments.
+
+<h2>Our Baseline Strategy</h2>
+
+As I mentioned above, our strategy was already looking quite decent before we started exploring ways to time the market. Here’s a long-term backtest, before costs (many of our ETFs weren’t around for the entirety of this backtest, so we had to create synthetic asset data from indexes, mutual funds, and other relevant sources):
+
+<img alt="" class="alignnone size-large wp-image-5825 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170121/baseline_unlevered-1024x731.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170121/baseline_unlevered-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170121/baseline_unlevered-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170121/baseline_unlevered-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170121/baseline_unlevered-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170121/baseline_unlevered-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170121/baseline_unlevered.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/>
+
+The strategy had a backtested Sharpe ratio of 1.22 and a Compound Annual Growth Rate (CAGR) of 6.6%. If we could lever it up 2x costlessly (which of course we can’t) we can bump up the CAGR to over 12%:
+
+<img alt="" class="alignnone size-large wp-image-5808 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170140/baseline-1024x731.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170140/baseline-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170140/baseline-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170140/baseline-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170140/baseline-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170140/baseline-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170140/baseline.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/>
+
+Over the same period, the S&amp;P500 delivered a CAGR of around 8.3% at a Sharpe of approximately 0.6.
+
+<h2>How To Time The Market</h2>
+
+Two anomalies seem to pop up over and over again in the markets: <em>momentum</em> and <em>value</em>. The AQR paper <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2174501" rel="noopener noreferrer" target="_blank"><em>Value and Momentum Everywhere</em></a> is a good summary for the uninitiated. Essentially, the authors demonstrate a momentum and value effect <em>within</em> every asset class they look at, as well as <em>across</em> asset classes. This suggests that we might be able to use relative momentum and value rankings across the assets in our risk premia universe as a simple prediction of future returns.
+
+<h3>The Momentum Effect</h3>
+
+We ended up ignoring the value effect for now (we ran out of time, and the strategy was good enough to get into the market at the end of the Bootcamp, but we’ll likely revisit this in the future), and instead focused on the momentum effect across our risk premia universe.
+
+The thing with momentum is that we don’t really know exactly what it is or how to calculate it. So we deferred to the simplest approach we could think of to estimate it: the rate of change of price over some formation period.
+
+<h4>Momentum Factor Plots</h4>
+
+We performed a classic rank-based factor analysis by:
+
+<ol>
+<li>Calculating our momentum estimate.</li>
+<li>Ranking each of our assets according to this estimate.</li>
+<li>Looking at subsequent returns over some holding period for each rank.</li>
+</ol>
+
+So our momentum analysis is really subject to two parameters: the formation period used in the momentum estimate, and the holding period used to assess the momentum factor’s relationship with future returns.
+
+We looked at all combinations of 1, 3, 6, 9 and 12 month formation periods and 1, 3, 6, 9 and 12 month hold periods. We found a clear and persistent momentum effect, at least on average over the whole sample.
+
+Here’s a selection of factor rank bar plots showing the mean future return by momentum rank (1 representing the highest momentum, 8 the lowest):
+
+<img alt="" class="alignnone size-large wp-image-5809 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170139/momo_3_1-1024x731.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170139/momo_3_1-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170139/momo_3_1-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170139/momo_3_1-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170139/momo_3_1-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170139/momo_3_1-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170139/momo_3_1.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/> <img alt="" class="alignnone size-large wp-image-5810 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170138/momo_9_3-1024x731.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170138/momo_9_3-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170138/momo_9_3-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170138/momo_9_3-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170138/momo_9_3-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170138/momo_9_3-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170138/momo_9_3.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/> <img alt="" class="alignnone size-large wp-image-5811 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170136/momo_12_1-1024x731.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170136/momo_12_1-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170136/momo_12_1-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170136/momo_12_1-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170136/momo_12_1-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170136/momo_12_1-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170136/momo_12_1.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/>
+
+We actually saw some sort of momentum effect in every combination of formation and holding period that we looked at.
+
+<h4>Momentum Outperformance</h4>
+
+Next, we tried to quantify the strength of this cross-sectional momentum effect. We did that by looking at the difference in annualised returns between the top and bottom <em>n</em> assets by momentum rank (again, for a combination of formation and holding periods).
+
+Here are some plots that show the difference in annualised returns between the top and the bottom <em>n</em> assets by momentum rank. The formation period (in months) is on the x-axis. The holding period (in months) is on the y-axis. The colour represents the magnitude of outperformance of the top-ranked asset.
+
+First, for <em>n = 2:</em>
+<img alt="" class="alignnone size-large wp-image-5812 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170135/momo_outperformance_top_2-1024x731.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170135/momo_outperformance_top_2-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170135/momo_outperformance_top_2-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170135/momo_outperformance_top_2-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170135/momo_outperformance_top_2-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170135/momo_outperformance_top_2-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170135/momo_outperformance_top_2.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/>
+
+And for <em>n = 4</em>:
+
+<img alt="" class="alignnone size-large wp-image-5813 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170134/momo_outperformance_top_4-1024x731.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170134/momo_outperformance_top_4-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170134/momo_outperformance_top_4-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170134/momo_outperformance_top_4-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170134/momo_outperformance_top_4-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170134/momo_outperformance_top_4-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170134/momo_outperformance_top_4.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/>
+
+We see that pretty much across the board, <em>assets with higher recent momentum tend to outperform those with lower recent momentum</em>, again on average over the whole sample of our data.
+
+We can also see that the effect is <em>greater the shorter the holding period. </em>This is unsurprising, but from a strategy development point of view is somewhat disappointing, because the shorter the holding period, the more frequently we’d need to adjust our positions to capitalise on the effect and the higher our cost of trading. Nothing comes for free, apparently.
+
+<h4>All Aboard the Momentum Train!</h4>
+
+To summarise our findings to this point, we see a strong momentum effect for formation periods of 3 to 12 months. And the effect is stronger for shorter holding periods.
+
+You might, therefore, be convinced (and indeed many of our Bootcamp participants were) that we should only hold the assets in our risk premia universe with the highest 3-12 month momentum.
+
+But so far we’ve only looked at the <em>mean</em> momentum outperformance over the entire 20-year data set. Markets are dynamic and noisy, and looking at summary statistics like the mean can hide important information.
+
+Therefore, before we made any decisions, we looked at the consistency of momentum outperformance over time.
+
+<h4>Momentum Consistency</h4>
+
+Here are some plots of 3-month and 6-month momentum outperformance over time for formation periods 3 to 12.
+
+<img alt="" class="alignnone size-large wp-image-5814 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170133/momo_consistency_hold_3top_4-1024x731.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170133/momo_consistency_hold_3top_4-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170133/momo_consistency_hold_3top_4-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170133/momo_consistency_hold_3top_4-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170133/momo_consistency_hold_3top_4-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170133/momo_consistency_hold_3top_4-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170133/momo_consistency_hold_3top_4.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/>
+<img alt="" class="alignnone size-large wp-image-5815 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170131/momo_consistency_hold_6_top_4-600x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170131/momo_consistency_hold_6_top_4-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170131/momo_consistency_hold_6_top_4-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170131/momo_consistency_hold_6_top_4-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170131/momo_consistency_hold_6_top_4-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170131/momo_consistency_hold_6_top_4-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170131/momo_consistency_hold_6_top_4.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/>
+
+The dots represent mean outperformance of top-ranked assets over the holding period <em>annualised over the given year</em>. The lines are LOESS curves.
+
+These plots suggest that the momentum train has been running out of steam for a number of years now. That is, we see a clear decline in the cross-sectional momentum effect over the sample period.
+
+The momentum effect over the <em>whole sample</em> is significant. But the <em>decaying performance</em> suggests caution in trading the effect aggressively.
+
+<h4>Momentum Backtest 1: Asset Rotation</h4>
+
+At this point, many of our Bootcamp participants were wondering why we’d still bother looking at momentum given the clear decaying performance in the previous charts.
+
+But at this point, we were still taking it seriously because it has worked <em>exceptionally</em> well for <em>as long as we have history available.</em> But there is a real question to whether the increased turnover and potential reduction in diversification as we rotate into high-momentum assets is justified given the decaying performance.
+
+Here’s a backtest for a strategy which, every month:
+
+<ul>
+<li>ranks each asset according to its trailing six-month returns</li>
+<li>selects the top four assets and weights each in inverse proportion to its volatility over the previous three months</li>
+</ul>
+<img alt="" class="alignnone size-large wp-image-5816 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170130/momo_rotation-1024x731.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170130/momo_rotation-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170130/momo_rotation-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170130/momo_rotation-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170130/momo_rotation-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170130/momo_rotation-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170130/momo_rotation.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/>
+
+This backtest has a before-cost CAGR of 8.9% at a Sharpe ratio of 1.14. This is a higher return than our baseline strategy at a similar, though slightly lower, Sharpe ratio – probably due to a reduction in diversification.
+
+We can get some insight into what this strategy is doing by looking at its asset weights over time:
+
+<img alt="" class="alignnone size-large wp-image-5821 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170129/momo_rotation_weights-1024x846.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170129/momo_rotation_weights-1024x846.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170129/momo_rotation_weights-600x495.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170129/momo_rotation_weights-300x248.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170129/momo_rotation_weights-768x634.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170129/momo_rotation_weights-727x600.png 727w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170129/momo_rotation_weights.png 1142w" decoding="async" height="846" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='846'%20viewBox='0%200%201024%20846'%3E%3C/svg%3E" width="1024"/>
+
+Compare this to the asset weights of our baseline strategy:
+
+<img alt="" class="alignnone size-large wp-image-5822 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170127/baseline_weights-1024x857.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170127/baseline_weights-1024x857.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170127/baseline_weights-600x502.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170127/baseline_weights-300x251.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170127/baseline_weights-768x643.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170127/baseline_weights-717x600.png 717w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170127/baseline_weights.png 1141w" decoding="async" height="857" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='857'%20viewBox='0%200%201024%20857'%3E%3C/svg%3E" width="1024"/>
+
+Chalk and cheese. The momentum strategy has higher returns and better drawdown control. It’s lower Sharpe comes by way of increased concentration (reduced diversification), and it turns out that it has over <em>5x the turnover</em>.
+
+We weren’t overly impressed by this trade-off. Specifically, we weren’t sold on the idea that there’s enough evidence to convince us to run a momentum strategy at the expense of diversification (what do you think? Let us know in the comments). However, despite its decay over the last decade or two, the historic momentum outperformance is <em>remarkable</em>. You won’t see a much bigger anomaly than that. We could therefore certainly entertain overweighting assets with high relative momentum and underweighting those with low relative momentum, based on the evidence we’ve seen to date.
+
+<h4>Momentum Backtest 2: Weight Adjustment</h4>
+
+Intuitively, we prefer a more subtle way to incorporate the momentum effect, one that adjusts portfolio weights slightly based on our estimate of relative (cross-sectional) momentum. That way, we’re always holding <em>some</em> of each asset in our universe, but we might be underweight when an asset class has been underperforming relative to the others.
+
+It’s possible to get super-complicated with this (Black-Litterman, Bootstrapping, etc.). Knowing that any improvement is likely to be marginal above our already-decent strategy, we decided not to try anything too complicated here. We simply adjusted our baseline asset weights slightly depending on the relative momentum factor.
+
+Here’s how that backtests:
+
+<img alt="" class="alignnone size-large wp-image-5823 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170125/momo_adjust_backtest-1024x731.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170125/momo_adjust_backtest-1024x731.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170125/momo_adjust_backtest-600x429.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170125/momo_adjust_backtest-300x214.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170125/momo_adjust_backtest-768x549.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170125/momo_adjust_backtest-840x600.png 840w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170125/momo_adjust_backtest.png 1344w" decoding="async" height="731" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='731'%20viewBox='0%200%201024%20731'%3E%3C/svg%3E" width="1024"/>
+
+This gives a CAGR of 7.4% at a Sharpe of 1.3. Here are the asset weights:
+
+<img alt="" class="alignnone size-large wp-image-5824 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/04/21170123/momo_adjust_weights-1024x860.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/04/21170123/momo_adjust_weights-1024x860.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170123/momo_adjust_weights-600x504.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170123/momo_adjust_weights-300x252.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170123/momo_adjust_weights-768x645.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170123/momo_adjust_weights-714x600.png 714w, https://media.robotwealth.com/wp-content/uploads/2019/04/21170123/momo_adjust_weights.png 1138w" decoding="async" height="860" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='860'%20viewBox='0%200%201024%20860'%3E%3C/svg%3E" width="1024"/>
+
+The portfolio is consistently well diversified and we’ve increased returns and Sharpe ratio over the baseline strategy. However, it turns over about 2x more than the baseline strategy. We feel that this is a much more attractive trade-off. Do you?
+
+<h2>Weighing the Evidence</h2>
+
+In our recent Bootcamp, we took a deep dive on the momentum effect and tried to make a sensible decision about incorporating it into our risk premia strategy. The evidence for the momentum effect includes:
+
+<ul>
+<li>A wealth of empirical evidence in favour of momentum over many years</li>
+<li>On average, a clear and persistent momentum effect (noting that <em>when looking at averages much detail is hidden</em>)</li>
+<li>On average, clear outperformance of top-ranked assets over bottom</li>
+</ul>
+
+The evidence against includes:
+
+<ul>
+<li>Outperformance is more pronounced for shorter hold periods, which implies more frequent rebalancing and higher costs</li>
+<li>Recent deterioration across the board</li>
+</ul>
+
+How can we weigh up this evidence in the context of our risk premia strategy? Here’s a summary of our thought process:
+
+<ul>
+<li>We are confident that exposure to risk premia is a good idea that is rewarded over the long term.</li>
+<li>Every time we are not in the market we are giving up exposure to that risk premia.</li>
+<li>So we need to be pretty confident in our timing ability to get out of the market.</li>
+<li>We are not <em>that</em> confident.</li>
+<li>We can see an obvious and clear momentum effect (at least in the past).</li>
+<li>This effect has deteriorated in the past decade or two.</li>
+<li>We give up quite a lot to access the momentum effect if we make binary decisions to get in or out of an asset. Specifically, we give up exposures to certain risk premia at certain times, and we give up diversification benefit on our portfolio variances.</li>
+<li>We also increase turnover significantly.</li>
+<li>We can, to an extent, have our cake and eat it too by adjusting baseline asset weights based on the cross-sectional momentum factor, rather than making binary in-out decisions.</li>
+<li>Using this approach, we give up some of the momentum effect, but we retain the benefits of diversification as well as constant exposure to the risk premia.</li>
+</ul>
+
+That thought process seems to logically suggest that the momentum adjustment approach makes the most sense in the context of our risk premia strategy. This also implies that we need to give some thought to <em>how</em> we implement these adjustments.
+
+In the end, we decided that a simple adjustment to the baseline weights based on our estimate of the momentum factor is sufficient – it affords us simple and easy access to the momentum effect without compromising our exposure to risk premia or the benefits of diversification. Previously, we alluded to some more complex approaches for adjusting these weights, such as Black-Litterman, which would probably allow us to squeeze out a couple more drops of performance.
+
+But that’s not the best use of our time given the bigger picture of our broader trading operation. First and foremost, we’re not building a risk premia strategy – we’re helping our members and Bootcamp participants build out their trading capability. At the early stages, we stand to gain <em>a lot</em> from adding additional edges to our portfolio. We would probably gain <em>something</em> from a more complex momentum tilt on our risk premia strategy, but it’s going to be nowhere near as beneficial as diversifying across strategies. So we opted for a simple approach that gets us into the market and hot on the trail of active alpha strategies to add to the portfolio.
+
+This bigger picture will change. When our portfolio is more mature, it will likely make a lot of sense to revisit the risk premia strategy and try to squeeze a little more out. There might well come a time when this is our biggest or most sensible opportunity. But that time isn’t now.
+
+<h2>Conclusions</h2>
+<ul>
+<li>Our strategy is based on exposure to risk premia for the long term.</li>
+<li>We think we might be able to gain some benefit from trying to time our risk premia exposures.</li>
+<li>Momentum has been a remarkable anomaly for a long time.</li>
+<li>Its performance has deteriorated for a decade or two.</li>
+<li>Strategy design is all about weighing evidence in the face of uncertainty.</li>
+<li>Context matters both at the strategy level and the bigger picture trading operation level.</li>
+<li>For our specific context, we found a way to incorporate momentum timing into our risk premia strategy with sensible trade-offs.</li>
+</ul>
+<h2>Next Steps</h2>
+
+One of the most fun things about independent trading is not only weighing the strategy-level evidence that you collect yourself, but deciding what it actually means for <em>your</em> specific situation. No one can tell you what the right answer is – partly because it doesn’t exist, and partly because everyone’s context is different. <em>You</em> have to make a decision at some point and take action based on <em>your</em> best judgment. It’s the ultimate exercise in backing yourself and taking responsibility for your own decisions. That’s also why I think trading isn’t for everyone – not everyone is comfortable taking on that level of responsibility. But if you do, then trading is the best game in town.
+
+The tricky part about weighing evidence and making smart trading decisions in the face of uncertainty is that <em>it takes experience to do it well</em>. You get that experience by getting kicked around in the markets for a few years – which isn’t particularly enjoyable or financially rewarding. In our Bootcamp program, we pass on the experience and intuition that we fought hard for over many years, minus the battle scars that we picked up along the way.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>momentum</span>, <span>quantitative analysis</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">4 thoughts on “Momentum Is Dead! Long Live Momentum!”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1" id="comment-3833">
+<article class="comment-body" id="div-comment-3833" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This is a great post. Thank you! It summarizes the main points of the risk premia strategy.  It gives evidence that momentum strategies such as the Dual Momentum or Sector Relative Strength are slowing but not out. The back-test also shows that the strategy can perform well in all different economic environments. There is also a balance of trading/balancing frequencies – not too much. From the chart above, there is a draw-down of 18% for about a year which is acceptable.  One idea is maybe selling volatility can help to improve the 2009 drawn-down which need further study.</p>
+<span class="reply"><a aria-label="Reply to Minsheng" class="comment-reply-link" data-belowelement="div-comment-3833" data-commentid="3833" data-postid="5797" data-replyto="Reply to Minsheng" data-respondelement="respond" href="#comment-3833" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-3834">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 04/29/2019 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-4299">
+<article class="comment-body" id="div-comment-4299" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi ,I love this, bcos ,I have been searching for such,I am dummy when it comes trading, so how can this community help me to developed skills from dummy to professional trader.and access the right information on trading. Thanks I look forward for your reply</p>
+<span class="reply"><a aria-label="Reply to Francis OBUNGWO" class="comment-reply-link" data-belowelement="div-comment-4299" data-commentid="4299" data-postid="5797" data-replyto="Reply to Francis OBUNGWO" data-respondelement="respond" href="#comment-4299" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/momentum-dead-alive/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

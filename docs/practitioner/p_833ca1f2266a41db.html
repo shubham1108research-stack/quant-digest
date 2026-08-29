@@ -1,0 +1,322 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Why Aren’t Call Options More Expensive Than Put Options? (In This Toy Example)</title>
+<!-- source: https://robotwealth.com/why-arent-call-options-more-expensive-than-puts/ -->
+<h1>Why Aren’t Call Options More Expensive Than Put Options? (In This Toy Example)</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-24001 post type-post status-publish format-standard has-post-thumbnail hentry category-options category-quant-trading tag-options tag-quant-teaser pmpro-has-access" id="post-24001">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/jameshodges/">Robot James</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">June 4, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Why Aren’t Call Options More Expensive Than Put Options? (In This Toy Example)</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Why Aren’t Call Options More Expensive Than Put Options? (In This Toy Example)" class="ipa-media gb-media-81e19d89" data-media-id="24002" decoding="async" fetchpriority="high" height="706" sizes="(max-width: 1000px) 100vw, 1000px" src="https://media.robotwealth.com/wp-content/uploads/2020/06/21161851/call-options.jpg" srcset="https://media.robotwealth.com/wp-content/uploads/2020/06/21161851/call-options.jpg 1000w, https://media.robotwealth.com/wp-content/uploads/2020/06/21161851/call-options-600x424.jpg 600w, https://media.robotwealth.com/wp-content/uploads/2020/06/21161851/call-options-300x212.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2020/06/21161851/call-options-768x542.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2020/06/21161851/call-options-850x600.jpg 850w" width="1000"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><em>In the <a href="https://robotwealth.com/zorro-priority-org/">Robot Wealth Pro Community</a>, we’ve started doing weekend “quant-teasers” where we discuss the solutions to quant problems. </em>
+<em>Here is a recent one…</em>
+<h2>Why aren’t calls more expensive than puts for an asset which is more likely to go up than down?</h2>
+
+We have an asset trading at $100 for which the distribution of future returns is a known fact.
+
+It has annual returns described by a normal distribution with mean 5% and standard deviation 10%.
+
+This is, therefore, an asset with positive drift. It is more likely to go up than down.
+
+Because we are certain about our return distribution, we can calculate the probability of this year’s return being negative, as follows:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">pnorm(0, mean = 0.05, sd = 0.1)
+[1] 0.3085375</pre>
+
+So in a year’s time, there’s a 31% chance it’s trading below $100, and a 69% chance it’s trading above $100.
+
+Now consider a call and a put option, each with a strike price of $100, expiring in a year’s time.
+
+At expiry:
+
+<ul>
+<li>The call will be valuable 69% of the time.</li>
+<li>The put will be valuable 31% of the time.</li>
+</ul>
+
+Assuming interest rates don’t exist and the asset doesn’t pay dividends or have any other cost of carry, the fair value of these options is the same price.
+
+<strong>Why? Try to explain this intuitively with minimal maths. </strong>
+<em>Hint: two things with the same payoff must be the same price.</em>
+<div></div>
+<div></div>
+<h2>Solution Discussion</h2>
+
+One of our community members, Ben, started by drawing the payoff as a function of the asset price for various combinations of the options and long and short positions in the stock. <em>(Let’s assume its a stock.)<img alt="" class="aligncenter wp-image-23567 perfmatters-lazy" data-sizes="(max-width: 400px) 100vw, 400px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161928/option-payoffs-768x1024.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161928/option-payoffs-768x1024.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161928/option-payoffs-scaled-600x800.jpg 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161928/option-payoffs-225x300.jpg 225w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161928/option-payoffs-1152x1536.jpg 1152w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161928/option-payoffs-1536x2048.jpg 1536w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161928/option-payoffs-450x600.jpg 450w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161928/option-payoffs-scaled.jpg 1920w" decoding="async" height="533" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='400'%20height='533'%20viewBox='0%200%20400%20533'%3E%3C/svg%3E" width="400"/></em>
+
+You can see that:
+
+<ul>
+<li>A long call has the same payoff as a long put and a long position in the stock (last diagram)</li>
+<li>A long put has the same payoff being long a call and short the stock (third line down)</li>
+</ul>
+
+So…
+
+<ul>
+<li>we can always “make a synthetic call” by longing the stock and buying a put.</li>
+<li>we can always “make a synthetic put” by shorting the stock and buying a call.</li>
+</ul>
+<blockquote>
+<em><strong>Now, if the $100 calls were more expensive than the $100 puts, how could you make risk free profits?</strong></em></blockquote>
+
+We would be able to make a cheaper “synthetic call” by longing the stock and a put.
+
+We would buy the cheaper “synthetic call” (long stock + put) and sell the more expensive call option.
+
+This would generate a risk-free profit for us…
+
+That can’t happen – because if it did – everyone would dive into this arbitrage trade, buying the puts (and the stock) and selling the calls.
+
+The buying pressure in the cheap puts and the selling pressure in the expensive calls from these trades would cause the prices of the options to converge with each other – bringing the options to the price where the arbitrage was no longer possible.
+
+So – in this example in which we ignored interest rates – calls and puts with the same moneyness trade at the same price, even though the calls are more likely to make money than the puts.
+
+<blockquote><em>The fact that calls and puts are the same price in this example is no more a paradox than the fact that you can long and short the asset at the same price.</em></blockquote>
+<h2>What Are The Implications For Option Pricing?</h2>
+
+It means that the drift, or the expected return, of the asset is not a factor in option pricing.
+
+We can easily hedge away the drift. (For example, if we are long a put we can buy the stock in the correct proportion, to hedge the drift.) So option holders are not rewarded for taking on the drift.
+
+So options are not priced on real-world probabilities. They are priced on <b data-stringify-type="bold">risk-neutral probabilities…</b>
+
+That is, they are priced on the probability that the price is greater than or less than the strike of the options – <b data-stringify-type="bold">assuming the expected returns (drift) of the asset was zero </b><em>(ignoring interest rates.)</em>
+
+To get the probabilities in risk-neutral world (assuming no interest) we put <code>mean = 0</code> into our cumulative distribution function:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">pnorm(0, mean = 0, sd = 0.1)
+[1] 0.5</pre>
+
+In this case, it becomes a 50/50 proposition and it is self-evident that the call and put should be the same price in risk-neutral world, ignoring interest.
+
+<blockquote><em>Another way of thinking about this was brought up by @Tho, who identified that the probabilities that matter, were not the probabilities of the asset price exceeding the strike price – but the probability of it exceeding the strike price, <strong>plus the drift. </strong></em>
+<em>In this example, the chance of the price of the the asset exceeding $105 (the current price, plus the annual expected return) is 50%</em></blockquote>
+
+We can see this in our closed-form solution for Black Scholes Merton for European Calls and Puts:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic"># BSM closed form solution for European calls and puts
+# S - Stock Price
+# X - Strike Price
+# b - Generalised cost of carry
+# t - Time to expiration
+# sig - Volatility of the underlying return process
+bsm_european &lt;- function(S, X, b, t, sig, optiontype = c('call','put')) {
+  if(optiontype == 'call'){
+    d1 &lt;- (log(S/X) + (b + sig^2/2)*t) / (sig*sqrt(t))
+    d2 &lt;- d1 - sig*sqrt(t)
+    value &lt;- S*pnorm(d1) - X*exp(-b*t)*pnorm(d2)
+  return(value)
+  }
+  if(optiontype == 'put'){
+    d1 &lt;- (log(S/X) + (b + sig^2/2)*t) / (sig*sqrt(T))
+    d2 &lt;- d1 - sig*sqrt(t)
+    value &lt;-  (X*exp(-b*t)*pnorm(-d2) - S*pnorm(-d1))
+    return(value)
+  }
+}</pre>
+
+There’s no parameter for the drift of the asset in BSM!So when we plug the numbers into price these options we get:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">bsm_european(S = 100,
+             X = 100,
+             b = 0,
+             t = 1,
+             sig = 0.1,
+             optiontype = 'call')
+bsm_european(S = 100,
+             X = 100,
+             b = 0,
+             t = 1,
+             sig = 0.1,
+             optiontype = 'put')
+[1] 3.987761
+[1] 3.987761</pre>
+<em>Note that the BSM assumptions are completely valid here because we know the price follows a stationary GBM process. <span aria-describedby="sk-tooltip-7fdf99a2-a3f2-49b2-be4a-6a41da8d0eb7" class="c-message__edited_label" data-sk="tooltip_parent" dir="ltr"> </span></em>
+<h2>Summary</h2>
+<div class="p-rich_text_section">In the example, the puts and the calls HAVE to be the same price, because:</div>
+<ul class="p-rich_text_list p-rich_text_list__bullet" data-indent="0" data-stringify-type="unordered-list">
+<li>you can make a synthetic call out of the combination of a put and a long position in the stock.</li>
+<li>if the call option were more expensive than the put option, then you could sell the real call option, and buy the cheaper synthetic call option(put + stock) and create a risk-free arbitrage.</li>
+</ul>
+<div class="p-rich_text_section">This has profound implications for option pricing and means that options are priced based on risk-neutral probabilities (probabilities which assume the drift is zero*) rather than real-life probabilities.</div>
+<div></div>
+<div class="p-rich_text_section"><i data-stringify-type="italic">*More accurately, in the real world, we assume that the drift is the risk-free rate, but we’re pretending interest doesn’t exist here.</i></div>
+<h2>Follow-up Questions</h2>
+<blockquote><em>For longer dates stuff there is also a dividend yield term? otherwise we could create a risk free dividend capture where we long the stock and short the synthetic?</em></blockquote>
+
+Yeah. There wasn’t a divided expected in this problem. But if there was you’d just subtract the value of the expected dividend from the price of the asset.
+
+i.e. if the stock was expected to pay $1 in dividends prior to expiry, then we’d do the analysis assuming it was trading at $99, rather than $100…
+
+For stock<em> index</em> options, it’s common to put the dividend yield in as a cost of carry parameter… i.e. <code>b</code> in the BSM solution above.
+
+<div class="convertful-36233"></div>
+<h2>If you liked this you’ll probably like these too…</h2>
+<blockquote class="wp-embedded-content" data-secret="QxNJg9f1ee"><a href="https://robotwealth.com/how-to-find-an-edge-trading-equity-options/">How to Find Cheap Options to Buy and Expensive Options to Sell</a></blockquote>
+<blockquote class="wp-embedded-content" data-secret="40HjGNXGi0"><a href="https://robotwealth.com/the-vix-futures-basis/">The VIX Futures Basis</a></blockquote>
+<blockquote class="wp-embedded-content" data-secret="cGMnpgcA74"><a href="https://robotwealth.com/finding-effective-crash-protection-using-downside-regressions/">Find Cheap Options for Effective Crash Protection Using Crash Regressions</a></blockquote>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>options</span>, <span>quant-teaser</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">2 thoughts on “Why Aren’t Call Options More Expensive Than Put Options? (In This Toy Example)”</h2>
+<ol class="comment-list">
+<li class="comment byuser comment-author-jradosta even thread-even depth-1 parent" id="comment-15330">
+<article class="comment-body" id="div-comment-15330" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This article (and conclusion) is incorrect. </p>
+<p>Synthetic positions can become cheaper than the actual position, and often do, this is why professional traders will use reversals and conversions to arbitrage the opportunity. </p>
+<p>Also, the conclusion of this article (that a put and a call would be the same price), is also inaccurate. Puts are usually more expensive than the corresponding call option because of the volatility smile, the implied volatility (IV) across the option chain. Investors typically fear more downside risk and use OTM puts as insurance which drives put prices higher at the edges of the chain, resulting in a higher IV on OTM puts, and lower IV ATM. </p>
+<p>Lot of complicated math in this post, the assumption and conclusion is wrong.</p>
+<span class="reply"><a aria-label="Reply to jradosta" class="comment-reply-link" data-belowelement="div-comment-15330" data-commentid="15330" data-postid="24001" data-replyto="Reply to jradosta" data-respondelement="respond" href="#comment-15330" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-jameshodges bypostauthor odd alt depth-2" id="comment-15381">
+<article class="comment-body" id="div-comment-15381" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>You are correct that a put and call won’t be the same price in the real world. Most importantly, because interest rates exist in the real world, stocks pay dividends and there are other cost-of-carry effects in other underlyings.</p>
+<p>The smile/smirk effects you mention are important too.</p>
+<p>This article isn’t making any observations about the real world. It presents a problem-solving exercise based on idealistic conditions in which interest rates don’t exist, dividends don’t exist and asset prices move according to a geometric brownian motion process – to help teach the important dynamics. We are well aware none of those assumptions hold in the real world. It’s not about that.</p>
+<span class="reply"><a aria-label="Reply to Robot James" class="comment-reply-link" data-belowelement="div-comment-15381" data-commentid="15381" data-postid="24001" data-replyto="Reply to Robot James" data-respondelement="respond" href="#comment-15381" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/why-arent-call-options-more-expensive-than-puts/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

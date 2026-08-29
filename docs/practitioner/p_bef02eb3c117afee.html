@@ -1,0 +1,1196 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Machine learning for Trading: Part 2</title>
+<!-- source: https://robotwealth.com/machine-learning-for-financial-prediction-experimentation-with-david-aronsons-latest-work-part-2/ -->
+<h1>Machine learning for Trading: Part 2</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1202 post type-post status-publish format-standard hentry category-fx category-machine-learning category-quant-trading category-r category-zorro tag-machine-learning tag-trading-strategies tag-zorro pmpro-has-access" id="post-1202">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 10, 2016</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Machine learning for Trading: Part 2</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Machine learning for Trading: Part 2" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><h2>Introduction</h2>
+
+My <a href="https://robotwealth.com/machine-learning-financial-prediction-david-aronson/" rel="noopener noreferrer" target="_blank">first post on using machine learning for financial prediction</a> took an in-depth look at various feature selection methods as a data pre-processing step in the quest to mine financial data for profitable patterns. I looked at various methods to identify predictive features including Maximal Information Coefficient (MIC), Recursive Feature Elimination (RFE), algorithms with built-in feature selection, selection via exhaustive search of possible generalized linear models, and the Boruta feature selection algorithm. I personally found the Boruta algorithm to be the most intuitive and elegant approach, but regardless of the method chosen, the same features seemed to keep on turning up in the results.
+In this post, I will take this analysis further and use these features to build predictive models that could form the basis of autonomous trading systems. Firstly, I’ll provide an overview of the algorithms that I have found to generally perform well on this type of machine learning problem as well as those algorithms recommended by David Aronson (2013) in <em>Statistically Sound Machine Learning for Algorithmic Trading of Financial Instruments </em>(SSML). I’ll also discuss a framework for measuring the performance of various models to facilitate robust comparison and model selection. Finally, I will discuss methods for combining predictions to produce ensembles that perform better than any of the constituent models alone.
+Without further ado, let’s dive in and discuss some machine learning algorithms.
+
+<h2>Algorithm selection</h2>
+
+Anyone familiar with machine learning can tell you that the quantity of algorithms available to the practitioner these days is staggering. With the rise of open source packages like R, used widely by industry, academics and hobbyists to collaborate on and share machine learning research, some of the most cutting edge statistical learning frameworks are literally at our fingertips.
+Its an exciting time, but also somewhat daunting.
+At last count there were 81 machine learning packages listed on <a href="https://cran.r-project.org/web/views/MachineLearning.html">CRAN’s Machine Learning Task View</a>, and many of those packages provide access to numerous individual algorithms! It’s impractical to perform an exhaustive search for the ‘best’ algorithm for a particular task, but it is certainly possible to arrive at some guidelines around what tends to work better for particular use cases.
+Aronson and Masters (2013) prefer linear and quadratic regression, boosted trees, and general regression neural networks. They state that “a single decision tree’s utility is debatable for financial data”, as are bagged ensembles of trees such as random forests, however boosted trees may be more appropriate. Personally, I found that neural networks initialized using stacked autoencoders were more promising than the general regression networks preferred by Aronson and Masters. I also found particularly useful models based on Friedman’s gradient boosting machine (Friedman, 2001). In addition, I was able to obtain surprisingly decent results from a simple k-Nearest Neighbors algorithm, however I had less success with bagging methods like random forests. Like Aronson and Masters, I avoided using single decision trees – for the the number of variables used in the investigation (see next section), there seems little point. The table below shows the algorithms that I investigated and highlights those that showed the most promise for this particular use case.
+<div class="supsystic-table-loader spinner" style="background-color:#000000"></div><div class="supsystic-tables-wrap" data-table-width-fixed="600px" data-table-width-mobile="100%" id="supsystic-table-2_90589" style=" width:600px; visibility: hidden; "><div class="supsystic-table-caption"><div class="table-title">Format Specifiers</div></div><table class="supsystic-table compact border lightboxImg cell-border" data-auto-index="off" data-currency-format="$1,000.00" data-date-format="DD.MM.YYYY" data-features='["after_table_loaded_script","import"]' data-from-history="0" data-head="on" data-head-rows-count="1" data-id="2" data-lang="default" data-lightbox-img="" data-loader-color="#000000" data-loader-icon-items="0" data-loader-icon-name="default" data-merged="[]" data-override='{"emptyTable":"","info":"","infoEmpty":"","infoFiltered":"","lengthMenu":"","search":"","zeroRecords":"","exportLabel":"","file":"default"}' data-pagination-length="50,100,All" data-percent-format="10.00%" data-processing-bg="#ffffff" data-processing-color="#000000" data-responsive-mode="0" data-search-value="" data-searching-settings='{"columnSearchPosition":"bottom","minChars":"0"}' data-time-format="HH:mm" data-title="Format Specifiers" data-view-id="2_90589" id="supsystic-table-2"><thead><tr><th class="bold htCenter" data-cell-id="A1" data-cell-type="text" data-db-index="1" data-order="Variable Type" data-original-value="Variable Type" data-x="0" data-y="1" style="min-width: 50%;">Variable Type </th><th class="bold htCenter" data-cell-id="B1" data-cell-type="text" data-db-index="1" data-order="Format Specifier" data-original-value="Format Specifier" data-x="1" data-y="1" style="min-width: 50%;">Format Specifier </th></tr></thead><tbody><tr style="height:px"><td class="htCenter" data-cell-id="A2" data-cell-type="text" data-db-index="2" data-order="int" data-original-value="int" data-x="0" data-y="2">int </td><td class="htCenter" data-cell-id="B2" data-cell-type="text" data-db-index="2" data-order="%d" data-original-value="%d" data-x="1" data-y="2">%d </td></tr><tr style="height:px"><td class="htCenter" data-cell-id="A3" data-cell-type="text" data-db-index="3" data-order="var" data-original-value="var" data-x="0" data-y="3">var </td><td class="htCenter" data-cell-id="B3" data-cell-type="text" data-db-index="3" data-order="%f" data-original-value="%f" data-x="1" data-y="3">%f </td></tr><tr style="height:px"><td class="htCenter" data-cell-id="A4" data-cell-type="text" data-db-index="4" data-order="string" data-original-value="string" data-x="0" data-y="4">string </td><td class="htCenter" data-cell-id="B4" data-cell-type="text" data-db-index="4" data-order="%s" data-original-value="%s" data-x="1" data-y="4">%s </td></tr></tbody></table><!-- /#supsystic-table-2.supsystic-table --></div><!-- /.supsystic-tables-wrap --><!-- Tables Generator by Supsystic --><!-- Version:1.14.2 --><!-- http://supsystic.com/ -->
+
+Even with the small selection listed here, we clearly have some decisions to make. I’ll present some results from these models below.
+
+<div>
+<h2>Choosing combinations of variables</h2>
+<div>For the purpose of this exercise, I chose the six features from the previous post that I feel are most likely to convey predictive information about the target variable. There are numerous combinations of features that we could use to build individual models, for example, various combinations of 2, 3, etc variables. Assuming we only build models based on at least two variables, we have 57 possible unique combinations from a pool of six features. Aronson and Masters (2013) caution against using too many variables due to the risk of overfitting the data, stating that two or three variables is usually the practical limit. In this analysis, I’ll take their advice and explore models with two or three features only. This limits the number of unique combinations to 35.
+The following features were chosen (refer to the previous post for calculation details):
+<ol>
+<li>3-period momentum</li>
+<li>Delta bollinger width</li>
+<li>10-period velocity</li>
+<li>10:100 period ATR ratio</li>
+<li>10:20 period ATR ratio</li>
+<li>7-period ATR</li>
+</ol>
+Each feature was normalized to the range $+1 : -1$ using a rolling 50-period window. I generally find that this method gives superior model performance to normalizing over the entire data set.
+Download the raw data I used in this study via this link: EUvarsD1. In addition, the code below uses Zorro to calculate the features and target variables listed above and outputs them to a CSV file like the one in the download link. Using this code, you can generate your own feature sets for use in the modelling framework described in this post. You can also  use it to change any other parameters, such as the normalization period and the amount of historical data. Using Zorro, this can easily be adapted to other markets as well. Click the box below to expand the code.
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Export features and target variable to CSV">/* MACHINE LEARNING FEATURE CREATION
+robotwealth.com
+Create a CSV file with features and target variable
+for use in machine learning framework in R
+*/
+function run()
+{
+StartDate = 20090827;
+EndDate = 20151231;
+LookBack = 141;
+BarPeriod = 1440;
+asset("EUR/USD");
+int period = 50; //lookback for calculating normalized/standardized values
+vars Price = series(price());
+vars High = series(priceHigh());
+vars Low = series(priceLow());
+vars Close = series(priceClose());
+vars logPrice = series(log(Price[0]));
+vars logOpen = series(log(priceOpen()));
+vars logHigh = series(log(High[0]));
+vars logLow = series(log(Low[0]));
+vars logClose = series(log(Close[0]));
+vars logDeltaClose = series(logClose[0] - logClose[1]);
+//bollinger width
+vars bWdith3 = series(log(sqrt(Moment(Price, 3, 2))/Moment(Price, 3, 1)));
+// delta bollinger width
+vars deltabWdith3 = series(bWdith3[0] - bWdith3[3]);
+vars deltabWidth3N = series(Normalize(deltabWdith3, period));
+//Price velocity - linear regression of log price
+vars velocity10 = series(TSF(logPrice, 10)/ATR(logOpen, logHigh, logLow, logClose, 7));
+vars velocity10N = series(Normalize(velocity10, period));
+//Price momentum
+vars mom3 = series((logDeltaClose[0] - logDeltaClose[3])/sqrt(Moment(logDeltaClose, 100, 2)));
+vars mom3N = series(Normalize(mom3, period));
+//ATR ratio
+vars atrRatFast = series(ATR(10)/ATR(20));
+vars atrRatFastN = series(Normalize(atrRatFast, period));
+vars atrRatSlow = series(ATR(10)/ATR(100));
+vars atrRatSlowN = series(Normalize(atrRatSlow, period));
+//ATR
+vars ATR7 = series(ATR(7));
+vars ATR7N = series(Normalize(ATR7, period));
+//objective
+vars objective = series( (Close[0]-Close[1])/ATR(100) );
+//print variables to CSV
+char line[150];
+sprintf(line, "%02d/%02d/%04d, %.5f, %.5f, %.5f, %.5f, %.5f, %.5f, %.5f\n", day(1), month(1), year(1), deltabWidth3N[1], velocity10N[1], mom3N[1], atrRatFastN[1], atrRatSlowN[1], ATR7N[1], objective[0]);
+if(!is(LOOKBACK)) file_append("Log\\EUvarsD1.csv", line);
+}</pre>
+</div>
+</div>
+<h2>A framework for measuring and comparing performance</h2>
+
+We have 35 possible variable combinations and 7 algorithms with which to construct predictive models. The subset of variables was constrained based on the feature selection process discussed in the last post. I’ve constrained the list of algorithms by attempting to maximize their diversity. For example, I’ve chosen a simple nearest neighbor algorithm, a bagging algorithm, boosting algorithms, tree-based models, neural networks and so on. Clearly, I’ve constrained my universe of models to only a fraction of what is possible. Still, there is a lot of choice. We could randomly choose various models in the hope of landing on something profitable, however since with today’s computing power we very much have the means to implement it, I much prefer the idea of a systematic, comprehensive assessment. I’ll describe my framework for such an assessment below.
+In this example, I will train each model to maximize the return of trading the model’s predictions normalized to the recent volatility measured by the 100-period ATR. Simple enough, but how would we objectively assess the performance of each model against this metric? And more importantly, how do we account for overfitting? Ideally, we would measure the out-of-sample performance of each model, but of course we have a finite amount of data and we need to maximize its utility. This is where cross validation comes in. There are plenty of great sources on the internet for detailed descriptions of cross validation, so I will only describe the procedure briefly.
+Cross validation involves dividing the training data into <em>k</em> portions, training a model on <em>k-1</em> portions and testing it on the portion that was held out. The performance on the hold out set is a first estimate of the true out of sample performance. The procedure is repeated using each subsample as the hold out test set and the results finally aggregated. This is known as k-fold cross validation. The estimate can be made more robust (usually) by randomly resampling the data into new portions and repeating the procedure. This is known as repeated k-fold cross validation. Other variations include bootstrapped cross validation (where resampling is undertaken with replacement – that is, individual observations can appear more than once in any subsample) and leave-one-out cross validation (where one observation at a time is held out, the remainder of the data used to train a model, and the performance of the model estimated by predicting the held out observation, repeated for every observation in the training set).
+Cross validation is a very useful procedure for estimating the true out of sample performance while maximizing the utility of the training data. This sounds fantastic, and it is for most data sets, but time series data presents some unique challenges. Consider a data set with no temporal dimension and in which the observations are independent and identically distributed. In any predictive modelling task for such a data set, we can never have too much data (within the practical constraints of computing resources of course). This is not necessarily the case with time series data.
+If we use too much of the time series to train our model, we risk including irrelevant and outdated patterns which of course by definition are unlikely to show up in the next instances of the time series. If we use too little data, we run the risk of under-fitting the model and missing the predictive information we hope to capture. How much data do we need then? I don’t know, but I intend to find out.
+Rob Hyndman describes a <a href="https://robjhyndman.com/hyndsight/tscvexample/">method for cross-validating time series data</a> which is extremely useful for algorithmic system development as it actually mirrors a procedure that can be used for live trading. Also known as “rolling origin forecast evaluation” and “forward chaining”, it is the best method I have found for quickly estimating the future performance of a model. The procedure is implemented thus:
+
+<ol>
+<li>Fit the model to a window of sequential data of length $t$: $x_1, x_2, …, x_t$</li>
+<li>Predict the next value in the sequence, $x_{t+1}$, and compute the forecast error by comparing the prediction with the observed value.</li>
+<li>Shift the origin of the window forward by one and repeat steps 1 and 2.</li>
+<li>Repeat the process until $x_1=x_{n-t}$ where $n$ is the length of the series (ie until we run out of data for creating a window of length $t$)</li>
+<li>Aggregate the forecast error for an estimate of the out of sample performance of the model</li>
+</ol>
+
+For readers familiar with walk forward analysis, time series cross validation is equivalent to walk forward analysis with the test set being a single period.
+
+<h2>Is there an optimal window length?</h2>
+
+As mentioned above, I want to investigate the existence or otherwise of an optimal amount of data to include in the rolling window of training data. How much data is too much? Too little? At what point do we incorporate old and outdated information into a model to its detriment? At what point do we underfit the model due to lack of data?
+For this experiment, I’ll model the EUR/USD exchange rate using a gradient boosting machine, a neural network and a k-nearest neighbors algorithm using various window lengths in the cross-validation procedure. My hypothesis is that there exists an optimal amount of data that maximizes the performance of a model for this particular time series. I am choosing three different algorithms in order to test the sensitivity of the optimal window length to the choice of algorithm. I expect that the length of the window itself will be an optimization parameter that is different for each market and that may itself change with time.
+The figures below show the Sharpe ratios and directional accuracy by window length for the cross-validated model predictions. Returns of the analogous trading system were calculated as follows:
+for all $y &gt; 0$, go long at the close and hold the position for 1 period
+for all $y &lt; 0$, go short at the close and hold the position for 1 period
+where $y$ is the prediction of the next period’s return normalized to the 100-period ATR. Results are exclusive of trading costs.
+
+The Sharpe ratio shows an obvious increase with increasing window length. This came as a surprise to me, as I suspected that there would be a point where data was too far removed from current market conditions to be of use in a predictive trading model. If such a point exists, it is clearly greater than 1,000 days. In hindsight, normalizing each feature using a rolling 50-period normalization window very likely ensures that the model dynamically adapts to changing conditions, but I must admit that I stumbled upon this more by accident than by design.
+Setting aside the obvious trend in the Sharpe ratio results, the other thing that jumps out at me is that the cross-validated performance of the k-Nearest Neighbors algorithm is at least on par with, and at times significantly better than the much more complex gradient boosting machines and neural networks. It is interesting that such a simple algorithm can hold its own against the more complex models.
+In my last post, I talked about the concept of a “prediction threshold”, being a method of filtering trades by entering the market only when the magnitude of the predicted next-period return exceeds a certain value. My hypothesis for doing so is that there is merit in filtering the small moves, which would be affected by randomness, in favor of the larger moves. Said differently, it makes sense (depending on the objectives of the trader) to target those returns in the tails of the distribution. Testing this hypothesis, I plotted a heatmap of Sharpe ratios by window length and prediction threshold for the neural network model:
+
+In general, there appears to be merit to this hypothesis with Sharpe ratios generally increasing for increasing prediction threshold.
+Here’s the code I used for the neural network models (the models based on k-nearest neighbors and gradient boosting machines used a similar procedure):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Neural network rolling window comparison">###############################################
+#### ROLLING FORECAST ORIGIN FRAMEWORK ########
+###############################################
+library(caret)
+library(nnet)
+library(neuralnet)
+library(deepnet)
+library(foreach)
+library(doParallel)
+eu &lt;- read.csv("EUvarsD1.csv", header = F, stringsAsFactors = F)
+colnames(eu) &lt;- c("date", "deltabWdith3", "velocity10", "mom3", "atrRatFast", "atrRatSlow", "ATR7", "objective")
+# summary function for training caret models on maximum profit
+absretSummary &lt;- function (data, lev = NULL, model = NULL) { # for training on a next-period return
+  positions &lt;- ifelse(data[ , "pred"] &gt; 0.0, 1, ifelse(data[, "pred"] &lt; -0.0, -1, 0))
+  trades &lt;- positions*data[, "obs"]
+  profit &lt;- sum(trades)
+  names(profit) &lt;- 'profit'
+  return(profit)
+}
+############################################################################
+# nnet models --------------------------------------------------------------
+############################################################################
+modellist.nnet &lt;- list()
+lengths &lt;- c(50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000)
+j &lt;- 1
+for (i in lengths) {
+  nnetGrid &lt;- expand.grid(.layer1 = c(2:3), .layer2 = c(0:2), .layer3=0, .hidden_dropout=c(0, 0.1, 0.2), .visible_dropout=c(0, 0.1, 0.2))
+  timecontrol &lt;- trainControl(method = 'timeslice', initialWindow = i, horizon = 1, summaryFunction=absretSummary, selectionFunction = "best",
+                              returnResamp = 'final', fixedWindow = TRUE, savePredictions = 'final')
+  cl &lt;- makeCluster(4)
+  registerDoParallel(cl)
+  set.seed(503)
+  modellist.nnet[[j]] &lt;- train(eu[, 2:4], eu[, 8], method = "dnn",
+                               trControl = timecontrol, tuneGrid = nnetGrid, preProcess = c('center', 'scale'))
+  stopCluster(cl)
+  j &lt;- j+1
+  cat("Window: ", i)
+}
+equity.nnet &lt;- data.frame()
+sharpe.nnet &lt;- data.frame()
+acc.nnet &lt;- data.frame()
+for (j in c(1:15)) {
+  k &lt;- 1
+  for (t in c(0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8)) {
+    threshold &lt;- t
+    trades &lt;- ifelse(modellist.nnet[[j]]$pred$pred &gt; threshold, modellist.nnet[[j]]$pred$obs,
+                     ifelse(modellist.nnet[[j]]$pred$pred &lt; -threshold, -modellist.nnet[[j]]$pred$obs, 0))
+    cumulative &lt;- cumsum(trades)
+    plot(cumulative, type = 'l', col = 'blue', main = paste0('Model: ', j, 'Thresh: ', threshold))
+    equity.nnet[j, k] &lt;- cumulative[length(cumulative)]
+    x &lt;- trades[trades!=0] #total trades
+    y &lt;- trades[trades &gt; 0] #winning trades
+    acc.nnet[j, k] &lt;- (length(y)/length(x))*100
+    if (length(x) &gt; 100) { # exclude any sharpes with less than 100 trades
+      a &lt;- sum(trades)/length(x) #average trade
+      b &lt;- sd(x) #std dev of trades
+      sharpe.nnet[j, k] &lt;- sqrt(252) * a/b
+    }
+    else sharpe.nnet[j, k] &lt;- 0
+    k &lt;- k+1
+  }
+}
+rownames(sharpe.nnet) &lt;- lengths
+colnames(sharpe.nnet) &lt;- c('0', '0.05', '0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', '0.5', '0.55', '0.6', '0.65',
+                          '0.7', '0.75', '0.8')
+# sharpe ratio
+sharpe.nnet[ "WINDOW" ] &lt;- rownames(sharpe.nnet)
+s.molten &lt;- melt( sharpe.nnet, id.vars="WINDOW", value.name="SHARPE", variable.name="THRESHOLD" )
+s.molten &lt;- na.omit(s.molten)
+#Factorize 'WINDOW' for plotting
+s.molten$WINDOW &lt;- as.character(s.molten$WINDOW)
+s.molten$WINDOW &lt;- factor(s.molten$WINDOW, levels=unique(s.molten$WINDOW))
+s &lt;- ggplot(s.molten, aes(x=WINDOW, y=THRESHOLD, fill = SHARPE)) +
+  geom_tile(colour = "white")  +
+  scale_fill_gradient(low = "white", high = "blue4") +
+  ggtitle("Sharpe Ratio by Window Length and Prediction Threshold")
+</pre>
+<h2>Comprehensive model comparison</h2>
+
+Now that I know that, in general, a longer rolling window helps a predictive model achieve a larger Sharpe ratio, my next experiment will be a comprehensive comparison of the 245 possible models from our 7 algorithms and 35 variable combinations.
+The results below show the cross-validated Sharpe ratios for each combination of algorithm and variable subset investigated in this study using a rolling window of 1,000 days of history as the training data. In each case, the optimal model was found by tuning the individual algorithm’s hyperparameters across a sensible subset of possible values. No prediction threshold was used to filter trades (that is, each model took a long or short position every day). Once again, transaction costs are excluded.
+
+The neural network initialized using a stacked autoencoder is the clear out-performer of this group of algorithms. This model seems to be able to learn the underlying predictive patterns better than any other algorithm used in this study, and it does so consistently regardless of the combination of variables used. Initialization with a stacked autoencoder essentially forces the network to recreate the input data in the pre-training phase, which results in a network that tends to learn the features that form a good representation of its input, reducing the noise component of the input data. With this in mind, it may be possible to use this technique with a larger number of features, potentially foregoing an extensive feature selection process. This is an interesting idea, and something to pursue at another time.
+We can also see that the boosting algorithms performed relatively well, the multi-adaptive regressive spline models were consistent, and that k-nearest neighbors performed well for such a simple model. The Cubist models were less consistent and the random forest models performed worst of all. <a href="https://robotwealth.com/wp-content/uploads/2016/05/Comprehensive-model-comparison.png">
+</a>
+The best Sharpe ratio of all the models was 1.72.
+The following R code shows how I implemented this framework for efficiently testing and comparing the algorithms used in this study:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Comprehensive model comparison">#########################################
+# SYTEMATIC MODEL COMPARISON ############
+#########################################
+library(caret)
+library(nnet)
+library(neuralnet)
+library(deepnet)
+library(randomForest)
+library(earth)
+library(bst)
+library(Cubist)
+library(foreach)
+library(doParallel)
+library(reshape)
+library(ggplot2)
+###### Import and process data
+eu &lt;- read.csv("EUvarsD1.csv", header = F, stringsAsFactors = F)
+colnames(eu) &lt;- c("date", "deltabWdith3", "velocity10", "mom3", "atrRatFast", "atrRatSlow", "ATR7", "objective")
+###### Caret support functions
+absretSummary &lt;- function (data, lev = NULL, model = NULL) { # for training on a next-period return
+  positions &lt;- ifelse(data[ , "pred"] &gt; 0.0, 1, ifelse(data[, "pred"] &lt; -0.0, -1, 0))
+  trades &lt;- positions*data[, "obs"]
+  profit &lt;- sum(trades)
+  names(profit) &lt;- 'profit'
+  return(profit)
+}
+window.length &lt;- 1000
+timecontrol &lt;- trainControl(method = 'timeslice', initialWindow = window.length, horizon = 1, summaryFunction=absretSummary, selectionFunction = "best",
+                            returnResamp = 'final', fixedWindow = TRUE, savePredictions = 'final')
+gbmGrid &lt;- expand.grid(shrinkage=0.1, n.trees = c(500, 600, 700),
+                       n.minobsinnode = c(1, window.length/50, window.length/25, window.length/10, window.length/5, window.length/2),
+                       interaction.depth = c(2, 3))
+knnGrid &lt;- expand.grid(k = c(1, 2, 5, 10, window.length/50, window.length/25, window.length/10))
+dnnGrid &lt;- expand.grid(.layer1 = c(1:3), .layer2 = c(0:1), .layer3=0, .hidden_dropout=c(0, 0.1, 0.2), .visible_dropout=c(0, 0.1, 0.2))
+rfGrid &lt;- expand.grid(.mtry = c(1,2))
+earthGrid &lt;- expand.grid(.nprune = c(1:5), .degree = c(1:2))
+bstTreeGrid &lt;- expand.grid(.mstop = c(3, 5, 7, 10, 12, 15), .maxdepth = c(1:3), .nu=c(0.1, 0.2, 0.3, 0.4, 0.5))
+cubistGrid &lt;- expand.grid(.committees = c(50, 100, 150), .neighbors = c(9))
+###### Model training and tuning
+models &lt;- c("knn", "gbm", "dnn", "rf", "earth", "bstTree", "cubist")
+# 2-var models
+m.list.2var &lt;- list()
+l &lt;- 1
+for (i in models)
+  {
+  for (j in c(2:7))
+    {
+    for (k in c(2:7))
+      {
+      if (j &gt;= k) next
+      cl &lt;- makeCluster(4)
+      registerDoParallel(cl)
+      set.seed(503)
+      m.list.2var[[l]] &lt;- train( eu[, c(j,k)], eu[, 8], method = i, trControl = timecontrol, tuneGrid = get(paste0(i, "Grid")) )
+      stopCluster(cl)
+      l &lt;- l + 1
+      cat(l, ".", i, "[", j, k, "]\n")
+    }
+  }
+}
+# 3-var models
+m.list.3var &lt;- list()
+l &lt;- 1
+for (i in models)
+{
+  for (j in c(2:7))
+  {
+    for (k in c(2:7))
+    {
+      if (j &gt;= k) next
+      for (m in c(2:7))
+      {
+        if (k &gt;= m) next
+        cl &lt;- makeCluster(8)
+        registerDoParallel(cl)
+        set.seed(503)
+        m.list.3var[[l]] &lt;- train( eu[, c(j,k,m)], eu[, 8], method = i, trControl = timecontrol, tuneGrid = get(paste0(i, "Grid")) )
+        stopCluster(cl)
+        l &lt;- l + 1
+        cat(l, ".", i, "[", j, k, m,"]\n")
+      }
+    }
+  }
+}
+# compare performance and generate heat map
+all.models &lt;- c(m.list.2var, m.list.3var)
+Sharpe &lt;- vector()
+vars &lt;- list()
+method &lt;- vector()
+for (i in c(1:length(all.models))) {
+ trades &lt;- all.models[[i]]$resample$profit #trades
+ Sharpe[i] &lt;- sqrt(252) * mean(trades)/sd(trades)
+ vars[[i]] &lt;- colnames(all.models[[i]]$trainingData[, 1:(ncol(all.models[[i]]$trainingData)-1)])
+ method[i] &lt;- all.models[[i]]$method
+}
+cat("Best Sharpe Ratio: ", max(Sharpe))
+perf &lt;- data.frame(method, as.character(vars), Sharpe)
+colnames(perf) &lt;- c("Algorithm", "Variables", "Sharpe")
+perf$Algorithm &lt;- as.factor(perf$Algorithm)
+perf$Variables &lt;- as.factor(perf$Variables)
+levels(perf$Algorithm) &lt;- c("Bst.Trees", "Cubist", "NNet", "MARS", "GBM", "KNN", "RF")
+levels(perf$Variables) &lt;- as.character(c(1:35))
+perf.molten &lt;- melt( perf, id.vars=c("Algorithm", "Variables"), value.name="Sharpe" )
+perf.molten &lt;- perf.molten[, c(1,2,4)]
+colnames(perf.molten) &lt;- c("ALGORITHM", "FEATURE_COMBINATION", "SHARPE")
+s.heat &lt;- ggplot(perf.molten, aes(x=ALGORITHM, y=FEATURE_COMBINATION, fill = SHARPE)) +
+ geom_tile(colour = "white") +
+ scale_fill_gradient2(low="darkorange", high="blue4", guide="colorbar") +
+ ggtitle("Sharpe Ratio by Model") +
+ theme_classic()</pre>
+<h2>Accounting for data mining bias</h2>
+
+Data mining bias refers to the unfortunate selection of a trading model based on randomly good performance. For instance, a system with no basis in economic or financial reality has a profit expectancy of exactly zero, excluding transaction costs. However, due to the finite sample size of a backtest, sometimes such a system will show a backtested performance that can lead us to believe it is better (or worse) than random. As the number of samples grow in live trading, the worthlessness of such a system becomes apparent.
+Data mining bias shows up often, but it is of particular concern when we harness computing power to systematically test numerous potential trading models, exactly as I have done in this post. White (2000) describes a method for accounting for this data mining bias, referred to as White’s Reality Check or the Bootstrap Reality Check. David Aronson covers it in detail in “Evidence Based Technical Anlysis.” I will only describe the procedure briefly here, but here is the <a href="https://www.ssc.wisc.edu/~bhansen/718/White2000.pdf">link to the original paper</a>.
+White’s Reality Check requires that we keep a record of all variants of the trading model that were tested during the development process and produce a zero-mean returns series for each. We then randomize these returns series using bootstrap resampling and note the total return of the best performer. This process is repeated several thousand times, and the median best return corresponds to the data mining bias introduced by the development process. We can then observe where the originally selected best model fits into the distribution of bootstrapped results to obtain a confidence level relating to its possession or otherwise of an actual positive expectancy. Saddest of all, and I think this is why White used the term “reality check”, is that the expected performance of the selected strategy in real trading is only the performance measured in its backtest MINUS the median performance of the bootstrapped returns series.
+Here is the histogram of Sharpe ratios from implementing White’s Reality Check on the 245 models under comparison for 5,000 bootstrap iterations:
+
+The best Sharpe ratio I obtained is approximately equivalent to the median bootstrapped best Sharpe ratio, implying that its expectancy is actually close to zero. However, I have clearly mis-estimated the data mining bias since I excluded the models discarded during the hyperparameter tuning phase of model construction. In addition, this method is known to have a bias towards Type II errors. In other words, this method tends to reject systems that do have an edge. In any event, following is the R code that implements the reality check. I leave it to the interested reader to implement the reality check across the full set of models including those rejected during hyperparameter tuning.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="White's Reality Check">############ APPLY WHITE's REALITY CHECK
+#get pest performance from raw returns of each model
+Sharpe &lt;- vector()
+detrend.trades &lt;- list()
+for (i in c(1:length(all.models))) {
+  trades &lt;- all.models[[i]]$resample$profit
+  Sharpe[i] &lt;- sqrt(252) * mean(trades)/sd(trades)
+  detrend.trades[[i]] &lt;- trades - mean(trades)
+}
+cat("Best Sharpe Ratio: ", max(Sharpe))
+Sharpe.hist &lt;- ggplot(data.frame(Sharpe), aes(x=Sharpe)) + geom_histogram(binwidth = 0.1, fill = "darkorange2", color = "black") +
+  ggtitle("Histogram of Sharpe Ratios")
+# White's reality check
+# loop through list of detrended trades, randomize each by bootstrap
+# select best performer, note Sharpe
+# repeat
+boot.Sharpe &lt;- vector()
+for (i in c(1:5000)) {
+  best.Sharpe &lt;- 0
+  for (j in c(1:length(detrend.trades))) {
+    rand.ind &lt;- sample(c(1:length(detrend.trades[[j]])), length(detrend.trades[[j]]), replace = T) #indices of bootstrapped data
+    rand &lt;- detrend.trades[[j]][rand.ind]
+    sharpe.ratio &lt;- sqrt(252) * mean(rand)/sd(rand)
+    if (sharpe.ratio &gt; best.Sharpe) best.Sharpe &lt;- sharpe.ratio
+  }
+  boot.Sharpe[i] &lt;- best.Sharpe
+  cat("Iteration: ", i, "\n")
+}
+# histogram of bootstrapped Sharpes:
+boot.Sharpe.hist2 &lt;- ggplot(data.frame(boot.Sharpe), aes(x=boot.Sharpe)) + geom_histogram(binwidth = 0.1, fill = "darkorange2", color = "black") +
+  ggtitle("Histogram of Bootstrapped Sharpe Ratios")
+</pre>
+<h2><b>Ensembles and hybrid methods</b></h2>
+
+Ensembling is the practice of aggregating the predictions of multiple models in order to achieve a prediction accuracy that exceeds any individual model. It is analogous to using a committee of experts to reach a consensus. There are numerous ways to create an ensemble, including:
+
+<ul>
+<li>Bagging: aggregate models based on bootstrapped training data, for example the random forest algorithm.</li>
+<li>Boosting: models developed sequentially where each additional model aims to improve performance on the least accurate part of the feature space of the previous model. An example is the boosted trees used previously in this study.</li>
+<li>Stacking: model predictions are combined using a “meta-model”. In my experience tends to result in over-fit models.</li>
+<li>Aggregating models based on random subsets of the input features.</li>
+<li>Aggregating models based on random subsets of the training data, which is equivalent to bagging without replacement as opposed to bootstrapping.</li>
+<li>Aggregating models based on different algorithms.</li>
+</ul>
+
+We have seen above that the models that incorporate boosting fared better than the random forest models, which use the bagging technique. Aronson and Masters (2013) advocate the latter three methods listed above as a protection against overfiitting. They argue that even if the component models are over-fit, if they are trained on different training and/or feature sets, they will be exposed to different noise patterns while real patterns will tend to be represented across the various training sets. The idea is that the noise patterns cancel out, while the real patterns are reinforced. Ensembles appear to be most effective when the component models each have a positive expectancy, but whose predictions are uncorrelated.
+
+<div>In this study, I will focus on combining different algorithms and different subsets of the feature set and I will once again advocate a systematic approach. Following is my approach for selecting component models for an ensemble:</div>
+<ol>
+<li>Build a model for each variable and algorithm combination (already done, above)</li>
+<li>Exclude any model with a cross-validated Sharpe ratio &lt; $x$, say 1.25</li>
+<li>Examine a correlation matrix of the predictions of the remaining models. Retain a subset of models such that all correlations are &lt; 0.75</li>
+<li>Combine the remaining models by either averaging the predictions or forming a majority vote on the direction</li>
+</ol>
+
+The figure below shows the equity curves of the best model and the two ensembles formed by averaging and majority vote described above (trading position sizes on EUR/USD relative to the 100-period ATR and excluding trading costs).
+
+In this case, there is little overall difference between the best model and either of the ensembles. There may be other possible ensembles that perform better; I haven’t performed an exhaustive search. Note that in the absence of an out of sample test following the aggregation of component models into an ensemble, this step has introduced a measure of selection bias into the results. Here’s the code to reproduce these results:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Ensemble Construction">#########################################
+# ENSEMBLE CONSTRUCTION #################
+#########################################
+# best model
+best.mod.trades &lt;- all.models[[which.max(Sharpe)]]$resample$profit
+plot(cumsum(best.mod.trades), type = 'l', col = 'darkred')
+cat('Best Sharpe: ', max(Sharpe))
+# retain models with Sharpe &gt; x
+x &lt;- 1.25
+Sharpe.retained.ind &lt;- which(Sharpe &gt; x)
+retained.models &lt;- all.models[Sharpe.retained.ind]
+resamps &lt;- resamples(retained.models) # collect results of cross-validation in a list
+# bwplot(resamps)
+retained.preds &lt;- lapply(retained.models, "[[", "pred")
+retained.preds &lt;- lapply(retained.preds, "[[", "pred")
+retained.preds &lt;- lapply(retained.preds, as.numeric)
+retained.preds.df &lt;- as.data.frame(retained.preds)
+colnames(retained.preds.df) &lt;- as.factor(c(Sharpe.retained.ind))
+# remove highly correlated predictions
+library(corrplot)
+correlations &lt;- cor(retained.preds.df)
+high.corrs &lt;- findCorrelation(correlations, cutoff = 0.75)
+reduced.corrs &lt;- correlations[-c(high.corrs), -c(high.corrs)]
+corrplot(correlations)
+corrplot(reduced.corrs)
+# create ensemble
+ens &lt;- retained.preds.df[, -c(high.corrs)]
+colnames(ens) &lt;- paste0("Mod", colnames(ens))
+obs &lt;- all.models[[1]]$pred$obs
+# take average predictions of compoenents
+ave &lt;- rowMeans(ens)
+trades.ave &lt;- ifelse(ave&gt;0, obs, -obs)
+plot(cumsum(trades.ave), type = 'l', col = "steelblue")
+profit.factor &lt;- abs(sum(trades.ave[trades.ave &gt; 0])/sum(trades.ave[trades.ave &lt; 0]))
+sharpe.ratio &lt;- sqrt(252) * mean(trades.ave)/sd(trades.ave)
+cat(profit.factor)
+cat(sharpe.ratio)
+# majority vote
+pos &lt;- rowSums(ens&gt;0)
+neg &lt;- rowSums(ens&lt;0)
+trades.maj &lt;- ifelse(pos&gt;neg, obs, ifelse(pos&lt;neg, -obs, 0))
+plot(cumsum(trades.maj), type = 'l', col = "deeppink2")
+profit.factor &lt;- abs(sum(trades.maj[trades.maj &gt; 0])/sum(trades.maj[trades.maj &lt; 0]))
+sharpe.ratio &lt;- sqrt(252) * mean(trades.maj)/sd(trades.maj)
+cat(profit.factor)
+cat(sharpe.ratio)
+# plot
+ens.methods &lt;- data.frame(c(1:length(trades.ave)), cumsum(trades.ave), cumsum(trades.maj), cumsum(best.mod.trades))
+colnames(ens.methods) &lt;- c("INDEX", "AVE", "MAJ", "BEST")
+ens.molten &lt;- melt(ens.methods, id.vars = "INDEX", variable_name = "METHOD", value.name = "RETURN")
+colnames(ens.molten) &lt;- c("INDEX", "METHOD", "RETURN")
+ens.plot &lt;- ggplot(ens.molten, aes(x=INDEX, y=RETURN, color = METHOD)) +
+  geom_line()</pre>
+
+Finally, I’ll try combining the predictions using a linear regression model as a “meta-model”. This approach has the potential to curve-fit the results, so I will test it using the time series cross validation approach used above:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Cross-validated linear ensemble"># linear combination
+window.length &lt;- 250
+timecontrol &lt;- trainControl(method = 'timeslice', initialWindow = window.length, horizon = 1, summaryFunction=absretSummary, selectionFunction = "best",
+                            returnResamp = 'final', fixedWindow = TRUE, savePredictions = 'final')
+cl &lt;- makeCluster(4)
+registerDoParallel(cl)
+set.seed(503)
+linear.ens &lt;- train(ens, obs, method = "lm", trControl = timecontrol)
+stopCluster(cl)
+plot(cumsum(linear.ens$resample$profit), type = 'l', col = 'blue4')
+linear.ens.sharpe &lt;- sqrt(252)*mean(linear.ens$resample$profit)/sd(linear.ens$resample$profit)
+cat(linear.ens.sharpe)</pre>
+
+This gives a Sharpe ratio of only 0.94, significantly less than the simpler ensembles and indeed the best of the component models.
+
+<h2>Next Steps</h2>
+
+This post and the last provide a framework for systematically comparing predictive models based on machine learning algorithms as the basis of trading systems. Despite the length of the posts, they have barely scratched the surface of what is possible. The following are ideas for future research that I intend to pursue. I would love to hear from people interested in collaborating on any of these ideas and I offer my work thus far as a basis from which to proceed:
+
+<ul>
+<li>Regime-based split linear models. The idea is that the training data is split based on different market regimes on the basis of a particular variable or condition for determining where the split occurs. Regimes characterized by extreme volatility are inherently difficult to predict, and it may be useful to simply avoid trading during these periods. A regime-based approach could potentially verify this hypothesis and provide clues as to its practical application. I have briefly investigated this approach and did not find a measurable increase in performance, but I haven’t investigated closely enough to rule out this idea completely.</li>
+<li>Another regime-based approach is to dynamically adjust the relative weights on individual component models based on each model’s performance in the current market conditions. This is appealing in that it does not require classification of the market regime. The weight adjustment is essentially regime-agnostic in the sense that it would not care about terms such as “trending” or “range bound”, whose identification of course carries substantial lag. By taking its cues from real-time performance, a dynamically adaptive weight allocation approach would minimize this lag to the extent possible.</li>
+<li>So far I have simply aggregated models into ensembles through averaging predictions, combining directional votes and using simple linear regression as a “meta-model”. My feeling is that combining predictions using non-linear stacking methods will lead to over-fitting. However, it would be useful to verify this feeling on hard data.</li>
+<li>I have also read about ‘sequential prediction” which, like boosting, involves building an ensemble from a series of models. If the first model is able to learn a dominant pattern, its residuals are then used as input to a second model under the assumptions that these residuals contain the noise terms as well as more subtle patterns. The first model’s predictions are then considered a measure of the dominant pattern and the second model’s predictions an estimate of the deviation of the first model’s prediction from the target.</li>
+<li>A related approach is to attempt to capture linear relationships in the data using classical time series methods such as ARIMA/GARCH and then use the residuals of these models as input to an algorithm capable of capturing more complex non-linear relationships, such as a neural network.</li>
+<li>Finally, the work presented here has only considered the most recent values of individual features in model construction. There may be benefit in incorporating recent past values as features, for example the 1-period return for each of the last 3 periods.</li>
+</ul>
+<div>
+<div>
+<h2><strong>A Note on the Practicalities of Trading Systems Research</strong></h2>
+<div>If I can offer one piece of advice based on my experiences, I would caution systems researchers (especially those with a penchant for the theoretical) against trying to build the “perfect” predictive model, if such a thing even exists. Admittedly it is an interesting exercise, but an approach much more grounded in the realities of extracting profits from the markets is to focus on building a model that meets one’s needs. If I could turn back the clock to the tune of about twelve months, I would go live with my machine learning models much earlier (as soon as they were fit for purpose) and then refined them as time went on. I made the mistake of repeatedly putting off the go-live date until I had improved the models performance just a bit more. In doing so, I missed some perfectly achievable profits. In addition, I would have uncovered implementation and execution issues much more efficiently.</div>
+<div></div>
+</div>
+</div>
+<h2>Conclusions</h2>
+
+You have seen in this post and <a href="https://robotwealth.com/machine-learning-financial-prediction-david-aronson/">the last</a> that mining financial data for profitable patterns in a statistically sound manner is incredibly time consuming and effort-intensive. What you’ve read in these last two posts is simply a distillation of a significant research effort and one that I hope provides a framework for others interested in this field to take it further.
+We have seen that neural networks initialized with stacked autoencoders have a great deal of potential in predictive models for trading systems, but that incredibly simple models like the k-nearest neighbors algorithm can also perform adequately. I have also touched on the specter of data mining bias and explored one possible method for accounting for it. Finally, we explored ensembles of component models, but didn’t get a significant boost to model performance in this case.
+I intend to pursue the ideas listed in the <strong>Next Steps</strong> section, likely beginning with the sequential prediction approach. If people are interested in collaborating on any of these ideas, I would very much like to hear from you.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>Machine Learning</span>, <span>trading strategies</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">50 thoughts on “Machine learning for Trading: Part 2”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-632">
+<article class="comment-body" id="div-comment-632" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks,Very interesting<br/>
+Can you share the data set files?</p>
+<span class="reply"><a aria-label="Reply to Lev" class="comment-reply-link" data-belowelement="div-comment-632" data-commentid="632" data-postid="1202" data-replyto="Reply to Lev" data-respondelement="respond" href="#comment-632" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-634">
+<article class="comment-body" id="div-comment-634" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Lev<br/>
+Apologies for that oversight. You can now access the raw data via a download link in the post (under the heading “Choosing combinations of variables”). I’ve also added the source code (written in Lite-C, compatible with Zorro) that I used to generate this data. This code can be modified to generate custom feature sets for any market or time period for which you have price data. The code will output a CSV file compatible with the framework in the post.<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-634" data-commentid="634" data-postid="1202" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-634" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-645">
+<article class="comment-body" id="div-comment-645" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris<br/>
+Thanks for the source and csv.<br/>
+I tried to reproduce your “heatmap of Sharpe ratios by window length and prediction threshold” and I get different  results , All my predictions  was in range (-0.3 – 0.3)<br/>
+Lev</p>
+<span class="reply"><a aria-label="Reply to Lev" class="comment-reply-link" data-belowelement="div-comment-645" data-commentid="645" data-postid="1202" data-replyto="Reply to Lev" data-respondelement="respond" href="#comment-645" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4 parent" id="comment-646">
+<article class="comment-body" id="div-comment-646" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>That result has really got me scratching my head. I suspect something is not quite right with the implementation on your end because with so many models being compared, you would expect to see much more variation in the Sharpes beyond that range through random variation alone.<br/>
+If anyone else gets this result, please let me know in the comments.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-646" data-commentid="646" data-postid="1202" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-646" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-5 parent" id="comment-647">
+<article class="comment-body" id="div-comment-647" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I mean predictions not shapes.<br/>
+The problem is only in “heatmap of Sharpe ratios by window length and prediction threshold” sample<br/>
+modellist.nnet[[j]]$pred$pred  in range of (-0.3 – 0.3)</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-5" id="comment-648">
+<article class="comment-body" id="div-comment-648" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>OK, I understand now. That’s actually not an unexpected result and indicates that in this case the model is having difficulty predicting the observations in the tails of the returns/atr distribution. Here’s one of my results, for comparison:<br/>
+summary(as.numeric(modellist.nnet[[9]]$pred$pred))<br/>
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max.<br/>
+-0.51530 -0.10380 -0.01300 -0.01491  0.07690  0.40590<br/>
+Check out what happens with the directional accuracy of these predictions though. They are actually good enough to give the model a decent cross-validated equity curve. They also hint at some potential improvements that can be made. For example, would a classification approach be better than the regression approach presented here? What about intelligent subsampling of the input to each iteration of the time series cross-validation procedure? I actually don’t know off the top of my head if such approaches would make a difference, but the results you see hint that there are improvements that could be made.</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-633">
+<article class="comment-body" id="div-comment-633" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Fantastic tutorial series! Had never come across a neural network initialised with stacked autoencoders before.  Looking forward to playing about with this technique.</p>
+<span class="reply"><a aria-label="Reply to GekkoQuant" class="comment-reply-link" data-belowelement="div-comment-633" data-commentid="633" data-postid="1202" data-replyto="Reply to GekkoQuant" data-respondelement="respond" href="#comment-633" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-635">
+<article class="comment-body" id="div-comment-635" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Gekko! They are a relatively recent addition to my toolkit as well. The unsupervised reconstruction of the input appears to help the network effectively clarify a pattern if it does exist. The Zorro guys have done some work in this area too, using a wider feature set and a deeper architecture than the ones I’ve used here. They achieved a directional accuracy in the order of ~60%. My own work corroborates this. SAEs have enormous potential.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-635" data-commentid="635" data-postid="1202" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-635" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-638">
+<article class="comment-body" id="div-comment-638" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This grabbed my attention as well.  I have not had much success with NNs of various architectures for regression problems.  Classification of course is quite good, although my lack of patience for fiddling with feature scaling and data shape often  just lead me to use a GBM.   I wonder if there is any literature out there explaining why it would help with regression specifically.  There is quite a bit that explains why boosted trees and NNs don’t fare well in regression.  If unsupervised pre-training really changes the game for regression that’s very encouraging, as there are alot of those techniques already out there and more on the horizon.  I am going to start testing toute suite.</p>
+<span class="reply"><a aria-label="Reply to Shane" class="comment-reply-link" data-belowelement="div-comment-638" data-commentid="638" data-postid="1202" data-replyto="Reply to Shane" data-respondelement="respond" href="#comment-638" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4 parent" id="comment-642">
+<article class="comment-body" id="div-comment-642" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Shane. In my experience, neural nets fare extremely well on complex regression tasks. They have been referred to as “universal approximators” for good reason, having the ability to approximate any linear or non-linear function (compare this with for example a linear time series model like ARIMA). Being powerful learners, they also have the ability to very easily over-fit the training data. Therefore it makes sense to apply appropriate guards against over-fitting: regularization techniques (L1, L2), random dropouts, unsupervised pre-training and early stopping can be effective ways to get the most out of a neural network while preventing its power from getting out of control.<br/>
+Also, if you are more comfortable with classification, you can simply re-frame the regression problem into a classification one using something like:<br/>
+if (next.day.return &gt; 0) target.variable = 1<br/>
+else target.variable = 0</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-642" data-commentid="642" data-postid="1202" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-642" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-5 parent" id="comment-649">
+<article class="comment-body" id="div-comment-649" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the reply (and the great blog material in general).  I actually have no discomfort with regression, and wrt finance/trading, continuous or countable targets are usually my choice.   I simply just have not been able to surpass a MARS  model or a custom nonparametric approach using a probabilistic programming library with any NN (and still haven’t after a few tests with deepnet BTW).  However,  this may have a great deal to do with my feature space and my choice of target.   One observation I have made is that these R NN libraries have done a great job of setting some defaults on the myriad hyperparameters and providing some quick automated ways to iterate through them.<br/>
+One particular architecture that I note is glaringly lacking is Recurrent Neural Networks.  LSTMs, GRUs and other time series/sequence aware NN architectures have achieved the best performance for me wrt finance/trading.  Obviously, there ability to model non-stationary data is desirable.   So hopefully someone is generous enough to write some libraries for those in R that become part of the caret ecosystem.  In the meantime, I’ll keep at it with Torch, Keras, Blocks etc.<br/>
+  Again, you have motivated me to spend some more time with these models and the caret ecosystem in particular.  Look forward to future posts.</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-5" id="comment-652">
+<article class="comment-body" id="div-comment-652" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Shane<br/>
+Investigating recurrent networks is a priority for me too. <a href="https://www.springer.com/us/book/9780387717197" rel="nofollow" target="_blank">These guys</a> use recurrent architectures in many of the topics discussed in this publication and report good results in the FX markets. I know of no library in R that incorporates RNNs just yet. Time to make a foray into the world of R library creation perhaps?</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-636">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 05/10/2016 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-637">
+<article class="comment-body" id="div-comment-637" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>HI Kris<br/>
+Great Article and thanks for posting!<br/>
+I am interested in the Stacked Auto encoder approach you are using.<br/>
+If you are using this to compress the data, can you not use more than 2/3 features to create inputs to your NN. Can i also ask how you go about choosing the optimal number of layers and the number of nodes in the Auto-encoder.<br/>
+Tom</p>
+<span class="reply"><a aria-label="Reply to Thomas Schlebusch" class="comment-reply-link" data-belowelement="div-comment-637" data-commentid="637" data-postid="1202" data-replyto="Reply to Thomas Schlebusch" data-respondelement="respond" href="#comment-637" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-640">
+<article class="comment-body" id="div-comment-640" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Thomas<br/>
+Indeed it does make sense to use more features with the stacked autoencoder approach. The unsupervised reconstruction of the input assists the network to detect any predictive patterns that may be present. This means that redundant or noisy features will have less of an impact on the output. I would however caution against a brute force approach where you throw everything you’ve got at such a network. You will quickly run into practical computation issues, particularly if you are simultaneously exploring various network architectures. Some intelligent feature engineering goes a long way.<br/>
+In terms of choosing an optimal architecture, unfortunately there isn’t a simple formula that I’m aware of. Yoshua Bengio at the University of Montreal published some very useful guidelines for practical training of deep architectures which I use to guide my starting point. From there, I’ll train and cross-validate several architectures and hyperparameter sets. Max Kuhn’s caret package in R is my go-to toolkit for doing this as efficiently as possible. Here’s a link to Bengio’s paper: <a href="https://arxiv.org/pdf/1206.5533v2.pdf" rel="nofollow" target="_blank">https://arxiv.org/pdf/1206.5533v2.pdf</a> and Max’s website: <a href="https://topepo.github.io/caret/index.html" rel="nofollow" target="_blank">https://topepo.github.io/caret/index.html</a><br/>
+One word of caution, if I may: It’s easy to get bogged down in the search for an “optimal” model even having discovered several models that will serve the intended purpose very well. The search for an “optimal” model could go on indefinitely if we allowed it. Focus on a defined objective for your model and let that guide your efforts.<br/>
+Thanks for commenting!</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-640" data-commentid="640" data-postid="1202" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-640" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3" id="comment-654">
+<article class="comment-body" id="div-comment-654" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the response Kris. Much appreciated.</p>
+<span class="reply"><a aria-label="Reply to Thomas Schlebusch" class="comment-reply-link" data-belowelement="div-comment-654" data-commentid="654" data-postid="1202" data-replyto="Reply to Thomas Schlebusch" data-respondelement="respond" href="#comment-654" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-639">
+<article class="comment-body" id="div-comment-639" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Kris, that’s another great post !   <br/>
+I love that “Comprehensive model comparison” heatmap.<br/>
+I like using the K-Nearest Neighbors algorithm for my “exploration” (i.e. exploring my feature space) because it is MUCH faster than most other types of algorithms.<br/>
+I find that KNN usually gives reasonable results, thus it allows me to find interesting features much more quickly ….<br/>
+Let’s say I have 1000 features;<br/>
+choose(1000, 2) + choose(1000, 3) = 166,666,500<br/>
+choose(1000, 2) + choose(1000, 3) + choose(1000, 4) = 41,583,791,250<br/>
+That’s a lot of combinations !<br/>
+With KNN I can explore ~100,000 random combinations over a 24 hour period. That’s perhaps a 100x speedup compared with say SVM.<br/>
+Best, Nick</p>
+<span class="reply"><a aria-label="Reply to Nick" class="comment-reply-link" data-belowelement="div-comment-639" data-commentid="639" data-postid="1202" data-replyto="Reply to Nick" data-respondelement="respond" href="#comment-639" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-641">
+<article class="comment-body" id="div-comment-641" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Nick!<br/>
+I agree, the heatmaps reveal a lot of useful information quickly. Plus they brighten up the blog a little!<br/>
+That’s a lot of features! An exhaustive search of even the 2- and 3-variable combinations at a rate of 100,000/day would require approximately 4.5 years to complete! But of course you are doing random search of the feature space which is obviously a lot more efficient. Still, without seeing your data set, I would speculate that out of the 1,000 features, there would be many highly correlated, and therefore redundant features which could be removed with little to no detriment of the final model. Again, without seeing your data, I suspect that an intelligent feature selection phase would assist greatly.<br/>
+Your approach got me thinking and I started googling to see whether others were using also this approach. Turns out there is some activity in this area. Have you seen this paper: <a href="https://papers.nips.cc/paper/2848-nearest-neighbor-based-feature-selection-for-regression-and-its-application-to-neural-activity.pdf" rel="nofollow" target="_blank">https://papers.nips.cc/paper/2848-nearest-neighbor-based-feature-selection-for-regression-and-its-application-to-neural-activity.pdf</a>?<br/>
+Have you experimented with such a feature-weighted version of k-NN?</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-641" data-commentid="641" data-postid="1202" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-641" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-643">
+<article class="comment-body" id="div-comment-643" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Yes, a lot of them will be correlated to some degree and an intelligent feature selection process does help.<br/>
+It’s easy to have 1000 features these days. Even starting with the standard technical indicators in TTR (~50 I think), you could add Super Smoother filters, take differences, apply PCA ….  Then we have macro, fundamental and sentiment data….<br/>
+.<br/>
+A lot of people won’t like the data-driven approach – whatever works for them I suppose ….<br/>
+Cheers Kris.</p>
+<span class="reply"><a aria-label="Reply to Nick" class="comment-reply-link" data-belowelement="div-comment-643" data-commentid="643" data-postid="1202" data-replyto="Reply to Nick" data-respondelement="respond" href="#comment-643" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4" id="comment-644">
+<article class="comment-body" id="div-comment-644" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Indeed! There is certainly an air of dismissiveness to the data-driven approach in the quant finance community. Personally, I see it as just another weapon in the arsenal and a useful source of portfolio diversification in addition to the classical approaches.<br/>
+Cheers</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-644" data-commentid="644" data-postid="1202" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-644" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-650">
+<article class="comment-body" id="div-comment-650" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+Do you choose the best network structure for “live” trading after the optimization<br/>
+nnetGrid &lt;- expand.grid(.layer1 = c(2:3), .layer2 = c(0:2), .layer3=0, .hidden_dropout=c(0, 0.1, 0.2), .visible_dropout=c(0, 0.1, 0.2))<br/>
+Because I understand that for each model you choose the result with best porfit with summery function?</p>
+<span class="reply"><a aria-label="Reply to Lev" class="comment-reply-link" data-belowelement="div-comment-650" data-commentid="650" data-postid="1202" data-replyto="Reply to Lev" data-respondelement="respond" href="#comment-650" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-653">
+<article class="comment-body" id="div-comment-653" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Lev<br/>
+That line simply specifies the grid of hyperparameters that are tested. The caret train function works as follows: for each hyperparameter combination, build a model on each iteration of the cross-validation procedure and calculate the average performance across each cross-validation iteration. Once this is done, the ‘best’ combination of hyperparameters is selected and a model fitted on the entire training data set. The specific case of time series cross validation is very applicable to trading since it mimics the process we would go through in order to trade the markets using these methods, with one important caveat: if at any point in time we picked the ‘best’ model based on this hyperparameter tuning process for live trading, we introduce selection bias and therefore the cross-validated performance is an over-estimate of actual performance. An unbiased estimate would only be possible with another out of sample validation data set. White’s Reality Check is another method of dealing with this.<br/>
+In practice, I find that a further out of sample validation set is generally a more accurate predictor of future performance, but the utility of this is milted by the finite nature of our data set. I am happy enough to go live with a model selected in this way, but I temper my expectations of its future performance using White’s Reality Check.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-653" data-commentid="653" data-postid="1202" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-653" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-651">
+<div class="comment-body">
+				Pingback: Best Links of the Week | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-655">
+<article class="comment-body" id="div-comment-655" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Interesting post – many thanks.  Re your second point under “Next Steps” were you thinking along the lines of a variant of Zorro’s “Equity Curve Trading”, only rather than turning models on/off adjusting their relative position sizes (though some might be reduced to zero)?<br/>
+Was also wondering if you had considered using equity curve plus other performance stats (e.g. rolling Sharpe/Sortino/K-Ratio) as predictors for a standalone overlay model that would automatically control individual model position size (weighting)?</p>
+<span class="reply"><a aria-label="Reply to Andy" class="comment-reply-link" data-belowelement="div-comment-655" data-commentid="655" data-postid="1202" data-replyto="Reply to Andy" data-respondelement="respond" href="#comment-655" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-656">
+<article class="comment-body" id="div-comment-656" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Andy. I actually had in mind something like your second point: using a rolling performance measure as a means of controlling individual model weighting. However there are of course many approaches and I don’t favour one over the other. What I am really trying to achieve is to reduce the selection bias in my system by including as many models as possible. The downside of my approach is that there is always a lag in calculating the “optimal” portfolio weights.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-656" data-commentid="656" data-postid="1202" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-656" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3" id="comment-657">
+<article class="comment-body" id="div-comment-657" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks. A long while back I had a similar lag issue with calculating the weights of a portfolio of non-ML models. One technique that seemed to work (occasionally quite well) and minimised the lag was to use a Kalman filter on the equity curves and calculate various difference measures based on that.  I tried using all  Kalman values, the filtered values, the smooths and  the predictions. As I recall, the predictions worked best, which I didn’t  expect.</p>
+<span class="reply"><a aria-label="Reply to Andy" class="comment-reply-link" data-belowelement="div-comment-657" data-commentid="657" data-postid="1202" data-replyto="Reply to Andy" data-respondelement="respond" href="#comment-657" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-658">
+<article class="comment-body" id="div-comment-658" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi – thanks for the fascinating and informative post!<br/>
+Did you try holding some data out and seeing how one of your deep neural nets performed on  it?  When I follow along your code and attempt doing this, the predictions on out of sample data have very little variation, suggesting an input scaling problem or that the network has been overfit…<br/>
+Thanks!</p>
+<span class="reply"><a aria-label="Reply to Jim" class="comment-reply-link" data-belowelement="div-comment-658" data-commentid="658" data-postid="1202" data-replyto="Reply to Jim" data-respondelement="respond" href="#comment-658" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-659">
+<article class="comment-body" id="div-comment-659" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Jim<br/>
+Yes I did try holding out some data and testing the performance of the various neural nets. My out of sample predictions do show a sensible amount of variation. I get a greater variation between the neural nets trained on smaller training windows and those trained on larger windows, as one would expect. Further, while directional out of sample predictions tend to converge as the training window increases, I still see variation in the absolute out of sample predictions.<br/>
+I doubt the problem you are having is related to input scaling if you are using the same data that I used, since the inputs are all scaled to the range -1 to +1 (you can verify this with the R command “summary(eu)”. Of course, if you are using your own data, you would need to ensure that you pre-processed your input features appropriately.<br/>
+Thanks for checking out my blog!</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-659" data-commentid="659" data-postid="1202" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-659" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-660">
+<article class="comment-body" id="div-comment-660" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+Great posts! Many thanks for sharing.<br/>
+Have you ever put real money to trade using your machine learning systems? Some people say these systems always mysteriously failed, while others say GS, JP Morgan and DE Shaw etc all use machine learning system to trade and made big bucks, what’s your comment on this?</p>
+<span class="reply"><a aria-label="Reply to Jeff" class="comment-reply-link" data-belowelement="div-comment-660" data-commentid="660" data-postid="1202" data-replyto="Reply to Jeff" data-respondelement="respond" href="#comment-660" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-661">
+<article class="comment-body" id="div-comment-661" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Jeff<br/>
+No problem, glad you found it useful. Yes, I am currently allocating to my ML strategies. I don’t think there is any great mystery about trading systems failing – it happens all the time. I have little idea what those guys you mentioned do to make money, but if they aren’t using machine learning, they are  foregoing a very useful tool.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-661" data-commentid="661" data-postid="1202" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-661" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-662">
+<article class="comment-body" id="div-comment-662" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+Thank you so much for your comment. What do your average profit factors look like for your machine learning trading systems ? Which factor you think leads to a successful trading system, indicators or algorithms, if you’re asked to name only one?<br/>
+Happy Holidays<br/>
+Jeff</p>
+<span class="reply"><a aria-label="Reply to Jeff" class="comment-reply-link" data-belowelement="div-comment-662" data-commentid="662" data-postid="1202" data-replyto="Reply to Jeff" data-respondelement="respond" href="#comment-662" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4" id="comment-663">
+<article class="comment-body" id="div-comment-663" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Jeff<br/>
+If I had to pick one, I’d pick execution as the most important determinant of algo trading success. That’s probably a very boring response, but one that I think is justified!<br/>
+Happy holidays to you too.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-663" data-commentid="663" data-postid="1202" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-663" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-664">
+<article class="comment-body" id="div-comment-664" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Kris,<br/>
+Thanks so much for this really insightful tutorial, I think this is one of the best examples of nnet application to risk and return data in the public domain.<br/>
+I have a basic question on the absretSummary function you’re using to assess the learner’s performance. Are you using the observed risk-adjusted returns in the line rather than geometric or logn scaled returns?<br/>
+trades &lt;- positions*data[, "obs"]<br/>
+Thanks &amp; Regards,</p>
+<span class="reply"><a aria-label="Reply to Matt" class="comment-reply-link" data-belowelement="div-comment-664" data-commentid="664" data-postid="1202" data-replyto="Reply to Matt" data-respondelement="respond" href="#comment-664" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-665">
+<article class="comment-body" id="div-comment-665" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Matt, thanks for the kind words, great to hear that the article was useful.<br/>
+You’re correct – I’m using the observed risk adjusted returns in my objective function: the last close minus the prior close divided by the 100-period average true range.<br/>
+Cheers</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-665" data-commentid="665" data-postid="1202" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-665" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="trackback even thread-odd thread-alt depth-1" id="comment-666">
+<div class="comment-body">
+				Pingback: My Homepage 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-667">
+<article class="comment-body" id="div-comment-667" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Someone pointed out that there is no sense to do a variable analysis because with different data-window or different time at all, the variables would be different.<br/>
+I see that if you choose a specific time ( as the years of the strategy ) and data-window ( as the period to generate an indicator ) everything will be different. Then a SMA cross over strategy will be winning using 20-period in 2009 and 15-period over 2015. The fact that the period changes does not mean that the analysis is wrong, as the fact that the variable importance may change does not mean that the analysis is wrong.<br/>
+I see two solutions for the variable importance change depending on data-window etc:<br/>
+1- We use different data-windows and years to do the analysis and we pick up only the variables that remain as importance in all the different scenarios. Then the discussion is closed because the variables choosen are the best in each scenario.<br/>
+2- We perform a WFO where the variables used are changed to train the model as the parameters of the model are tuned in every WFO cycle. In that way “variable tunning” should be added to the analysis meaning that if we choose that the model is retrainned the first trading day of each month, then the variable analysis should be as well done and be part of that training. does it make sense?</p>
+<span class="reply"><a aria-label="Reply to MarianoA" class="comment-reply-link" data-belowelement="div-comment-667" data-commentid="667" data-postid="1202" data-replyto="Reply to MarianoA" data-respondelement="respond" href="#comment-667" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-668">
+<article class="comment-body" id="div-comment-668" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>For sure, you raise really good points. Both your solutions are sensible; however in my experience you’ll have more success with the second one. Including the variable selection step in the model re-training process is not uncommon in machine learning applications to time series data. Another option is to create models with the best subset of variables over different lookback periods and ensemble their predictions.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-668" data-commentid="668" data-postid="1202" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-668" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-669">
+<article class="comment-body" id="div-comment-669" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great content on your site!<br/>
+I’m trying to get my head around stacked autoencoders and dropout.<br/>
+Quora: “<em>Though the fundamental principle is same, making sure that large no of the parameters do not over-fit the data. But on a closer look they work differently. While denoising work on  input layer only, dropout work on all layers (but output).  So I guess when u have a deep network and you also want the hidden units of some higher layer to avoid over-fitting you might want to choose dropout over denoising. For shallow models both should work the same</em>.”<br/>
+The following quote is from the following article: https://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf<br/>
+“<em>The idea of adding noise to the states of units has previously been used in the context of Denoising Autoencoders (DAEs) by Vincent et al. (2008, 2010) where noise is added to the input units of an autoencoder and the network is trained to reconstruct the noise-free input. Our work extends this idea by showing that dropout can be eﬀectively applied in the hidden layers as well and that it can be interpreted as a form of model averaging</em>”<br/>
+Seems like autoencoders and dropout are two ways of achieving the same thing, although dropout can be used on more layers. Any thoughts on this would be most welcome!<br/>
+ </p>
+<span class="reply"><a aria-label="Reply to Chris" class="comment-reply-link" data-belowelement="div-comment-669" data-commentid="669" data-postid="1202" data-replyto="Reply to Chris" data-respondelement="respond" href="#comment-669" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-670">
+<article class="comment-body" id="div-comment-670" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I guess you could say that, although I’m not sure about the mathematical equivalence. In my experience, dropout has been the most effective way to control overfitting in my applications. As I understand denoising autoencoders, we apply noise only on the input layer, while of course dropout extends through the network. I was heavily into autoencoders a few years ago, but have moved away from them in the deep learning research I’m currently doing.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-670" data-commentid="670" data-postid="1202" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-670" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-671">
+<article class="comment-body" id="div-comment-671" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris and <span class="st"><em>thank you</em> so much, all <em>your</em> work are fantastic!</span><br/>
+I have a question<br/>
+why  <span class="crayon-v">modellist</span><span class="crayon-sy">.</span><span class="crayon-v">nnet</span><span class="crayon-sy">[</span><span class="crayon-sy">[</span><span class="crayon-v">j</span><span class="crayon-sy">]</span><span class="crayon-sy">]</span><span class="crayon-sy">$</span><span class="crayon-v">pred</span><span class="crayon-sy">$</span><span class="crayon-v">pred</span> value are different from predict( <span class="crayon-v">modellist</span><span class="crayon-sy">.</span><span class="crayon-v">nnet</span><span class="crayon-sy">[</span><span class="crayon-sy">[</span><span class="crayon-v">j</span><span class="crayon-sy">]</span><span class="crayon-sy">]</span>) ?<br/>
+ <br/>
+Thanks &amp; Regards<br/>
+ </p>
+<span class="reply"><a aria-label="Reply to bob zanler" class="comment-reply-link" data-belowelement="div-comment-671" data-commentid="671" data-postid="1202" data-replyto="Reply to bob zanler" data-respondelement="respond" href="#comment-671" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-673">
+<article class="comment-body" id="div-comment-673" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Bob, you’re  most welcome. It’s admittedly been a while since I used caret, but from memory the caret model object includes predictions from the training/cross-validation procedure whereas <code>predict</code> is used to present new observations to your model. Check out the <a href="https://topepo.github.io/caret/index.html" rel="noopener nofollow" target="_blank">caret documentation</a>, which is a great resource in general, for more info.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-673" data-commentid="673" data-postid="1202" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-673" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-672">
+<article class="comment-body" id="div-comment-672" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi, I’m trying to execute the Rolling Forecast Origin Framework but it is giving to me an error (well, it is giving lots of errors, but I guess that the other ones are because of this first one):</p>
+<pre class="show-plain:1 lang:c decode:true">+ modellist.nnet[[j]] &lt;- train(eu[, 2:4], eu[, 8], method = "dnn",
++ trControl = timecontrol, tuneGrid = nnetGrid, preProcess = c('center', 'scale'))
++ stopCluster(cl)
++ j &lt;- j+1
++ cat("Window: ", i)
++ }
+Error in e$fun(obj, substitute(ex), parent.frame(), e$data) :
+unable to find variable "optimismBoot"
+In addition: There were 21 warnings (use warnings() to see them)
+&gt;
+[...]
+&gt; warnings()
+Warning messages:
+1: In new.env(parent = emptyenv()) :
+closing unused connection 22 (&lt;-WIN-BDG5DH3A9DM:11032)
+2: In new.env(parent = emptyenv()) :
+closing unused connection 21 (&lt;-WIN-BDG5DH3A9DM:11032)
+3: In new.env(parent = emptyenv()) :
+closing unused connection 20 (&lt;-WIN-BDG5DH3A9DM:11032)
+4: In new.env(parent = emptyenv()) :
+closing unused connection 19 (&lt;-WIN-BDG5DH3A9DM:11032)
+5: In new.env(parent = emptyenv()) :
+closing unused connection 18 (&lt;-WIN-BDG5DH3A9DM:11032)
+6: In new.env(parent = emptyenv()) :
+closing unused connection 17 (&lt;-WIN-BDG5DH3A9DM:11032)
+7: In new.env(parent = emptyenv()) :
+closing unused connection 16 (&lt;-WIN-BDG5DH3A9DM:11032)
+8: In new.env(parent = emptyenv()) :
+closing unused connection 15 (&lt;-WIN-BDG5DH3A9DM:11032)
+9: In new.env(parent = emptyenv()) :
+closing unused connection 14 (&lt;-WIN-BDG5DH3A9DM:11032)
+10: In new.env(parent = emptyenv()) :
+closing unused connection 13 (&lt;-WIN-BDG5DH3A9DM:11032)
+11: In new.env(parent = emptyenv()) :
+closing unused connection 12 (&lt;-WIN-BDG5DH3A9DM:11032)
+12: In new.env(parent = emptyenv()) :
+closing unused connection 11 (&lt;-WIN-BDG5DH3A9DM:11032)
+13: In new.env(parent = emptyenv()) :
+closing unused connection 10 (&lt;-WIN-BDG5DH3A9DM:11032)
+14: In new.env(parent = emptyenv()) :
+closing unused connection 9 (&lt;-WIN-BDG5DH3A9DM:11032)
+15: In new.env(parent = emptyenv()) :
+closing unused connection 8 (&lt;-WIN-BDG5DH3A9DM:11032)
+16: In new.env(parent = emptyenv()) :
+closing unused connection 7 (&lt;-WIN-BDG5DH3A9DM:11032)
+17: In new.env(parent = emptyenv()) :
+closing unused connection 6 (&lt;-WIN-BDG5DH3A9DM:11032)
+18: In new.env(parent = emptyenv()) :
+closing unused connection 5 (&lt;-WIN-BDG5DH3A9DM:11032)
+19: In new.env(parent = emptyenv()) :
+closing unused connection 4 (&lt;-WIN-BDG5DH3A9DM:11032)
+20: In new.env(parent = emptyenv()) :
+closing unused connection 3 (&lt;-WIN-BDG5DH3A9DM:11032)
+21: In train.default(eu[, 2:4], eu[, 8], method = "dnn", trControl = timecontrol, ... :
+The metric "RMSE" was not in the result set. profit will be used instead.
+</pre>
+<p> <br/>
+ </p>
+<span class="reply"><a aria-label="Reply to lindezas" class="comment-reply-link" data-belowelement="div-comment-672" data-commentid="672" data-postid="1202" data-replyto="Reply to lindezas" data-respondelement="respond" href="#comment-672" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-674">
+<article class="comment-body" id="div-comment-674" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Yep, I’ve seen this one too. It is a recent phenomenon arising due to some changes to the way caret interfaces with the parallel backend. I know that Max (caret’s author) is aware of the problem and has written a fix. At the time of writing, this fix existed in the dev version on GitHub, but it hadn’t yet been pushed to CRAN. My advice: try updating to the latest version of caret, and if the problem persists, then you’ll need the dev version from GitHub. In that case, first, do <code>install.packages('devtools')</code> then install from GitHub via <code>devtools::install_github('topepo/caret/pkg/caret')</code></p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-674" data-commentid="674" data-postid="1202" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-674" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-10090">
+<div class="comment-body">
+				Pingback: Optimal Data Windows for Training a Machine Learning Model for Financial Prediction - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-dmac even thread-odd thread-alt depth-1 parent" id="comment-35070">
+<article class="comment-body" id="div-comment-35070" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Kris,<br/>
+Incredible article! Thanks for the info. I was not able to see the embedded charts, seems the links were broken.</p>
+<span class="reply"><a aria-label="Reply to Darrell McMurray" class="comment-reply-link" data-belowelement="div-comment-35070" data-commentid="35070" data-postid="1202" data-replyto="Reply to Darrell McMurray" data-respondelement="respond" href="#comment-35070" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-35360">
+<article class="comment-body" id="div-comment-35360" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Darrell! Thanks for the heads up re the charts etc too.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-35360" data-commentid="35360" data-postid="1202" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-35360" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/machine-learning-for-financial-prediction-experimentation-with-david-aronsons-latest-work-part-2/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

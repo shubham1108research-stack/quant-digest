@@ -1,0 +1,435 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Backtesting the short term volatility spectrum</title>
+<!-- source: https://www.sixfigureinvesting.com/2011/12/backtesting-the-short-term-volatility-spectrum-2/ -->
+<h1>Backtesting the short term volatility spectrum</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a> <div class="top-bar top-bar-align-left">
+<div class="inside-top-bar grid-container grid-parent">
+ </div>
+</div>
+<!-- Begin ComScore data collection -->
+<!-- Begin comScore Tag -->
+
+
+<!-- End comScore Tag -->
+
+
+<div class="site grid-container container hfeed grid-parent" id="page">
+<div class="site-content" id="content">
+<div class="content-area grid-parent mobile-grid-100 grid-75 tablet-grid-75" id="primary">
+<main class="site-main" id="main">
+<article class="post-8514 post type-post status-publish format-standard hentry category-all category-etf category-options-2 tag-svxy tag-tvix tag-uvxy tag-vixy tag-vxx tag-vxx-backtest tag-vxxb tag-vxz tag-vxzb tag-xiv tag-ziv" id="post-8514" itemscope="" itemtype="https://schema.org/CreativeWork">
+<div class="inside-article">
+
+<div class="entry-content" itemprop="text">
+<p>I have generated the end of day trading day values for the most  popular long and short volatility Exchange Traded Products (ETPs) for March 26<sup>th</sup>, 2004 through the end of the most recent quarter.  See this <a href="https://www.sixfigureinvesting.com/2011/04/date-ranges-on-sim-spreadsheets/">table</a> for specifics.</p><!-- Ezoic - wp_under_page_title - under_page_title --><div data-inserter-version="2" id="ezoic-pub-ad-placeholder-701"></div><!-- End Ezoic - wp_under_page_title - under_page_title -->
+<ul class="listlinks">
+<li>+1.5X UVXY  ProShares Ultra VIX Short-Term Futures ETF (includes old 2X simulation)</li>
+<li>VXX     Barclays S&amp;P 500 VIX Short-Term Futures ETN</li>
+<li>VXZ     Barclays S&amp;P 500 VIX Mid-Term Futures ETN</li>
+<li>-0.5X SVXY  ProShares VIX Short-Term Futures ETF (includes old -1X simulation and XIV simulation)</li>
+<li>VIXY  ProShares  VIX Short-Term Futures ETF</li>
+<li>VIXM ProShares  VIX  Medium-Term Futures ETF</li>
+<li>TVIX    VelocityShares Daily 2x VIX Short-Term ETN (only trading on OTC market)</li>
+<li>ZIV     VelocityShares Daily Inverse VIX Medium-Term ETN (only trading on OTC market)</li>
+</ul>
+<div>
+<p>These ETP histories are useful if you want to backtest various volatility strategies through the quiet times from 2004 to 2007, or the 2008/2009 crash.  The chart below shows the simulated values with a logarithmic vertical axis so that you can see a reasonable amount of information for each fund.</p>
+<p><a href="https://www.sixfigureinvesting.com/wp-content/uploads/2013/09/Pop-Vol-ETPs.jpg"><img alt="Pop-Vol-ETPs" class="alignnone size-large wp-image-8553" decoding="async" height="336" sizes="(max-width: 560px) 100vw, 560px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2013/09/Pop-Vol-ETPs-560x336.jpg" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2013/09/Pop-Vol-ETPs-560x336.jpg 560w, https://www.sixfigureinvesting.com/wp-content/uploads/2013/09/Pop-Vol-ETPs-600x360.jpg 600w, https://www.sixfigureinvesting.com/wp-content/uploads/2013/09/Pop-Vol-ETPs-300x180.jpg 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2013/09/Pop-Vol-ETPs.jpg 1188w" width="560"/></a></p>
+</div>
+<div>
+<p>The algorithms for generating these ETPs values are documented in the prospectuses for the various volatility ETNs and ETFs.    Barclays’ VXX/VXZ fund <a href="http://www.ipathetn.com/US/16/en/static/strategies-equity.app">prospectus</a> is a good example.   See <a href="https://www.sixfigureinvesting.com/2010/12/volatility-tickers/">Volatility tickers</a> for the current universe of  USA based volatility ETPs and their associated reference indexes.    The recent futures settlement data required for these calculations is available on this <a href="http://cfe.cboe.com/products/historicalvix.aspx">CBOE website</a>—in the form of 100+ separate spreadsheets.  To make the calculation of the indexes underlying the ETPs tractable  I created a master spreadsheet that integrates the futures settlement data into a single sheet.  See this <a href="https://www.sixfigureinvesting.com/2010/12/volatility-futures-worksheet/">post</a> for more information about that spreadsheet.</p><!-- Ezoic - wp_under_first_paragraph - under_first_paragraph --><div data-inserter-version="2" id="ezoic-pub-ad-placeholder-709"></div><!-- End Ezoic - wp_under_first_paragraph - under_first_paragraph -->
+<p>My simulated values very closely track the published indicative values (IV) of the funds.  Barclays provides a recent IV values for the series B<a href="http://www.ipathetn.com/US/16/en/details.app?instrumentId=259118"> VXX</a> and <a href="http://www.ipathetn.com/US/16/en/instruments.app?searchType=text&amp;dataType=html&amp;searchTerm=vxz#/details/259119">VXZ</a>—my simulation tracks them within +-0.05% and +-0.025% respectively.   Sampled IV values for the other funds give error terms of  +-0.2% for Proshares’ UVXY and SVXY.</p>
+<p>If you need simulated intraday open, high, low values also check out this <a href="https://www.sixfigureinvesting.com/2014/09/simulating-open-high-low-vxx-vixy-tvix-uvxy-xiv-svxy/">post</a>.</p>
+<p>These ETP prices reflect the contribution of 91-day treasury bills on their overall performance.   Thirteen-week Treasuries yields averaged 0.05% in 2013,  but in February 2007 they yielded over 5%— things have changed a bit…   The simulated ETP values do include applicable fees which vary from fund to fund.   The fee calculation is surprisingly difficult.  For more on that see <a href="https://www.sixfigureinvesting.com/2013/11/backtest-on-vxx/">Backtest on VXX Including Annual Fees</a></p><!-- Ezoic - wp_under_second_paragraph - under_second_paragraph --><div data-inserter-version="2" id="ezoic-pub-ad-placeholder-710"></div><!-- End Ezoic - wp_under_second_paragraph - under_second_paragraph -->
+<p>I am making these simulation spreadsheets (values only, no formulas) available for purchase, individually, or as a complete package. The VXX package is also available <a href="https://www.sixfigureinvesting.com/2013/11/backtest-on-vxx/">here</a>.   If you cannot see purchase information immediately below then please click this <a href="https://www.sixfigureinvesting.com/2011/12/historical-volatility-rolling-indexes-2004-2011/">link</a> to the stand-alone post and look at the bottom of the page.</p>
+<p>For more information on the spreadsheets see <a href="https://www.sixfigureinvesting.com/wp-content/uploads/2013/09/SFI-Volatility-ETP-Backtest-Readme-rev-E2-30Dec14.pdf">readme</a>.</p>
+<p>If you purchase the spreadsheet you will be directed to paypal where you can pay via your paypal account or a credit card.   Please email me at <a class="__cf_email__" data-cfemail="94e2fca6e7fbf8e1e0fdfbfae7d4f3f9f5fdf8baf7fbf9" href="/cdn-cgi/l/email-protection">[email protected]</a> if you have problems, questions, or requests.</p>
+<p><span style="font-weight: 400;"></span></p><div class="woocommerce columns-4"><ul class="products columns-4">
+<li class="product type-product post-14425 status-publish first instock product_cat-end-of-day-settlement-values has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/evix-exiv-backtests/"><img alt="EVIX / EXIV Backtests" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" sizes="(max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2019/04/EVIX-EXIV-sim-300x300.png" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2019/04/EVIX-EXIV-sim-300x300.png 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2019/04/EVIX-EXIV-sim-150x150.png 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2019/04/EVIX-EXIV-sim-100x100.png 100w" width="300"/><h2 class="woocommerce-loop-product__title">EVIX / EXIV Backtests</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>99.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_14425" aria-label="Add to cart: “EVIX / EXIV Backtests”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="14425" data-product_sku="" data-quantity="1" data-success_message="“EVIX / EXIV Backtests” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=14425" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_14425">
+</span>
+</li>
+<li class="product type-product post-17666 status-publish instock product_cat-end-of-day-settlement-values product_cat-volatility-exchange-traded-products product_tag-longvol product_tag-shortvol product_tag-spvxmpi product_tag-svix-uvix product_tag-zivb has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/velocity-shares-1x-svix-2x-uvix-etfs-backtest-free/"><img alt="Volatility Shares -1X SVIX, 2X UVIX, and -1X ZVOL ETFs Backtest + Associated Indexes (free)" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/UVIX-SVIX-sim-2022-03-31-094458-300x300.png" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/UVIX-SVIX-sim-2022-03-31-094458-300x300.png 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/UVIX-SVIX-sim-2022-03-31-094458-150x150.png 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2022/03/UVIX-SVIX-sim-2022-03-31-094458-100x100.png 100w" width="300"/><h2 class="woocommerce-loop-product__title">Volatility Shares -1X SVIX, 2X UVIX, and -1X ZVOL ETFs Backtest + Associated Indexes (free)</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>0.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_17666" aria-label="Add to cart: “Volatility Shares -1X SVIX, 2X UVIX, and -1X ZVOL ETFs Backtest + Associated Indexes (free)”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="17666" data-product_sku="" data-quantity="1" data-success_message="“Volatility Shares -1X SVIX, 2X UVIX, and -1X ZVOL ETFs Backtest + Associated Indexes (free)” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=17666" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_17666">
+</span>
+</li>
+<li class="product type-product post-19213 status-publish instock product_cat-bitcoin product_cat-end-of-day-settlement-values product_cat-etf product_tag-2x-bitcoin product_tag-bitx product_tag-etf product_tag-spbtfdue product_tag-volatility-shares has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/bitx-backtest-free-copy/"><img alt="Volatility Shares BITX (2X Bitcoin Futures) &amp; ETHU (2X Ether) ETF Backtests (free)" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2023/06/Log-BTC-BITX-price-300x300.png" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2023/06/Log-BTC-BITX-price-300x300.png 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2023/06/Log-BTC-BITX-price-150x150.png 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2023/06/Log-BTC-BITX-price-100x100.png 100w" width="300"/><h2 class="woocommerce-loop-product__title">Volatility Shares BITX (2X Bitcoin Futures) &amp; ETHU (2X Ether) ETF Backtests (free)</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>0.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_19213" aria-label="Add to cart: “Volatility Shares BITX (2X Bitcoin Futures) &amp; ETHU (2X Ether) ETF Backtests (free)”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="19213" data-product_sku="" data-quantity="1" data-success_message="“Volatility Shares BITX (2X Bitcoin Futures) &amp; ETHU (2X Ether) ETF Backtests (free)” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=19213" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_19213">
+</span>
+</li>
+<li class="product type-product post-12604 status-publish last instock product_cat-end-of-day-settlement-values has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/simulated-volatility-etp-end-of-day-closing-values-vxx/"><img alt="VXX Backtest" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/VXX-sim-WMb-300x300.jpg" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/VXX-sim-WMb-300x300.jpg 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/VXX-sim-WMb-150x150.jpg 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/VXX-sim-WMb-100x100.jpg 100w" width="300"/><h2 class="woocommerce-loop-product__title">VXX Backtest</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>29.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_12604" aria-label="Add to cart: “VXX Backtest”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="12604" data-product_sku="" data-quantity="1" data-success_message="“VXX Backtest” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=12604" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_12604">
+</span>
+</li>
+<li class="product type-product post-12602 status-publish first instock product_cat-end-of-day-settlement-values product_tag-end-of-day has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/usa-volatility-etp-end-of-day-closing-values-vxx-tvix-uvxy-svxy-ziv-vixy-from-2004/"><img alt="Volatility ETP Backtests" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/USA-EOD-vol-ETPs-WM-300x300.jpg" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/USA-EOD-vol-ETPs-WM-300x300.jpg 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/USA-EOD-vol-ETPs-WM-150x150.jpg 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/USA-EOD-vol-ETPs-WM-100x100.jpg 100w" width="300"/><h2 class="woocommerce-loop-product__title">Volatility ETP Backtests</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>99.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_12602" aria-label="Add to cart: “Volatility ETP Backtests”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="12602" data-product_sku="" data-quantity="1" data-success_message="“Volatility ETP Backtests” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=12602" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_12602">
+</span>
+</li>
+<li class="product type-product post-12639 status-publish instock product_cat-end-of-day-settlement-values has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/velocityshares-2-0x-tvix/"><img alt="VelocityShares 2X TVIX Backtest" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/TVIX-Sim-WM-300x300.jpg" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/TVIX-Sim-WM-300x300.jpg 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/TVIX-Sim-WM-150x150.jpg 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/TVIX-Sim-WM-100x100.jpg 100w" width="300"/><h2 class="woocommerce-loop-product__title">VelocityShares 2X TVIX Backtest</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>29.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_12639" aria-label="Add to cart: “VelocityShares 2X TVIX Backtest”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="12639" data-product_sku="" data-quantity="1" data-success_message="“VelocityShares 2X TVIX Backtest” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=12639" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_12639">
+</span>
+</li>
+<li class="product type-product post-12625 status-publish instock product_cat-end-of-day-settlement-values has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/proshares-1-5x-uvxy-backtest/"><img alt="Proshares 1.5X UVXY Backtest" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/1.5X-UVXY-Sim-WM-300x300.jpg" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/1.5X-UVXY-Sim-WM-300x300.jpg 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/1.5X-UVXY-Sim-WM-150x150.jpg 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/1.5X-UVXY-Sim-WM-100x100.jpg 100w" width="300"/><h2 class="woocommerce-loop-product__title">Proshares 1.5X UVXY Backtest</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>29.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_12625" aria-label="Add to cart: “Proshares 1.5X UVXY Backtest”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="12625" data-product_sku="" data-quantity="1" data-success_message="“Proshares 1.5X UVXY Backtest” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=12625" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_12625">
+</span>
+</li>
+<li class="product type-product post-12621 status-publish last instock product_cat-end-of-day-settlement-values has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/proshares-0-5x-svxy-backtest/"><img alt="Proshares -0.5X SVXY Backtest" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/0.5X-SVXY-WM--300x300.jpg" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/0.5X-SVXY-WM--300x300.jpg 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/0.5X-SVXY-WM--150x150.jpg 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/0.5X-SVXY-WM--100x100.jpg 100w" width="300"/><h2 class="woocommerce-loop-product__title">Proshares -0.5X SVXY Backtest</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>29.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_12621" aria-label="Add to cart: “Proshares -0.5X SVXY Backtest”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="12621" data-product_sku="" data-quantity="1" data-success_message="“Proshares -0.5X SVXY Backtest” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=12621" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_12621">
+</span>
+</li>
+<li class="product type-product post-12628 status-publish first instock product_cat-end-of-day-settlement-values has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/velocityshares-ziv-backtest/"><img alt="VelocityShares ZIV Backtest" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/ZIV-sim-WM-300x300.jpg" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/ZIV-sim-WM-300x300.jpg 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/ZIV-sim-WM-150x150.jpg 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/ZIV-sim-WM-100x100.jpg 100w" width="300"/><h2 class="woocommerce-loop-product__title">VelocityShares ZIV Backtest</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>0.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_12628" aria-label="Add to cart: “VelocityShares ZIV Backtest”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="12628" data-product_sku="" data-quantity="1" data-success_message="“VelocityShares ZIV Backtest” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=12628" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_12628">
+</span>
+</li>
+<li class="product type-product post-17003 status-publish instock product_cat-end-of-day-settlement-values product_tag-vixm has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/vixm-backtest/"><img alt="VIXM Backtest" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2021/08/labeled-VIXM-Backtest-2021-08-19-220345-300x300.png" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2021/08/labeled-VIXM-Backtest-2021-08-19-220345-300x300.png 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2021/08/labeled-VIXM-Backtest-2021-08-19-220345-150x150.png 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2021/08/labeled-VIXM-Backtest-2021-08-19-220345-100x100.png 100w" width="300"/><h2 class="woocommerce-loop-product__title">VIXM Backtest</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>29.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_17003" aria-label="Add to cart: “VIXM Backtest”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="17003" data-product_sku="" data-quantity="1" data-success_message="“VIXM Backtest” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=17003" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_17003">
+</span>
+</li>
+<li class="product type-product post-12631 status-publish instock product_cat-end-of-day-settlement-values has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/barclays-vxz-vxzb-backtest/"><img alt="VXZ Backtest" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/VXZ-sim-WMa-300x300.jpg" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/VXZ-sim-WMa-300x300.jpg 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/VXZ-sim-WMa-150x150.jpg 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/12/VXZ-sim-WMa-100x100.jpg 100w" width="300"/><h2 class="woocommerce-loop-product__title">VXZ Backtest</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>29.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_12631" aria-label="Add to cart: “VXZ Backtest”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="12631" data-product_sku="" data-quantity="1" data-success_message="“VXZ Backtest” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=12631" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_12631">
+</span>
+</li>
+<li class="product type-product post-12614 status-publish last instock product_cat-end-of-day-settlement-values product_tag-vixy product_tag-vixy-backtest has-post-thumbnail downloadable virtual purchasable product-type-simple">
+<a class="woocommerce-LoopProduct-link woocommerce-loop-product__link" href="https://www.sixfigureinvesting.com/product/proshares-vixy-backtest/"><img alt="ProShares' VIXY Backtest" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" decoding="async" height="300" loading="lazy" sizes="auto, (max-width: 300px) 100vw, 300px" src="https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/VIXY-sim-WM-300x300.jpg" srcset="https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/VIXY-sim-WM-300x300.jpg 300w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/VIXY-sim-WM-150x150.jpg 150w, https://www.sixfigureinvesting.com/wp-content/uploads/2018/11/VIXY-sim-WM-100x100.jpg 100w" width="300"/><h2 class="woocommerce-loop-product__title">ProShares’ VIXY Backtest</h2>
+<span class="price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol" translate="no">$</span>19.00</bdi></span></span>
+</a><a aria-describedby="woocommerce_loop_add_to_cart_link_describedby_12614" aria-label="Add to cart: “ProShares' VIXY Backtest”" class="button product_type_simple add_to_cart_button ajax_add_to_cart" data-product_id="12614" data-product_sku="" data-quantity="1" data-success_message="“ProShares' VIXY Backtest” has been added to your cart" href="/2013/09/backtests-for-volatility-etn-etf/?add-to-cart=12614" rel="nofollow">Add to cart</a> <span class="screen-reader-text" id="woocommerce_loop_add_to_cart_link_describedby_12614">
+</span>
+</li>
+</ul>
+</div><p></p><!-- Ezoic - wp_mid_content - mid_content --><div data-inserter-version="2" id="ezoic-pub-ad-placeholder-711"></div><!-- End Ezoic - wp_mid_content - mid_content -->
+</div>
+</div>
+
+<br/>
+First posted on  <time class="entry-date-published" datetime="2013-09-16T14:30:35-06:00" itemprop="datePublished">September 16, 2013</time> <br/>
+<br/>
+<!-- [related_posts_by_tax  taxonomies="post_tag" ]  -->
+</div>
+</article>
+<div class="comments-area">
+<h3>
+<a class="smooth-scroll" href="#respond">Click <u>here</u> to leave a comment</a>
+</h3><div id="comments">
+<h2 class="comments-title">29 thoughts on “Backtests for Popular Long &amp; Short Volatility Exchange Traded Products”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-80236">
+<div class="comment-body">
+				Pingback: <a class="url" href="https://show-hn.com/2023/12/19/what-prompted-the-volatility-volmageddon-on-5-feb-2018/" rel="ugc external nofollow">What Prompted the Volatility “Volmageddon” on 5-Feb-2018? – TOP Show HN</a> </div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-76668">
+<div class="comment-body">
+				Pingback: <a class="url" href="https://bestfortraders.com/vixy-svxy-strategies-alvarez-quant-trading/" rel="ugc external nofollow">VIXY &amp; SVXY Strategies – Alvarez Quant Trading – Best For Traders</a> </div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-74933">
+<div class="comment-body">
+				Pingback: <a class="url" href="https://gpttradeassist.com/vixy-svxy-strategies-alvarez-quant-trading/" rel="ugc external nofollow">VIXY &amp; SVXY Strategies – Alvarez Quant Trading | GPTTradeAssist.com</a> </div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-20763">
+<article class="comment-body" id="div-comment-20763" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p><a href="https://uploads.disquscdn.com/images/810ffb9296c06fbf50b85cafbd70352dfbb31306dc5edc289ccac5b304b5d0c2.png" rel="nofollow ugc">https://uploads.disquscdn.com/images/810ffb9296c06fbf50b85cafbd70352dfbb31306dc5edc289ccac5b304b5d0c2.png</a> </p>
+<p>i tried to catch the buy moment for the uvxy which is of course also is the sell moment for xiv or svxy<br/>
+Can someone help me to make it more accurate?<br/>
+Thanks, Bernard</p>
+<span class="reply"><a aria-label="Reply to bernard vermoote" class="comment-reply-link" data-belowelement="div-comment-20763" data-commentid="20763" data-postid="8514" data-replyto="Reply to bernard vermoote" data-respondelement="respond" href="#comment-20763" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-20115">
+<div class="comment-body">
+				Pingback: <a class="url" href="http://alvarezquanttrading.com/2015/07/08/xiv-a-heart-attack-waiting-to-happen/" rel="ugc external nofollow">XIV a heart attack waiting to happen | Alvarez Quant Trading</a> </div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-19992">
+<article class="comment-body" id="div-comment-19992" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi. Thanks for sharing. </p>
+<p>Im also contemplating some volatility ETF trades and would like feedback on if anyone had done/analyzed something similar to what I came up with and how did that turn out.</p>
+<p>1. Shorting TVIX XIV pair. I backtested shorting TVIX XIV at a 1:2 dollar ratio with weekly rebalance (can be done on ETFreplay.com). The idea is to cancel out the price risk so I can reap compounding losses of the leveraged ETFs without betting on volatility. It turns out to be a fairly ‘safe’ strategy (at least on paper) yielding a steady 8-15% annually before commissions and ‘hard to borrow’ fees (around 3% at my broker), with maximum draw down &lt;10% except during the 2012 period of TVIX's severe tracking error. I'm thinking with a low-commission broker this strategy may have the potential as a bond replacement as the yield is net positive, not too volatile, and not terribly correlated to the stock market. </p>
+<p>2. short TVIX long VXX calls. Im also considering going 'naked' short TVIX and hedge it with deep OTM VXX calls. My exponential regression on historical TVIX is showing me an averaged 0.58% DAILY decline in TVIX price. That's $5.8/day with $1000 invested in short TVIX. 42 DTE VXX calls at double the current VXX price can be had for around 1.5% the price of VXX. Since $1000 in TVIX has roughly the same price risk as $2000 in VXX, the short $1000 TVIX is adequately hedged if I buy enough VXX calls to cover $2000 worth of VXX, thus paying $2000*1.5%=$30 for 42 days, or less than $1/day. I'd be netting a $5 gain per $1000. My maximum loss would be capped at 200% ($2000), occurring in the unlikely scenario of VXX shooting up 100%+ overnight (TVIX up 200%+) . As long as I have $2000 cash on hand and the worst case doesn't happen more than every 400 or so days I should be making money, and a lot of it. That is, unless there's some huge pitfall that I failed to consider</p>
+<span class="reply"><a aria-label="Reply to g g" class="comment-reply-link" data-belowelement="div-comment-19992" data-commentid="19992" data-postid="8514" data-replyto="Reply to g g" data-respondelement="respond" href="#comment-19992" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-19993">
+<article class="comment-body" id="div-comment-19993" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi GG,  The weekly rebalancing is pretty important in your 1st scenario because of the variable leverage of the short positions.   Your analysis seems reasonable.   </p>
+<p>On your second scenario I think you have missed that if VXX doubles TVIX/UVXY can quadruple.  In this recent correction VXX went 2X from 16 to 31, UVXY went from 25 to 85, a factor of 3.4.  I suggest you work through a specific example assuming those sorts of moves and see if the VXX calls provide as much of a hedge as you expect.   Remember the VXX calls are just  at the money if the VXX = the strike price. They don’t provide much hedging power until significantly in the money. </p>
+<p>— Vance </p>
+<span class="reply"><a aria-label="Reply to Vance Harwood" class="comment-reply-link" data-belowelement="div-comment-19993" data-commentid="19993" data-postid="8514" data-replyto="Reply to Vance Harwood" data-respondelement="respond" href="#comment-19993" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-19782">
+<article class="comment-body" id="div-comment-19782" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Vance,  great work as always.  Also if you ever create a table that shows how often XIV has drawn down 10%, 25%, 50% or more that would be enlightening.  I’ve always heard only buy these on “significant” pullbacks and I don’t think Monday quite counts as I suspect the 10%-15% pullbacks aren’t so rare.</p>
+<span class="reply"><a aria-label="Reply to dph" class="comment-reply-link" data-belowelement="div-comment-19782" data-commentid="19782" data-postid="8514" data-replyto="Reply to dph" data-respondelement="respond" href="#comment-19782" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-19785">
+<article class="comment-body" id="div-comment-19785" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi dph,  Not surprisingly most of the volatility trading systems suffered in June.  <a href="http://volatilitymadesimple.com/vix-trading-strategies-in-june/" rel="nofollow ugc">http://volatilitymadesimple.com/vix-trading-strategies-in-june/</a>  Thought you might be interested. </p>
+<p>— Vance</p>
+<span class="reply"><a aria-label="Reply to Vance Harwood" class="comment-reply-link" data-belowelement="div-comment-19785" data-commentid="19785" data-postid="8514" data-replyto="Reply to Vance Harwood" data-respondelement="respond" href="#comment-19785" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-19786">
+<article class="comment-body" id="div-comment-19786" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very interesting.  Which of these strategies, if not buy and hold, would you trade if you we’re inclined to put a small position on and planned to allow it many years (even a decade plus) to be profitable with the expectations of large drawdowns in the interim?</p>
+<p>Dave</p>
+<span class="reply"><a aria-label="Reply to dph" class="comment-reply-link" data-belowelement="div-comment-19786" data-commentid="19786" data-postid="8514" data-replyto="Reply to dph" data-respondelement="respond" href="#comment-19786" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-19788">
+<article class="comment-body" id="div-comment-19788" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Dave,<br/>
+    Actually I have not dug into these strategies, so I don’t have an opinion on them.  Right now I’m focused on UBS’s VQTS (see my latest blog post).  Its simulated drawdowns less than S&amp;P and impressive gains since 2006 (again simulated). </p>
+<p>— Vance</p>
+<span class="reply"><a aria-label="Reply to Vance Harwood" class="comment-reply-link" data-belowelement="div-comment-19788" data-commentid="19788" data-postid="8514" data-replyto="Reply to Vance Harwood" data-respondelement="respond" href="#comment-19788" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-4556">
+<div class="comment-body">
+				Pingback: <a class="url" href="http://volatilitymadesimple.com/the-best-historical-data-for-backtesting-vix-trading-strategies/" rel="ugc external nofollow">The Best Historical Data for Backtesting VIX Trading Strategies | Volatility Made Simple</a> </div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-4438">
+<article class="comment-body" id="div-comment-4438" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for a great informative post.  However, I have serious doubts about your calculations.</p>
+<p>XIV, for example, tracks the S&amp;P 500 VIX Short Term Futures Inverse Daily Index.  This index was created in 2007 and Standard &amp; Poor’s back-tested the data to determine closing values for this index dating back to December 20, 2005.  The closing value on December 20, 2005 was set at 100,000.  The closing value of this index on October 15, 2013, the last date in the data calculations above, was 331349.98.  </p>
+<p>The total gain of the S&amp;P 500 VIX Short Term Futures Inverse Daily Index between 12/20/05 and 10/15/13 was therefore about 231%.  However, your calculations indicate that $1000 invested in an XIV product on March 26, 2004 would have grown to $17865 by 10/15/13, a gain of 1686.5%.</p>
+<p>Even if your calculations assume that an XIV product exactly tracked  the S&amp;P 500 VIX Short Term Futures Inverse Daily Index (which it would not – it would likely trail the target index by about 1.5-2% per year), your hypothetical XIV product would have had to have increased about 439% between 3/26/04, the first date for your calculations, and 12/20/05.  </p>
+<p>It seems highly unlikely that an XIV product would have returned 439% or more during the 21-month period of time between 3/26/04 and 12/20/05.</p>
+<span class="reply"><a aria-label="Reply to Kurt" class="comment-reply-link" data-belowelement="div-comment-4438" data-commentid="4438" data-postid="8514" data-replyto="Reply to Kurt" data-respondelement="respond" href="#comment-4438" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-4439">
+<article class="comment-body" id="div-comment-4439" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kurk,</p>
+<p>     I stand by my calculations.   I think the core part of your argument is that you think a 439% gain (my number is 409%) from March 2004 to December 2005 seems unlikely.  It turns out that period of the market was extraordinarily quiet with a maximum closing VIX of 19.96.    In quiet periods such as this the contango losses on the long side are very heavy.  My calculations on the long index for short term volatility (SPVXSP) would be a decrease from 590277 to 100000 over that period, which would amount to a 8.8% monthly drop.   This is not unprecedented, in the 13 month period between VXX reverse splits from Oct 2012 to Nov 2013 the long side dropped at a monthly rate of 8.5% even though there were 3 VIX spikes of 20 or higher.   A glance at the log chart on my post would show other times where the rate of decline in VXX was higher than the simulated 2004 to Dec 2005 timeframe.   A compounded rate of 8.8% would give a gain of 487% for an inverse strategy over the 21 month period you mention.  Volatility drag would decrease the realizable amount by some, but the compounding benefits of a trending security <a href="https://www.sixfigureinvesting.com/2012/10/a-hat-trick-for-inverse-leveraged-volatility-funds/" rel="ugc">https://www.sixfigureinvesting.com/2012/10/a-hat-trick-for-inverse-leveraged-volatility-funds/</a> would tend to counteract that–so the 409% value is reasonable.  </p>
+<p>     My simulation tracks the actual XIV IV values within +-0.2% since inception and it tracks the underlying index (SPVXSP) within +- 0.01% to the Dec 20th 2005 index start value.  So I think it is highly unlikely my methodology is incorrect.   The biggest uncertainty in that 2004 to 2005 timeframe is that in some timeframes the front month futures were not being traded.   I used an variance based extrapolation to project the front month values in those cases.   The resultant values are within historic term structure ranges. </p>
+<p>   It turns out that  XIV is based on the SPVXSP index not the SPVIXSTR index you mentioned.  The differences are not large, but the one you mentioned is a total returns index which includes a treasury bill component that SPVXSP does not have. </p>
+<p>— Vance</p>
+<span class="reply"><a aria-label="Reply to Vance Harwood" class="comment-reply-link" data-belowelement="div-comment-4439" data-commentid="4439" data-postid="8514" data-replyto="Reply to Vance Harwood" data-respondelement="respond" href="#comment-4439" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-4440">
+<article class="comment-body" id="div-comment-4440" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Vance, thanks for your reply.  All other things being equal, if the interest rate on treasury bills are higher than they are now, like they were back in 2004 and 2005, do you think that an XIV product would decrease faster than it would if the interest rate on treasury bills are low, as they are now?</p>
+<span class="reply"><a aria-label="Reply to Kurt" class="comment-reply-link" data-belowelement="div-comment-4440" data-commentid="4440" data-postid="8514" data-replyto="Reply to Kurt" data-respondelement="respond" href="#comment-4440" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4 parent" id="comment-4441">
+<article class="comment-body" id="div-comment-4441" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Oops, I mean, would an XIV product increase, not decrease, more quickly if the interest rate of treasury bills were much higher than it is now.  If so, I suppose that VXX might be an even more attractive short than it is right now in that scenario.</p>
+<span class="reply"><a aria-label="Reply to Kurt" class="comment-reply-link" data-belowelement="div-comment-4441" data-commentid="4441" data-postid="8514" data-replyto="Reply to Kurt" data-respondelement="respond" href="#comment-4441" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-5 parent" id="comment-4442">
+<article class="comment-body" id="div-comment-4442" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kurt,<br/>
+     Since XIV is based on an index that doesn’t have treasury bill exposure it would have no impact on XIV.   If an inverse ETP like XIV was based on SPVIXSTR which has T-bill value add,, then I would expect it to out performance XIV  when t-bills are yielding higher interest. </p>
+<p>— Vance</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-5" id="comment-4443">
+<article class="comment-body" id="div-comment-4443" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Ok, thanks Vance.  I will definitely check out this blog periodically in the future – you have a wealth of information relating to VIX products here!</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even depth-5" id="comment-4444">
+<article class="comment-body" id="div-comment-4444" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Vance, in your opinion, how do think think that a product such as XIV would have performed during the seemingly drawn-out bear market between March 2000 and the market lows in either October 2002 or March 2003?</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-3 parent" id="comment-19608">
+<article class="comment-body" id="div-comment-19608" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Vance,</p>
+<p>I’m very impressed with your blog.  May I ask you thoughts on long term holding XIV?  Would you add after certain drawdown thresholds and/or MA crossovers?  Can you imagine putting 10%+ of one’s portfolio into something like XIV assuming some risk management?</p>
+<span class="reply"><a aria-label="Reply to dph" class="comment-reply-link" data-belowelement="div-comment-19608" data-commentid="19608" data-postid="8514" data-replyto="Reply to dph" data-respondelement="respond" href="#comment-19608" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4 parent" id="comment-19776">
+<article class="comment-body" id="div-comment-19776" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi dph,   A lot of effort has gone into finding systems for trading volatility products, see this blog <a href="http://www.tradingvolatility.net/p/home_3.html" rel="nofollow ugc">http://www.tradingvolatility.net/p/home_3.html</a> for some good examples.  I”m not super enthusiastic because most/all of these trading systems rely on historical patterns that aren’t based in economic realities, but happen to be consistent in the past.   Plus they haven’t had to deal with a true bear market yet, which will be a big test–the drawdown in XIV will be huge.   A 10% portfolio stake is not ridiculous, but it would come with a lot of challenges emotionally. </p>
+<p>— Vance</p>
+<span class="reply"><a aria-label="Reply to Vance Harwood" class="comment-reply-link" data-belowelement="div-comment-19776" data-commentid="19776" data-postid="8514" data-replyto="Reply to Vance Harwood" data-respondelement="respond" href="#comment-19776" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-5 parent" id="comment-19777">
+<article class="comment-body" id="div-comment-19777" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Vance are you skeptical that systems that enter/exit based on the contango dynamic will perform going forward because of whipsaws? Or do you think eventually one likely gets caught in a large overnight drawdown (which would suggest that Futures might be a better way to move in and out of these)?</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even depth-5 parent" id="comment-19779">
+<article class="comment-body" id="div-comment-19779" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi dph,   In general I don’t think the past is predictive of the future, so any enter/exit signal that’s not based on an economic reality will eventually fail.   The overnight spike is an extreme version of the unpredictable event, this is a significant risk for anyone that’s systematically short volatility.   I don’t see where futures are any better regarding this risk, it seems to me that they have the same risk factors.   </p>
+<p>— Vance</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-5 parent" id="comment-19780">
+<article class="comment-body" id="div-comment-19780" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Vance early you stated your not super enthusiastic about volatility “systems” does that suggest that they maybe their not much better than just shorting volatility in the long run?  Or can a simple ratio of when to be long (or avoid) XIV perform nearly as well without subscribing to a model?</p>
+<p>Also, I mentioned futures since they have deeper liquidity (and market hours) than ETNs.  Yes the overnight black swans will hit them too but maybe a few traders got out Sunday/ Monday before the thrashing of the US based etns where it was already too late.</p>
+<p>“” I”m not super enthusiastic because most/all of these trading systems rely on historical patterns that aren’t based in economic realities, but happen to be consistent in the past.””</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even depth-5" id="comment-19781">
+<article class="comment-body" id="div-comment-19781" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi dph,  The biggest advantage of systems is that they remove emotion and day to day re-evaluation requirements.  The downside is that most of them will not work well over the long run.  In general I think being short volatility is a tough trading challenge–relatively small profits, big drawdowns, and changing landscape over time.</p>
+<p>— Vance</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-3 parent" id="comment-19773">
+<article class="comment-body" id="div-comment-19773" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Vance,</p>
+<p>For XIV to continue to prosper in the long run does it need declining volatility or just quiet (ie stable) volatility even if VIX levels normalize above their 2014/2015 values?</p>
+<span class="reply"><a aria-label="Reply to dph" class="comment-reply-link" data-belowelement="div-comment-19773" data-commentid="19773" data-postid="8514" data-replyto="Reply to dph" data-respondelement="respond" href="#comment-19773" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-19775">
+<article class="comment-body" id="div-comment-19775" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi dph,   For XIV to do well the VIX futures term structure needs to be in contango most of the time.  This has been the case 75% to 85% of the time and probably won’t change.  The other enemy of XIV is a lot of choppy action in the market.  Because XIV is a daily resetting fund choppy action tends to erode the value of the fund (e.g., 1% down followed by 1% up does not get you back to where you started).  </p>
+<p>— Vance</p>
+<span class="reply"><a aria-label="Reply to Vance Harwood" class="comment-reply-link" data-belowelement="div-comment-19775" data-commentid="19775" data-postid="8514" data-replyto="Reply to Vance Harwood" data-respondelement="respond" href="#comment-19775" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-4422">
+<article class="comment-body" id="div-comment-4422" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>So just buy and hold XIV and buy more share if it goes down by e.g. 50%? Could you do a backtest for that, on which drawdown is the best point to buy again?</p>
+<span class="reply"><a aria-label="Reply to Aaron" class="comment-reply-link" data-belowelement="div-comment-4422" data-commentid="4422" data-postid="8514" data-replyto="Reply to Aaron" data-respondelement="respond" href="#comment-4422" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-4421">
+<article class="comment-body" id="div-comment-4421" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Vance, so it looks like XIV/SVXY is a great long term buy and hold IF you can weather the 90%+ drawdowns in 2008- style market meltdowns? (even more so if you average down)</p>
+<span class="reply"><a aria-label="Reply to John" class="comment-reply-link" data-belowelement="div-comment-4421" data-commentid="4421" data-postid="8514" data-replyto="Reply to John" data-respondelement="respond" href="#comment-4421" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/2013/09/backtests-for-volatility-etn-etf/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+<div class="widget-area sidebar is-right-sidebar grid-25 tablet-grid-25 grid-parent" id="right-sidebar">
+<div class="inside-right-sidebar">
+<!-- Ezoic - wp_sidebar - sidebar --><div data-inserter-version="-1" id="ezoic-pub-ad-placeholder-703"></div><!-- End Ezoic - wp_sidebar - sidebar --><!-- Ezoic - wp_sidebar_middle_1 - sidebar_middle --><div data-inserter-version="-1" id="ezoic-pub-ad-placeholder-704"></div><!-- End Ezoic - wp_sidebar_middle_1 - sidebar_middle --><!-- Ezoic - wp_sidebar_bottom - sidebar_bottom --><div data-inserter-version="-1" id="ezoic-pub-ad-placeholder-707"></div><!-- End Ezoic - wp_sidebar_bottom - sidebar_bottom --> </div>
+</div>
+</div>
+</div>
+<div class="site-footer grid-container grid-parent footer-bar-active footer-bar-align-center">
+
+<!-- Quantcast Tag -->
+
+
+<!-- End Quantcast tag --></div>
+
+<!-- Ezoic - wp_bottom_of_page - bottom_of_page --><div data-inserter-version="-1" id="ezoic-pub-ad-placeholder-702"></div><!-- End Ezoic - wp_bottom_of_page - bottom_of_page -->
+
+
+
+
+
+
+
+
+
+
+
+

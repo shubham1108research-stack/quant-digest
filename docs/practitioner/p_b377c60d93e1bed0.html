@@ -1,0 +1,332 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Intro to Algorithmic Trading – An Algorithmic Trading System</title>
+<!-- source: https://robotwealth.com/back-to-basics-introduction-to-algorithmic-trading/ -->
+<h1>Intro to Algorithmic Trading – An Algorithmic Trading System</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1762 post type-post status-publish format-standard hentry category-quant-trading category-think-like-a-trader tag-algorithmic-trading tag-quantitative-trading pmpro-has-access" id="post-1762">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">February 4, 2017</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Intro to Algorithmic Trading – An Algorithmic Trading System</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Intro to Algorithmic Trading – An Algorithmic Trading System" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><blockquote>
+<div class="gmail_default">This is the first post in our 3-part <strong><em>Back to Basics</em></strong> series which serve as an introduction to algorithmic trading. You may be interested in checking out the other posts in this series:</div>
+<ul>
+<li class="gmail_default"><a href="https://robotwealth.com/back-to-basics-part-2-how-to-succeed-at-algorithmic-trading/">Part 2: How to Succeed at Algorithmic Trading</a></li>
+<li class="gmail_default"><a href="https://robotwealth.com/back-basics-part-3-backtesting-algorithmic-trading/">Part 3: Backtesting in Algorithmic Trading</a></li>
+</ul>
+</blockquote>
+
+This is the first in a series of posts in which we will change gears slightly and take a look at some of the <a href="https://robot-wealth-algorithmic-trading.teachable.com/p/algorithmic-trading-fundamentals-package">fundamentals of algorithmic trading</a>. So far, Robot Wealth has focused on <strong>machine learning</strong> and <strong>quantitative trading</strong> research, but I had several conversations recently that motivated me to explore some of the fundamental questions around <strong>algorithmic trading</strong>. In the next few posts, we will investigate questions such as:
+
+<ul>
+<li>What is algorithmic trading?</li>
+<li>What can algorithmic trading do for me?</li>
+<li>What are the pre-requisites? What should I think about before getting started?</li>
+<li>What’s all this fuss about curve fitting and robust optimisation? Why should I care?</li>
+</ul>
+
+So without further ado, let’s dive in!
+
+<h1>What is Algorithmic Trading?</h1>
+
+At its most basic level, algorithmic trading is simply the automated buying and selling of financial instruments, like stocks, bonds and futures. It requires a networked connection to an electronic exchange, broker or counterparty, and a means of programmatically buying, selling and performing other tasks related to trading, such as monitoring price action and market exposure.
+
+Algorithmic trading is enabled thanks to the rise of electronic exchanges – a relatively recent phenomenon. Once upon a time, financial products were traded in the so-called ‘pit’ inside the exchange building using the ‘open outcry’ method. This consisted of brokers and traders being physically present in the pit and shouting prices at which they were willing to buy and sell. Participants even used hand signals to convey their intentions. This gradually began to give way to telephone trading and eventually to electronic trading. The shift started sometime in the 1980s and continues to this day, however the vast majority of exchanges around the world are now electronic.
+
+Naturally, this evolution changed the dynamics of the trading process. Anecdotally, pit traders could sometimes read each other’s intentions through the physical contact that comes with being in the pit – obviously this is incredibly implausible when market participants trade electronically and can be separated by potentially vast spaces. Stories of life in the pit makes for interesting and often amusing reading. Some curated links:
+
+<ul>
+<li>The Chicago Business School compiled the <a href="https://www.chicagobusiness.com/section/trading-pits#intro">reflections of a number of pit traders</a></li>
+<li><a href="https://www.businessinsider.com.au/trading-floor-pranks-2012-11">This post makes for an interesting insight into life in the pits</a></li>
+<li>As do these <a href="https://www.topstep.com/">‘Tales of the Pit’.</a></li>
+<li>There’s even <a href="https://www.tradingpitblog.com/">a blog about pit trading!</a></li>
+</ul>
+
+It is also worth noting that algorithmic trading is not just for exchange-traded markets: over-the-counter (OTC) markets are also traded algorithmically. An OTC market is one where orders are not executed through a central exchange, but rather between two parties. OTC algorithmic trading typically takes place via an Electronic Communication Network (ECN) or dark pool. The former is typically used by market makers to disseminate and match orders with their network of counterparties. The latter is more like a private execution venue where liquidity is provided by the participants of the dark pool, away from the exchange.
+
+Advocates of electronic trading point out the attendant increased market efficiency and reduced opportunity for manipulation. Electronic trading is also typically less expensive and with the advent of cheap Internet, is accessible to anyone with a decent connection. This means that an individual can buy or sell a financial product from their living room.
+
+It must also be pointed out that as electronic trading has taken off, the instance of <strong>‘flash crashes</strong>‘ – huge spikes in volatility over short periods of time – has also increased. A case can be made that suggests that algorithms exacerbate such a crash because they act much faster than a human can intervene. But on the other hand, exchange operators are finding ways to handle this new environment in safer ways, for example electronic mechanisms to curb extreme volatility, order routing co-ordination between exchanges and re-thinking the role of market makers. Whether it is fair to blame flash crashes on electronic trading is a huge and sometimes contentious topic.
+
+In order to execute trades algorithmically, we use a computer program connected to the exchange (either directly or via a broker) that executes our desired trading behavior on our behalf. Such a program or algorithm is simply a set of detailed instructions that a computer understands. A trivial example might go something like <em>“read some price data, calculate its mean and standard deviation, then if the most recent value of the price data is above its average and the standard deviation is less than some threshold, send a buy order to market.”</em> That’s a trivial example and of course most trading algorithms are much more complex, but you get the idea.
+
+The simple algorithm described above had some of the common aspects of an algorithmic trading system:
+
+<ul>
+<li>A method to acquire data (“read some price data”), noting that this in itself could be quite a complex standalone algorithm and requires connection to a source of market data, usually in real time.</li>
+<li>Some analysis of that data (“calculate its mean and standard deviation”).</li>
+<li>A means of checking if some condition has been fulfilled based on the previous analysis (“if the most recent price is above its mean and the standard deviation is less than some threshold”).</li>
+<li>Execution of the trading logic, which again can be quite a complex standalone algorithm requiring a means of communicating with a broker or exchange, managing that communication link and keeping track of orders and fills.</li>
+</ul>
+
+Other common components of such systems include:
+
+<ul>
+<li>Risk management modules, for example position sizing calculations, exposure tracking and adjustment, and tools to track a system’s performance and behavior.</li>
+<li>Portfolio management tools, which are somewhat related to the above.</li>
+<li>Data handling and storage.</li>
+<li>Post-trade reconciliation and analysis.</li>
+</ul>
+<h2>Confusing Terminology in Algorithmic Trading Systems</h2>
+
+The assumption behind the description of the algorithm above is that its purpose is the implementation of a signal-based trading system which essentially follows the fundamental logic of “if this happens, buy, and if that happens, sell.” The term algorithmic trading can actually have a slightly different nuance, particularly in an institutional setting, that it pays to be aware of. In this setting, algorithmic trading can refer to the automated splitting of a large order to get the best execution possible. Such algorithms typically split up a large order into smaller pieces and send the pieces to market in a way that optimizes the overall cost of the transaction.
+
+Consider a large hedge fund that wants to hold a significant position in a stock, say a couple of percent of its market capitalization. Buying such an order in one transaction would have an impact on the price of that stock (depending on its liquidity) that would be disadvantageous to the fund. Entering the position gradually in line with the capacity of the stock to absorb the order often reduces the overall cost of the transaction, sometimes significantly.
+
+Many in the institutional space will refer to algorithmic trading as the type that splits up a big order. These same folks will typically refer to the signal-based system as an automated trading system. In my experience, the terms are largely used interchangeably, and it therefore pays to understand the context when talking about algorithmic trading.
+
+<h2>Different Strokes for Different Folks</h2>
+
+The type of algorithmic trading that most readers of Robot Wealth are interested in is the kind that seeks to identify opportunities to profit by buying low and selling higher. This is the signal-based type of system mentioned above. Within this broad category, there are different subsets of trading algorithm. While there is no one accepted nomenclature for classifying algorithmic trading systems, they can generally be described as follows.
+
+<h3>Technical Analysis</h3>
+
+Technical Analysis (TA) refers broadly to the analysis of patterns of price and volume to predict future market movement. It is therefore based on the assumption that there exist repeating patterns in the price action of a market. The TA toolkit consists of a collection of indicators (price/volume transformations) like the Relative Strength Index (RSI) and Moving Average Convergence Divergence (MACD). It also includes the suite of trend lines, support and resistance lines, formations like ‘flag’ and ‘pennant’ and patterns like ‘head and shoulders.’ There is even a catalog of candlestick patterns like ‘engulfing bear’ that allegedly portend the future direction of the market. On the more esoteric end of the spectrum, we have things like Elliot Wave Theory which asserts that markets move in predictable ‘waves’.
+
+While some of the tools of TA are sometimes used in more scientifically rigorous quantitative trading (see below), opinion is divided on whether TA as an approach to predicting the market has any utility; indeed, there are published academic papers that support both sides of this argument (see for example Lo, Mamaysky and Wang, 2000 and Chan, Jagadeesh and Lakonishok, 1996). We will return more to this question in the second part of this series.
+
+<h3>Quantitative Trading</h3>
+
+Quantitative trading means different things to different people. For some, it may be simply another name for TA-based trading. For me, the distinguishing feature of quantitative trading is the removal of subjectivity (decisions are based on quantifiable information). This implies that quantitative trading is based on some sort of mathematical or statistical model of market behavior.
+
+There are an infinite number of models for market behavior, however finding one that is accurate enough to generate profits is no trivial endeavor. Sometimes, a tool from the TA world might be used in a quantitative model, hence the cross-over that I mentioned above. An example of a popular model is the cross-sectional momentum strategy, which essentially boils down to buying winners and selling losers. Another popular one is the mean-reversion strategy, which essentially equates to selling winners and buying losers.
+
+As we move along the complexity scale, we might encounter a <a href="https://robotwealth.com/exploring-mean-reversion-and-cointegration-with-zorro-and-r-part-1/">cointegrating pairs model</a>. In this model, we find a pair of securities that can be combined such that together they form a mean-reverting series. Such strategies are appealing because they can be engineered to keep the trader market neutral, or close to it, with the goal of minimizing market risk. Just be careful with the underlying assumptions of such a strategy – that is, that a past cointegrating relationship will continue into the future.
+We can also build quantitative models based on fundamental data. Fundamental data like earnings announcements are just numbers, and we now have the tools to efficiently and automatically process the news releases and company filings from which these numbers are taken.
+
+There is a subset of quantitative trading that is currently undergoing a huge upsurge in interest. I am of course referring to <a href="https://robotwealth.com/machine-learning-financial-prediction-david-aronson/">machine learning</a> and artificial intelligence, which seems to have captured the imagination of both technologists and lay people around the world. With good reason, I might add. At its most basic level, machine learning is simply the derivation of insights from data using statistical models. As such, linear regression can be considered a low-level machine learning algorithm. Today we have much more complex tools, such as artificial neural networks and deep learning, support vector machines and boosting algorithms. Such tools are already widely used to support business decision-making and improve the performance of complex systems. It seems a very natural and obvious step to apply these tools to the markets.
+
+The reality is that while such tools are incredibly powerful, it is difficult (but not impossible) to use them to model the markets directly. Applying the ‘classic’ data science approach generally doesn’t work too well on financial data, at least in my experience. The more celebrated machine learning applications in finance seem to be around efficiently extracting insights from large and complex non-market data sets, like libraries of satellite images, social media feeds and other proprietary and open data sets. Entire books could be written about this topic, but if you are really interested in machine learning, there is enormous scope to apply it to financial decision making – just don’t expect an easy ride.
+
+<h3>High Frequency Trading</h3>
+
+High Frequency Trading (HFT) is admittedly not something I have a lot of direct experience with, but I have worked with folks who are directly engaged in the activity. HFT by definition must be algorithmic since it occurs on the scale of microseconds – or less. No human could engage in HFT without the support of computers. While HFT is generally signal based – that is, something occurs to trigger a buy or sell signal – speed and latency are generally more important than the actual signal itself. The implication of this is that co-location of the algorithm either in the exchange or as close as possible is a prerequisite, and code must be optimized for speed and usually written in a low level language like C++. This results in barriers that are simply too high for DIY traders, and indeed for many trading firms. From my conversations with HFT traders, it is something of an arms race, and an expensive one at that.
+
+<h2>Why Should You Care about Algorithmic Trading?</h2>
+
+The trend towards algorithmic trading, and automation more generally, has been underway in the institutional trading space for some time. For instance, <a href="https://www.bloomberg.com/news/articles/2016-05-12/hedge-funds-almost-double-currency-algo-trading-greenwich-says">Bloomberg</a> (2016) recently reported that:
+
+<blockquote>“Hedge funds almost doubled their use of algorithmic trading in the forex market last year … executing 61% of their trades via automated computer systems.”</blockquote>
+
+This trend can be seen in other markets too. In 2006, 40% of all orders were entered by algo traders at the London Stock Exchange, rising to 60% in 2007. In 2010, that estimate stood at over 80% (<a href="https://thefinanser.com/2010/07/more-banking-statistics-algo-and-high-frequency-trading.html/">thefinancer.com,</a> 2010).
+<strong>So why this shift towards algorithmic trading?</strong>
+Most algo traders that I speak to say that they would never trade any other way, typically quoting similar reasons that relate to overcoming human limitations:
+
+<ul>
+<li>Computers process enormous amounts of data in the blink of an eye, enabling them to constantly scan dozens or hundreds of markets simultaneously for trading opportunities. A human trader can’t keep up with that sort of workload.</li>
+<li>Computers are not prone to the same execution difficulties that humans face: calculation errors, time required to manually enter order details into a broker platform, “fat fingers” errors.</li>
+<li>Computers have no emotional attachment to a trade or a market. Either there is a trade opportunity present or there isn’t.</li>
+<li>Computers can execute a system consistently and continuously. Contrast this with a human who is limited to a few hours chart time per day, suffers from fatigue and needs to pursue a social life (not that I would ever advocate leaving an algorithm to run with no human oversight).</li>
+</ul>
+
+What I also find interesting is that most algo traders that I know have an enormous respect for successful manual or discretionary traders. That’s because anyone who has made money through algo trading knows precisely how difficult it really is, even with all the advantages of algorithms and automated computation described above.  These things are powerful tools for navigating the markets, and folks who can beat the market without them deserve tremendous respect.
+
+Personally, in addition to the advantages listed above, I view algorithmic trading as a means of allocating tasks to the resource most capable of performing them. This needs more explanation:
+
+Reading the points above, you would get the impression that humans are becoming obsolete in the world of trading. Not true! Just as there are many tasks that algos are better suited for, likewise there are certain things that humans are simply brilliant at. We have the creativity to view the markets in novel ways and come up with new ideas for trading systems. We can perform research and stay abreast of the macroeconomic environment in ways that a machine simply can’t (for now, at least).
+
+Using algos to trade the markets frees up the trader to pursue meaningful tasks that make use of their skill set. I don’t know about you, but I don’t get much joy out of staring at charts all day. Nor am I particularly good at distilling meaning from them. My time is better spent researching and overseeing than looking for and executing trading opportunities.
+
+Another nice by-product that arises through algorithmic trading is an automated research and development environment. If a trader writes an algorithm for executing trades in the live market, it is possible to test the algorithm on historical or synthetic data before taking it live. This provides crucial feedback about the algorithm’s past performance as well as insight into when, where and why it might fail. Such feedback is difficult, if not impossible, to get with a manually traded or discretionary system.
+
+Obviously I am firmly in the algorithmic trading camp and have so far focused on the advantages that a trader receives by taking this approach to the markets. Of course, there is another side to every story and this one is no different. Some of the drawbacks to algorithmic trading include:
+
+<ul>
+<li>It requires certain skills which one either needs to acquire personally or rely on others to provide. Programming is the obvious prerequisite, but it is also useful to know about market microstructure and computer hardware, software and networking. The tools that become available through computational trading, like optimisation and machine learning, are incredibly powerful and require specific knowledge to use appropriately. Algo trading is actually very difficult and requires skills from multiple disciplines.</li>
+<li>Algorithmic trading comes with certain infrastructure considerations, such as backup power and network connectivity. This is less of a problem with the rise of affordable managed private servers and cloud-based services, but definitely needs to be considered.</li>
+<li>Hardware dependency – what happens if the server hosting the algorithm goes down?</li>
+<li>A (perceived) lack of control over the behaviour of the algorithm.</li>
+<li>For some traders, the loss of discretion or ‘gut feel’ that comes with algorithmic trading is problematic.</li>
+</ul>
+
+I have also noticed from time to time a misconception that algorithmic trading systems can be simply set up and then forgotten about. This is most definitely not the case! Managing an algorithmic trading system actually represents a significant amount of work and it takes a lot of oversight. Any system that trades at the intra-day frequency would ideally be monitored in real time.
+
+Where this is not possible, my personal preference is to have alerts sent to my phone when trades are entered or closed or when my system loses its connection to my brokerage account. Trades also need to be reconciled, preferably on a daily basis. This is important to ensure that the system is behaving as expected, as well as to monitor any deviations between simulated and actual performance. Bugs can and do creep into any computer program and a trading algorithm is no exception!
+
+<h2>Where to Next in the Basics of Algorithmic Trading?</h2>
+
+I hope this article was useful for people who are new to algorithmic trading or who have questions around the fundamentals – it was certainly a shift from the usual research-focused content that I post on robotwealth.com. In the coming weeks, I’ll be posting the remaining two articles in this series, which I hope will appeal to both beginners and veterans alike, before returning to my exploration of using machine and deep learning in algorithmic trading.
+
+<hr/>
+<em>If you are interested in learning the fundamental aspects of algorithmic trading – the stuff I personally wish I’d known during my early years of playing at this game – please check out our course <a href="https://robotwealth.com/bootcamp">The Fundamentals of Algorithmic Trading</a>. </em>
+<hr/>
+<h2>References</h2>
+
+Chan, L.K.C.; Jegadeesh, N.; Lakonishok, J. 1996, “Momentum Strategies”. The Journal of Finance. The Journal of Finance, Vol. 51, No. 5. 51 (5): 1681–1713.
+Lo, A.; Mamaysky H.; and Wang, J. 2000, “Foundations of Technical Analysis: Computational Algorithms, Statistical Inference, and Empirical Implementation”, Journal of Finance 55 (2000), 1705-1765.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>algorithmic trading</span>, <span>quantitative trading</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">8 thoughts on “Intro to Algorithmic Trading – An Algorithmic Trading System”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-730">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 02/04/2017 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-731">
+<div class="comment-body">
+				Pingback: 02/07/17 – Tuesday’s Interest-ing Reads | Compound Interest-ing! 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-732">
+<article class="comment-body" id="div-comment-732" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very on-point post Kris…as someone with 4 years experience as an arbitrage trader, i could relate to much of what you said.</p>
+<span class="reply"><a aria-label="Reply to Jasen" class="comment-reply-link" data-belowelement="div-comment-732" data-commentid="732" data-postid="1762" data-replyto="Reply to Jasen" data-respondelement="respond" href="#comment-732" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-733">
+<article class="comment-body" id="div-comment-733" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Jasen, I appreciate the comment.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-733" data-commentid="733" data-postid="1762" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-733" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-734">
+<div class="comment-body">
+				Pingback: Back to Basics Part 2 – How to Succeed at Algorithmic Trading – Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-735">
+<div class="comment-body">
+				Pingback: Back to Basics: Introduction to Algorithmic Trading – Robot Wealth | Collect 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/back-to-basics-introduction-to-algorithmic-trading/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

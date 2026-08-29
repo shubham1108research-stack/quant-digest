@@ -1,0 +1,470 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Revenge of the Stock Pickers</title>
+<!-- source: https://robotwealth.com/revenge-of-the-stock-pickers/ -->
+<h1>Revenge of the Stock Pickers</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-20526 post type-post status-publish format-standard hentry category-backtesting category-factors category-quant-trading category-r category-trading-strategies tag-alpha tag-dplyr tag-etfs tag-factors tag-low-beta-factor tag-r tag-tidyverse tag-trading-strategies pmpro-has-access" id="post-20526">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">March 31, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Revenge of the Stock Pickers</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Revenge of the Stock Pickers" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">To say we’re living through extraordinary times would be an understatement.
+
+We saw the best part of 40% wiped off stock indexes in a matter of weeks, unprecedented co-ordinated central bank intervention on a global scale, and an unfolding health crisis that for many has already turned into a tragedy.
+
+As an investor or trader, what do you do?
+
+You manage your exposures the best you can, dial everything down, and go hunting for the opportunities that inevitably present themselves in a stressed out market.
+
+We’ve been hunting pretty much since this thing kicked off – and we want to show you what we found. And, more importantly, the tools and approach we used to find them.
+
+<blockquote><strong><i data-stringify-type="italic">To that end, <a href="https://robotwealth.com/fasttrack-to-pro/">we are opening the gates to our Robot Wealth Pro community</a>, a tight-knit network of independent traders with whom we share our firm’s research, data, systematic trading strategies, and real-time ideas. </i></strong>
+<strong><i data-stringify-type="italic">We normally insist that you go through an introductory Bootcamp before joining our Pro team, but these are extraordinary times and we want to get after these opportunities as soon as possible. If you’re interested in joining us, <a href="https://robotwealth.com/fasttrack-to-pro/">go here for more information.</a></i></strong></blockquote>
+
+We have a ton of ideas, strategies, and tactics for not only surviving the current sell-off in risk assets, but also to profit. I’ll share one in this post.
+
+Last year, some folks at a Baltimore investment management firm published a paper with the catchy title <em><a href="https://doi.org/10.1080/0015198X.2019.1572358" rel="noopener noreferrer" target="_blank">Revenge of the Stock Pickers</a>. </em>The gist of the paper is as follows:
+
+When an ETF sells off on high volume, correlations among its constituents tend to increase, often quite significantly. During normal times, some constituents have lower beta to the ETF than others, but during significant sell-offs, these low-beta constituents get dragged down along with the ETF, regardless of their own idiosyncratic exposure to whatever caused the sell-off. The authors hypothesise that such <em>throwing the baby out with the bathwater</em> can lead to temporary mispricings upon which stock pickers can capitalise.
+
+With the inexorable rise of passive investing, this certainly seems a plausible hypothesis at first glance. Given the current state of things, we decided to dig a little deeper and find out if there’s anything to the theory.
+
+<em>Turns out there is. </em>
+
+Our game plan for tackling this will be:
+
+<ul>
+<li>Get some ETF historical price data – both for the ETF and its constituents</li>
+<li>Look at correlations between constituents during normal times and stressed times</li>
+<li>Calculate historical returns to low- and high-beta constituents and figure out if we have some alpha on our hands</li>
+<li>Suggest a simple trading strategy</li>
+</ul>
+<div class="convertful-31991"></div>
+<h2>ETF data</h2>
+
+We like to start simple, so to kick things off we’ll look at the <a href="http://www.sectorspdr.com/" rel="noopener noreferrer" target="_blank">SPDR sector ETFs</a>. We’ll look at the following sectors:
+
+<ul>
+<li>Materials (XLB)</li>
+<li>Energy (XLE)</li>
+<li>Financials (XLF)</li>
+<li>Industrials (XLI)</li>
+<li>Technology (XLK)</li>
+<li>Staples (XLP)</li>
+<li>Utilities (XLU)</li>
+<li>Health care (XLV)</li>
+<li>Consumer discretionary (XLY)</li>
+</ul>
+
+Here’s some Python code for downloading the constituents of each ETF to separate CSV files:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Download SPDR constituents">"""download to csv file ETF holdings"""
+
+import pandas as pd
+
+
+def get_holdings(spdr_ticker):
+    
+    url = f'http://www.sectorspdr.com/sectorspdr/IDCO.Client.Spdrs.Holdings/Export/ExportCsv?symbol={spdr_ticker}'
+    df = pd.read_csv(url, skiprows=1).to_csv(f'{spdr_ticker}_holdings.csv', index=False)
+        
+    return df
+    
+    
+if __name__ == "__main__":
+    
+    tickers = ['XLB', 'XLE', 'XLF', 'XLI', 'XLK', 'XLP', 'XLU', 'XLV', 'XLY']
+    
+    for t in tickers:
+        get_holdings(t)</pre>
+
+We’ll also need historical market data for the ETFs and their constituents. I’ll be using our Robot Wealth Pro database of market data for this.
+
+We need some way to identify high-volume sell-offs, so let’s create rolling means and standard deviation of volumes, and then a rolling z-score of volume for each ETF. The <code>tidyquant</code> R package is great for this sort of thing:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Load data and plot volumes">library(tidyverse)
+library(tidyquant)
+
+source("./robotwealth_tools.R")
+
+# load stock-level prices
+load(paste0(STOCK_FOLDER, 'raw-data.RData'))
+
+# load etf prices
+etfs &lt;- c('XLB', 'XLE', 'XLF', 'XLI', 'XLK', 'XLP', 'XLU', 'XLV', 'XLY')
+etf_prices &lt;- get_daily_OHLC(etfs, ETF_FOLDER)
+
+# calculate returns
+etf_returns &lt;-  etf_prices %&gt;%
+  group_by(ticker) %&gt;%
+  mutate(returns = log(close) - log(lag(close))) %&gt;%
+  na.omit()
+
+wdw &lt;- 250
+etf_returns &lt;- etf_returns %&gt;%
+  group_by(ticker) %&gt;%
+  tq_mutate(select = volume, mutate_fun = rollapply, width = wdw, align = "right", FUN = mean, na.rm = TRUE, col_rename = "vol_mean") %&gt;% 
+  tq_mutate(select = volume, mutate_fun = rollapply, width = wdw, align = "right", FUN = sd, na.rm = TRUE,   col_rename = "vol_sd") %&gt;% 
+  mutate(zscore = (volume - vol_mean) / vol_sd)
+
+# Plot volume and it's moving average by ticker
+etf_returns %&gt;%
+  na.omit() %&gt;%
+  ggplot(aes(x = date, y = volume)) +
+   geom_line() + 
+   geom_line(aes(y = vol_mean), color='red') +
+   facet_wrap(~ticker)
+
+# plot zscores of volume
+etf_returns %&gt;% 
+  na.omit() %&gt;%
+  ggplot(aes(x = date, y = zscore)) +
+    geom_line() +
+    facet_wrap(~ticker)</pre>
+<img alt="" class="size-full wp-image-20532 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162604/volume-zscores.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162604/volume-zscores.png 700w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162604/volume-zscores-600x343.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162604/volume-zscores-300x171.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='400'%20viewBox='0%200%20700%20400'%3E%3C/svg%3E" width="700"/>
+
+There seem to be enough volume spikes for us to do some analysis.
+
+<h2>ETF constituent correlations</h2>
+
+First, let’s see if the idea that ETF constituent correlations increase during times of stress. In the spirit of keeping things simple, we’ll plot some heatmaps of correlation calculated:
+
+<ul>
+<li>Over the whole data set</li>
+<li>On high volume days only</li>
+</ul>
+
+Let’s look at the Financials ETF, XLF.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="">get_constituents &lt;- function(etf) {
+  constituents &lt;- read.csv(paste0('./', etf, '_holdings.csv'), stringsAsFactors = FALSE)
+  constituents &lt;- constituents %&gt;%
+    select(Symbol) %&gt;%
+    pull()
+  
+  return(constituents)
+}
+
+# get etf constituents
+etf &lt;- 'XLF'
+etf_constituents &lt;- get_constituents(etf)
+
+# make dataframe of constituent prices
+constituent_prices &lt;- prices_df %&gt;%
+  filter(ticker %in% etf_constituents)
+
+# calculate returns
+constituent_returns &lt;-  constituent_prices %&gt;%
+  group_by(ticker) %&gt;%
+  mutate(returns = log(close) - log(lag(close))) %&gt;%
+  select(date, ticker, returns) %&gt;%
+  na.omit()
+
+library(corrplot, quietly = TRUE)
+
+# pairwise correlation of constituents using as much data as possible (different number of observatiosn for different pairs)
+corr_complete_pairwise &lt;- constituent_returns %&gt;%
+  spread(key = ticker, value = returns) %&gt;%
+  select(-date) %&gt;%
+  cor(use = "pairwise.complete.obs", method='pearson')
+
+corrplot(corr_complete_pairwise)
+
+# pairwise correlation on days when zscore of volume is &gt; 3
+
+# high etf vol days
+high_vol_days &lt;- etf_returns %&gt;% 
+  filter(zscore &gt;= 3) %&gt;%
+  ungroup() %&gt;%
+  filter(ticker == etf) %&gt;%
+  select(date) %&gt;%
+  pull()
+
+# pairwise correlation of constituents using as much data as possible (different number of observatiosn for different pairs)
+corr_complete_pairwise_high_vol &lt;- constituent_returns %&gt;%
+  filter(date %in% high_vol_days) %&gt;%
+  spread(key = ticker, value = returns) %&gt;%
+  select(-date) %&gt;%
+  cor(use = "pairwise.complete.obs", method='pearson')
+
+corrplot(corr_complete_pairwise_high_vol)</pre>
+
+Here’s the correlation of the XLF constituents over the full data set:
+
+<img alt="" class="size-full wp-image-20534 aligncenter perfmatters-lazy" data-sizes="(max-width: 600px) 100vw, 600px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162603/correlation-full.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162603/correlation-full.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162603/correlation-full-300x250.png 300w" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='500'%20viewBox='0%200%20600%20500'%3E%3C/svg%3E" width="600"/>
+
+Darker blue indicates higher correlation.
+
+Here’s the same plot but now only calculated on days where the zscore of traded volume was greater than three:
+
+<img alt="" class="size-full wp-image-20535 aligncenter perfmatters-lazy" data-sizes="(max-width: 600px) 100vw, 600px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162602/corr-zs3.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162602/corr-zs3.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162602/corr-zs3-300x250.png 300w" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='500'%20viewBox='0%200%20600%20500'%3E%3C/svg%3E" width="600"/>
+
+We see a lot more dark blue. This tells us that, on average, correlations are higher on days where the ETF traded a high volume.
+
+This is a very interesting result, which gives us confidence in the validity of this idea.
+
+<h2>Returns to low-beta constituents</h2>
+
+Now we want to look at returns of stocks wit low or high betas to the industry ETF. Do they appear to differ significantly?
+
+In doing this, we need to be aware that we’re making a simplifying assumption: that the stocks currently in the ETF were also there historically.
+
+That’s a somewhat heroic assumption. The return of the stocks that are currently in the ETF is going to be higher than the return of the ETF – because the ETF included stocks that performed poorly and were subsequently removed from the index.
+
+For now, we can just keep that in the back of our mind while we try to figure out if there’s anything to this effect.
+
+Here’s some code for calculating rolling 250-day betas for each constituent to the XLF ETF:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Rolling betas"># rolling beta estimation
+wdw &lt;- 250
+betas &lt;- vector('list', nrow(wide_returns)-wdw)
+for(i in (wdw):(nrow(wide_returns)-1)) {  
+  
+  wide_returns_subset &lt;- wide_returns %&gt;% 
+    slice((i-wdw):(i-1)) %&gt;%   
+    select_if(~ sum(is.na(.)) &lt; wdw/2) %&gt;%  # some constituents weren't in the index during some periods - drop any with not much data in the period of interest
+    dplyr::select(-date)
+  
+  models &lt;- wide_returns_subset %&gt;%
+    map(~ lm(. ~ wide_returns_subset[[etf]]))  # [[ ]] returns a vector
+  
+  betas[[i]] &lt;- models %&gt;%
+    map_df(., .f = extract_coeff) %&gt;%
+    mutate(date = wide_returns$date[i-1])
+}
+
+betas &lt;- bind_rows(betas)
+save(betas, file = paste0("./", etf, "_betas_", wdw, ".RData"))</pre>
+
+Next, we need to:
+
+<ul>
+<li>Sort our stocks into buckets according to the rank of their beta each day</li>
+<li>Figure out when we’re going to be long which stocks –  in this example we get long the lowest beta bucket of stocks the day after a sell-off of 2% or more in the ETF, accompanied by at least three standard deviations greater than the mean traded volume. and we hold for 40 days</li>
+<li>Calculate returns from doing this for each bucket</li>
+</ul>
+
+The code that does this is quite long, so I won’t reproduce it all here <em>(if you do want it, let me know and I’ll stick it up on GitHub or otherwise share it – you’ll need your own data to reproduce the analysis as well).</em>
+
+Instead, let’s take a look at the results. Here are the cumulative returns to each of the five beta “buckets”:
+
+<img alt="" class="size-full wp-image-20537 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162600/return-by-quantile.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162600/return-by-quantile.png 700w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162600/return-by-quantile-600x343.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162600/return-by-quantile-300x171.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='400'%20viewBox='0%200%20700%20400'%3E%3C/svg%3E" width="700"/>
+
+This is a very nice result!
+
+The returns to the lowest beta stocks (quantile 1) exceed those to the quantile 2 stocks, which exceed quantile 3’s return, and so on.
+
+This gives us some tentative optimism that there really is something to the idea that low-beta ETF constituents tend to outperform following a high-volume sell-off in the ETF.
+
+We don’t have a whole lot of data here, but if we extend the analysis to the other ETFs in our universe, we’ll have a whole lot more. Let’s do that next.
+
+<h2>Buying low-beta across SPDR sectors</h2>
+
+Next, we’ll run a backtest across all the SPDR sector ETFs in our universe. Again, I’ll skip the code and cut straight to the results.
+
+For each ETF, following a down day accompanied by a three standard deviation volume spike, we:
+
+<ul>
+<li>Buy the bottom quantile of constituents by rolling 250-day beta to the ETF</li>
+<li>Hold for 40 days</li>
+</ul>
+
+Here’s what that looks like:
+
+<img alt="" class="size-full wp-image-20555 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162556/spdr-sector-backtest.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162556/spdr-sector-backtest.png 700w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162556/spdr-sector-backtest-600x343.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162556/spdr-sector-backtest-300x171.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='400'%20viewBox='0%200%20700%20400'%3E%3C/svg%3E" width="700"/>
+
+That comes out to a Sharpe of around 0.7.
+
+The assumptions in the backtest are that we trade at the closing price on the day of the volume spike, we trade for free, and we rebalance positions daily such that we maintain an equal dollar weight in whatever we happen to be holding.
+
+Of course, most of those ETFs went up a lot during that period. So it’s possible these returns are simply due to the upward drift in these assets.
+
+To assess that, let’s look at the result of doing the same thing (buying on high-volume down day and holding for 40 days) but using the ETF rather than its low-beta constituents. We expect positive performance, but lower risk-adjusted returns.
+
+<img alt="" class="size-full wp-image-20556 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162555/etf-only-backtest.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162555/etf-only-backtest.png 700w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162555/etf-only-backtest-600x343.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162555/etf-only-backtest-300x171.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='400'%20viewBox='0%200%20700%20400'%3E%3C/svg%3E" width="700"/>
+
+That has a Sharpe of a little under 0.3.<em> (Again, we neglect transaction costs and rebalance daily to hold equal dollar weights in whatever ETFs we happen to be holding.)</em>
+
+Our active strategy had more than double the risk-adjusted returns over the backtest period. This is good evidence that we might have some alpha here.
+
+Of course, the work is really just beginning. So far we’ve seen that:
+
+<ul>
+<li>Correlations among ETF constituents do increase in times of stress</li>
+<li>Beta to the XLF ETF has been a decent factor for predicting returns conditional on a high volume sell-off</li>
+<li>More broadly across the SPDR sectors, buying low-beta constituents following a high-volume sell-off outperforms the broader index in risk-adjusted terms</li>
+</ul>
+
+But we also have many unanswered questions:
+
+<ul>
+<li>What is the impact of survivorship bias on our results?<em> (we could assess this without needing any more data by comparing the strategy returns with being long all our constituent stocks at those times)</em></li>
+<li>What about transaction costs? <em>(this is a simple backtesting problem)</em></li>
+<li>How does this apparent alpha evolve over time? Is a 40-day hold period a sensible thing?</li>
+<li>How might we best capture this apparent alpha? We could:
+<ul>
+<li>implement a long-only strategy</li>
+<li>use the low beta stocks as a watchlist for discretionary stock picking</li>
+<li>try being long-short the low- and high-beta constituents respectively</li>
+<li>long the low-beta stuff and short the ETF</li>
+</ul>
+</li>
+<li>How does this play out across the vast universe of ETFs that trade today? Surely there are better opportunities than the ones we looked at first.</li>
+<li>In particular, broad index ETFs intuitively seem attractive given the current market context</li>
+</ul>
+
+Further, in their original paper, the authors of <em>Revenge of the Stockpickers</em> suggest that we can capture further alpha from this approach by also considering the context of the sell-off and whether individual stocks’ performance is justified for fundamental and macro reasons.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>alpha</span>, <span>dplyr</span>, <span>ETFs</span>, <span>factors</span>, <span>low-beta factor</span>, <span>R</span>, <span>tidyverse</span>, <span>trading strategies</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">3 thoughts on “Revenge of the Stock Pickers”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-13363">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 03/30/2020 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-14679">
+<div class="comment-body">
+				Pingback: Handling a Large Universe of Stock Price Data in R: Profiling with profvis - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-14691">
+<div class="comment-body">
+				Pingback: Performant R Programming: Chunking a Problem into Smaller Pieces - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/revenge-of-the-stock-pickers/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

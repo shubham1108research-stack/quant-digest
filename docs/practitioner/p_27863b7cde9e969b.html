@@ -1,0 +1,75 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>The Volatility Watcher’s Toolkit</title>
+<!-- source: https://www.sixfigureinvesting.com/2012/12/volatility-measures-to-watch/ -->
+<h1>The Volatility Watcher’s Toolkit</h1>
+
+<table border="1" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td rowspan="2" valign="top" width="84"><b>Duration</b></td>
+<td rowspan="2" valign="top" width="70"><b>Securities</b></td>
+<td colspan="4" valign="top" width="355">
+<p align="center"><b>Term Structure</b></p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="98">Short Term (1-2 month)</td>
+<td valign="top" width="83">3 Month</td>
+<td valign="top" width="90">Mid-Term(4-7 month)</td>
+<td valign="top" width="83">Long Term</td>
+</tr>
+<tr>
+<td rowspan="3" valign="top" width="84"><b>Constant</b></td>
+<td rowspan="2" valign="top" width="70"><b>Blend</b></td>
+<td valign="top" width="98">
+<ul>
+<li>VIX</li>
+<li><a href="http://finance.yahoo.com/q?s=%5EVVIX&amp;ql=1">VVIX</a> (vol of vol)</li>
+<li><a href="https://www.sixfigureinvesting.com/2014/12/volatility-related-indexes-and-tickers/">SPVXSTR </a> (<a href="http://finance.yahoo.com/q?s=vxx&amp;ql=1">VXX</a>)</li>
+</ul>
+</td>
+<td valign="top" width="83">
+<ul>
+<li><a href="http://finance.yahoo.com/q?s=%5Evxv&amp;ql=1">VIX3M</a></li>
+</ul>
+</td>
+<td valign="top" width="90">
+<ul>
+<li><a href="https://www.sixfigureinvesting.com/2014/12/volatility-related-indexes-and-tickers/">SPVXMTR</a> (<a href="http://finance.yahoo.com/q?s=vxz&amp;ql=1">VXZ</a>)</li>
+<li><a href="https://www.cboe.com/micro/vxmt/default.aspx">VXMT</a> (6 months)</li>
+</ul>
+</td>
+<td valign="top" width="83"></td>
+</tr>
+<tr>
+<td colspan="4" valign="top" width="355"><a href="https://www.sixfigureinvesting.com/2012/09/taming-inverse-volatility-with-a-simple-ratio/">VIX/VIX3M</a><a href="https://www.sixfigureinvesting.com/2012/09/taming-inverse-volatility-with-a-simple-ratio/"> ratio</a> (when below 1 indicates contango)</td>
+</tr>
+<tr>
+<td valign="top" width="70"><b>Single</b></td>
+<td colspan="4" valign="top" width="355">Historical Volatility (e.g., 22-day retrospective)</td>
+</tr>
+<tr>
+<td rowspan="2" valign="top" width="84"><b>Variable </b></td>
+<td valign="top" width="70"><b>Blend</b></td>
+<td valign="top" width="98">
+<ul>
+<li><a href="http://finance.yahoo.com/q?s=%5EVIN&amp;ql=1">VIN</a> (23 day to 29 days)</li>
+<li><a href="http://finance.yahoo.com/q?s=%5EVIF&amp;ql=1">VIF</a> (30 to 37 days)</li>
+</ul>
+</td>
+<td colspan="3" valign="top" width="257">Per-expiration month SPX option volatility computed using the VIX’s option strike composite approach for months 3 through 10</td>
+</tr>
+<tr>
+<td valign="top" width="70"><b>Single</b></td>
+<td colspan="4" valign="top" width="355">
+<ul>
+<li>SPX options IV (months 1-6, 9,12,18,24)  many strikes</li>
+<li><a href="http://vixcentral.com/">S&amp;P 500 VIX futures</a> (months 1 through 9)</li>
+<li><a href="http://finance.yahoo.com/q/op?s=%5EVIX+Options">VIX options IV</a> (months 1 through 6)  35 strikes</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+

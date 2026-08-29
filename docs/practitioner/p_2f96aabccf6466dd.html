@@ -1,0 +1,472 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Pairs Trading in Zorro</title>
+<!-- source: https://robotwealth.com/pairs-trading-zorro/ -->
+<h1>Pairs Trading in Zorro</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-11301 post type-post status-publish format-standard hentry category-cointegration category-quant-trading category-trading-strategies category-zorro tag-pairs-trading tag-r tag-zorro pmpro-has-access" id="post-11301">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">September 25, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Pairs Trading in Zorro</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Pairs Trading in Zorro" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In our previous post, we looked into implementing a <a href="https://robotwealth.com/kalman-filter-pairs-trading-r/" rel="noopener noreferrer" target="_blank">Kalman filter in R</a> for calculating the hedge ratio in a pairs trading strategy.
+
+You know, light reading…
+
+We saw that while R makes it easy to implement a relatively advanced algorithm like the Kalman filter, there are drawbacks to using it as a backtesting tool.
+
+Setting up anything more advanced than the <em>simplest</em> possible vectorised backtesting framework is tough going and error-prone. Plus, it certainly isn’t simple to experiment with strategy design – for instance, incorporating costs, trading at multiple levels, using a timed exit, or incorporating other trade filters.
+
+To be fair, there are good native R backtesting solutions, such as Quantstrat. But in my experience none of them let you experiment as efficiently as the <a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro platform</a>.
+
+<blockquote>And as an independent trader, the ability to move fast – writing proof of concept backtests, invalidating bad ideas, exploring good ones in detail, and ultimately moving to production efficiently – is quite literally a superpower.</blockquote>
+<p style="text-align: center;"><img alt="" class="aligncenter size-full wp-image-11559 perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164644/ezgif.com-optimize.gif" decoding="async" height="273" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='273'%20viewBox='0%200%20500%20273'%3E%3C/svg%3E" width="500"/></p>
+<p style="text-align: center;"><em>I’ve already invalidated 3 ideas since starting this post</em></p>
+
+The downside with Zorro is that it would be pretty nightmarish implementing a Kalman filter in its native Lite-C code. But thanks to Zorro’s R bridge, I can use the R code for the Kalman filter that I’ve already written, with literally only a couple of minor tweaks. <em>We can have the best of both worlds!</em>
+
+This post presents a script for a pairs trading algorithm using Zorro. We’ll stick with a static hedge ratio and focus on the pairs trading logic itself. In the next post, I’ll show you how to configure Zorro to talk to R and thus make use of the Kalman filter algorithm.
+
+<em>Let’s get to it. </em>
+<h2>The Pairs Trading Zoo</h2>
+
+Even the briefest scan of the pairs trading literature reveals many approaches to constructing spreads. For example, using:
+
+<ul>
+<li>Prices</li>
+<li>Log-prices</li>
+<li>Ratios</li>
+<li>Factors</li>
+<li>Cointegration</li>
+<li>Least squares regression</li>
+<li>Copulas</li>
+<li>State space models</li>
+</ul>
+
+Ultimately, the goal is to find a spread that is both mean-reverting and volatile enough to make money from.
+
+In my view, <em>how</em> you do that is much less important than it’s ability to make money. From personal experience, I know that the tendency is to get hung up on the “correct” way to implement a pairs trade. Such a thing doesn’t exist — I’ve seen money-printing pairs trading books that younger me, being more hung up on “correctness”, would have scoffed at.
+
+Instead, understand that pairs trading is ultimately a numbers game and that universe selection is more important than the specifics of the algorithm. Sure, you can tweak your implementation to squeeze a little more out of it, and even find pockets of conditional or seasonal mean-reversion, but the specifics of the implementation are unlikely to be the ultimate source of alpha.
+
+Anyway, that’s for you to mull over and keep in mind as you read this series. Right now, we’re just going to present one version of a pairs trade in Zorro.
+
+<h2>Implementing a Pairs Trade in Zorro</h2>
+
+This is a pairs trade that uses a price-based spread for its signals. First, here’s the code that calculates the spread, given two tickers <code>Y</code> and <code>X</code> (lines 5 – 6) and a hedge ratio, <code>beta</code> (line 39). The spread is simply (Y – \beta X)
+
+Here’s the code:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Price-based spread">/* 
+Price-based spread in Zorro
+*/
+
+#define Y "GDX"
+#define X "GLD"
+
+var calculate_spread(var hedge_ratio)
+{
+  var spread = 0;
+  asset(Y);
+  spread += priceClose();
+  
+  asset(X); 
+  spread -= hedge_ratio*priceClose();
+  
+  return spread;
+}
+
+function run()
+{
+    set(PLOTNOW);
+    StartDate = 20100101;
+    EndDate = 20191231;
+    BarPeriod = 1440;
+    LookBack = 100;
+    
+    // load data from Alpha Vantage in INITRUN
+    if(is(INITRUN)) 
+    {
+        string Name;
+        while(Name = loop(Y, X))
+        {
+            assetHistory(Name, FROM_AV);
+        }
+    }
+    
+    // calculate spread
+    var beta = 0.4; 
+    vars spread = series(calculate_spread(beta));
+    
+    // plot
+    asset(Y);
+    var asset1Prices = priceClose();
+    asset(X);
+    plot(strf("%s-LHS", Y), asset1Prices, MAIN, RED);
+    plot(strf("%s-RHS", X), priceClose(), 0|AXIS2, BLUE);
+    plot("spread", spread, NEW, BLACK);
+}</pre>
+
+Using GDX and GLD as our Y and X tickers respectively and a hedge ratio of 0.4, Zorro outputs the following plot:
+
+<img alt="" class="size-full wp-image-11529 aligncenter perfmatters-lazy" data-sizes="(max-width: 699px) 100vw, 699px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164648/GLD-GDX-spread.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164648/GLD-GDX-spread.png 699w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164648/GLD-GDX-spread-600x372.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164648/GLD-GDX-spread-300x186.png 300w" decoding="async" height="433" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='699'%20height='433'%20viewBox='0%200%20699%20433'%3E%3C/svg%3E" width="699"/>
+
+The spread looks like it was reasonably stationary during certain subsets of the simulation, but between 2011 and 2013 it trended – not really a desirable property for a strategy based on mean-reversion.
+
+Even this period in late 2013, where one could imagine profiting from a mean-reversion strategy, the spread hasn’t been very well behaved. The buy and sells levels are far from obvious in advance:
+
+<img alt="" class="size-full wp-image-11530 aligncenter perfmatters-lazy" data-sizes="(max-width: 699px) 100vw, 699px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164647/GLD-GDX-spread-zoomed.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164647/GLD-GDX-spread-zoomed.png 699w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164647/GLD-GDX-spread-zoomed-600x372.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164647/GLD-GDX-spread-zoomed-300x186.png 300w" decoding="async" height="433" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='699'%20height='433'%20viewBox='0%200%20699%20433'%3E%3C/svg%3E" width="699"/>
+
+One way to tame the spread is to apply a rolling z-score transformation. That is, take a window of data, say 100 days, and calculate its mean and standard deviation. The z-score of the next point is the raw value less the window’s mean, divided by its standard deviation. Applying this in a rolling fashion is a one-liner in Zorro:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="">vars ZScore = series(zscore(spread[0], 100));</pre>
+
+Our z-scored spread then looks like this:
+
+<img alt="" class="size-full wp-image-11531 aligncenter perfmatters-lazy" data-sizes="(max-width: 699px) 100vw, 699px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164646/GLD-GDX-spread-zscored.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164646/GLD-GDX-spread-zscored.png 699w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164646/GLD-GDX-spread-zscored-600x372.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164646/GLD-GDX-spread-zscored-300x186.png 300w" decoding="async" height="433" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='699'%20height='433'%20viewBox='0%200%20699%20433'%3E%3C/svg%3E" width="699"/>
+
+The z-scored spread has some nice properties. In particular, it tends to oscillate between two extrema, eliminating the need to readjust buy and sell levels (although we’d need to decide on the actual values to use). On the other hand, it does introduce an additional parameter, namely the window length used in its calculation.
+
+To implement the rest of our pairs trade, we need to decide the z-score levels at which to trade and implement the logic for buying and selling the spread.
+
+Zorro makes that fairly easy for us. Here’s the complete backtesting framework code:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Price-based pairs trading in Zorro">/* 
+Price-based spread trading in Zorro
+*/
+
+#define Y "GDX"
+#define X "GLD"
+#define MaxTrades 5
+#define Spacing 0.5
+// #define COSTS
+
+int ZSLookback = 100;
+int Portfolio_Units = 100; //units of the portfolio to buy/sell (more --&gt; better fidelity to dictates of hedge ratio)
+
+var calculate_spread(var hedge_ratio)
+{
+  var spread = 0;
+  asset(Y);
+#ifndef COSTS  
+  Spread = Commission = Slippage = 0;
+#endif
+  spread += priceClose();
+  
+  asset(X); 
+#ifndef COSTS
+  Spread = Commission = Slippage = 0;
+#endif 
+  spread -= hedge_ratio*priceClose();
+  
+  return spread;
+}
+
+function run()
+{
+    set(PLOTNOW);
+    setf(PlotMode, PL_FINE);
+    StartDate = 20100101;
+    EndDate = 20191231;
+    BarPeriod = 1440;
+    LookBack = ZSLookback;
+    MaxLong = MaxShort = MaxTrades;
+    
+    // load data from Alpha Vantage in INITRUN
+    if(is(INITRUN)) 
+    {
+        string Name;
+        while(Name = loop(Y, X))
+        {
+            assetHistory(Name, FROM_AV);
+        }
+    }
+    
+    // calculate spread
+    var beta = 0.4; 
+    vars spread = series(calculate_spread(beta));
+    vars ZScore = series(zscore(spread[0], 100));
+    
+    // set up trade levels
+    var Levels[MaxTrades]; 
+    int i;
+    for(i=0; i&lt;MaxTrades; i++)
+    {
+        Levels[i] = (i+1)*Spacing;
+    }
+    
+// -------------------------------
+// trade logic 
+// -------------------------------
+
+    // exit on cross of zero line
+    if(crossOver(ZScore, 0) or crossUnder(ZScore, 0)) 
+    {
+        asset(X);
+        exitLong(); exitShort();
+        asset(Y);
+        exitLong(); exitShort();
+    }
+    
+    // entering positions at Levels
+    for(i=0; i&lt;=MaxTrades; i++)
+    {
+        if(crossUnder(ZScore, -Levels[i])) // buying the spread (long Y, short X)
+        {
+            asset(Y);
+            Lots = Portfolio_Units;
+            enterLong();
+            asset(X);
+            Lots = Portfolio_Units * beta;
+            enterShort();
+        }
+        if(crossOver(ZScore, Levels[i])) // shorting the spread (short Y, long X)
+        {
+            asset(Y);
+            Lots = Portfolio_Units;
+            enterShort();
+            asset(X);
+            Lots = Portfolio_Units * beta;
+            enterLong();
+        }
+    }
+    
+    // exiting positions at Levels
+    for(i=1; i&lt;=MaxTrades-1; i++)
+    {
+        if(crossOver(ZScore, -Levels[i])) // covering long spread (exiting long Y, exiting short X)
+        {
+            asset(Y);
+            exitLong(0, 0, Portfolio_Units);
+            asset(X);
+            exitShort(0, 0, Portfolio_Units * beta);
+        }
+        if(crossUnder(ZScore, Levels[1])) // covering short spread (exiting short Y, exiting long X)
+        {
+            asset(Y);
+            exitShort(0, 0, Portfolio_Units);
+            asset(X);
+            exitLong(0, 0, Portfolio_Units * beta);
+        }
+    }
+    
+
+    // plots
+    if(!is(LOOKBACK))
+    {
+        plot("zscore", ZScore, NEW, BLUE);
+        int i;
+        for(i=0; i&lt;MaxTrades; i++)
+        {
+            plot(strf("#level_%d", i), Levels[i], 0, BLACK);
+            plot(strf("#neglevel_%d", i), -Levels[i], 0, BLACK);
+        }   
+        plot("spread", spread, NEW, BLUE);
+    }
+}</pre>
+
+The trade levels are controlled by the <code>MaxTrades</code> and <code>Spacing</code> variables (lines 7 – 8). These are implemented as <code>#define</code> statements to make it easy to change these values, enabling fast iteration.
+
+As implemented here, with <code>MaxTrades</code>equal to 5 and <code>Spacing</code> equal to 0.5, Zorro will generate trade levels every 0.5 standard deviations above and below the zero line of our z-score.
+
+The generation of the levels happens in lines 57 – 63.
+
+The trade logic is quite simple:
+
+<ul>
+<li>Buy the spread if the z-score crosses under a negative level</li>
+<li>Short the spread if the z-score crosses over a positive level</li>
+<li>If we’re long the spread, cover a position if the z-score crosses over a negative level</li>
+<li>If we’re short the spread, cover a position if the z-score crosses under a positive level</li>
+<li>Cover whenever z-score crosses the zero line</li>
+</ul>
+
+By default, we’re trading 100 units of the spread at each level. We’re trading in and out of the spread as the z-score moves around and crosses our levels. If the z-score crosses more than one level in a single period, we’d be entering positions for each crossed level at market.
+
+Essentially, it’s a bet on the mean-reversion of the z-scored spread translating into profitable buy and sell signals in the underlyings.
+
+The strategy returns a Sharpe ratio of about 0.6 before costs (you can enable costs by uncommenting <code>#define COSTS</code> in line 9, but you’ll need to <a href="https://zorro-project.com/manual/en/account.htm" rel="noopener noreferrer" target="_blank">set up a Zorro assets list</a> with cost details, or tell Zorro about costs via script) and the following equity curve:
+
+<img alt="" class="size-full wp-image-11533 aligncenter perfmatters-lazy" data-sizes="(max-width: 722px) 100vw, 722px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164645/GDLD-GDX-equity-curve.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164645/GDLD-GDX-equity-curve.png 722w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164645/GDLD-GDX-equity-curve-600x314.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164645/GDLD-GDX-equity-curve-300x157.png 300w" decoding="async" height="378" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='722'%20height='378'%20viewBox='0%200%20722%20378'%3E%3C/svg%3E" width="722"/>
+<h2>Conclusion</h2>
+
+There you have it – a Zorro framework for price-based pairs trading. More than this particular approach to pairs trading itself, I hope that I’ve demonstrated Zorro’s efficiency for implementing such frameworks quickly. And once they’re implemented, you can run experiments and iterate on the design, as well as the utility of the trading strategy, efficiently.
+
+For instance, it’s trivial to:
+
+<ul>
+<li>Add more price levels, tighten them up, or space them out</li>
+<li>Get feedback on the impact of changing the z-score window length</li>
+<li>Explore what happens when you change the hedge ratio</li>
+<li>Change the simulation period</li>
+<li>Swap out GLD and GDX for other tickers</li>
+</ul>
+
+You can even run Zorro on the command line and pass most of the parameters controlling these variables as command line arguments – which means you can write a batch file to run hundreds of backtests and really get into some serious data mining – if that’s your thing.
+
+All that aside, in the next post I want to show you how to incorporate the dynamic estimate of the hedge ratio into our Zorro pairs trading framework by calling the Kalman filter implemented in R directly from our Zorro script.
+
+<strong>You can grab the code for the Kalman Filter we used in the previous post for free below:</strong>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>pairs trading</span>, <span>R</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">5 thoughts on “Pairs Trading in Zorro”</h2>
+<ol class="comment-list">
+<li class="comment byuser comment-author-minshengw even thread-even depth-1" id="comment-9667">
+<article class="comment-body" id="div-comment-9667" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thank you. I enjoy the post a lot. A very good introduction to Pair tradings.</p>
+<span class="reply"><a aria-label="Reply to Minsheng Wu" class="comment-reply-link" data-belowelement="div-comment-9667" data-commentid="9667" data-postid="11301" data-replyto="Reply to Minsheng Wu" data-respondelement="respond" href="#comment-9667" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-10268">
+<div class="comment-body">
+				Pingback: Kalman Filter example: Pairs Trading in R - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-11018">
+<article class="comment-body" id="div-comment-11018" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Never used zorro, how I can create synthetic index on zorro?</p>
+<span class="reply"><a aria-label="Reply to rimantas venckus" class="comment-reply-link" data-belowelement="div-comment-11018" data-commentid="11018" data-postid="11301" data-replyto="Reply to rimantas venckus" data-respondelement="respond" href="#comment-11018" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-48503">
+<div class="comment-body">
+				Pingback: Kalman Filter Pairs Trading with Zorro and R - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/pairs-trading-zorro/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

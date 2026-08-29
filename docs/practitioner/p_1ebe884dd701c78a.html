@@ -1,0 +1,446 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>The Graphical Lasso and its Financial Applications</title>
+<!-- source: https://robotwealth.com/the-graphical-lasso-and-its-financial-applications/ -->
+<h1>The Graphical Lasso and its Financial Applications</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-19532 post type-post status-publish format-standard hentry category-machine-learning category-r category-tools-of-the-trade tag-correlation tag-covariance tag-graphical-lasso tag-inverse-covariance tag-machine-learning tag-partial-correlation tag-r pmpro-has-access" id="post-19532">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">March 5, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">The Graphical Lasso and its Financial Applications</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="The Graphical Lasso and its Financial Applications" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Way back in November 2007, literally weeks after SPX put in its pre-GFC all-time high, Friedman, Hastie and Tibshirani published their <a href="http://statweb.stanford.edu/~tibs/ftp/graph.pdf" rel="noopener noreferrer" target="_blank">Graphical Lasso</a> algorithm for estimation of the sparse inverse covariance matrix.
+
+<blockquote><em>Are you suggesting that Friedman and his titans of statistical learning somehow caused the GFC by publishing their Graphical Lasso algorithm?</em></blockquote>
+
+Not at all. I’m just setting you up to demonstrate the fallacy of mistaking <em>correlation</em> with <em>causation </em>(thanks for playing along).
+
+Seeing patterns where there are none is part of what it means to be human. Of course, Friedman and his gang of statisticians didn’t cause the GFC. But they did help us deal with our psychological flaws by providing us with a powerful tool for detecting spurious correlations.
+
+Their tool allows one to figure out if variables are correlated with one another <em>directly</em>, or whether any measured connection is merely due to a <em>common connection to something else</em>.
+
+<h2>Confusing? Let’s look at an example</h2>
+
+Consider the two stocks ABB, a multinational industrial automation company, and PUK, a multinational life insurance company. Over the period 2015 to 2018, these companies’ returns had a correlation of around 0.6 – which suggests a significant relationship.
+
+Now consider the classical pairs trade, where we bet on the convergence of related financial instruments following a dislocation in their prices. How would you feel about trading ABB and PUK as a pair? Would you be willing to bet that if they diverged, they’d come back together thanks to their significant correlation over the sample period?
+
+Of course, the answer is <em>no</em>. You intuitively know that this isn’t a sensible bet. You know that these stocks aren’t moving together because they’re related to one another, but because they’re huge firms <em>with similar beta to the broader market</em>.
+
+Said differently, even though they’re correlated, they don’t <em>explain</em> one another’s returns. A third variable, the S&amp;P500 (to which they both have a strong relationship), is the main driver of their correlation.
+
+ABB and PUK are therefore <em>conditionally independent given the S&amp;P500. </em>
+<i>Conditionally independent </i>means that there is no direct relationship between ABB and PUK when you account for the effects of other variables.
+
+This is a common feature of correlation estimates from stock returns data. Such estimates are often misleading due to spurious correlations and the existence of confounding variables related to both returns series.
+
+<h2>Where does the Graphical Lasso fit into this?</h2>
+
+Given a series of stock returns:
+
+<ul>
+<li>The Graphical Lasso can be used to estimate an inverse covariance matrix.</li>
+<li>The elements of the inverse covariance matrix are proportional to the partial correlation coefficients between a pair of stocks.</li>
+<li>The partial correlation of two variables is a measure of their relationship given all the other variables in the data set.</li>
+</ul>
+<em><strong>That is, the Graphical Lasso can help us remove effects such as market beta and recover real, direct relationships between stocks.</strong></em>
+<h2>Does this tell us anything we didn’t already know?</h2>
+
+To be fair, you don’t really need a fancy machine-learning algorithm to tell you that industrial automation companies aren’t directly related to life insurance providers. Intuition and common sense will do.
+
+However, Graphical Lasso can still be useful:
+
+<ul>
+<li>It can provide <em>validation</em> of relationships determined through other means (including intuition)</li>
+<li>It can highlight <em>hidden relationships</em> that don’t necessarily surface through other means</li>
+<li>It can <em>quantify </em>the strength of a relationship, since the magnitude of the partial correlation is informative</li>
+<li>It can help us construct visualisation tools, such as the interactive network graph we’ll build shortly, which help us reason about and understand a large universe stocks</li>
+</ul>
+
+Further, it makes intuitive sense that in a large universe, most stocks would be conditionally independent. Therefore, we’d favour an inverse covariance matrix that highlights strong relationships and zeroes correlations that are dependent on a third variable. The Graphical Lasso algorithm allows us to refine this sparsity condition by tuning it’s only parameter. More on this shortly.
+
+<h2>The inverse covariance matrix’s relationship to partial correlation</h2>
+
+There are some great resources that explore in excruciating detail the math behind the Graphical Lasso and the inverse covariance matrix.
+
+There’s little point repeating that material here, but I do think there’s value in clarifying something that tripped me up. When I first used this tool, I assumed that the terms in the inverse covariance matrix were equivalent to the partial correlation between the two corresponding variables.
+
+<em>This is wrong.</em>
+
+The inverse covariance matrix is <em>proportional</em> to the partial correlation. There’s another step needed to transform an element in the inverse covariance matrix to the corresponding partial correlation. But perhaps surprisingly, information about how to do this transformation is in somewhat short supply.
+
+After much searching, I found the details buried at about the eight-minute mark of the <a href="https://www.youtube.com/watch?v=Cdpfpy4bXPI&amp;list=PLjbUi5mgii6B7A0nM74zHTOVQtTC9DaCv&amp;index=22" rel="noopener noreferrer" target="_blank">twenty-second (!) lecture</a> of Ryan Tibshirani’s Statistical Machine Learning course taught at Carnegie Mellon in the Spring of 2017.
+
+<em>(Fun fact: Ryan is the son of Robert Tibshirani, one of the authors of the original graphical lasso paper. Imagine the dinner conversations in that household.)</em>
+
+On the off chance that you don’t have time to rip through a post-graduate course in statistical learning, here’s the critical information:
+
+If  \( R \) is a matrix of partial correlations and  \( \Omega \) is the corresponding inverse covariance matrix, then the  \( j^{th}, k^{th} \) element of  \( R \) is given by:
+
+\( R_{j,k} = \frac{-\Omega_{j,k}}{\sqrt{\Omega_{j,j}\Omega_{k,k}}} \)
+
+What’s super interesting about this relationship is that the partial correlation is proportional to the <em>negative</em> of the corresponding element of the inverse covariance matrix (the numerator in the equation above). Thus, if one were to assume that the elements of the inverse correlation matrix directly corresponded to the partial correlation, one would end up with <em>anti-</em><em>correlation</em> where there was a positive correlation, and vice versa. Quite the error!
+
+<h2>Applying the Graphical Lasso to stock data using R</h2>
+
+Now for the fun part.
+
+We’re going to take a universe of US equities and apply the Graphical Lasso algorithm to estimate an inverse covariance matrix. Then, we’ll apply the transform given by the equation above to construct a sparse matrix of partial correlations.
+
+We can think of this sparse matrix as representing a <em>network</em> with <em>edges</em> (connections) between <em>nodes </em>(stocks ) that have some sort of relationship, independent of any of the other variables.
+
+Thinking of our matrix in this way leads us to the concept of a network graph which we can use as a visual tool to aid our understanding of and ability to reason about a large universe of stocks.
+
+Our data consists of daily returns for the top roughly 1,100 US stocks by market cap between 2010 and 2019. Each returns series is standardised to have zero mean and unit variance.
+
+Firstly, we group stocks into clusters based on loadings to statistical factors obtained from Principal Components Analysis (PCA) using the DBSCAN clustering algorithm. In our graph, we will colour stocks according to their cluster. All going well, we should see more connections between stocks within the same cluster.
+
+We’ll gloss over the code for performing the clustering operations here – the subject of another blog post perhaps.
+
+Next, we calculate a covariance matrix of stock returns.
+
+Since I can’t share our stock price database, you’ll find the covariance matrix and the output of the clustering algorithm linked below (in exchange for the princely sum of your email address).
+
+
+I’ll provide the code for you to reproduce the analysis from this point. We’ll use the <a href="https://cran.r-project.org/web/packages/glasso/glasso.pdf" rel="noopener noreferrer" target="_blank"><code>glasso</code> package</a>, which implements the Graphical Lasso algorithm, the <code>igraph</code> package, which contains tools for building network graphs, and the <code>threejs</code> and <code>htmlwidgets</code> packages for creating interactive plots.
+
+The first thing we need to do is load these and a few other packages and the data:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># install and load required packages
+required.packages &lt;- c('glasso', 'colorRamps', 'igraph', 'RColorBrewer', 'threejs', 'htmlwidgets')
+new.packages &lt;- required.packages[!(required.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org')
+library(glasso);library(colorRamps);library(igraph);library(RColorBrewer);library(threejs);library(htmlwidgets);
+
+# load data
+load("./clusters_covmat.RData")</pre>
+
+This will load the covariance matrix into the variable <code>S</code> and a dataframe of tickers and their corresponding clusters into the variable <code>cl</code>.
+
+Then, to apply the Graphical Lasso, we choose a value for <code>rho</code>, which is the regularisation parameter that controls the degree of sparsity in the resulting inverse covariance matrix. Higher values lead to greater sparsity.
+
+In our application, there is no “correct” value of <code>rho</code>, but it can be tuned for your use case.
+
+For instance, if you wanted to isolate the strongest relationships in your data you would choose a higher value <code>rho</code>. If you were interested in preserving more tenuous connections, perhaps identifying stocks with connections to multiple groups, you’d choose a lower value of <code>rho</code>. Finding a sensible value requires experimentation.
+
+It’s also not a bad idea to check for symmetry in the resulting inverse covariance matrix. Assymmetry can arise due to numerical computation and rounding errors, which can cause problems later depending on what you want to do with the matrix.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># estimate precision matrix using glasso
+rho &lt;- 0.75
+invcov &lt;- glasso(S, rho=rho)  
+P &lt;- invcov$wi
+colnames(P) &lt;- colnames(S)
+rownames(P) &lt;- rownames(S)
+
+# check symmetry
+if(!isSymmetric(P)) {
+  P[lower.tri(P)] = t(P)[lower.tri(P)]  
+}</pre>
+
+Next, we calculate the partial correlation matrix and set the terms on the diagonal to zero – this prevents stocks having connections with <em>themselves</em> in the network graph we’ll be shortly constructing:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># calculate partial correlation matrix
+parr.corr &lt;- matrix(nrow=nrow(P), ncol=ncol(P))
+for(k in 1:nrow(parr.corr)) {
+  for(j in 1:ncol(parr.corr)) {
+    parr.corr[j, k] &lt;- -P[j,k]/sqrt(P[j,j]*P[k,k])
+  }
+}
+colnames(parr.corr) &lt;- colnames(P)
+rownames(parr.corr) &lt;- colnames(P)
+diag(parr.corr) &lt;- 0</pre>
+
+Now if you run <code>View(parr.corr)</code> in R Studio, you’ll see a very sparse partial correlation matrix. In fact, only about 6,000 of 1.35 million elements will contain non-zeroes! The non-zero elements represent a connection between two stocks, with the strength of the connection determined by the magnitude of the partial correlation. Here’s a snapshot that gives you an idea of the level of sparsity:
+
+<img alt="" class="size-full wp-image-19590 aligncenter perfmatters-lazy" data-sizes="(max-width: 1229px) 100vw, 1229px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162845/parr_corr_snapshot.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162845/parr_corr_snapshot.png 1229w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162845/parr_corr_snapshot-600x189.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162845/parr_corr_snapshot-300x94.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162845/parr_corr_snapshot-1024x322.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162845/parr_corr_snapshot-768x242.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162845/parr_corr_snapshot-1000x315.png 1000w" decoding="async" height="387" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1229'%20height='387'%20viewBox='0%200%201229%20387'%3E%3C/svg%3E" width="1229"/>
+
+The partial correlation matrix can be used to build a network graph, where stocks are represented as nodes and non-zero elements are represented as edges between two stocks.
+
+The <code>igraph</code> package has some fantastic tools for building, manipulating and displaying graphs. We’ll only use a fraction of the package’s features here, but if you’re interested in getting to know it, check out <a href="https://kateto.net/networks-r-igraph" rel="noopener noreferrer" target="_blank">Katya Ognyanova’s tutorial</a> (it’s really excellent and got me up and running with <code>igraph</code> in a matter of hours).
+
+This next block of code constructs the network graph, assigns a colour to each node according to its cluster and drops any node with no connections.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># build network graph
+stock_graph &lt;- graph_from_adjacency_matrix(parr.corr, mode="undirected", weighted=TRUE)
+
+# color by cluster
+V(stock_graph)$cluster &lt;- as.numeric(cl$cluster)
+num_clusters &lt;- length(unique(cl$cluster))
+cols &lt;- colorRamps::primary.colors(n=num_clusters+1) # hack to replace black colour with something else
+cols &lt;- cols[2:length(cols)] # hack to replace black colour with something else
+V(stock_graph)$color &lt;- cols[V(stock_graph)$cluster+1]
+
+# drop vertices with no edges
+isolated &lt;-  which(degree(stock_graph) == 0)
+stock_graph &lt;- delete.vertices(stock_graph, isolated)</pre>
+
+And finally, we can construct, save and view (in a browser) an interactive network graph:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># make interactive graph
+stock_graph_js &lt;- graphjs(g=stock_graph, 
+                layout_with_fr(stock_graph, weights=30*E(stock_graph)$width, dim=3), # can choose other layout algorithms. `?layout` to get a list
+                # vertex.shape = names(V(ig_wt)),  # plot nodes as tickers rather than circles
+                vertex.size=0.7,
+                vertex.frame.color="white",
+                vertex.frame.width=0.2,
+                vertex.label=names(V(stock_graph)),  # label nodes with tickers
+                brush=TRUE,  # enable highlighting clicked nodes and their connections
+                showLabels=TRUE,  # show node labels on hover
+                edge.alpha=0.6,  # edge opacity - lower helps when there are dense connections
+                bg="black",  # background colour
+                main="Network graph from Graphical Lasso")
+
+# save graph
+graph_filename &lt;- paste0("./network_graph_rho_", rho, ".html")
+saveWidget(stock_graph_js, file=graph_filename)
+
+# open in browser
+browseURL(graph_filename)</pre>
+
+Here’s the resulting network graph. You can interact with it by:
+
+<ul>
+<li>Clicking and dragging to rotate the graph</li>
+<li>Scrolling your mouse wheel to zoom in and out</li>
+<li>Hovering on a node to see the name of the stock</li>
+<li>Clicking on a node to highlight its connections</li>
+</ul>
+
+
+Pretty cool hey?
+
+What insights do you get from exploring the graph? Most obviously we see:
+
+<ul>
+<li>A large lime green cluster with strong intra-cluster partial correlations corresponding to banks, asset managers and insurance companies.</li>
+<li>Another darker green cluster with strong intra-cluster partial correlations corresponding to REITs.</li>
+<li>An orange cluster with strong intra-cluster partial correlations corresponding to utilities.</li>
+<li>Stocks coloured red were unclassified by our clustering process. But where a connection exists, it seems to make sense. For instance, the Graphical Lasso identified a connection between WYNN and LVS, which both operate resorts in Las Vegas.</li>
+<li>The smaller purple cluster consists of residential construction companies.</li>
+<li>There’s another darker purple cluster, but its intra-cluster connections are weaker, resulting in small, dispersed groups of stocks from this cluster. It consists of oil and gas companies.</li>
+<li>The small aqua coloured cluster corresponds to Canadian banks.</li>
+<li>Finally, the small peach coloured cluster corresponds to global banks listed as ADRs in the US.</li>
+</ul>
+<blockquote><em><strong>This is all very interesting. But isn’t it telling us what we already know?</strong></em></blockquote>
+
+Yes and no.
+
+The results all make intuitive sense. You don’t need a fancy algorithm to tell you that the casinos of Las Vegas are exposed to similar risk factors.
+
+But what about stuff that’s been filtered from our universe of stocks? There are more residential construction companies than exist in that little purple cluster for instance. Is what’s been filtered valuable?
+
+In our recent Machine Learning and Big Data Bootcamp, we built an equity pairs trading universe selection model that whittles down a list of several million potential pairs to around twenty to trade in the next period. One of the inputs to that model was a sparse partial correlation matrix estimated using Graphical Lasso.
+
+We found that in fourteen of seventeen years, pairs with a non-zero partial correlation outperformed the wider universe of potential pairs in the next period:
+
+<img alt="" class="size-full wp-image-19600 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162844/pair-returns.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162844/pair-returns.png 700w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162844/pair-returns-600x370.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162844/pair-returns-300x185.png 300w" decoding="async" height="432" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='432'%20viewBox='0%200%20700%20432'%3E%3C/svg%3E" width="700"/>
+
+This plot shows the unleveraged annualised returns to a simple pairs trading algorithm for pairs whose constituent stocks had a non-zero partial correlation (pinkish-red bars) versus returns to pairs in the wider universe (greenish-blue bars). For each year, the partial correlation matrix was estimated on the prior three years’ returns.
+
+This is just one input to a bigger model, but clearly it’s a useful one. What’s more, we found that this added value beyond the obvious things such as pairing stocks in the same industry group.
+
+We can also make a less sparse graph in order to explore inter-cluster relationships. In this case, we’ll use a smaller value of <code>rho</code> (0.65) and we’ll drop any nodes that have zero or only one connection:
+
+
+
+This is also interesting. We can see here certain stocks bridging the gaps between clusters. For instance, we have BHP (an Australian natural resources company listed as an ADR in the US) connected to other mining stocks, oil and gas companies and industrial manufacturers, such as CAT, which produces a lot of heavy equipment used in BHP’s vast operations.
+
+We also see numerous connections to financial services companies, including basic materials companies, tech companies and industrials. Perhaps this is indicative of the central role of financial services in the modern economy.
+
+<h2>Parting thoughts</h2>
+
+Modern statistical learning techniques continue to transform the way in which we interact with data and the insights we can tease out. I find it quite astounding that the Graphical Lasso algorithm is able to take us from a noisy covariance matrix subject to all sorts of estimation errors, to a sparse matrix of partial correlations – the relationships between variables that remain when all the correlations with the other confounding variables have been stripped out.
+
+One application is the universe selection problem in the context of equities pairs trading. Can you think of other use cases for the Graphical Lasso? I would love to hear them in the comments.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>correlation</span>, <span>covariance</span>, <span>graphical lasso</span>, <span>inverse covariance</span>, <span>Machine Learning</span>, <span>partial correlation</span>, <span>R</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-111077 post type-post status-publish format-standard hentry category-excel category-think-like-a-trader category-tools-of-the-trade tag-excel tag-gld tag-research tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110579 post type-post status-publish format-standard hentry category-data-analysis category-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110175 post type-post status-publish format-standard has-post-thumbnail hentry category-excel category-quant-trading tag-data tag-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/quick-fix-yahoo-finance-data-access-with-excel/"><img alt="Quick fix: Yahoo Finance data access with Excel" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="110222" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">11 thoughts on “The Graphical Lasso and its Financial Applications”</h2>
+<ol class="comment-list">
+<li class="comment byuser comment-author-nottamed even thread-even depth-1 parent" id="comment-12930">
+<article class="comment-body" id="div-comment-12930" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi ,Kris. Thanks for the blog helping me to recap the graphical lasso.  Is it possible to use it for feature selection, eliminating correlated features ?</p>
+<span class="reply"><a aria-label="Reply to Steven Gallagher" class="comment-reply-link" data-belowelement="div-comment-12930" data-commentid="12930" data-postid="19532" data-replyto="Reply to Steven Gallagher" data-respondelement="respond" href="#comment-12930" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-12940">
+<article class="comment-body" id="div-comment-12940" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Steven, that’s an interesting use case. I think Graphical Lasso could provide some insight into this problem, as it would help you figure out which features were correlated given other confounding variables. I think from a feature selection perspective you’d be more interested in figuring out which variables are the confounding ones and why – Graphical Lasso could help fill in one piece of the puzzle, but you’d want to look at that particular problem from multiple angles.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-12940" data-commentid="12940" data-postid="19532" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-12940" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1" id="comment-12948">
+<article class="comment-body" id="div-comment-12948" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hii<br/>
+Yes using GL as feature  is good idea.Is GL substitude to   mutual information?</p>
+<span class="reply"><a aria-label="Reply to Trader" class="comment-reply-link" data-belowelement="div-comment-12948" data-commentid="12948" data-postid="19532" data-replyto="Reply to Trader" data-respondelement="respond" href="#comment-12948" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-12995">
+<article class="comment-body" id="div-comment-12995" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris, great post! Do you think this can be used to select the subset of less correlated assets for markowitz like “it is left as an excercise for the reader” 🙂 in this post of jcl ? <a href="https://financial-hacker.com/get-rich-slowly/" rel="nofollow ugc">https://financial-hacker.com/get-rich-slowly/</a></p>
+<p>If so, how you would get the uncorrelated assets? Are the ones that do not have connections or the ones that didn’t even get plotted? Or both? </p>
+<p>Thanks again for your content!</p>
+<span class="reply"><a aria-label="Reply to Mithrandir77" class="comment-reply-link" data-belowelement="div-comment-12995" data-commentid="12995" data-postid="19532" data-replyto="Reply to Mithrandir77" data-respondelement="respond" href="#comment-12995" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-14617">
+<article class="comment-body" id="div-comment-14617" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>They’d be the ones that don’t have connections – ie zeros in the precision matrix. Although that’s not really going to help maximise anti-correlation – for that, I’d start with some simple algorithm that looked at pairwise corelations and took a subset that minimised their average.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14617" data-commentid="14617" data-postid="19532" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14617" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-13027">
+<div class="comment-body">
+				Pingback: A Vector Autoregression Trading Model - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-13365">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 03/04/2020 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/the-graphical-lasso-and-its-financial-applications/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

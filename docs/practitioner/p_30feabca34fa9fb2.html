@@ -1,0 +1,298 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>What’s the chance that a market effect is real? Monte Carlo permutation tests in Excel</title>
+<!-- source: https://robotwealth.com/whats-the-chance-that-a-market-effect-is-real-monte-carlo-permutation-tests-in-excel/ -->
+<h1>What’s the chance that a market effect is real? Monte Carlo permutation tests in Excel</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-108437 post type-post status-publish format-standard has-post-thumbnail hentry category-data-analysis tag-permutation-test tag-statistics pmpro-has-access" id="post-108437">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">February 11, 2025</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">What’s the chance that a market effect is real? Monte Carlo permutation tests in Excel</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="What’s the chance that a market effect is real? Monte Carlo permutation tests in Excel" class="ipa-media gb-media-81e19d89" data-media-id="108484" decoding="async" fetchpriority="high" height="585" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2025/02/11201907/permutation-1024x585.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/02/11201907/permutation-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/02/11201907/permutation-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/02/11201907/permutation-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/02/11201907/permutation-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2025/02/11201907/permutation.webp 1792w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">Let’s say you observe some effect in the market and quantify it with simple data analysis.</p>
+<p class="wp-block-paragraph">A good question is, “What are the chances I’d see this effect solely due to chance?”</p>
+<p class="wp-block-paragraph">And using simple Excel tools, we can answer this question without doing any formal statistics.</p>
+<p class="wp-block-paragraph">Before we get into it, it’s worth noting that while answering this can give you some insight into the effect, it relies on you not torturing your data too much.</p>
+<p class="wp-block-paragraph">Imagine you curve fit the hell out of something. By design, you’ve zeroed in on something that is genuinely unusual,<em> but it’s overwhelmingly due to chance</em> because your research process was lacking.</p>
+<p class="wp-block-paragraph">So you want to be careful in your analysis: </p>
+<ul class="wp-block-list">
+<li>Keeping things simple will prevent you from doing too much damage. </li>
+<li>Be honest with yourself about things like cherry-picking a result that fits your hypothesis.  </li>
+</ul>
+<p class="wp-block-paragraph">Even if you find that the effect likely isn’t due to chance, there’s no guarantee that you’ll make money trading it:</p>
+<ul class="wp-block-list">
+<li>Maybe it’s a real effect that won’t overcome trading costs.</li>
+<li>Maybe it’s a real effect that did overcome trading costs in the past, but now everyone knows about it, and it’s decayed.</li>
+</ul>
+<p class="wp-block-paragraph">I’m not trying to dissuade you from using this approach – it’s genuinely useful in understanding your edge – but there’s a broader context to consider.</p>
+<h2 class="wp-block-heading"><strong>Day of the week seasonality in crypto</strong></h2>
+<p class="wp-block-paragraph">Let’s see how this works for a simple day-of-the-week seasonality effect in crypto.</p>
+<p class="wp-block-paragraph">Here’s the process in a nutshell:</p>
+<ol class="wp-block-list">
+<li>Observe an interesting effect in the market.
+<ul class="wp-block-list">
+<li>In this case, we observe that BTC has historically shown anomalously high returns on Tuesdays.</li>
+</ul>
+</li>
+<li>Understand where the actual effect sits within the context of what could happen by chance using simulation:
+<ul class="wp-block-list">
+<li>Take the returns and jumble them up randomly – typically, you use a random number generator to do this. This preserves the statistical properties of your data but destroys any seasonal effect.</li>
+<li>Take the jumbled returns, group these by their randomly assigned day of the week, and aggregate. Record the results.</li>
+<li>Repeat a few thousand times.</li>
+<li>Compare the effect to the distribution of random results.</li>
+</ul>
+</li>
+</ol>
+<p class="wp-block-paragraph">The goal here is to see if any single day’s returns are especially high compared to other days—and then check, by randomisation, how likely it is that we’d observe that effect by chance.</p>
+<h2 class="wp-block-heading">Setting Up Your Excel Workbook</h2>
+<p class="wp-block-paragraph"><a href="https://storage.googleapis.com/rw-blog-images/seasonality_by_chance.xlsx">Grab the complete workbook here</a>. It’s quite large (300 MB) so might take a few seconds to download. </p>
+<p class="wp-block-paragraph">I’ll explain how it works. </p>
+<p class="wp-block-paragraph">The first tab, called “data”, contains raw price data for BTC and some calculated fields: Log_Return, Day_of_Week, and Year.</p>
+<h2 class="wp-block-heading">Day of the Week Seasonality</h2>
+<p class="wp-block-paragraph">The second tab, called “analysis”, contains a pivot table that calculates the mean return to each day of the week. </p>
+<p class="wp-block-paragraph">Notice that Tuesday (day 2) shows an anomalously high return compared to the other days of the week:</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img alt="" class="wp-image-108438 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/02/11002434/mean_return_by_day_of_week-1024x597.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/02/11002434/mean_return_by_day_of_week-1024x597.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/02/11002434/mean_return_by_day_of_week-300x175.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/02/11002434/mean_return_by_day_of_week-768x448.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/02/11002434/mean_return_by_day_of_week-1536x896.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/02/11002434/mean_return_by_day_of_week-2048x1194.png 2048w" decoding="async" height="597" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='597'%20viewBox='0%200%201024%20597'%3E%3C/svg%3E" width="1024"/></figure>
+</div>
+<p class="wp-block-paragraph">Could this be a real market effect, or is it just a random artefact that is as likely to disappear as continue?  </p>
+<p class="wp-block-paragraph">One thing that would <em>really</em> help answer that question is having a reason for the effect to exist. Is there anything special about Tuesday that would drive outsized BTC returns?</p>
+<p class="wp-block-paragraph">Maybe there is, but I can’t think of anything. So I’m pretty sceptical from the outset. But I’m also open-minded. And crypto is weird.</p>
+<h2 class="wp-block-heading">Consistency through Time</h2>
+<p class="wp-block-paragraph">Another thing we can do is to see how consistent the effect is over time. If it’s relatively consistent, I’d have more confidence.</p>
+<p class="wp-block-paragraph">The tab named “yearly” shows another pivot table. </p>
+<p class="wp-block-paragraph">This time, we group our data by day of the week and year and end up with a plot that shows the average return to each day of the week in each year from 2019 through 2025 (noting 2025 contains almost no data). </p>
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img alt="" class="wp-image-108439 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/02/11002922/mean_return_by_day_of_week_and_year-1024x566.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/02/11002922/mean_return_by_day_of_week_and_year-1024x566.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/02/11002922/mean_return_by_day_of_week_and_year-300x166.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/02/11002922/mean_return_by_day_of_week_and_year-768x425.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/02/11002922/mean_return_by_day_of_week_and_year-1536x850.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/02/11002922/mean_return_by_day_of_week_and_year-2048x1133.png 2048w" decoding="async" height="566" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='566'%20viewBox='0%200%201024%20566'%3E%3C/svg%3E" width="1024"/></figure>
+</div>
+<p class="wp-block-paragraph">Interesting. The effet was concentrated in 2020 and 2022 (even though the Tuesday bar for 2022 is low in absolute terms, it’s higher than all the other 2022 bars).</p>
+<p class="wp-block-paragraph">Tuesday’s return was also positive in 2019, 2023 and 2024 – but not uniquely so. It was negative in 2021 only.</p>
+<p class="wp-block-paragraph">This isn’t exactly a slam dunk (nothing ever is). But at this point, I’m still interested enough to ask “<em>What are the chances that we see is due to chance?</em>“</p>
+<p class="wp-block-paragraph">We’ll do that next.</p>
+<h2 class="wp-block-heading">Doing statistics the Easy Way</h2>
+<p class="wp-block-paragraph">Answering this question requires generating a number of randomised but representative observations that we can compare our actual observations against – a few thousand would be great, but we’ll stick to a few hundred here to make things easy. </p>
+<p class="wp-block-paragraph">We create randomised realisations of our actual returns data –  aka a Monte Carlo simulation or a permutation test. It preserves the aggregate statistical properties but removes any time-series effects, allowing us to see how often the seasonal patterns we observe in the actual data arise due to chance.</p>
+<p class="wp-block-paragraph">Now, admittedly, if you know some Python or R, this is easier than doing it in Excel (<a href="https://github.com/Robot-Wealth/trader-tales/blob/master/quant-techniques/chance_of_seasonality.ipynb" rel="noreferrer noopener" target="_blank">check out the R version here</a>). But spreadsheets are handy and nearly everyone can drive one. </p>
+<p class="wp-block-paragraph">Here’s how I performed the Monte Carlo test in Excel:</p>
+<p class="wp-block-paragraph">On the tab named “MC_returns” I created 500 realisations of randomised BTC returns. In the first cell of the Series_1 column (cell C2), we enter the following formula:</p>
+<p class="wp-block-paragraph"><code>=SORTBY(data!$D$2:$D$1977, RANDARRAY(ROWS(data!D2:$D$1977)))</code></p>
+<p class="wp-block-paragraph">This tells Excel to sort the BTC returns data (referenced by <code>data!$D$2:$D$1977</code> in the function above) by an array of randomly generated numbers the same length as the returns data. </p>
+<p class="wp-block-paragraph">This creates one column of randomised returns. </p>
+<p class="wp-block-paragraph">We can then copy that first cell (no need to copy the entire column) across the first row of each series – and just like that, we have 500 randomly shuffled realisations of our BTC returns. </p>
+<p class="wp-block-paragraph">You end up with this:</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-108471 perfmatters-lazy" data-sizes="(max-width: 770px) 100vw, 770px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/02/11161638/random_returns.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/02/11161638/random_returns.png 770w, https://media.robotwealth.com/wp-content/uploads/2025/02/11161638/random_returns-300x137.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/02/11161638/random_returns-768x350.png 768w" decoding="async" height="351" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='770'%20height='351'%20viewBox='0%200%20770%20351'%3E%3C/svg%3E" width="770"/></figure>
+</div>
+<p class="wp-block-paragraph">It’s a good idea to select all of that random data and do an in-place <em>Copy/Paste Special (Values) </em>operation. This will replace the formulas with the data that was just generated. Without this, the random data will be refreshed every time you change a cell anywhere in the notebook, which will quickly get annoying. </p>
+<p class="wp-block-paragraph">It’s also a good idea to check that this all worked out as expected. </p>
+<p class="wp-block-paragraph">Since we’re just shuffling our data, the log returns should all add up to the same terminal cumulative return – they’ll simply take different paths to get there. </p>
+<p class="wp-block-paragraph">So we can calculate the sum of our randomised returns and plot a few to make sure they look as expected. This is done on the sheet named MC_cumulative_returns. </p>
+<p class="wp-block-paragraph">Plotting a few cumulative returns series looks as expected:</p>
+<figure class="wp-block-image size-large"><img alt="" class="wp-image-108472 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/02/11162031/random_cum_returns-1024x682.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/02/11162031/random_cum_returns-1024x682.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/02/11162031/random_cum_returns-300x200.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/02/11162031/random_cum_returns-768x511.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/02/11162031/random_cum_returns-1536x1022.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/02/11162031/random_cum_returns-2048x1363.png 2048w" decoding="async" height="682" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='682'%20viewBox='0%200%201024%20682'%3E%3C/svg%3E" width="1024"/></figure>
+<p class="wp-block-paragraph">An interesting thing here is that, while the cumulative return plots are all up and to the right, you don’t see much evidence of the trendiness that we observe in the actual BTC price series. </p>
+<p class="wp-block-paragraph">The up moves in the actual data tend to be clustered together, but in the randomised data, they don’t.</p>
+<p class="wp-block-paragraph">Without doing any actual analysis, that’s suggestive that the trendiness we do observe is unlikely due to randomness.</p>
+<p class="wp-block-paragraph">Now that we have 500 realisations of randomised data, let’s look at how our actual Tuesday return compares.</p>
+<p class="wp-block-paragraph">Let’s consider the chances of <em>any</em> day of the week having a return as large as our Tuesday return. Since we have no good reason to think that Tuesday is special, this feels like a more relevant question.</p>
+<p class="wp-block-paragraph">To do this, we plot a histogram of the randomised day-of-week returns, and note where our actual Tuesday return lies on this distribution.</p>
+<p class="wp-block-paragraph">This answers the question “what is the chance of the return we observed happening on any day due to chance?”</p>
+<p class="wp-block-paragraph">This is done on the sheet named MC_analysis. We get the following histogram:</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img alt="" class="wp-image-108473 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/02/11162425/bootstrap_histogram-1024x622.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/02/11162425/bootstrap_histogram-1024x622.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/02/11162425/bootstrap_histogram-300x182.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/02/11162425/bootstrap_histogram-768x466.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/02/11162425/bootstrap_histogram-1536x933.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/02/11162425/bootstrap_histogram-2048x1244.png 2048w" decoding="async" height="622" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='622'%20viewBox='0%200%201024%20622'%3E%3C/svg%3E" width="1024"/></figure>
+</div>
+<p class="wp-block-paragraph">The histogram shows the frequency with which certain average day-of-the-week returns appear in our randomised data. We want to know where our actual Tuesday average return sits on this histogram. </p>
+<p class="wp-block-paragraph">I don’t love Excel’s default histogram. The x-axis is hard to decipher, and it’s non-trivial to add a line that denotes where our actual Tuesday return lies. We’ll come to a better visualisation shortly.</p>
+<p class="wp-block-paragraph">But first, we can calculate our actual Tuesday return’s position with the <code>PERCENTRANK</code> function as follows:</p>
+<p class="wp-block-paragraph"><code>=PERCENTRANK(C2:SH8, GETPIVOTDATA("Log_Return",analysis!$A$3,"Day_of_Week",2))</code></p>
+<p class="wp-block-paragraph">This takes all the average daily returns from our random data (referenced by <code>C2:SH8</code> in the formula above) and calculates where the value we’re interested in (which we get with the <code>GETPIVOTDATA</code> function) lies in this distribution. </p>
+<p class="wp-block-paragraph">The result is 0.964, which tells us that our actual Tuesday return is greater than 96.4% of the randomised realisations. Most people would consider this significant. </p>
+<p class="wp-block-paragraph">To see this visually, we use the empirical cumulative distribution function (on the sheet “ECDF”) which shows the same information as the histogram, but plots it in a cumulative fashion. </p>
+<p class="wp-block-paragraph">The x-axis shows the average day-of-the-week return value, and the y-axis shows the percentage of values that are smaller than the value on the x-axis.</p>
+<p class="wp-block-paragraph">Our actual Tuesday return is plotted in orange. </p>
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img alt="" class="wp-image-108474 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/02/11163433/ecdf-1024x611.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/02/11163433/ecdf-1024x611.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/02/11163433/ecdf-300x179.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/02/11163433/ecdf-768x458.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/02/11163433/ecdf-1536x916.png 1536w, https://media.robotwealth.com/wp-content/uploads/2025/02/11163433/ecdf-2048x1221.png 2048w" decoding="async" height="611" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='611'%20viewBox='0%200%201024%20611'%3E%3C/svg%3E" width="1024"/></figure>
+</div>
+<p class="wp-block-paragraph">You can see that our actual return is larger than about 96% of random day-of-week returns. </p>
+<h2 class="wp-block-heading">Comparison with Classical Statistics</h2>
+<p class="wp-block-paragraph">The t-test looks at two samples and computes the likelihood that they are taken from two different populations. </p>
+<p class="wp-block-paragraph">We’ll set up a sheet that performs a t-test on the Tueday and non-Tuesday returns to see if they’re significantly different. </p>
+<p class="wp-block-paragraph">In the sheet named “t-test”, copy across the date, day-of-the-week, and log return data. Create a new column, is_season, and set the values according to an <code>if</code> statement. The first cell looks like this:</p>
+<p class="wp-block-paragraph"><code>=IF(C2=2, 1, 0)</code></p>
+<p class="wp-block-paragraph">We then copy that formula down the entire is_season column.</p>
+<p class="wp-block-paragraph">Then, we can do a t-test on the Tuesday vs non-Tuesday returns by filtering our returns on the is_season column:</p>
+<p class="wp-block-paragraph"><code>=T.TEST(FILTER(B:B, D:D=0),FILTER(B:B, D:D=1),2,3)</code>`</p>
+<p class="wp-block-paragraph">This results in a p-value of 0.1, indicating weak evidence against the null hypothesis (that the Tuesday and non-Tuesday returns come from the same distribution). It does not meet the conventional 5% significance threshold, but some might consider it suggestive.</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-108481 perfmatters-lazy" data-sizes="(max-width: 663px) 100vw, 663px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/02/11193656/t_test.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/02/11193656/t_test.png 663w, https://media.robotwealth.com/wp-content/uploads/2025/02/11193656/t_test-300x156.png 300w" decoding="async" height="345" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='663'%20height='345'%20viewBox='0%200%20663%20345'%3E%3C/svg%3E" width="663"/></figure>
+</div>
+<p class="wp-block-paragraph">I prefer the empirical Monte Carlo approach over this statistical parametric test because:</p>
+<ul class="wp-block-list">
+<li>The empirical test is intuitively much easier to understand than the parametric test.</li>
+<li> Without training in statistical methods, you don’t really know what the t-test is doing.</li>
+<li>On the other hand, it’s obvious what our empirical Monte Carlo approach is doing.</li>
+</ul>
+<p class="wp-block-paragraph">In addition, the t-test has certain assumptions baked in, such as normality. It’s not clear how much a violation of this assumption matters, but the empirical Monte Carlo approach has no assumptions about the distribution of the data.</p>
+<p class="wp-block-paragraph">That said, the Monte Carlo approach does assume that the data are independent and identically distributed (i.i.d.). Autocorrelation (aka trendiness, which I believe is present in BTC returns) would invalidate this assumption – but since it is likely mild, and we are exploring broad seasonal patterns, the Monte Carlo approach is likely reasonably robust.</p>
+<h2 class="wp-block-heading"><strong>Summary</strong></h2>
+<p class="wp-block-paragraph">Monte Carlo can help answer the question “What are the chances I’d see this effect by chance?”</p>
+<p class="wp-block-paragraph">Of course, it comes with the usual caveats around overfitting and cherry-picking results to fit your hypothesis. It’s also worth thinking about the structure of your data – for instance, is autocorrelation present?</p>
+<p class="wp-block-paragraph">Remember that analysis of market effects requires gathering and weighing evidence from many different angles. Monte Carlo can be considered one of many such windows into an effect. </p>
+<p class="wp-block-paragraph">In this case, we see weak evidence that BTC returns on Tuesdays might be higher than on other days. The Monte Carlo test wasn’t overwhelmingly in favour of the effect. There’s also no strong structural or risk-based reason for this to hold. Plus, the effect isn’t consistent over time. </p>
+<p class="wp-block-paragraph">Without a solid foundation to back it up, I’m shelving this idea for now.</p>
+<p class="wp-block-paragraph">Remember that even if you find that an effect likely isn’t due to chance, there’s no guarantee that you’ll make money trading it:</p>
+<ul class="wp-block-list">
+<li>Maybe it’s real but too small to overcome trading costs.</li>
+<li>Maybe it’s a real effect, but has decayed because it’s well-known.</li>
+</ul>
+<p class="wp-block-paragraph">Often, the art in applying this technique is in thinking about the question that you want answered and framing the problem sensibly. Sometimes it will be obvious, as in our example here, and other times less so.</p>
+<p class="wp-block-paragraph">But Monte Carlo is a useful tool to add to your data analysis toolkit, allowing you to make meaningful statistical comparisons without resorting to classical statistics.</p>
+<p class="wp-block-paragraph">Excel can be used to perform such analysis without the use of specialised statistical software. In this example, we: </p>
+<ul class="wp-block-list">
+<li>Computed daily returns</li>
+<li>Grouped by day of week</li>
+<li>Measured average returns</li>
+<li>Ran basic randomisation tests</li>
+<li>Performed a classical t-test</li>
+</ul>
+<p class="wp-block-paragraph">Feel free to adapt or extend this Excel method to investigate other time-based seasonality, or any other hypothesis you want to check with a randomisation test.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>permutation test</span>, <span>statistics</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-118832 post type-post status-publish format-standard has-post-thumbnail hentry category-crypto category-data-analysis category-think-like-a-trader tag-crypto tag-quantitative-analysis tag-r tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/trading-signals-in-high-definition/"><img alt="Trading Signals in High Definition" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="118842" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-300x200.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-300x200.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-1024x683.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-768x512.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def.webp 1536w" decoding="async" height="200" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='200'%20viewBox='0%200%20300%20200'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110579 post type-post status-publish format-standard hentry category-data-analysis category-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-107726 post type-post status-publish format-standard has-post-thumbnail hentry category-data-analysis category-excel category-tools-of-the-trade tag-gold tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/excel-for-trading-research/"><img alt="Excel for trading research?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="107736" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/01/28011638/algorithms-300x84.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/01/28011638/algorithms-300x84.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/01/28011638/algorithms.png 740w" decoding="async" height="84" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='84'%20viewBox='0%200%20300%2084'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">1 thought on “What’s the chance that a market effect is real? Monte Carlo permutation tests in Excel”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-43085">
+<div class="comment-body">
+				Pingback: Recent Quant Links from Quantocracy as of 02/11/2025 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/whats-the-chance-that-a-market-effect-is-real-monte-carlo-permutation-tests-in-excel/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

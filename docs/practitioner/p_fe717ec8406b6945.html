@@ -1,0 +1,450 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Using Apache Airflow to Extract CoT Data</title>
+<!-- source: https://robotwealth.com/using-apache-airflow-data-processing/ -->
+<h1>Using Apache Airflow to Extract CoT Data</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-21027 post type-post status-publish format-standard hentry category-python category-quant-trading category-trading-infrastructure tag-airflow tag-cftc tag-cot tag-data-processing tag-python pmpro-has-access" id="post-21027">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/19f7989eace47c5fe98211a8e81485cc773bdc6af0c455902d991c6cbe6514f7?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/19f7989eace47c5fe98211a8e81485cc773bdc6af0c455902d991c6cbe6514f7?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/ajet1996/">Ajet Luka</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 4, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Using Apache Airflow to Extract CoT Data</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Using Apache Airflow to Extract CoT Data" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In today’s post we are going to be extracting CoT (Commitment of Traders) reports from the <a href="https://cftc.gov/">CFTC </a>website using a pipeline built on <em>Apache Airflow.</em>
+<blockquote><em>What is CoT data?</em></blockquote>
+
+The CoT report is a weekly publication which reports the open positions of market participants in the U.S futures market. It’s published every Friday at 3:30 E.T but the actual report from the participants is compiled on the same week Tuesday. See <a href="https://cftc.gov/MarketReports/CommitmentsofTraders/index.htm">here</a> for more information on it.
+
+<h3>Getting Data From “Everywhere” to “here”</h3>
+
+I’m sure you heard of the term <em>data is everywhere. </em>It definitely is. However, you often want it “<em>here”</em> where you can analyze it, not out <em>there</em>.
+
+There are many ways of getting data from <em>everywhere </em>to <em>here. </em>The path which time- and resource-constrained traders should choose is the one that offers the most return on their effort. For example, chances are you are not going to get any improvement in productivity if you decide to code a bespoke system that fits your “needs”. Simply using the ones that are already there will be more than enough.
+
+A python library that fits the bill for what we intend to do is Apache Airflow.
+
+<h3>What is Apache Airflow?</h3>
+
+Apache Airflow is an Open Source python library that is used to build pipelines.
+
+<blockquote><em>What is a pipeline? </em></blockquote>
+
+It’s a series of tasks that need to be executed in their respective order. One of the most compelling reasons to go with Airflow is it’s out of the box scalability, modular approach, neat UI and logging features. You can get up to speed with Airflow <a href="https://airflow.apache.org/docs/stable/concepts.html">concepts</a> here.
+
+Airflow is meant to be run on distributed cloud systems like Kubernetes. Google offers a hosted Airflow service called <a href="https://cloud.google.com/composer">Composer.</a> I recommend you either run Airflow there or for simpler tasks like the one we will be doing here you could run it on a <a href="https://cloud.google.com/compute/">Virtual Machine</a>. For this post, we are simply going to run it on a Virtual Machine.
+
+<h3>Setting up Apache Airflow running as Cloud Composer on Google Cloud Platform</h3>
+
+Firstly we need to set up a Virtual Machine, you can do this on any cloud provider but, the one we are going to be using is Google Cloud.
+
+<a href="https://console.cloud.google.com/projectselector/compute/instances?supportedpurview=project">Click here to set up a new GCP project</a>.
+
+<img alt="create-gcp-project" class="alignnone wp-image-21031 perfmatters-lazy" data-sizes="(max-width: 644px) 100vw, 644px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162500/create-project.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162500/create-project.png 913w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162500/create-project-300x300.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162500/create-project-100x100.png 100w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162500/create-project-600x600.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162500/create-project-150x150.png 150w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162500/create-project-768x768.png 768w" decoding="async" height="644" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='644'%20height='644'%20viewBox='0%200%20644%20644'%3E%3C/svg%3E" width="644"/>
+
+After you click Create you should have your new GCP project ready to go.
+
+Next, create a VM Instance by clicking on the <em>VM Instances</em> tab to your left and then clicking on <em>Create</em>.
+
+<img alt="create-gcp-vm" class="alignnone size-large wp-image-21032 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162458/create-vm-1024x385.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162458/create-vm-1024x385.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162458/create-vm-600x226.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162458/create-vm-300x113.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162458/create-vm-768x289.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162458/create-vm-1536x578.png 1536w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162458/create-vm-1000x376.png 1000w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162458/create-vm.png 1818w" decoding="async" height="385" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='385'%20viewBox='0%200%201024%20385'%3E%3C/svg%3E" width="1024"/>
+
+For this project, I’m choosing Ubutnu 18.04 LTS and I have allowed HTTP and HTTPS traffic to the VM:
+
+<img alt="" class="alignnone size-large wp-image-21045 perfmatters-lazy" data-sizes="(max-width: 433px) 100vw, 433px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162454/Capture-433x1024.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162454/Capture-433x1024.png 433w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162454/Capture-127x300.png 127w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162454/Capture-254x600.png 254w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162454/Capture.png 504w" decoding="async" height="1024" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='433'%20height='1024'%20viewBox='0%200%20433%201024'%3E%3C/svg%3E" width="433"/>
+
+One of Airflow’s coolest features is its webserver. Using it allows us to connect to the Airflow instance and actually see our data pipeline being executed. To use it, we need to allow firewall access to port 8080.
+
+<img alt="" class="alignnone wp-image-21049 size-full perfmatters-lazy" data-sizes="(max-width: 1014px) 100vw, 1014px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162450/network-details-blured.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162450/network-details-blured.png 1014w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162450/network-details-blured-600x233.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162450/network-details-blured-300x116.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162450/network-details-blured-768x298.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162450/network-details-blured-1000x388.png 1000w" decoding="async" height="393" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1014'%20height='393'%20viewBox='0%200%201014%20393'%3E%3C/svg%3E" width="1014"/>
+
+Click on <em>View network details</em>.
+
+<img alt="" class="alignnone size-large wp-image-21048 perfmatters-lazy" data-sizes="(max-width: 458px) 100vw, 458px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162451/allow-port-8080-458x1024.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162451/allow-port-8080-458x1024.png 458w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162451/allow-port-8080-134x300.png 134w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162451/allow-port-8080-268x600.png 268w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162451/allow-port-8080.png 572w" decoding="async" height="1024" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='458'%20height='1024'%20viewBox='0%200%20458%201024'%3E%3C/svg%3E" width="458"/>
+
+Here you add TCP port 8080 under <em>Specified protocols and ports</em> and click <em>Save</em>.
+
+Now we are going to connect to our machine by clicking on the SSH button.
+
+One of the first commands you should run whenever you log on to a fresh Linux machine is:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="">sudo apt update</pre>
+
+After successfully running that we need to install additional python3 packages:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="">sudo apt install python3 python3-dev python3-venv
+sudo apt-get install python3-pip</pre>
+
+Now we are ready to install Airflow on our machine, to do that simply run:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="">sudo pip3 install apache-airflow</pre>
+
+After successfully installing Apache airflow you need to initialize the airflow database and export the path variable for airflow:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="">airflow initdb
+export PATH=$PATH:~/.local/bin
+</pre>
+
+Now that was a slightly tedious setup process but, if you have followed everything it should work as intended. If not, the great thing about airflow is its big community of contributors. Usually, if you have a problem someone else has an answer. This is another thing to consider when choosing to go with a system.
+
+Next up we are going to run airflow for the first time. There are two stages to this. First, we need to start up the Webserver which gives us a nice UI to interact with. Then we need to start up the Airflow Scheduler which as the name suggests schedules tasks. <a href="https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/scheduler.html" rel="noopener" target="_blank"><em>Learn more about the airflow scheduler here</em></a>
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="">airflow webserver -p 8080 -D
+airflow scheduler -D</pre>
+
+Now that we have the system up and running we can visit it by going to the external IP of our VM and adding port 8080 like this: <em>external vm IP:8080</em>
+<img alt="" class="alignnone size-large wp-image-21050 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162448/airflow-ui-1024x458.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162448/airflow-ui-1024x458.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162448/airflow-ui-600x268.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162448/airflow-ui-300x134.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162448/airflow-ui-768x343.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162448/airflow-ui-1536x686.png 1536w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162448/airflow-ui-2048x915.png 2048w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162448/airflow-ui-1000x447.png 1000w" decoding="async" height="458" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='458'%20viewBox='0%200%201024%20458'%3E%3C/svg%3E" width="1024"/>
+<em>If you have issues with getting the webserver running try changing the <code>max_threads</code> parameter to 1 in the airflow.cfg file in your home directory</em>
+
+The image above is the Airflow UI – it’s a neat way of viewing and managing your workflows.
+
+Imagine you are pulling tick data from your broker along with sentiment data from another website. It gets out of hand pretty quickly if you use bash scripts and cron jobs. The Airflow UI offers a lot of creature comforts that you don’t always find in data engineering.
+
+<h3>Python Code to Pull Data From the CFTC Website</h3>
+
+Okay, we’ve set up Airflow. Let’s leave it aside for a while and figure out the actual code that will pull the data from the CFTC website.
+
+If you can write your task in Python, you can write it in Apache Airflow.
+
+Let’s check out what data we want to download from CFTC. If you visit their <a href="https://www.cftc.gov/MarketReports/CommitmentsofTraders/HistoricalCompressed/index.htm">page</a> you’ll see a wide range of data options. Here, we’ll focus on downloading <em>Traders in Financial Futures (Futures Only Reports).</em> The process is easily repeatable for other data sets.
+
+<img alt="" class="size-full wp-image-21053 aligncenter perfmatters-lazy" data-sizes="(max-width: 608px) 100vw, 608px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162447/traders-in-financial-futures.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162447/traders-in-financial-futures.png 608w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162447/traders-in-financial-futures-600x205.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162447/traders-in-financial-futures-300x103.png 300w" decoding="async" height="208" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='608'%20height='208'%20viewBox='0%200%20608%20208'%3E%3C/svg%3E" width="608"/>
+
+The data is available in zipped format.
+
+If we right-click on one of the <em>Text </em>fields we can copy the link to the file. We’ll then use that in our python code to programmatically download the file.
+
+Here is the code for downloading all the files from 2010-2020
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="">import pandas as pd 
+import requests
+from zipfile import ZipFile
+from io import BytesIO
+
+#high bound exclusive in python
+years = [i for i in range(2010,2021)]
+
+
+def download_extract_zip(link): 
+    r = requests.get(link,stream=True) 
+    zip_file = ZipFile(BytesIO(r.content)) 
+    df = pd.read_csv(BytesIO(zip_file.read(zip_file.namelist()[0]))) 
+    return df  
+
+for year in years:
+    df = download_extract_zip(f'https://www.cftc.gov/files/dea/history/fut_fin_txt_{year}.zip')
+    df.to_csv(f'finfut_{year}.csv',index=False)</pre>
+
+Now we have a script that downloads all the data from 2010 to 2020 and saves it in our local directory as a csv file.
+
+<h3>Creating an Apache Airflow DAG</h3>
+
+We don’t need to always download everything. Going forward, we only need to download new data every Friday as it gets published.  <em>This is where Airflow can help us.</em>
+
+We’re going to use Airflow to schedule <code>download_extract_zip</code>  to run every Friday and download the latest 2020 data.
+
+With that in mind, it’s now time to create our first DAG.
+
+<blockquote><em>Wait, what’s a DAG?</em></blockquote>
+<em>A dag is a lock of wool matted with dung hanging from the hindquarters of a sheep. </em>
+
+It’s also an acronym for Directed Acyclic Graph, which is basically a collection of all the tasks that you want to run organized in order.
+
+You can structure DAGs so that the tasks inside them have specific dependencies between one another. You could also run a task conditional on the success/failure of the previous one. Really the sky is the limit. All we need for now is a simple task that downloads the CoT data every Friday:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="">import pandas as pd
+import requests
+import datetime
+from airflow import DAG 
+from airflow.operators.python_operator import PythonOperator
+from io import BytesIO
+from zipfile import ZipFile
+
+
+def download_extract_zip(): 
+    link = 'https://www.cftc.gov/files/dea/history/fut_fin_txt_2020.zip'
+    r = requests.get(link,stream=True) 
+    zip_file = ZipFile(BytesIO(r.content)) 
+    df = pd.read_csv(BytesIO(zip_file.read(zip_file.namelist()[0])))
+    df.to_csv('~/finfut.csv',index=False) 
+
+default_args = {
+    'owner':'me',
+    'start_date':datetime.datetime(2020,1,1),
+    'retries':1,
+    'retry_delay':datetime.timedelta(minutes=5),
+    'is_paused_upon_creation':False,}
+
+
+with DAG('cot-dag',default_args = default_args,schedule_interval='0 21 * * 5',catchup=False) as dag:
+    cot_download = PythonOperator(task_id=f'cot-download',python_callable=download_extract_zip)
+    cot_download
+
+</pre>
+
+As you can see there aren’t many differences from the airflow DAG and the original batch downloader. We can see the Airflow DAG object has a task called <em>cot-download </em> which calls the <em>download_extract_zip </em>function each Friday at 21:00 UTC (<em>Airflow works in UTC).</em>
+
+Now we need to get this code inside the Airflow <em>dags </em>directory. To do that you need to SSH to your machine and type in <em>cd airflow </em> to change your working directory to the Airflow one
+
+<img alt="" class="alignnone size-full wp-image-21082 perfmatters-lazy" data-sizes="(max-width: 446px) 100vw, 446px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162446/cd-airflow.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162446/cd-airflow.png 446w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162446/cd-airflow-300x47.png 300w" decoding="async" height="70" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='446'%20height='70'%20viewBox='0%200%20446%2070'%3E%3C/svg%3E" width="446"/>
+
+Then you create a directory called <em>days,</em> which is where all your dag files will live.
+
+<img alt="" class="alignnone size-large wp-image-21083 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162445/mkdir-dags-1024x105.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162445/mkdir-dags-1024x105.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162445/mkdir-dags-600x62.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162445/mkdir-dags-300x31.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162445/mkdir-dags-768x79.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162445/mkdir-dags-1000x103.png 1000w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162445/mkdir-dags.png 1040w" decoding="async" height="105" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='105'%20viewBox='0%200%201024%20105'%3E%3C/svg%3E" width="1024"/>
+
+Finally, we need to upload the python file from our local machine to the Google VM. The way you do that is by clicking the settings icon on the top right and uploading a file. The file should be in your home directory.
+
+Now you can move it from the home directory to the dags folder we just created.
+
+<img alt="" class="alignnone size-large wp-image-21084 perfmatters-lazy" data-sizes="(max-width: 975px) 100vw, 975px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162444/mv-cot-dag-975x1024.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162444/mv-cot-dag-975x1024.png 975w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162444/mv-cot-dag-600x630.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162444/mv-cot-dag-286x300.png 286w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162444/mv-cot-dag-768x806.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162444/mv-cot-dag-571x600.png 571w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162444/mv-cot-dag.png 1280w" decoding="async" height="1024" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='975'%20height='1024'%20viewBox='0%200%20975%201024'%3E%3C/svg%3E" width="975"/>
+
+If everything went well we should have the DAG pop up on our Airflow UI
+
+<img alt="" class="alignnone size-large wp-image-21085 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162442/cot-dag-image-1024x38.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162442/cot-dag-image-1024x38.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162442/cot-dag-image-600x22.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162442/cot-dag-image-300x11.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162442/cot-dag-image-768x28.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162442/cot-dag-image-1536x57.png 1536w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162442/cot-dag-image-2048x76.png 2048w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162442/cot-dag-image-1000x37.png 1000w" decoding="async" height="38" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='38'%20viewBox='0%200%201024%2038'%3E%3C/svg%3E" width="1024"/>
+
+You can either let the dag trigger by itself in due time, or you can trigger it by pressing the <em>play </em>button under the <em>Links</em> tab.
+
+Airflow will handle all the logging and error exceptions. In case something goes wrong the logs will be easily available through the UI for you to investigate.
+
+The final output of this DAG should be a file in your home directory called <code>finfut.csv</code>. This file will be updated each Friday 21:00 UTC
+
+Congratulations – you created and ran your first DAG!
+
+<h3>What’s Next?!</h3>
+
+Hopefully, you found this tutorial useful.
+
+How might you extend this work?
+
+<ul>
+<li>Maybe you could download the other datasets on the website?</li>
+<li>How would you handle federal holidays?</li>
+<li>Do you think we should have a notification service if the task fails?</li>
+<li>Having data on a drive on a VM isn’t ideal. Could you push it to a storage bucket, a cloud database?</li>
+</ul>
+
+All this is possible with Apache Airflow. It’s a tool that really starts shining when your pipeline gets bigger.
+
+Happy Data Scraping! #stayhome
+
+<div class="convertful-36233"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>airflow</span>, <span>CFTC</span>, <span>CoT</span>, <span>data processing</span>, <span>python</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">10 thoughts on “Using Apache Airflow to Extract CoT Data”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-14177">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 05/04/2020 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-14191">
+<article class="comment-body" id="div-comment-14191" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>how can I use CoT Data? How can I work with it?<br/>
+Thanks</p>
+<span class="reply"><a aria-label="Reply to anonymous" class="comment-reply-link" data-belowelement="div-comment-14191" data-commentid="14191" data-postid="21027" data-replyto="Reply to anonymous" data-respondelement="respond" href="#comment-14191" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master even depth-2" id="comment-14196">
+<article class="comment-body" id="div-comment-14196" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>The first thing you want to do with any new data set is to plot it. Have a good look at it and sanity check that it makes sense.</p>
+<p>Next, you want to think about how it might be related to future asset prices – you want to form some sort of hypothesis that you can test. An example related to CoT data might be: <em>the CoT report quantifies the net positioning of various participants in the futures market, including hedgers, speculators and managed money. I hypothesise that the positioning of managed money might be (noisily) correlated with futures returns.</em></p>
+<p>Now, that hypothesis might be right or it might be wrong (it’s almost certainly wrong). But the point is, it’s something you can test.</p>
+<p><em>How would you test it?</em></p>
+<p>You could create a factor out of the net positioning of managed money – simply divide the data into say 5 equal quantiles and plot the mean forward returns associated with each quantile.<br/>
+That will provide some initial feedback – either it will invalidate your hypothesis or give you something to be excited about and provide justification for digging deeper.</p>
+<p>One thing to be aware of with the CoT report is that it isn’t released in real time – there’s a lag of several days between the time the data relates to, and the time it’s released. So be sure to consider that in any analysis.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14196" data-commentid="14196" data-postid="21027" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14196" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-14194">
+<article class="comment-body" id="div-comment-14194" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the great article. Given that you are using Linux, can you please clarify what the advantages are over scheduling a cronjob to run the python?</p>
+<span class="reply"><a aria-label="Reply to JonB451" class="comment-reply-link" data-belowelement="div-comment-14194" data-commentid="14194" data-postid="21027" data-replyto="Reply to JonB451" data-respondelement="respond" href="#comment-14194" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-ajet1996 bypostauthor even depth-2 parent" id="comment-14205">
+<article class="comment-body" id="div-comment-14205" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Jon, I’m glad you liked the blog post. The main advantages of Airflow appear when your workflow gets bigger and more complex.</p>
+<p>Cron jobs are time-based job schedulers. Managing hundreds of tasks (some of which will almost surely fail) can get quite cumbersome.</p>
+<p>Airflow is a workflow management platform that offers a UI with built in logging, all sorts of integrations imaginable and out of the box scalability, all of these features come native with Airflow.</p>
+<p>Airflow has a steeper learning curve than a cron job, but if you are serious about building your own data extraction and transformation pipeline, then using Airflow becomes the natural choice for the reasons mentioned above.</p>
+<span class="reply"><a aria-label="Reply to Ajet Luka" class="comment-reply-link" data-belowelement="div-comment-14205" data-commentid="14205" data-postid="21027" data-replyto="Reply to Ajet Luka" data-respondelement="respond" href="#comment-14205" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-14230">
+<article class="comment-body" id="div-comment-14230" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the answer Ajet. Really appreciate it!</p>
+<p>I used Autosys on a couple of jobs a while back. Is Airflow similar in some way, eg jobs with triggers and conditions and alerting?</p>
+<span class="reply"><a aria-label="Reply to JonB451" class="comment-reply-link" data-belowelement="div-comment-14230" data-commentid="14230" data-postid="21027" data-replyto="Reply to JonB451" data-respondelement="respond" href="#comment-14230" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-ajet1996 bypostauthor even depth-4 parent" id="comment-14272">
+<article class="comment-body" id="div-comment-14272" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>My Pleasure Jon.</p>
+<p>I’ve never used Autosys, looking at it briefly it seems to have a different architecture, but there is some overlap in functionality.</p>
+<span class="reply"><a aria-label="Reply to Ajet Luka" class="comment-reply-link" data-belowelement="div-comment-14272" data-commentid="14272" data-postid="21027" data-replyto="Reply to Ajet Luka" data-respondelement="respond" href="#comment-14272" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-5" id="comment-14333">
+<article class="comment-body" id="div-comment-14333" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Ajet for having a look and getting back. Would definitely be really interested to read more like this on the whole pipeline of Google data engineering possibilities, especially for data being updated in real time like market data. Comparisons of functionality and the costs of running such bespoke infrastructure in the cloud and on demand, with alternatives from the likes of Amazon and Microsoft, would also be great to hear from Robot Wealth’s perspective / use case.</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-14803">
+<div class="comment-body">
+				Pingback: Why We Use Apache Beam For Our Trading Data Pipeline - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/using-apache-airflow-data-processing/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

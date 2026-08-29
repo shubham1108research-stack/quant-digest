@@ -1,0 +1,439 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Kalman Filter Pairs Trading with Zorro and R</title>
+<!-- source: https://robotwealth.com/kalman-filter-pairs-trading-with-zorro-and-r/ -->
+<h1>Kalman Filter Pairs Trading with Zorro and R</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-11303 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-r category-trading-strategies category-zorro tag-backtesting tag-kalman-filter tag-pairs-trading tag-quantitative-trading tag-trading-strategies tag-zorro pmpro-has-access" id="post-11303">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">October 16, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Kalman Filter Pairs Trading with Zorro and R</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Kalman Filter Pairs Trading with Zorro and R" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In the first three posts of this mini-series on <em><strong>pairs trading with Zorro and R</strong></em>, we:
+
+<ul>
+<li><a href="https://robotwealth.com/kalman-filter-pairs-trading-r/" rel="noopener noreferrer" target="_blank">Implemented a Kalman filter in R</a></li>
+<li><a href="https://robotwealth.com/pairs-trading-zorro/" rel="noopener noreferrer" target="_blank">Implemented a simple pairs trading algorithm in Zorro</a></li>
+<li><a href="https://robotwealth.com/integrating-r-with-the-zorro-backtesting-and-execution-platform/" rel="noopener noreferrer" target="_blank">Connected Zorro and R and exchanged data between the two platforms</a></li>
+</ul>
+
+In this fourth and final post, we’re going to put it all together and develop a pairs trading script that uses Zorro for all the simulation aspects (data handling, position tracking, performance reporting and the like) and our Kalman implementation for updating the hedge ratio in real-time.
+
+You can download the exact script used in this post for free down at the very bottom. Let’s go!
+
+<h2>Step 1: Encapsulate our Kalman routine in a function</h2>
+
+Encapsulating our Kalman routine in a function makes it easy to call from our Zorro script – it reduces the call to a single line of code.
+
+Save the following R script, which implements the iterative Kalman operations using data sent from Zorro, in your Zorro strategy folder:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Kalman iterator">###### KALMAN FILTER #######
+
+delta &lt;- 0.0001
+Vw &lt;- delta/(1-delta)*diag(2)
+Ve &lt;- 0.01
+R &lt;- matrix(rep(0, 4), nrow=2)
+P &lt;- matrix(rep(0, 4), nrow=2)
+
+kalman_iterator &lt;- function(y, x, beta) {
+  beta &lt;- matrix(c(beta, 0), nrow=1)
+  x &lt;- matrix(c(x, 1), nrow=1)
+  R &lt;&lt;- P + Vw # state cov prediction
+  
+  y_est &lt;- x[1, ] %*% beta[1, ] # measurement prediction
+  Q &lt;- x[1, ] %*% R %*% x[1, ] + Ve # measurement variance prediction
+  
+  # error between observation of y and prediction
+  e &lt;- y - y_est
+  K &lt;- R %*% t(x) / drop(Q) # Kalman gain
+  
+  # state update
+  beta &lt;- beta[1, ] + K * e[1, ]
+  P &lt;&lt;- R - K %*% x[1, ] %*% R
+  
+  return(list(beta[1], e, Q))
+}</pre>
+
+Recall that this implementation of the Kalman filter is <em>almost</em> parameterless. There are however two parameters that impact the speed at which the hedge ratio is updated by the Kalman algorithm, <span class="lang:r decode:true crayon-inline">delta</span>  in line 3 and <span class="lang:r decode:true crayon-inline">Ve</span> in line 5.
+
+You can experiment with these parameters, but note that changes here will generally require changes in the Zorro script, such as the spacing between trade levels (more on this below).
+
+Experimentation is a good thing (it’s useful to understand how these parameters impact the algorithm), but a nice, stable pair trade should be relatively robust to changes in these parameters. A pair that depends on just the right values of these parameters is one I’d think twice about trading.
+
+Having said that, a sensible use of these parameters is to adjust the trade frequency of your pairs in line with transaction costs and risk management approach (not to optimise the strategy’s backtested performance).
+
+<h2>Step 2: Set up a Zorro pair trading script to exchange data with R</h2>
+
+Here’s our simple pairs trading script modified to call the Kalman iterator function to update the hedge ratio. To experiment with this Zorro script you’ll need:
+
+<ul>
+<li>an <a href="https://www.alphavantage.co/" rel="noopener noreferrer" target="_blank">Alpha Vantage API key</a> (we load price history directly from Alpha Vantage)</li>
+<li>to set up trading conditions in a Zorro assets list (although if you don’t want to model costs, you don’t need to do this)</li>
+</ul>
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Kalman pairs trading">/* KALMAN PAIRS TRADING
+
+*/
+
+#include &lt;r.h&gt;
+
+#define Asset1 "GDX"
+#define Asset2 "GLD"
+#define MaxTrades 1
+#define Spacing 1
+// #define COSTS
+
+int Portfolio_Units = 1000; //units of the portfolio to buy/sell (more --&gt; better fidelity to hedge ratio)
+
+var calculate_spread(var hedge_ratio)
+{
+    var spread = 0;
+    asset(Asset1); 
+#ifndef COSTS
+    Spread = Commission = Slippage = 0;
+#endif
+    spread += priceClose();
+#ifndef COSTS
+    Spread = Commission = Slippage = 0;
+#endif
+      asset(Asset2); spread -= hedge_ratio*priceClose();
+
+      return spread;
+}
+
+function run()
+{
+    set(PLOTNOW);
+    setf(PlotMode, PL_FINE);
+    StartDate = 20060525;
+    EndDate = 2019;
+    BarPeriod = 1440;
+    LookBack = 1; 
+    MaxLong = MaxShort = MaxTrades;
+
+// ---------------------------------------
+// Startup and data loading
+// ---------------------------------------  
+    if(is(INITRUN)) 
+    {
+        // start R and source the kalman iterator function
+        if(!Rstart("kalman.R", 2)) 
+        {
+            print("Error - can't start R session!");
+            quit();
+        }
+        
+        // load data from Alpha Vantage
+        string Name;
+        int n = 0;
+        while(Name = loop(Asset1, Asset2))
+        {
+            assetHistory(Name, FROM_AV);
+            n++;
+        }
+    }
+
+// ---------------------------------------
+// calculate hedge ratio and trade levels
+// ---------------------------------------
+    asset(Asset1);
+#ifndef COSTS
+    Spread = Commission = Slippage = 0;
+#endif
+    vars prices1 = series(priceClose());
+    
+    asset(Asset2);
+#ifndef COSTS
+    Spread = Commission = Slippage = 0;
+#endif
+    vars prices2 = series(priceClose());
+    
+    static var beta;
+    if(is(INITRUN)) beta = 0;
+    
+    // use kalman iterator to calculate paramters 
+    Rset("y", prices1[0]);
+    Rset("x", prices2[0]);
+    Rset("beta", beta);
+    Rx("kalman &lt;- kalman_iterator(y, x, beta)");
+    beta = Rd("kalman[[1]][1]");
+    vars e = series(Rd("kalman[[2]]"));
+    var Q = Rd("kalman[[3]]");  
+    
+    // set up trade levels
+    var Levels[MaxTrades]; 
+    int i;
+    for(i=0; i&lt;MaxTrades; i++)
+    {
+        Levels[i] = (i+1)*Spacing*sqrt(Q);
+    }
+
+// ---------------------------------------
+// trade logic
+// ---------------------------------------
+
+    // enter positions at defined levels
+    for(i=0; i&lt;MaxTrades; i++)
+    {
+        if(crossUnder(e, -Levels[i])) 
+        {
+            asset(Asset1);
+            Lots = Portfolio_Units;
+            enterLong();
+            asset(Asset2);
+            Lots = Portfolio_Units * beta;
+            enterShort();
+        }
+        if(crossOver(e, Levels[i])) 
+        {
+            asset(Asset1);
+            Lots = Portfolio_Units;
+            enterShort();
+            asset(Asset2);
+            Lots = Portfolio_Units * beta;
+            enterLong();
+        }
+    }
+    
+    // exit positions at defined levels
+    for(i=1; i&lt;MaxTrades-1; i++)
+    {
+        if(crossOver(e, -Levels[i])) 
+        {
+            asset(Asset1);
+            exitLong(0, 0, Portfolio_Units);
+            asset(Asset2);
+            exitShort(0, 0, Portfolio_Units * beta);
+        }
+        if(crossUnder(e, Levels[1])) 
+        {
+            asset(Asset1);
+            exitShort(0, 0, Portfolio_Units);
+            asset(Asset2);
+            exitLong(0, 0, Portfolio_Units * beta);
+        }
+    }
+
+// ---------------------------------------
+// plots
+// ---------------------------------------
+    plot("beta", beta, NEW, PURPLE);
+    if(abs(e[0]) &lt; 20)
+    {
+        plot("error", e, NEW, BLUE);
+        int i;
+        for(i=0; i&lt;MaxTrades; i++)
+        {
+            plot(strf("#level_%d", i), Levels[i], 0, BLACK);
+            plot(strf("#neglevel_%d", i), -Levels[i], 0, BLACK);
+        }   
+    }
+}</pre>
+
+Like in our original vectorised backtest, this strategy is always in the market, simply entering a long position when the prediction error of the Kalman filter drops below its minus one standard deviation level and holding it until the prediction error crosses above its plus one standard deviation level, at which point the trade is reversed and a short position held.
+
+This is not the optimal way to trade a spread, so we’ve left the door open to trade at multiple levels (line 9) with a user-specified spacing between levels (line 10).
+
+<em>But before we get to that, there’s an important box we need to tick…</em>
+<h2>Step 3: Reproduce original results</h2>
+
+Before we go further, we’ll aim to reproduce the results we got in the vectorised backtest we wrote in R way back in the <a href="https://robotwealth.com/kalman-filter-pairs-trading-r/" rel="noopener noreferrer" target="_blank">first post of this series</a>. That way, we can validate that our Zorro setup is working as expected.
+
+This is an important (and easily overlooked) step because we’ll surely tinker with the strategy implementation (Zorro is <em>really </em>useful for efficiently doing that sort of experimentation), and we need to have confidence in our setup before we make any changes, do further research, and make decisions based on what we find.
+
+<em>If you’ve ever had to rewind a whole bunch of research because of a faulty implementation at the outset, you know what I’m talking about….</em>
+
+We’d expect some differences since Zorro provides an event-driven sequential backtester with very different assumptions to my hacky vectorised backtest. But we should see consistency in the hedge ratio, the positions taken, and the shape of the equity curve.
+
+Here’s the Zorro output when we trade at one standard deviation of the prediction errors:
+
+<img alt="" class="size-full wp-image-12442 aligncenter perfmatters-lazy" data-sizes="(max-width: 608px) 100vw, 608px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/10/21164412/default-1std-backtest-1.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/10/21164412/default-1std-backtest-1.png 608w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164412/default-1std-backtest-1-600x518.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164412/default-1std-backtest-1-300x259.png 300w" decoding="async" height="525" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='608'%20height='525'%20viewBox='0%200%20608%20525'%3E%3C/svg%3E" width="608"/>
+
+The hedge ratio, prediction errors, positions and equity curve shape all look very similar to the original vectorised R version.
+
+We also ran a more aggressive version through our vectorised backtester, which traded at half a standard deviation of the prediction errors. Here’s what that looks like in Zorro (simply change line 10 to <code>#define Spacing 0.5</code>):
+
+<img alt="" class="size-full wp-image-12443 aligncenter perfmatters-lazy" data-sizes="(max-width: 608px) 100vw, 608px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/10/21164411/default-half-std-backtest-1.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/10/21164411/default-half-std-backtest-1.png 608w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164411/default-half-std-backtest-1-600x518.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164411/default-half-std-backtest-1-300x259.png 300w" decoding="async" height="525" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='608'%20height='525'%20viewBox='0%200%20608%20525'%3E%3C/svg%3E" width="608"/>
+
+Again, virtually identical to the output of our vectorised backtest.
+
+<em>I’m calling that a win. Time to move on to some fun stuff. </em>
+<h2>Step 4: Iterate on the algorithm design</h2>
+
+There are a bunch of things we can try with our pairs trading implementation. A few of them include:
+
+<ul>
+<li>Exiting positions when the prediction error crosses zero</li>
+<li>Limiting the hold time of individual positions (that is, closing out early if the spread hasn’t converged fast enough)</li>
+<li>Entering at multiple levels</li>
+<li>Using more or less aggressive entry level spacing</li>
+</ul>
+
+Here’s an example of trading quite aggressively every 0.25 standard deviations of the prediction error, up to a maximum of eight levels:
+
+<img alt="" class="size-full wp-image-12441 aligncenter perfmatters-lazy" data-sizes="(max-width: 608px) 100vw, 608px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/10/21164413/default-aggressive-qtr-std-backtest.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/10/21164413/default-aggressive-qtr-std-backtest.png 608w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164413/default-aggressive-qtr-std-backtest-600x518.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164413/default-aggressive-qtr-std-backtest-300x259.png 300w" decoding="async" height="525" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='608'%20height='525'%20viewBox='0%200%20608%20525'%3E%3C/svg%3E" width="608"/>
+
+Of course, when you trade like this you’re going to pay a ton in fees. But it gives you a taste of the sorts of things you can experiment with using this framework.
+
+<h2>Conclusion</h2>
+
+This concludes our mini-series on pairs trading with Zorro and R via the Kalman filter. We saw how you might:
+
+<ul>
+<li>Implement the Kalman filter in R</li>
+<li>Implement a pairs trading algorithm in Zorro</li>
+<li>Make Zorro and R talk to one another</li>
+<li>Put it all together in an integrated pairs trading strategy</li>
+</ul>
+
+We’d love to know what you thought of the series in the comments. In particular, can you suggest any pairs you’d like to see us test? Can you suggest any improvements to the pairs trading algorithm itself? Are there any other approaches you’d like us to implement or test?
+
+Thanks for reading!
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>backtesting</span>, <span>Kalman filter</span>, <span>pairs trading</span>, <span>quantitative trading</span>, <span>trading strategies</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">6 thoughts on “Kalman Filter Pairs Trading with Zorro and R”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-10269">
+<div class="comment-body">
+				Pingback: Kalman Filter example: Pairs Trading in R - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-12971">
+<div class="comment-body">
+				Pingback: R Language – Quant Trading Tips 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/kalman-filter-pairs-trading-with-zorro-and-r/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

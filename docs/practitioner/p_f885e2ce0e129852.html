@@ -1,0 +1,381 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How to Hedge a Portfolio with Put Options</title>
+<!-- source: https://robotwealth.com/hedging-with-put-options/ -->
+<h1>How to Hedge a Portfolio with Put Options</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-22892 post type-post status-publish format-standard has-post-thumbnail hentry category-options category-quant-trading category-r tag-gbm tag-hedging tag-options tag-put-option tag-quantitative-analysis tag-tidyverse pmpro-has-access" id="post-22892">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/jameshodges/">Robot James</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 8, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">How to Hedge a Portfolio with Put Options</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="How to Hedge a Portfolio with Put Options" class="ipa-media gb-media-81e19d89" data-media-id="22503" decoding="async" fetchpriority="high" height="360" sizes="(max-width: 648px) 100vw, 648px" src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162124/port_returns-1.png" srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162124/port_returns-1.png 648w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162124/port_returns-1-600x333.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162124/port_returns-1-300x167.png 300w" width="648"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">There are 2 good reasons to buy put options:
+
+<ul>
+<li>because you think they are cheap</li>
+<li>because you want downside protection.</li>
+</ul>
+
+In the latter case, you are looking to use the skewed payoff profile of the put option to protect a portfolio against large downside moves without capping your upside too much.
+
+The first requires a pricing model. Or, at the least, an understanding of when and under what conditions put options tend to be cheap.
+
+The second doesn’t necessarily. We’ll assume that we’re going to have to pay a premium to protect our portfolio – and that not losing a large amount of money is more important than the exact price we pay for it.
+
+<blockquote><em>Let’s run through an example…</em></blockquote>
+
+We have a portfolio comprised entirely of 100 shares of SPY. About $29k worth.
+
+We can plot a payoff profile for our whole portfolio. This is going to show the dollar P&amp;L from our portfolio at various SPY prices.
+
+At the time of writing, SPY closed at $287.05
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, rvest, slider, tidyquant, alphavantager, kableExtra)
+</pre>
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">SPYprice &lt;- 287.05
+SPYshares &lt;- 100
+min_price &lt;- 140
+max_price &lt;- 440
+
+portfolio_payoffs &lt;- tibble(price = c(min_price, max_price)) %&gt;%
+  mutate(pnl = (price - SPYprice) * SPYshares) 
+
+portfolio_payoffs %&gt;%
+  ggplot(aes(x = price, y = pnl)) + 
+  geom_line() + 
+  ggtitle('PnL of Portfolio vs SPY Price')
+</pre>
+<img alt="plot of chunk portfolio_payoff" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162126/portfolio_payoff-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk portfolio_payoff"/>
+So far, so unremarkable…
+
+Now let’s say we want to limit our downside to no more than $5,000 (from current levels) over the next 3 months.
+
+<em>That’s about a 17% decline from current prices.</em>
+
+First, we look at the SPY price which results in about a $5,000 loss. From eyeballing the chart, that’s about $240.
+
+Let’s do it with code…
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">minlossprice &lt;- SPYprice -5000 / SPYshares
+minlossprice
+</pre>
+<pre>## [1] 237.05
+</pre>
+
+Next, remember that <strong>a SPY put option struck at or near $240 gives us the option to sell 100 SPY shares at $240, regardless of the price of SPY.</strong>
+
+If we buy a 17 July $240 SPY put, then we have capped our minimum possible portfolio loss to -$5,000.
+
+If we take the last traded price for that put option contract then that “insurance” costs us about $5.19 per share. SPY options are options on 100 shares so that “insurance” costs us $519 in Premium.
+
+So for $519 (which is about 1.8% of our portfolio), we can “insure” our portfolio so it doesn’t drop any more than -$5,000 from current prices.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">strike &lt;- 240
+premium &lt;- 5.19
+
+portfolio_payoffs_hedged &lt;- tibble(price = c(min_price:max_price)) %&gt;%
+  mutate(pnl = case_when(
+    price &lt; strike ~ (strike - SPYprice - premium)*SPYshares,
+    TRUE ~ (price - SPYprice - premium)*SPYshares
+    ))
+
+
+portfolio_payoffs_hedged %&gt;%
+  ggplot(aes(x = price, y = pnl)) + 
+  geom_line() + 
+  geom_vline(xintercept = strike, linetype = 'dashed') +
+  annotate(geom = 'text', label = paste('Strike = ', strike), x = strike-50, y = -2500, ) +
+  ggtitle('PnL of Hedged Portfolio vs SPY Price')
+</pre>
+<img alt="plot of chunk hedged_port_payoff" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162125/hedged_port_payoff-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk hedged_port_payoff"/>
+Whether this is valuable to you depends on what you’re trading and what your risk tolerance is.
+
+<em>More on this at the end of the post…</em>
+<h2>But I don’t have a portfolio of just SPY!</h2>
+
+Ok, so it’s highly unlikely that your portfolio is made up entirely of 100 shares of SPY!
+
+So let’s look at an example of hedging a degenerate portfolio of small caps using SPY puts.
+
+First, get some price history for SPY and a few small caps from AlphaVantage:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">tickers &lt;- c('NOG', 'SWN', 'ACB', 'DO', 'SPY')
+MY_API_KEY &lt;- getOption("AV_API_KEY")
+av_api_key(MY_API_KEY)
+
+prices &lt;- tq_get(
+  tickers,
+  get = 'alphavantager', 
+  av_fun = 'TIME_SERIES_DAILY_ADJUSTED', 
+  outputsize = 'full'
+)
+
+prices &lt;- prices %&gt;%
+  filter(timestamp &gt;= '2015-01-01') %&gt;%
+  group_by(symbol) %&gt;%
+  mutate(returns = adjusted_close / lag(adjusted_close) - 1)
+
+prices %&gt;%
+  ggplot(aes(x = timestamp, y = adjusted_close, colour = symbol)) +
+    geom_line()
+</pre>
+<img alt="plot of chunk sm_cap_prices" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162125/sm_cap_prices-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk sm_cap_prices"/>
+Next, calculate our portfolio’s beta to SPY. We’ll assume we’re invested equal weight in these stocks.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">portfolio_returns &lt;- prices %&gt;%
+  filter(symbol != 'SPY') %&gt;%
+  group_by(timestamp) %&gt;%
+  summarise(port = mean(returns)) %&gt;%
+  left_join(
+    prices %&gt;% filter(symbol == 'SPY') %&gt;% select(symbol, timestamp, returns),
+    by = 'timestamp'
+  ) %&gt;%
+  select(timestamp, port, returns) %&gt;%
+  rename('spy' = returns)
+
+portfolio_returns %&gt;%
+  ggplot(aes(x = spy, y = port)) +
+    geom_point() +
+    geom_smooth(method = lm, formula = y ~ x)
+</pre>
+<img alt="plot of chunk port_returns" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162124/port_returns-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk port_returns"/>
+
+Estimate a 100-day rolling beta of our portfolio to SPY:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">get_beta &lt;- function(x) {
+  mod &lt;- lm(port ~ spy, data = x)
+  return(mod$coefficients['spy'])
+
+}
+
+portfolio_returns &lt;- portfolio_returns %&gt;%
+  mutate(rollbeta = slide_dbl(., ~get_beta(.x), .before = 100, .complete = TRUE))
+
+portfolio_returns %&gt;%
+  ggplot(aes(x = timestamp, y = rollbeta)) +
+  geom_line()
+</pre>
+<img alt="plot of chunk rolling_port_beta" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162123/rolling_port_beta-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk rolling_port_beta"/>
+Let’s take our portfolio beta at the current 100-day rolling estimate. You can see that the estimate is rather noisy – this won’t be too precise.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">port_beta &lt;- portfolio_returns %&gt;%
+  select(rollbeta) %&gt;%
+  last() %&gt;%
+  pull()
+
+port_beta
+</pre>
+<pre>## [1] 1.266401
+</pre>
+
+Our portfolio beta is about 1.27.
+
+That means that for every dollar invested in our portfolio, we would need to hedge 1.27 dollars worth of SPY.
+
+Let’s say our portfolio is worth $50,000. That means we need to hedge $63,500 of SPY. Given the current SPY price
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">port_value &lt;- 50000
+SPYprice &lt;- 287
+
+shares_of_spy &lt;- port_value*port_beta/SPYprice
+shares_of_spy
+</pre>
+<pre>## [1] 220.6274
+</pre>
+
+Now, we can only hedge to the nearest 100 shares of SPY (told you this can’t get too precise…). So, in this case, we’d buy two SPY puts and call ourselves slightly underhedged. You could on the other hand by 3 puts and find yourself slightly over hedged.
+
+<blockquote><strong><em>What’s the optimal thing to do?</em></strong></blockquote>
+
+Well, everything is a trade-off. Being underhedged costs less in the premium you pay, but leaves you…well…underhedged. Being over hedged costs you more in premium, but leaves you more than adequately protected.
+
+Portfolio hedging with index put options, in reality, requires juggling of <em>basis risk</em> (you can only hedge in 100 share units) and <em>correlation risk</em> – where correlation risk is the risk of hedging on the basis of the betas of the components of your portfolio.
+
+<h2>So should I hedge my portfolio with index put options?</h2>
+
+That depends on:
+
+<ul>
+<li>your trading edge</li>
+<li>what risk you’re taking in the portfolio</li>
+<li>what your risk tolerance is</li>
+</ul>
+
+If you’re running a highly leveraged portfolio of negatively skewed carry-trades, for example, then there is a time in the future when you will lose a large amount of money very quickly.
+
+Losing a lot of money is bad. And making sure you don’t lose a lot of money is more important than the exact price you pay for that insurance. So provided you do indeed have a large edge, I would recommend you pay up for crash protection.
+
+However, this assumes you have a significant trading edge. Portfolio insurance is costly, so you need to be confident that you have a large edge which is significantly greater than the cost you’re going to pay to hedge your downside.
+
+If you aren’t confident in your trading edge, then you would be much better sizing your trading down to a point where you are happy taking on the downside risk.
+
+ 
+
+<h2>Summary</h2>
+
+In this lesson, we’ve been through a very simple approach to hedging a simple portfolio of equity-like assets.
+
+It’s an approach that doesn’t require an options pricing model, just an appreciation of how much you are willing to pay for downside protection given a realistic assessment of your trading edge.
+
+<em>In a future lesson, we’ll look at how we might be able to get a similar level of protection cheaper by looking at “less precise” hedges using baskets of put options in single name stocks and other risk assets…</em>
+
+ 
+
+<div class="convertful-36233"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>GBM</span>, <span>hedging</span>, <span>options</span>, <span>put option</span>, <span>quantitative analysis</span>, <span>tidyverse</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">3 thoughts on “How to Hedge a Portfolio with Put Options”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-14637">
+<div class="comment-body">
+				Pingback: Find Cheap Options for Effective Crash Protection Using Crash Regressions - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-14697">
+<div class="comment-body">
+				Pingback: Weekly Roundup 29 May - Crash Protection, Sloppy Regressions and Data Munging Skillz - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-14703">
+<article class="comment-body" id="div-comment-14703" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Apologies I just cross posted accidentally in  the other protection thread. </p>
+<p>What if SPY moves against me and what expiry monthly vs weekly etc?</p>
+<span class="reply"><a aria-label="Reply to Interzone" class="comment-reply-link" data-belowelement="div-comment-14703" data-commentid="14703" data-postid="22892" data-replyto="Reply to Interzone" data-respondelement="respond" href="#comment-14703" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/hedging-with-put-options/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,630 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Exploring Mean Reversion and Cointegration: Part 2</title>
+<!-- source: https://robotwealth.com/exploring-mean-reversion-and-cointegration-part-2/ -->
+<h1>Exploring Mean Reversion and Cointegration: Part 2</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1052 post type-post status-publish format-standard hentry category-backtesting category-cointegration category-fx category-quant-trading category-r category-trading-books category-trading-strategies category-zorro tag-algorithmic-trading tag-aud-nzd tag-augemnted-dickey-fuller-test tag-backtesting tag-cointegration tag-forex tag-mean-reversion tag-quantitative-analysis tag-quantitative-trading tag-r tag-stationarity tag-zorro pmpro-has-access" id="post-1052">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">January 2, 2016</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Exploring Mean Reversion and Cointegration: Part 2</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Exploring Mean Reversion and Cointegration: Part 2" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In the <a href="https://robotwealth.com/exploring-mean-reversion-and-cointegration-with-zorro-and-r-part-1/">first Mean Reversion and Cointegration post</a>, I explored mean reversion of individual financial time series using techniques such as the Augmented Dickey-Fuller test, the Hurst exponent and the Ornstein-Uhlenbeck equation for a mean reverting stochastic process. I also presented a simple linear mean reversion strategy as a proof of concept. In this post, I’ll explore artificial stationary time series and will present a more practical trading strategy for exploiting mean reversion. Again this work is based on Ernie Chan’s <a href="https://www.amazon.com/Algorithmic-Trading-Winning-Strategies-Rationale/dp/1118460146/ref=sr_1_1?keywords=algorithmic+trading+ernie+chan&amp;qid=1572093074&amp;sr=8-1" rel="noopener noreferrer" target="_blank"><em>Algorithmic Trading</em></a>, which I highly recommend and have used as inspiration for a great deal of my own research.
+
+<p style="text-align: center;"><i>Go easy on my design abilities…</i></p>
+
+In presenting my results, I have purposefully shown equity curves from mean reversion strategies that go through periods of stellar performance as well as periods so bad that they would send most traders broke. Rather than cherry pick the good performance, I want to demonstrate what I think is of utmost importance in this type of trading, namely that the nature of mean reversion for any financial time series is constantly changing. At times this dynamism can be accounted for by updating the hedge ratios or other strategy parameters. At other times, the only solution is to abandon the mean reversion approach altogether, perhaps in favour of a trend following approach.
+
+As this post will demonstrate, finding or constructing mean reverting price series is a relatively simple matter. The real key to profitably exploiting such series is the much more difficult matter of understanding, in real time, whether to continue a strategy as is, update its parameters or put it on ice temporarily or permanently.
+
+<em>Let’s get started!</em>
+<h2>Cointegration</h2>
+
+A collection of non-stationary time series variables are said to be cointegrated if there exists a linear combination of those variables that creates a stationary time series. This implies that we can artificially construct a mean reverting time series through the appropriate combination of non-stationary time series. For example, we can construct a portfolio of assets whose market value is a stationary time series and thus amenable to profitable exploitation through mean-reversion techniques, even through the price series of the constituent assets are not themselves mean reverting. A pairs trading strategy, where we buy one asset and short another with an appropriate allocation of capital to each, is an example of this method for exploiting the concept of cointegration, but we can also create more complex portfolios of three or more assets.
+
+We can test whether a given combination of assets forms a stationary process using the stationarity tests described in the previous post. However, it is impossible to know <em>a priori</em> the coefficients (or hedge ratios) that form a stationary portfolio. How then does one test for cointegration? I’ll explore two approaches: the Cointegrated Augmented Dickey-Fuller test and the Johansen test.
+
+<h2>Cointegrated Augmented Dickey-Fuller Test</h2>
+
+The Cointegrated Augmented Dickey-Fuller Test (CADF test) involves firstly performing a linear regression between two price series to determine the portfolio’s optimal hedge ratio and then conducting a stationarity test on the portfolio’s price series. The example below illustrates this concept using the currencies of Australia and New Zealand since they seem likely to cointegrate given that the economies of both countries are commodity-based and are affected by similar geopolitical forces.
+
+This extends the example in the first post, which explored the mean reverting tendencies of the foreign exchange pair AUD/NZD. In that example, the hedge ratio is always one since equal amounts of AUD and NZD are always being bought and sold. In this example, we allow for a flexible hedge ratio and attempt its optimization. In order to achieve this, we need to introduce a common quote currency, the more liquid the better. It makes sense to choose the US dollar. Therefore, the example below seeks to exploit a stationary portfolio of AUD/USD and NZD/USD.
+
+Firstly, the price series of both exchange rates for the period 2009 to mid-2015, which look like they may cointegrate:
+<a href="https://robotwealth.com/wp-content/uploads/2015/12/AUDUSD-and-NZDUSD-Closing-Prices-1.png" rel="attachment wp-att-1060"><img alt="AUDUSD and NZDUSD Closing Prices" class="aligncenter size-full wp-image-1060 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/12/AUDUSD-and-NZDUSD-Closing-Prices-1.png" decoding="async" height="469" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='469'%20viewBox='0%200%20500%20469'%3E%3C/svg%3E" width="500"/></a>
+A scatter plot further suggests that the price series may cointegrate as the price pairs fall on  a roughly straight line:
+<a href="https://robotwealth.com/wp-content/uploads/2015/12/AU-NU-Closing-Price-Scatterplot.png" rel="attachment wp-att-1061"><img alt="AU-NU Closing Price Scatterplot" class="aligncenter size-full wp-image-1061 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/12/AU-NU-Closing-Price-Scatterplot.png" decoding="async" height="469" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='469'%20viewBox='0%200%20500%20469'%3E%3C/svg%3E" width="500"/></a>
+We can use least squares regression to find the optimal hedge ratio and plot the residual of AUD/USD-beta*NZD/USD, which admittedly does not look overly stationary:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="OLS regression and extraction of hedge ratio">## ordinary least squares regression
+m &lt;- lm(AUDUSD.Close ~ NZDUSD.Close, data = closes)
+beta &lt;- coef(m)[2]
+resid &lt;- closes$AUDUSD.Close - beta * closes$NZDUSD.Close
+colnames(resid) &lt;- "residual"
+plot.zoo(resid, col = 'navyblue', xlab = 'Date', ylab = 'residual')</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2015/12/AU-NU-OLS-residuals-1.png" rel="attachment wp-att-1063"><img alt="AU-NU OLS residuals" class="aligncenter size-full wp-image-1063 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/12/AU-NU-OLS-residuals-1.png" decoding="async" height="469" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='469'%20viewBox='0%200%20500%20469'%3E%3C/svg%3E" width="500"/></a>
+Next we apply the ADF test to the spread (see the previous post for a brief description of the <span class="lang:default decode:true crayon-inline">urca</span> package, and why its implementation of the ADF test is suitable for this application):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="ADF test of AUDUSD-beta*NZDUSD portfolio">## test stationarity of the spread
+library(urca)
+summary(ur.df(resid, type = "drift", lags = 1))
+###############################################
+# Augmented Dickey-Fuller Test Unit Root Test #
+###############################################
+Test regression drift
+Call:
+lm(formula = z.diff ~ z.lag.1 + 1 + z.diff.lag)
+Residuals:
+       Min         1Q     Median         3Q        Max
+-0.0168356 -0.0022881 -0.0000261  0.0024003  0.0147704
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept)  0.0001514  0.0002107   0.719    0.472
+z.lag.1     -0.0012629  0.0013435  -0.940    0.347
+z.diff.lag   0.0159660  0.0242163   0.659    0.510
+Residual standard error: 0.003877 on 1706 degrees of freedom
+Multiple R-squared:  0.0007491, Adjusted R-squared:  -0.0004224
+F-statistic: 0.6395 on 2 and 1706 DF,  p-value: 0.5277
+Value of test-statistic is: -0.94 0.4801
+Critical values for test statistics:
+      1pct  5pct 10pct
+tau2 -3.43 -2.86 -2.57
+phi1  6.43  4.59  3.78</pre>
+
+In this case, the test statistic we are interested in is -0.94, which is greater than the 10% critical value of -2.57. Therefore, we unfortunately can’t reject the null hypothesis that the portfolio is not mean reverting. However, the negative value of the test statistic indicates that the portfolio is not trending.
+
+One shortcoming of the ordinary least squares approach is that it is asymmetric: switching the dependent and independent variables in the regression results in a different hedge ratio. Good practice would dictate that both options be tested and the arrangement that results in the more negative test statistic be selected. Another approach is to use total least squares regression, which can be used to derive a  symmetric hedge ratio. In a geometrical sense, total least squares minimizes the orthogonal distance to the regression line (as opposed to the vertical distance in the case of ordinary least squares) and thus takes into account variance of both the dependent and independent variables. The total least squares solution is easily computed in R using principal component analysis and is not limited to a two-asset portfolio:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="TLS solution to optimal hedge ratio">## total least squares regression
+r &lt;- princomp(~ AUDUSD.Close + NZDUSD.Close, data=closes)
+beta_TLS &lt;- r$loadings[1,1] / r$loadings[2,1]
+resid_TLS &lt;- closes$AUDUSD.Close - beta_TLS * closes$NZDUSD.Close
+colnames(resid_TLS) &lt;- "residual"
+plot.zoo(resid_TLS, col = 'blue')
+summary(ur.df(resid_TLS, type = "drift", lags = 1))
+###############################################
+# Augmented Dickey-Fuller Test Unit Root Test #
+###############################################
+Test regression drift
+Call:
+lm(formula = z.diff ~ z.lag.1 + 1 + z.diff.lag)
+Residuals:
+ Min 1Q Median 3Q Max
+-0.0253424 -0.0031200 -0.0001321 0.0029981 0.0223268
+Coefficients:
+ Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept) -0.0005211 0.0003666 -1.421 0.155
+z.lag.1 -0.0021508 0.0015501 -1.388 0.165
+z.diff.lag 0.0174238 0.0241998 0.720 0.472
+Residual standard error: 0.005064 on 1706 degrees of freedom
+Multiple R-squared: 0.001396, Adjusted R-squared: 0.0002253
+F-statistic: 1.192 on 2 and 1706 DF, p-value: 0.3037
+Value of test-statistic is: -1.3875 1.0204
+Critical values for test statistics:
+ 1pct 5pct 10pct
+tau2 -3.43 -2.86 -2.57
+phi1 6.43 4.59 3.78</pre>
+
+This results in a more negative test statistic and a visually more stationary spread (at least for the period 2009 – 2012, see the figure below), but we are still unable to reject the null hypothesis that the spread obtained through total least squares regression is mean reverting.
+<a href="https://robotwealth.com/wp-content/uploads/2015/12/AU-NU-TLS-Residuals.png" rel="attachment wp-att-1064"><img alt="AU-NU TLS Residuals" class="aligncenter size-full wp-image-1064 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/12/AU-NU-TLS-Residuals.png" decoding="async" height="469" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='469'%20viewBox='0%200%20500%20469'%3E%3C/svg%3E" width="500"/></a>
+<h2>Johansen test</h2>
+
+The Johansen test allows us to test for cointegration of more than two variables. Recall from the previous post, using a linear model of price changes:
+
+<p class="" style="text-align: center;"><strong>Δy(t) = λy(t − 1) <span class="mo" id="MathJax-Span-9">+</span><span class="mi" id="MathJax-Span-10">β</span><span class="mi" id="MathJax-Span-11">t </span>+ μ + α1Δy(t − 1) + … + αkΔy(t − k) + εt</strong></p>
+<p style="text-align: center;"><strong>where Δy(t) ≡ y(t) − y(t − 1),  Δy(t − 1) ≡ y(t − 1) − y(t − 2), etc.</strong></p>
+
+that if<em> λ ≠ 0</em>, then <em>Δy(t)</em> depends on the current level <em>y(t − 1)</em> and therefore is not a random walk. We can generalize this equation for the multivariate case by using vectors of prices y(t) and coefficients λ and α, denoted Y(t), Λ and Α respectively. The Johansen test calculates the number of independent, stationary portfolios that can be  formed by various linear combinations of the price series based on the eignevector decomposition of  Λ. The <span class="lang:default decode:true crayon-inline">urca</span>  package contains an implementation of the Johansen test that provides critical values that we can use to test whether we can reject the null hypothesis that there exist 0, 1, 2, …, n-1 cointegrating relationships, where n is the number of constituent time series.
+
+Conveniently, the eigenvectors can be used as the hedge ratios of individual price series to form a stationary portfolio. This process is illustrated below for the AUD/USD-NZD/USD portfolio. A third currency pair – USD/CAD – is added in the next section to attempt to create a stationary portfolio of three currencies.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Johansen test">## johansen test
+closes_mat &lt;- cbind(AUDUSD$AUDUSD.Close, NZDUSD$NZDUSD.Close)
+jo &lt;- ca.jo(cbind(AUDUSD$AUDUSD.Close, NZDUSD$NZDUSD.Close), type="trace", ecdet="none", K=2) #test trace statistics
+print(summary(jo)) # print results of trace statistics
+######################
+# Johansen-Procedure #
+######################
+Test type: trace statistic , with linear trend
+Eigenvalues (lambda):
+[1] 0.004894775 0.001479608
+Values of test statistic and critical values of test:
+ test 10pct 5pct 1pct
+r &lt;= 1 | 2.53 6.50 8.18 11.65
+r = 0 | 10.92 15.66 17.95 23.52
+Eigenvectors, normalised to first column:
+(These are the cointegration relations)
+ AUDUSD.Close.l2 NZDUSD.Close.l2
+AUDUSD.Close.l2 1.000000 1.0000000
+NZDUSD.Close.l2 -3.408877 -0.6886162
+Weights W:
+(This is the loading matrix)
+ AUDUSD.Close.l2 NZDUSD.Close.l2
+AUDUSD.Close.d 0.002496743 -9.504283e-05
+NZDUSD.Close.d 0.001842973 1.653321e-03
+jo2 &lt;- ca.jo(cbind(AUDUSD$AUDUSD.Close, NZDUSD$NZDUSD.Close), type="eigen", ecdet="none", K=2) # eigenvalue test statistics
+print(summary(jo2))</pre>
+
+In this case, we can’t reject either null hypothesis that r (the number of cointegrating portfolios) is zero or one, since the test statistic in both cases is less than even the 10% critical value. That is, it is unlikely that we can form a stationary portfolio from the price history used in this example. However, it may still be worth pursuing a mean reverting strategy if the half-life of mean reversion is sufficiently low (see the previous post for more details).
+
+As stated above, the eigenvectors form the optimal hedge ratio. They are conveniently ordered by maximum likelihood, so in this case we would select a portfolio of 1 lot of AUD/USD long or short and 3.41 lots of NZD/USD in the opposite direction. In this case, unfortunately, the resulting portfolio does not look any  more stationary than that constructed using the ordinary least squares and total least squares regression approaches:
+<a href="https://robotwealth.com/wp-content/uploads/2016/01/AUDUSD-NZDUSD-Spread-from-Johansen-eigenvector.png" rel="attachment wp-att-1071"><img alt="AUDUSD-NZDUSD Spread from Johansen eigenvector" class="aligncenter size-full wp-image-1071 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2016/01/AUDUSD-NZDUSD-Spread-from-Johansen-eigenvector.png" decoding="async" height="469" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='469'%20viewBox='0%200%20500%20469'%3E%3C/svg%3E" width="500"/></a>
+<h2>Mean reversion of a portfolio of more than two instruments</h2>
+
+We can add a third asset and use the Johansen test to determine the probability that there exists a mean reverting portfolio along with the hedge ratios of such a portfolio. In this case, I will add USD/CAD and take the reciprocal of price so that the quote currencies are consistent (note that when building a trading strategy from this triplet, that the directions signalled for USD/CAD would need to be reversed):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Johansen triplet">## add third pair to portfolio
+USDCAD &lt;- read.csv("USDCAD.csv")
+USDCAD &lt;- xts(USDCAD[,-1], as.Date(USDCAD[,1], format="%d/%m/%Y"), src="csv", dateFormat = 'Date')
+colnames(USDCAD) &lt;- paste(toupper(gsub("\\^", "", "USDCAD" )),
+ c("Open", "High", "Low", "Close", "Volume", "Adjusted"),
+ sep = ".")
+jo_3_t &lt;- ca.jo(cbind(AUDUSD$AUDUSD.Close, NZDUSD$NZDUSD.Close, 1/USDCAD$USDCAD.Close), type="trace", ecdet="none", K=2)
+print(summary(jo_3_t))
+jo_3_e &lt;- ca.jo(cbind(AUDUSD$AUDUSD.Close, NZDUSD$NZDUSD.Close, 1/USDCAD$USDCAD.Close), type="eigen", ecdet="none", K=2) #[, 'USDCAD.Close'])
+print(summary(jo_3_e))
+######################
+# Johansen-Procedure #
+######################
+Test type: maximal eigenvalue statistic (lambda max) , with linear trend
+Eigenvalues (lambda):
+[1] 0.007006571 0.004775725 0.001302791
+Values of teststatistic and critical values of test:
+ test 10pct 5pct 1pct
+r &lt;= 2 | 2.22 6.50 8.18 11.65
+r &lt;= 1 | 8.16 12.91 14.90 19.19
+r = 0 | 11.98 18.90 21.07 25.75
+Eigenvectors, normalised to first column:
+(These are the cointegration relations)
+ AUDUSD.Close.l2 NZDUSD.Close.l2 USDCAD.Close.l2
+AUDUSD.Close.l2 1.0000000 1.000000 1.000000
+NZDUSD.Close.l2 -0.5812779 1.219923 -1.247111
+USDCAD.Close.l2 -1.1244247 -1.825102 2.361038
+Weights W:
+(This is the loading matrix)
+ AUDUSD.Close.l2 NZDUSD.Close.l2 USDCAD.Close.l2
+AUDUSD.Close.d 0.004438228 -0.004070151 3.141054e-05
+NZDUSD.Close.d 0.004877582 -0.002836566 5.746013e-04
+USDCAD.Close.d 0.013292047 -0.001652545 3.738115e-06</pre>
+
+Again, we unfortunately find no significant cointegrating relationship. However, as discussed in the first post, we sometimes don’t need to hold our results to scientifically stringent statistical significance in order to make money, particularly if the half life of mean reversion is sufficiently short. Therefore, we will retain the first eigenvector to form a portfolio of the three instruments for further investigation. First, let’s take a look at a time series plot of the portfolio’s value:
+<a href="https://robotwealth.com/wp-content/uploads/2016/01/AU-NU-CU-Johansen-spread.png" rel="attachment wp-att-1075"><img alt="AU NU CU Johansen spread" class="aligncenter size-full wp-image-1075 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2016/01/AU-NU-CU-Johansen-spread.png" decoding="async" height="469" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='469'%20viewBox='0%200%20500%20469'%3E%3C/svg%3E" width="500"/></a>
+
+The half-life of mean reversion of the portfolio is 53.2 days. This is calculated in the same manner as for a single mean reverting time series in the previous post, namely by regressing the value of the portfolio against its value lagged by one time period:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="half life of mean reversion">y &lt;- spread3
+y.lag &lt;- Lag(y, k=1)
+delta.y &lt;- diff(y)
+df &lt;- cbind(y, y.lag, delta.y)
+df &lt;- df[-1 ,] #remove first row with NAs
+regress.results &lt;- lm(delta.y ~ y.lag, data = df)
+lambda &lt;- summary(regress.results)$coefficients[2]
+half.life &lt;- -log(2)/lambda
+print(half.life)
+[1] 53.23</pre>
+
+Recall that in the previous post, we were able to construct a theoretically profitable linear mean reverting strategy from a single time series with a half life of mean reversion of over 300 days, so at first glance, this result holds some promise.
+
+<h2>Linear mean reversion on a cointegrated time series</h2>
+
+Below is the equity curve of the linear mean reversion strategy from the previous post on the three-instrument portfolio with the value of the portfolio overlaid on the equity curve:<a href="https://robotwealth.com/wp-content/uploads/2016/01/BBandMRv3_AUD-NZD-CAD_USD_USDCAD-1.png" rel="attachment wp-att-1076">
+</a>
+
+The strategy suffers significant drawdown and only returns a profit factor of 1.04 and a Sharpe ratio of 0.29.
+
+Obviously, the linear mean reversion strategy presented above and detailed in the previous post would not be suitable for live trading even if the example shown here had generated an impressive backtest. Applied to equities, it would require buying and selling an infinitesimal number of shares when price moves an infinitesimal amount. This is less of a problem when applied to currencies since we can buy and sell in units as small as one-hundredth of a lot. However, the real killer for such a strategy is the trading costs associated with bar-by-bar portfolio rebalancing, as well as the fact that we can’t know the capital required at the outset.
+
+Having said that, there is still much value in testing a mean reversion idea with this linear strategy as it shows whether we can extract profits without any data snooping bias as there are no parameters to optimize. Also, a consequence of the bar-by-bar portfolio rebalancing is that the results of the linear strategy backtest are likely to have more statistical significance than other backtests that incorporate more complex entry and exit rules. Essentially, the simple linear strategy presented here can be used as a proof of concept to quickly determine whether a portfolio is able to be exploited using mean reversion techniques.
+
+<h2>A practical approach to linear mean reversion</h2>
+
+If the simple linear strategy is not practical for trading, how can we exploit mean reverting portfolios? In <em>Algorithmic Trading</em>, Ernie Chan suggests a Bollinger band approach where trades are entered when price deviates by more than <em>x </em>standard deviations from the mean, where <em>x</em> is a parameter to be optimized. The lookback period for the rolling mean and standard deviation can be optimized or set to the half-life of mean reversion. The trade would be exited when price reverts to <em>y </em>standard deviations from the mean where again <em>y </em>is an optimization parameter. For <em>y = 0</em> the trade is exited when price reverts to the mean. For <em>y = -x</em> the trade is reversed at <em>x </em>standard deviations from the mean. The obvious advantage of this approach is that we can easily control capital allocation and risk. We can also control the holding period and trade frequency. For example, setting <em>x </em>and <em>y</em> to smaller values will result in shorter holding periods and more round-trip trades.
+
+Exploiting the AUD-NZD-CAD portfolio using this simple implementation with <em>x = 2</em> and <em>y = 1 </em>returns the following equity curve, with transaction costs included:<a href="https://robotwealth.com/wp-content/uploads/2016/01/BBandMRv3_AUD-NZD-CAD_USD_USDCAD-2.png" rel="attachment wp-att-1078">
+</a>
+
+The equity curve of the Bollinger strategy is of similar shape to the linear mean reversion strategy, but it trades much less and allows for simpler control of risk and exposure.
+
+<h2>Concluding thoughts</h2>
+
+This post extended the previous article on the exploitation of individual mean reverting time series by exploring the construction of portfolios whose market value is mean reverting. In addition to the simple linear mean reversion strategy, I also presented a more practical approach that could form the basis of an actual trading strategy.
+
+As stated in the introductory paragraphs, I wanted to show the good and the bad of mean reversion trading. The equity curves presented show periods of outstanding performance as well as periods of the polar opposite. Clearly, there are times when mean reversion is highly profitable, and other times when it just doesn’t work (perhaps trend following is more suitable at these times). But how does one determine, in real-time, which regime to follow? How does one determine when to switch?
+
+I’ve explored several options, including a simple filter based on a trend indicator and a filter based on the actual performance of the strategy in real-time. However, due to the lag associated with the filter values, these approaches are of little if any value. Diversification is another option, that is, continuously trade both mean reversion and trend following strategies at the same time in the belief that the profit from the dominant regime will more than make up for the losses of the other.
+
+<em>If you have an idea about how to address this issue, please let me know in the comments. I’d love to hear from you.</em>
+<h2>Download files and data used in this analysis</h2>
+
+Here you can download the price data and scripts (Zorro and R) used in this post: Mean reversion 2
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>algorithmic trading</span>, <span>AUD/NZD</span>, <span>augemnted Dickey-Fuller test</span>, <span>backtesting</span>, <span>cointegration</span>, <span>forex</span>, <span>mean reversion</span>, <span>quantitative analysis</span>, <span>quantitative trading</span>, <span>R</span>, <span>stationarity</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">31 thoughts on “Exploring Mean Reversion and Cointegration: Part 2”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-580">
+<article class="comment-body" id="div-comment-580" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Knowing when to revert and when to trend follow without the signal lagging is the gazillion dollar question. From my conversations with my mentor, you want a regime changing model for that.<br/>
+After all, if you have a rangebound instrument, pick your favorite mean reversion indicator and go nuts. If you have a trending market, just buy and hold the trend. But to know which is which? I’d love to see some ideas posted elsewhere. I’ve tried depmix’s default settings and it just gave me garbage.</p>
+<span class="reply"><a aria-label="Reply to Ilya Kipnis" class="comment-reply-link" data-belowelement="div-comment-580" data-commentid="580" data-postid="1052" data-replyto="Reply to Ilya Kipnis" data-respondelement="respond" href="#comment-580" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-581">
+<article class="comment-body" id="div-comment-581" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Regime switching models are a whole new area of research for me. Something I’ve been meaning to tackle for a while now, but haven’t yet gotten around to. This is good motivation to bump it up the to do list. I’ll spend some time learning the first principles and then take a look at the depmix package you mentioned. Although from your experience it sounds like the solution is not a simple one.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-581" data-commentid="581" data-postid="1052" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-581" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-582">
+<article class="comment-body" id="div-comment-582" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Your last suggestion should work fine.  Trade a basket of uncorrelated systems with a range of parameters.  You’ll get the sum of returns with reduced drawdowns.  Some Zorro code is here: <a href="https://www.financial-hacker.com/build-better-strategies-part-2-model-based-systems/" rel="nofollow ugc">https://www.financial-hacker.com/build-better-strategies-part-2-model-based-systems/</a></p>
+<span class="reply"><a aria-label="Reply to kevin" class="comment-reply-link" data-belowelement="div-comment-582" data-commentid="582" data-postid="1052" data-replyto="Reply to kevin" data-respondelement="respond" href="#comment-582" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-583">
+<article class="comment-body" id="div-comment-583" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the suggestion Kevin. I think the key term in your comment is ‘uncorrelated’. I’ve had mixed success with strategy diversification in the past thanks mainly to the correlation between strategies changing over time. But that’s not really a failure of diversification, rather a failure of the trader to properly manage it.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-583" data-commentid="583" data-postid="1052" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-583" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-584">
+<article class="comment-body" id="div-comment-584" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi,<br/>
+great analysis. I did a lot of stuff there and traded (my website is down) so here are some things I found out.<br/>
+No need to diversify mean reverting and trading, just find 5-10 cointegrating relationship and your Sharpe ratio will be 2+ as residuals are all uncorrelated. You’ll also need to do a WFO or IS/OOS test as no one will take seriously if you have a look-ahead bias. (there is a 50% performance degradation in out of sample testing from my own experience after doing in sample optimization) I strongly suggest WFO for every parameter as it will adapt to changing market modes. Also try other loading from PCA as the first one has the most variance but also the most likely to contain trends.<br/>
+As for regime switching some filter to filter out trends is an option if you can find one. No need to waste time as regime switching field is huge.<br/>
+Additional an execution algo that uses EMA vs SMA was better option for me (probably due to large funds using it also and size moves markets), plus you can use 2 st dev to enter but exit after n days could be a better one as a rule.<br/>
+Anyhow hope it helps .If you want to talk more feel free to contact me.<br/>
+Kind regards,<br/>
+D.</p>
+<span class="reply"><a aria-label="Reply to D" class="comment-reply-link" data-belowelement="div-comment-584" data-commentid="584" data-postid="1052" data-replyto="Reply to D" data-respondelement="respond" href="#comment-584" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-586">
+<article class="comment-body" id="div-comment-586" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi D, thanks for sharing your findings! Some great stuff there that hadn’t occurred to me. I’ll definitely be pursuing them. Totally agree regarding walk forward testing; it is an essential part of the evaluation phase of strategy development in my opinion.<br/>
+I hadn’t considered using the other loadings from the principal components analysis, but I will look into that too. I also like the n-day exit idea. It is appealing in its simplicity and I have found it useful in the past.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-586" data-commentid="586" data-postid="1052" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-586" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-585">
+<article class="comment-body" id="div-comment-585" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Have you tried to use some kind of dominantPhase analysis from Zorro in the cointegrated spread and then trading it (spread) when the phase indicated so?<br/>
+Ps: I’ve traded cointegrated equity pairs for some 4 yrs, and have no clue about cointegrated fx pairs =)  but they do look way better and more robust for doing such.</p>
+<span class="reply"><a aria-label="Reply to Eduardo Gonzatti" class="comment-reply-link" data-belowelement="div-comment-585" data-commentid="585" data-postid="1052" data-replyto="Reply to Eduardo Gonzatti" data-respondelement="respond" href="#comment-585" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-587">
+<article class="comment-body" id="div-comment-587" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Eduardo, no I hadn’t considered extracting phase information from the cointegrated spread. My first reaction to the idea is that this approach would be applicable if some sort of cyclical behaviour was present in the spread. I don’t presently know if that is the case or not, but I will certainly look into it. In your experience, have you found exploitable cycles in the spreads you have traded?</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-587" data-commentid="587" data-postid="1052" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-587" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3" id="comment-589">
+<article class="comment-body" id="div-comment-589" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi there!<br/>
+Actually, I had this idea when fiddling with the Zorro manual a couple days ago..  I was studying about spectral analysis of financial time series returns and stumble upon Zorro’s cycle/phase indicators based in Hilbert Transforms, so it just occurred to me that, IF you assume that a spread (say, a cointegrated ols residue of two equities) is mean reverting (cointegrated and low enough half life with OU equation), you could probably use the same kind of transformation / cycle analysis that Zorro does (i thinks it’s based in John  Ehlers books) in those spreads, in order to get “optimized” entry points, assuming those would predict turning points in the spread itself.<br/>
+Don’t know if my assumption is mathematically sound, but it’s a hunch..<br/>
+Personally, I never tried something aside from N*sigmas deviations for trading cointegrated spreads,  because of the assumption that they are stochastic.<br/>
+Sorry for any misspellings,<br/>
+Best regards</p>
+<span class="reply"><a aria-label="Reply to Eduardo Gonzatti" class="comment-reply-link" data-belowelement="div-comment-589" data-commentid="589" data-postid="1052" data-replyto="Reply to Eduardo Gonzatti" data-respondelement="respond" href="#comment-589" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-588">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 01/03/2016 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-590">
+<article class="comment-body" id="div-comment-590" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Robot Master,<br/>
+Thank you for the analysis. One question, is keeping the quote currency constant also necessary for CADF and OU, or it is only for required for Johansen?<br/>
+Thanks,<br/>
+Mehmet</p>
+<span class="reply"><a aria-label="Reply to Mehmet" class="comment-reply-link" data-belowelement="div-comment-590" data-commentid="590" data-postid="1052" data-replyto="Reply to Mehmet" data-respondelement="respond" href="#comment-590" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-591">
+<article class="comment-body" id="div-comment-591" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>If you think about what the tests are doing, the answer to this becomes fairly obvious. The tests mentioned look for a unit root and/or stationarity of the time series in question. In this case, the time series is a spread created by the linear combination of the constituent currency pairs. Would it make much sense to test a spread that consists of, for example:<br/>
+A*USD/JPY + B*EUR/GBP ???<br/>
+What would the units of the spread be?</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-591" data-commentid="591" data-postid="1052" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-591" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-592">
+<article class="comment-body" id="div-comment-592" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thank you for answering.<br/>
+With two pairs with same quote currency, one unit moves have the same dollar values. So what you say is, unless we have this, the tests will not make any sense. Then for example for sgdchf vs zarjpy the pairs to test are sgdusd and zarusd, inverting the quotes or trading signals when necessary.<br/>
+Am i correct with my interpretation.</p>
+<span class="reply"><a aria-label="Reply to Mehmet" class="comment-reply-link" data-belowelement="div-comment-592" data-commentid="592" data-postid="1052" data-replyto="Reply to Mehmet" data-respondelement="respond" href="#comment-592" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4" id="comment-593">
+<article class="comment-body" id="div-comment-593" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Assuming you want to trade a mean reverting spread that consists of SGD and ZAR, yes what you described is how I would approach it.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-593" data-commentid="593" data-postid="1052" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-593" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-594">
+<article class="comment-body" id="div-comment-594" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>What about using 10 assets and combining them in groups of 3 with  a loop and then calculate the eigenvalues of all those combinantions to get as an output the best cointegration portfolio?</p>
+<span class="reply"><a aria-label="Reply to mariano" class="comment-reply-link" data-belowelement="div-comment-594" data-commentid="594" data-postid="1052" data-replyto="Reply to mariano" data-respondelement="respond" href="#comment-594" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-595">
+<article class="comment-body" id="div-comment-595" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Just a heads up:<br/>
+You’re missing a negative here:<br/>
+half.life &lt;- log(2)/lambda<br/>
+It should be, '-log(2) / lambda'<br/>
+And caution to the lag function; I'm unsure which package was used, but you might be erroneously shifting the lag forward to y(t+1) by using '-1' if you're using the base:::lag function. I like quantmod:::Lag(y, k = 1).<br/>
+Best</p>
+<span class="reply"><a aria-label="Reply to John Doe" class="comment-reply-link" data-belowelement="div-comment-595" data-commentid="595" data-postid="1052" data-replyto="Reply to John Doe" data-respondelement="respond" href="#comment-595" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-597">
+<article class="comment-body" id="div-comment-597" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey John<br/>
+Thanks for pointing that out – you are absolutely correct on both counts. I’ve updated the code accordingly and found that the actual half life should be roughly 53 days, an increase over the 40 days calculated erroneously. I will some day get around to updating the affected results (ie the equity curves of the trading strategies that used the erroneous half life)!<br/>
+Thanks!</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-597" data-commentid="597" data-postid="1052" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-597" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="trackback odd alt thread-even depth-1" id="comment-596">
+<div class="comment-body">
+				Pingback: Homepage 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-598">
+<div class="comment-body">
+				Pingback: ADF тест для парного трейдинга в Excel | QuantAlgos 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-599">
+<article class="comment-body" id="div-comment-599" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+Can you enlighten me as to the meaning, when both eigenvalues for a pair are the same sign? They are normally opposite… so I’m selling one and buying the other. The same sign seems to imply go long (or short) on both… which seems at odds with the pair trading methodology.<br/>
+Thanks,</p>
+<span class="reply"><a aria-label="Reply to David" class="comment-reply-link" data-belowelement="div-comment-599" data-commentid="599" data-postid="1052" data-replyto="Reply to David" data-respondelement="respond" href="#comment-599" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-600">
+<div class="comment-body">
+				Pingback: Demystifying the Hurst Exponent – Part 1 – Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-601">
+<div class="comment-body">
+				Pingback: ADF тест для парного трейдинга в Excel — kirichblog 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-602">
+<div class="comment-body">
+				Pingback: Augmented Dickey Fuller (ADF) Test for a Pairs Trading Strategy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-603">
+<article class="comment-body" id="div-comment-603" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+Just came across your blog post while searching for the concept around half-life in mean reversion. I would be keen to know your thoughts around using Kalman filter to estimate hedge ratio. Would be even better if you have an example implementation in R.<br/>
+Many thanks<br/>
+riskmaverick</p>
+<span class="reply"><a aria-label="Reply to Riskmaverick" class="comment-reply-link" data-belowelement="div-comment-603" data-commentid="603" data-postid="1052" data-replyto="Reply to Riskmaverick" data-respondelement="respond" href="#comment-603" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-604">
+<article class="comment-body" id="div-comment-604" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I think Kalman filtering is a great way to estimate hedge ratios. The optimal hedge ratio is rarely static, and Kalman filtering provides a sensible way to update it in real time taking into account the inherent uncertainty in its calculation.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-604" data-commentid="604" data-postid="1052" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-604" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-605">
+<article class="comment-body" id="div-comment-605" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi<br/>
+Is there a easy way to ensure that the cointegration relationship is about to expire?<br/>
+ </p>
+<span class="reply"><a aria-label="Reply to MarianoA" class="comment-reply-link" data-belowelement="div-comment-605" data-commentid="605" data-postid="1052" data-replyto="Reply to MarianoA" data-respondelement="respond" href="#comment-605" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-606">
+<article class="comment-body" id="div-comment-606" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I’m not sure of any easy way, but one reason these relationships break down is a structural change in the underlying relationship, for example following an earnings announcement that causes a sudden revaluation in one security. In that case, a different cointegrating relationship would probably emerge, once the jump or decline in price settled down to its new level. Another example that relates to the cointegration of ETFs that track the economies of two countries: a relationship could break down when one country’s economy shifts in some fundamental way, for example from a manufacturing to a service base. The two ETFs end up being exposed to different factors and so the cointegration relationship breaks down. In this case, it would happen more slowly. </p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-606" data-commentid="606" data-postid="1052" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-606" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/exploring-mean-reversion-and-cointegration-part-2/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,269 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Evolving Thoughts on Data Mining</title>
+<!-- source: https://robotwealth.com/evolving-thoughts-on-data-mining/ -->
+<h1>Evolving Thoughts on Data Mining</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-32650 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading pmpro-has-access" id="post-32650">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">December 10, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Evolving Thoughts on Data Mining</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Evolving Thoughts on Data Mining" class="ipa-media gb-media-81e19d89" data-media-id="32688" decoding="async" fetchpriority="high" height="312" sizes="(max-width: 467px) 100vw, 467px" src="https://media.robotwealth.com/wp-content/uploads/2020/12/21160823/mlcrop.png" srcset="https://media.robotwealth.com/wp-content/uploads/2020/12/21160823/mlcrop.png 467w, https://media.robotwealth.com/wp-content/uploads/2020/12/21160823/mlcrop-300x200.png 300w" width="467"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Several years ago, I wrote about some experimentation I’d done with data mining for predictive features from financial data. The article has had several tens of thousands of views and nearly 100 comments.
+
+I <em>think</em> the popularity of the article lay in its demonstration of various tools and modeling frameworks for doing data mining in R (it didn’t generate any alpha, so it can’t have been that). To that end, I’ve updated the data, code, and output, and added it to our GitHub repository. You can view the updated article <a href="https://robotwealth.com/machine-learning-financial-prediction-david-aronson/" rel="noopener noreferrer" target="_blank">here</a> and find the code and data <a href="https://github.com/Robot-Wealth/r-quant-recipes/tree/master/research-examples/aronson-ml" rel="noopener noreferrer" target="_blank">here</a>.
+
+Re-reading the article, it was apparent that my thinking had moved on quite significantly in just a few short years.
+
+Back when I originally wrote this article, there was a commonly held idea that a newly-hyped approach to predictive modeling known as <em>machine learning</em> could discern predictive patterns in market data. A quick search on SSRN will turn up dozens of examples of heroic attempts at this very thing, many of which have been downloaded thousands of times.
+
+Personally, I spent more hours than I care to count on this approach. And while I learned an absolute ton, I can also say that <em>nothing</em> that I trade today emerged from such a data-mining exercise. A large scale data mining exercise <em>contributed</em> to <em>one</em> of our strategies, but it was supported by a ton of careful analysis.
+
+Over the years since I first wrote the article, a realisation has dawned on me:
+
+<blockquote><em>Trading is very hard, and these techniques don’t really help that much with the hardest part.</em></blockquote>
+
+I think, in general, the trading and investment community has had a similar awakening.
+
+<em>OK, so what’s the “hardest part” of trading?</em>
+
+Operational issues of running a trading business aside, the hardest part of trading is maximising the probability that the edges you trade continue to pay off in the future.
+
+Of course, we can never be entirely sure about anything in the markets. They change. Edges come and go. There’s always anxiety that an edge isn’t really an edge at all, that it’s simply a statistical mirage. There is uncertainty everywhere.
+
+Perhaps the most honest goal of the quantitative researcher is to <em><strong>reduce this uncertainty as far as reasonably possible.</strong></em>
+
+Unfortunately (or perhaps fortunately, if you take the view that if it were easy, everyone would do it), reducing this uncertainty takes a lot of work and more than a little market nouse.
+
+In the practical world of our own trading, we do this in a number of ways centred on detailed and careful analysis. Through data analysis, we try to answer questions like:
+
+<ul>
+<li>Does the edge make sense from a structural, economic, financial, or behavioural perspective?</li>
+<li>Is there a reason for it to exist that I can explain in terms of taking on risk or operational overhead that others don’t want, or providing a service?</li>
+<li>Is it stable through time?</li>
+<li>Does it show up in the assets that I’d expect it to, given my explanation for why it exists?</li>
+<li>What else could explain it? Have I isolated the effect from things we already know about?</li>
+<li>What other edges can I trade with this one to diversify my risk?</li>
+</ul>
+
+In the world of machine learning and data mining, “reducing uncertainty” involves accounting for data mining bias (the tendency to eventually find things that look good if you look at enough combinations). There are statistical tests for data-mining bias, which, if being generous, offer plausible-sounding statistical tools for validating data mining efforts. However, I’m not here to be generous to myself and can admit that the appeal of such tools, at least for me, lay in the promise of avoiding the really hard work of careful analysis. <em>I don’t need to do the analysis, because a statistical test can tell me how certain my edge is!</em>
+
+But what a double-edged sword such avoidance turns out to be.
+
+If you’ve ever tried to trade a data-mined strategy, regardless of what your statistical test for data-mining bias told you, you know that it’s a constant battle with your anxiety and uncertainty. Because you haven’t done the work to understand the edge, it’s impossible to just leave it alone. You’re constantly adjusting, wondering, and looking for answers <em>after the</em> <em>fact</em>. It turns into an endless cycle – and I’ve <em>personally </em>seen it play out at all levels from beginner independent traders through to relatively sophisticated and mature professional trading firms.
+
+The real tragedy about being on this endless cycle is that it short-circuits the one thing that is most effective at reducing uncertainty, at least at the level of your overall portfolio – finding new edges to trade.
+
+This reality leads me to an approach for adding a new trade to our portfolio:
+
+<ul>
+<li>Do the work to reduce the uncertainty to the extent possible. You don’t want to trade just <em>anything</em>, you want to trade high-probability edges that you understand deeply.</li>
+<li>Trade it at a size that can’t hurt you at the portfolio level if you’re wrong – and we will all be wrong from time to time.</li>
+<li>Leave it alone and go look for something else to trade.</li>
+</ul>
+
+The third point is infinitely more palatable if you’ve done the work and understand the things you’re already trading.
+
+Having said all that, I’m not about to abandon machine learning and other statistical tools. They absolutely have their place, but it’s worth thinking about the relative importance of what to concentrate on and what we spend our time on.
+
+At one extreme, we might think that market insight and quantitative analysis (what we’d call “feature engineering” in machine learning speak) is the most important thing and that we should spend all our time there.
+
+However, the problem with this approach is that there are effective and well-understood techniques (for example PCA, lasso regression, and others) that will very much help with modeling and analysis. Understanding these tools well enough to know what they are and when they might help greatly enhances your effectiveness as a quantitative researcher.
+
+On the other extreme, we might think that spending all our time on machine learning, data mining and statistical tests is appropriate. This is akin to owning a top-notch toolkit for servicing a car, but not knowing anything about cars, and leads to the endless cycle of patching things up mentioned above.
+
+<div aria-expanded="false" class="c-virtual_list__item" data-qa="virtual-list-item" id="1607393890.069100" role="listitem" tabindex="-1">
+<div class="c-message_kit__background p-message_pane_message__message c-message_kit__message" data-qa="message_container" data-qa-placeholder="false" data-qa-unprocessed="false" role="document">
+<div class="c-message_kit__hover" data-qa-hover="true" role="document">
+<div class="c-message_kit__actions c-message_kit__actions--above">
+<div class="c-message_kit__gutter">
+<div class="c-message_kit__gutter__left">
+<p class="p-message_pane_message__compact_timestamp p-message_pane_message__compact_timestamp--light p-message_pane_message__compact_timestamp--adjacent">To be frank, it’s not obvious how to manage the middle ground between these two extremes. Viewing machine learning and statistical techniques as <em>tools</em> rather than <em>alpha</em> is certainly a step in the right direction. Like the markets themselves, we must always be looking to evolve – finding new trades and more effective tools for doing good analysis, and adding to our skills and knowledge with time.</p>
+<blockquote>
+<p class="p-message_pane_message__compact_timestamp p-message_pane_message__compact_timestamp--light p-message_pane_message__compact_timestamp--adjacent"><em>Now, philosophising aside, here’s the <a href="https://robotwealth.com/machine-learning-financial-prediction-david-aronson/" rel="noopener noreferrer" target="_blank">original article</a>, with updated code and charts.</em></p>
+</blockquote>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8"></div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">5 thoughts on “Evolving Thoughts on Data Mining”</h2>
+<ol class="comment-list">
+<li class="comment byuser comment-author-alexlev2004 even thread-even depth-1" id="comment-18118">
+<article class="comment-body" id="div-comment-18118" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great insight, makes lots of sense also in other areas where people tried to apply ML. The process starts with an idea (“edge”) then modeling it – the hardest part. Data is just the “oil”.<br/>
+Thanks for sharing, Kris.</p>
+<span class="reply"><a aria-label="Reply to alexlev2004" class="comment-reply-link" data-belowelement="div-comment-18118" data-commentid="18118" data-postid="32650" data-replyto="Reply to alexlev2004" data-respondelement="respond" href="#comment-18118" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-18138">
+<article class="comment-body" id="div-comment-18138" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris, </p>
+<p>I am a big fan of the thought evolution. We used to think that ‘financial engineering’ was an awkward neologism, but it pales in comparison with its newer counterpart ‘data science’. There is also a very worrying shift towards completely data-driven hypotheses and data-driven decision making, where in fact it should always be ‘story-driven’ hypotheses and data-justified decision making. Data and models should inform decisions but not be the key drivers of both hypotheses and decisions.<br/>
+The worry here – and potentially the reason why your first post was so successful – is that this thinking  amplifies the Dunning-Kruger effect. Anyone with sufficient technical data analysis skills is now able to analyse any phenomena in any field without the requirement of having what is casually referred to as ‘domain knowledge’. As you point out, this quickly becomes apparent in finance, where the system is both non-stationary and very noisy. Your final point sums it up: tools should always be viewed as tools, no more and also no less.<br/>
+Thanks, Emlyn</p>
+<span class="reply"><a aria-label="Reply to Emlyn Flint" class="comment-reply-link" data-belowelement="div-comment-18138" data-commentid="18138" data-postid="32650" data-replyto="Reply to Emlyn Flint" data-respondelement="respond" href="#comment-18138" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-18159">
+<article class="comment-body" id="div-comment-18159" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Emylin: I think your comment is great, but I have a caveat: if those driven-data systems persists ¿is this not a proof or at list hint that they are  making money?</p>
+<span class="reply"><a aria-label="Reply to Leon Jaime Bendayan Rios" class="comment-reply-link" data-belowelement="div-comment-18159" data-commentid="18159" data-postid="32650" data-replyto="Reply to Leon Jaime Bendayan Rios" data-respondelement="respond" href="#comment-18159" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-18222">
+<article class="comment-body" id="div-comment-18222" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the comment, Emlyn. I very much agree – data analysis skills are a key ingredient, but so too (even more so) is domain knowledge.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-18222" data-commentid="18222" data-postid="32650" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-18222" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-18512">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 12/09/2020 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/evolving-thoughts-on-data-mining/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

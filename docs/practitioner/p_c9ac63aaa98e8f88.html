@@ -1,0 +1,249 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Pairs Trading Strategy: A Short Take on Real-World Application</title>
+<!-- source: https://robotwealth.com/a-short-take-on-real-world-pairs-trading/ -->
+<h1>Pairs Trading Strategy: A Short Take on Real-World Application</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-87785 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader category-trading-strategies tag-pair-trading tag-stat-arb-2 tag-trading-lessons pmpro-has-access" id="post-87785">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">January 12, 2024</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Pairs Trading Strategy: A Short Take on Real-World Application</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Pairs Trading Strategy: A Short Take on Real-World Application" class="ipa-media gb-media-81e19d89" data-media-id="87786" decoding="async" fetchpriority="high" height="684" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2024/01/21154927/pear-1024x684.jpg" srcset="https://media.robotwealth.com/wp-content/uploads/2024/01/21154927/pear-1024x684.jpg 1024w, https://media.robotwealth.com/wp-content/uploads/2024/01/21154927/pear-300x200.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2024/01/21154927/pear-768x513.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2024/01/21154927/pear-1536x1025.jpg 1536w, https://media.robotwealth.com/wp-content/uploads/2024/01/21154927/pear-2048x1367.jpg 2048w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">InIn textbooks, you often see pairs trading algorithms starting by regressing prices of Asset A on Asset B to calculate a hedge ratio.</p>
+<p class="wp-block-paragraph">But in the real world, I’ve rarely seen anyone actually do this.</p>
+<p class="wp-block-paragraph">That’s because it’s a very unstable approach, especially for pairs of volatile assets, and even more so over long periods of data.</p>
+<h2 class="wp-block-heading">The Basics of Pairs Trading: What You Need to Know</h2>
+<p class="wp-block-paragraph">Pairs trading is a market-neutral strategy where you trade two correlated assets in opposite directions: one long, one short. The idea is that, over time, the assets will converge in price, and you profit from that convergence.</p>
+<p class="wp-block-paragraph">At its core, pairs trading relies on the belief that prices of two correlated assets will revert to their mean over time. If Asset A moves up, Asset B should move up too. If Asset A falls, Asset B should fall too. But, when they diverge significantly, you go long on the undervalued one and short the overvalued one, expecting them to move closer together.</p>
+<p class="wp-block-paragraph">The beauty of this strategy is that it aims to profit from relative price movements, not from the overall market direction. This makes pairs trading a popular choice for traders seeking to hedge market risk while capturing profits from asset mispricing.</p>
+<h2 class="wp-block-heading">Why Traditional Pairs Trading Models Don’t Work in the Real World</h2>
+<p class="wp-block-paragraph">In textbooks, pairs trading algorithms often begin by regressing the prices of Asset A on Asset B to calculate a hedge ratio. This might work in theory, but in practice, it’s a volatile, unstable method, especially for a pair of assets that move dramatically or over large datasets.</p>
+<p class="wp-block-paragraph">The traditional model assumes that historical price relationships will continue to hold. But as you know, the market doesn’t care about your backtest. Real-world conditions like slippage, market impact, and the underlying volatility of the assets make these methods highly unreliable.</p>
+<h2 class="wp-block-heading">A Simple and Practical Approach to Pairs Trading</h2>
+<p class="wp-block-paragraph">In the real world, the simpler approach tends to work best. Forget the complicated hedge ratios, focus on the ratio of the stock prices, apply a moving average to that ratio, and then use standard deviation to understand how far off the prices are from the mean. You can then calculate a z-score to decide when to trade.</p>
+<p class="wp-block-paragraph">The benefit here is that you don’t need to overthink the hedge ratio. You’re not trying to predict exactly how much one asset should outperform the other. Instead, you’re betting on the assets reverting to the mean, and your entry is based on the volatility around that mean.</p>
+<h3 class="wp-block-heading">Why Equal Risk Exposure Works in Pairs Trading</h3>
+<p class="wp-block-paragraph">When you’re trading stocks or futures, you want to allocate the same amount of risk to each leg. The idea is simple: by allocating equal margin to both legs of the trade, you ensure that each position carries the same risk, regardless of how much the assets cost. This works because the relative movement of the two assets is more important than their absolute price.</p>
+<p class="wp-block-paragraph">In the case of equity pairs or futures contracts, this method is easy to execute and tends to balance risk exposure evenly. If one asset moves up, you want the other to move in the opposite direction in order to profit from the difference. This is about balancing your positions, not trying to predict exact price movements.</p>
+<h3 class="wp-block-heading">Adapting Pairs Trading for Unconventional Assets</h3>
+<p class="wp-block-paragraph">When you step outside the world of equities and start trading unconventional asset pairs, like copper against JGBs, things get more complicated. These are markets with completely different behaviors. But you can still apply a simplified approach by adjusting your strategy based on the volatility of the assets.</p>
+<p class="wp-block-paragraph">For example, you can weight the ratio of assets by their realized or implied volatility. This ensures that you’re allocating more weight to the asset that has a greater potential to move, reducing the risk of mismatched exposure. So even if you’re trading something as crazy as copper vs. bonds, you can make the simple method work.</p>
+<h2 class="wp-block-heading">The Best Pairs Trading Strategy is the One That Works for You</h2>
+<p class="wp-block-paragraph">The main lesson from this is that the smartest-seeming thing is often not the best in trading.</p>
+<p class="wp-block-paragraph">In academic land, you often see people calculating hedge ratios using dynamic linear models (Kalman filters, etc), copulas, genetic algorithms, etc. When I started out, I did all of these things as well.</p>
+<p class="wp-block-paragraph">In the real world, where implementation, scalability and profitability are prioritised, the simpler approach tends to win out.</p>
+<p class="wp-block-paragraph"><strong>In the real world, where implementation, scalability and profitability are prioritised, the simpler approach tends to win out.</strong></p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>pair trading</span>, <span>stat arb</span>, <span>trading lessons</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-133234 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai tag-data-mining tag-llms pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/for-the-love-of-the-game/"><img alt="For The Love of The Game" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="133235" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-80x69.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-480x413.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game.png 893w" decoding="async" height="660" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='660'%20viewBox='0%200%20768%20660'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-132449 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/to-trend-or-not-to-trend-wrong-question/"><img alt="To Trend or Not To Trend? (Wrong question)" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="132450" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-131547 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/brave-new-backtest/"><img alt="Brave New Backtest" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="131550" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-150x150.jpeg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-80x80.jpeg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-480x480.jpeg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-960x960.jpeg 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst.jpeg 1024w" decoding="async" height="768" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='768'%20viewBox='0%200%20768%20768'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">13 thoughts on “Pairs Trading Strategy: A Short Take on Real-World Application”</h2>
+<ol class="comment-list">
+<li class="comment byuser comment-author-andrea123 even thread-even depth-1 parent" id="comment-36391">
+<article class="comment-body" id="div-comment-36391" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Do you provide (R) code for above pairs trading strategy in RW PRO subscription?</p>
+<span class="reply"><a aria-label="Reply to Andrea Gazdek" class="comment-reply-link" data-belowelement="div-comment-36391" data-commentid="36391" data-postid="87785" data-replyto="Reply to Andrea Gazdek" data-respondelement="respond" href="#comment-36391" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2 parent" id="comment-36432">
+<article class="comment-body" id="div-comment-36432" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Yes we do. We also run a universe selection process that leverages big data and cloud computing – which is much more interesting and useful than the actual pair trading algorithm itself.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-36432" data-commentid="36432" data-postid="87785" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-36432" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-36732">
+<article class="comment-body" id="div-comment-36732" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>is there plans for another bootcamp this year, very interested</p>
+<span class="reply"><a aria-label="Reply to Brendan" class="comment-reply-link" data-belowelement="div-comment-36732" data-commentid="36732" data-postid="87785" data-replyto="Reply to Brendan" data-respondelement="respond" href="#comment-36732" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-4" id="comment-36819">
+<article class="comment-body" id="div-comment-36819" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Brendan, yep we are running Trade Like a Quant Bootcamp again in April 2024! Sign up for email updates here: <a href="https://robotwealth.com/trade-like-a-quant-bootcamp-closed/" rel="ugc">https://robotwealth.com/trade-like-a-quant-bootcamp-closed/</a></p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-36819" data-commentid="36819" data-postid="87785" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-36819" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-36410">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 01/12/2024 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-36527">
+<div class="comment-body">
+				Pingback: A General Approach for Exploiting Statistical Arbitrage Alphas  - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-36528">
+<div class="comment-body">
+				Pingback: A General Approach for Exploiting Statistical Arbitrage Alphas  | GPTTradeAssist.com 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-36617">
+<div class="comment-body">
+				Pingback: Ideas for Crypto Stat Arb Features - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-36835">
+<div class="comment-body">
+				Pingback: Quantifying and Combining Crypto Alphas - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-36848">
+<div class="comment-body">
+				Pingback: A Simple, Effective Way to Manage Turnover and Not Get Killed by Costs - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-36931">
+<div class="comment-body">
+				Pingback: How to Model Features as Expected Returns - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-37019">
+<div class="comment-body">
+				Pingback: Building Intuition for Trading with Convex Optimisation with CVXR - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-37139">
+<div class="comment-body">
+				Pingback: Navigating Tradeoffs with Convex Optimisation - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/a-short-take-on-real-world-pairs-trading/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,323 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Diving Deep: My Personal Approach to Equity and Volatility Risk Premia</title>
+<!-- source: https://robotwealth.com/diving-deep-my-personal-approach-to-equity-and-volatility-risk-premia/ -->
+<h1>Diving Deep: My Personal Approach to Equity and Volatility Risk Premia</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-81761 post type-post status-publish format-standard hentry category-options category-quant-trading category-think-like-a-trader category-trading-strategies pmpro-has-access" id="post-81761">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">October 5, 2023</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Diving Deep: My Personal Approach to Equity and Volatility Risk Premia</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Diving Deep: My Personal Approach to Equity and Volatility Risk Premia" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">Lately, I’ve been thinking a lot about the Volatility Risk Premium (VRP). The VRP makes much more sense (to me, at least) when I have the Equity Risk Premium (ERP) for context and comparison. So, in this article, I want to discuss the ERP and the VRP, their similarities and differences, and how I seek exposure to both.</p>
+<p class="wp-block-paragraph">I’ll do a follow-up article where we analyse the VRP using the most excellent ORATS core research data set (ORATS has generously offered <a href="https://orats.com/robotwealth" rel="noreferrer noopener sponsored nofollow" target="_blank">discounted subscriptions</a> to readers of Robot Wealth).</p>
+<p class="wp-block-paragraph">Let’s get to it.</p>
+<h2 class="wp-block-heading" id="risk-reward-and-not-outsmarting-the-market">Risk, reward, and (not) outsmarting the market</h2>
+<p class="wp-block-paragraph">Predicting when projected market expectations differ from reality is, in my opinion, the single most difficult way to make money in the markets.</p>
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="wp-block-paragraph">For the record, finding people willing or forced to trade at inopportune prices is a much safer bet. Not that this doesn’t come with its own set of trade-offs of course. But that’s a story for another time. (We cover it in detail in Trade Like a Quant Bootcamp – <a href="https://robotwealth.com/" rel="noreferrer noopener" target="_blank">subscribe for free updates here</a>).</p>
+</blockquote>
+<p class="wp-block-paragraph">While not entirely efficient, the market is extremely good at pricing assets based on all available information. If you think about an exchange-traded market for a stock, it’s essentially a process where (potentially) thousands or even millions of people vote on what the stock is worth right now. When taken in the aggregate, these crowds tend to be surprisingly accurate.</p>
+<p class="wp-block-paragraph">When I buy stock in a particular company because I think it will go up, I’m essentially saying, “I am betting that I know more about this company’s worth than the market.”</p>
+<p class="wp-block-paragraph">For me, that’s been a bad bet on average.</p>
+<p class="wp-block-paragraph"><em>Maybe I’m a terrible stock picker. Or maybe trying to out-predict the market is simply the wrong game.</em></p>
+<p class="wp-block-paragraph">There exists an inconsistency in what I said above. If the market is indeed such an efficient pricing machine, <strong>why have investors made so much money over the risk-free rate by being exposed to the stock market?</strong></p>
+<p class="wp-block-paragraph">Check out this chart of the growth of $100 invested in stocks, bills, and bonds since 1928:</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-81764 perfmatters-lazy" data-sizes="(max-width: 846px) 100vw, 846px" data-src="https://media.robotwealth.com/wp-content/uploads/2023/10/21155045/Growth-of-100-invested-in-stocks-bills-and-bonds.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2023/10/21155045/Growth-of-100-invested-in-stocks-bills-and-bonds.png 846w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155045/Growth-of-100-invested-in-stocks-bills-and-bonds-300x185.png 300w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155045/Growth-of-100-invested-in-stocks-bills-and-bonds-768x475.png 768w" decoding="async" height="523" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='846'%20height='523'%20viewBox='0%200%20846%20523'%3E%3C/svg%3E" width="846"/><figcaption class="wp-element-caption"><a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html">Data</a> sourced from <a href="https://pages.stern.nyu.edu/~adamodar/">Aswath Domodoran’s home page</a> at NYU Stern.</figcaption></figure>
+</div>
+<p class="wp-block-paragraph">Compounded total returns to stocks far exceed returns to bills and bonds (<em>that’s a log scale on the y-axis</em>). Where do those returns come from?</p>
+<p class="wp-block-paragraph">The answer is the Equity Risk Premium (ERP).</p>
+<p class="wp-block-paragraph">At its core, the ERP exists to compensate investors for the inherent uncertainty and risk of holding equities. Stocks are volatile and can decline in value, potentially even leading to a total loss. The ERP provides an incentive for investors to take on this risk.</p>
+<p class="wp-block-paragraph">Here’s an example of what I mean:</p>
+<p class="wp-block-paragraph">Which of these two assets would you rather buy for $10k?</p>
+<ul class="wp-block-list">
+<li>One that <em>definitely</em> pays you back $11k after 12 months.</li>
+<li>Or one which you <em>expect</em> to pay you back $11k – but there’s a chance you could lose half of the money you put up or a chance you could double it.</li>
+</ul>
+<p class="wp-block-paragraph">If you are a rational investor, you’ll pick the first one every time. The expectation is the same, but the risk profile is completely different (<em>expectation</em> here means the average outcome if you took the bet an infinite number of times).</p>
+<p class="wp-block-paragraph">There’s no point picking the riskier option <em>unless you expect it to pay more</em>. And you expect it to pay the same as the first one.</p>
+<p class="wp-block-paragraph">So if the second one traded on an exchange, very few people would buy it outside of a few risk-loving maniacs. And many people who might have held it will sell it when they realize they can get the same returns, risk-free.</p>
+<p class="wp-block-paragraph">So you’ll be able to buy the riskier asset cheaper – and because it’s cheaper, its expected returns as a percentage of the amount you paid will be higher.</p>
+<p class="wp-block-paragraph"><strong><em>That discount represents the ERP.</em></strong></p>
+<p class="wp-block-paragraph">So essentially, the ERP rewards you with higher expected returns for taking on risk that others shun.</p>
+<p class="wp-block-paragraph">But the phrase “taking on risk” is much less benign than it sounds when written in an internet article. Take another look at the chart comparing the growth of $100 invested into stocks, bills and bonds, except now we add the drawdown in the S&amp;P 500 investment as a green line against the right axis:</p>
+<figure class="wp-block-image size-full"><img alt="" class="wp-image-81765 perfmatters-lazy" data-sizes="(max-width: 846px) 100vw, 846px" data-src="https://media.robotwealth.com/wp-content/uploads/2023/10/21155045/Growth-of-100-invested-in-stocks-bills-and-bonds-w-dd.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2023/10/21155045/Growth-of-100-invested-in-stocks-bills-and-bonds-w-dd.png 846w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155045/Growth-of-100-invested-in-stocks-bills-and-bonds-w-dd-300x185.png 300w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155045/Growth-of-100-invested-in-stocks-bills-and-bonds-w-dd-768x475.png 768w" decoding="async" height="523" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='846'%20height='523'%20viewBox='0%200%20846%20523'%3E%3C/svg%3E" width="846"/></figure>
+<p class="wp-block-paragraph">The log scale on the left axis potentially masks the extent of the equity volatility. You can get a better feel for what “taking on risk” actually feels like now that we can see the drawdown in green:</p>
+<ul class="wp-block-list">
+<li>It means losing 65% of your capital once since 1928 on a year-on-year basis.</li>
+<li>It means losing nearly 40% another five times.</li>
+<li>It means losing 10% another six times.</li>
+<li>If you were unlucky and your timing was terrible, you could have locked up your money for 15 years before it was worth more than you started with (1928-1943). </li>
+<li>You would also have sat with less than you started with for 11 years if you got in at the height of the dot-com boom (1999 – just as you almost got your money back circa 2007, along came the GFC).</li>
+</ul>
+<p class="wp-block-paragraph"><em>And the data I used here paints the rosiest of pictures possible.</em></p>
+<p class="wp-block-paragraph">It uses yearly snapshots, so it hides the intra-year volatility, which can also be significant. For example, 2020: the data used here records an 18% gain in 2020, but that year <em>also</em> saw capital destruction of around 30% before things turned around:</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img alt="" class="wp-image-81775 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2023/10/21155041/covid-drawdown-1024x568.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2023/10/21155041/covid-drawdown-1024x568.png 1024w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155041/covid-drawdown-300x166.png 300w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155041/covid-drawdown-768x426.png 768w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155041/covid-drawdown.png 1466w" decoding="async" height="568" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='568'%20viewBox='0%200%201024%20568'%3E%3C/svg%3E" width="1024"/><figcaption class="wp-element-caption">Intra-year drawdown of ~30% in SPY </figcaption></figure>
+</div>
+<p class="wp-block-paragraph">The data also hides the worst of the drawdowns. For instance, if we use daily snapshotted data, the peak-to-trough drawdown over the GFC is about 54%. The year-on-year data used here “only” shows a 40% capital destruction.</p>
+<p class="wp-block-paragraph">So, hopefully, two things are obvious:</p>
+<ol class="wp-block-list">
+<li>You can see that the ERP has been a reliable and effective source of returns. At least in the US since 1928.</li>
+<li>These returns come with a trade-off. You get your premium precisely because you take on the risk we just saw. You can’t divorce the two – as anyone who has tried to time the ERP will tell you.</li>
+</ol>
+<h2 class="wp-block-heading" id="volatility-another-risk-premium-">Volatility – another risk premium?</h2>
+<p class="wp-block-paragraph">The ERP represents the premium investors require as compensation for the risk of holding equities. Said differently, it reflects the uncertainty investors have in the price of stocks.</p>
+<p class="wp-block-paragraph"><em>It turns out that something similar turns up when we look at volatility.</em></p>
+<p class="wp-block-paragraph">The price of a stock’s options represents the market’s expectation of the stock’s volatility. That is, the market’s expectation of how much the price is expected to wiggle around over some time period. </p>
+<p class="wp-block-paragraph">This expectation of volatility, extracted from its options’ prices, is what we call <em>implied volatility</em> (because it’s <em>implied</em> by the prices of the options).</p>
+<p class="wp-block-paragraph">When you go back and compare <em>realised</em> volatility (that is, what actually happened) to <em>implied</em> volatility (what the market thought would happen), you find that <em>implied</em> is persistently greater than <em>realised</em>.</p>
+<p class="wp-block-paragraph">The market expects more volatility than it gets, typically.</p>
+<p class="wp-block-paragraph">This difference between implied and realised volatility is the Volatility Risk Premium (VRP).</p>
+<p class="wp-block-paragraph">And like the ERP, the VRP may exist as compensation for risk (at least partly), albeit a different risk from the ERP. Specifically, one could argue that the VRP compensates for bearing <em>volatility</em> risk. </p>
+<p class="wp-block-paragraph">Consider that when investors write (or sell) options, they expose themselves to potential losses due to spikes in market volatility. The implied volatility, therefore, contains a premium as compensation for this risk.</p>
+<p class="wp-block-paragraph">The risk that the VRP compensates for behaves very differently from that of the ERP. This suggests that we may want to think about these premia differently.</p>
+<h3 class="wp-block-heading">An example of how to think about the VRP</h3>
+<p class="wp-block-paragraph">Imagine you have two money-making ventures:</p>
+<ol class="wp-block-list">
+<li><strong>Renting Out Property (ERP)</strong>: You buy a house and rent it out. Every month, the tenant pays you rent. While the house’s value might go up or down over time, the rent you collect is relatively steady, and over the long run, you expect to make a profit, even if you get the odd tenant that trashes the house along the way. This consistent return over and above keeping your money in the bank is like the Equity Risk Premium.</li>
+<li><strong>Selling Insurance (VRP)</strong>: Imagine you’re an insurance agent selling storm insurance to homeowners. Most years, there are no catastrophic storms, and you keep all the premiums people pay you for the insurance. But occasionally, a big storm hits, and you have to pay out big claims. The money you earn from selling insurance most of the time (when there’s no storm) is your reward for the risk you take on those rare occasions when the storm does hit. This consistent difference between the premium you collect and the occasional payout is analogous to the Volatility Risk Premium.</li>
+</ol>
+<p class="wp-block-paragraph">Renting out property (like investing in stocks) is a relatively consistent and straightforward way to earn a return. You face some risks, like property damage or vacancies, but you expect to be rewarded over the long haul for taking on those risks.</p>
+<p class="wp-block-paragraph">Selling storm insurance is much like selling options. Most of the time, you collect premiums (analogous to the implied volatility), but every so often, a “storm” (or market downturn) hits, and you need to pay out <em>big</em>. The difference between the premium you regularly collect and the rare, large payouts you make is like capturing the VRP.</p>
+<p class="wp-block-paragraph">You can see the parallels between ERP and VRP: both premiums exist primarily as compensation for risk. The ERP compensates for the general risk of equities, while the VRP compensates for the risk of volatility spikes.</p>
+<p class="wp-block-paragraph">However, there are some interesting differences:</p>
+<ul class="wp-block-list">
+<li>Nature of risk: While both are compensation for risk, the nature of the risk is different. ERP relates to the long-term risk of holding equities versus risk-free assets, while VRP is more related the short-term uncertainty or variability in asset prices.</li>
+<li>Duration: While both premiums can manifest in the short term, ERP is often viewed with a longer-term perspective (the long-run excess returns of equities), whereas VRP can be particularly prominent in the short term due to immediate market uncertainties.</li>
+</ul>
+<p class="wp-block-paragraph"><em>Let’s turn to a few more charts to make this all a little more visceral.</em></p>
+<p class="wp-block-paragraph">VIXY is an ETF that holds short-term VIX index futures. Because of the VRP, it loses money most of the time (remember, realised volatility tends to come in lower than implied) but occasionally has big spikes up. Here’s the growth of $1,000 invested in VIXY (note that the y-axis is log-scale):</p>
+<figure class="wp-block-image size-full"><img alt="" class="wp-image-81766 perfmatters-lazy" data-sizes="(max-width: 808px) 100vw, 808px" data-src="https://media.robotwealth.com/wp-content/uploads/2023/10/21155044/Growth-of-1000-invested-in-VIXY.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2023/10/21155044/Growth-of-1000-invested-in-VIXY.png 808w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155044/Growth-of-1000-invested-in-VIXY-300x185.png 300w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155044/Growth-of-1000-invested-in-VIXY-768x474.png 768w" decoding="async" height="499" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='808'%20height='499'%20viewBox='0%200%20808%20499'%3E%3C/svg%3E" width="808"/></figure>
+<p class="wp-block-paragraph">This suggests that short volatility (long the VRP) is a pretty good bet. </p>
+<p class="wp-block-paragraph">But this is what happens if I shorted $1,000 of VIXY at its inception and continuously compounded the position by ploughing profits back in every day (and didn’t have to pay any fees to do so):</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-81767 perfmatters-lazy" data-sizes="(max-width: 798px) 100vw, 798px" data-src="https://media.robotwealth.com/wp-content/uploads/2023/10/21155044/Growth-of-1000-short-VIXY.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2023/10/21155044/Growth-of-1000-short-VIXY.png 798w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155044/Growth-of-1000-short-VIXY-300x186.png 300w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155044/Growth-of-1000-short-VIXY-768x475.png 768w" decoding="async" height="494" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='798'%20height='494'%20viewBox='0%200%20798%20494'%3E%3C/svg%3E" width="798"/></figure>
+</div>
+<p class="wp-block-paragraph">You can see that when volatility spiked, VIXY spiked as well, and my short got punished, sometimes dramatically.</p>
+<p class="wp-block-paragraph">This illustrates nicely how the nature of the VRP differs from the ERP. <em>It gets pretty wild</em>, <em>to say the least</em>.</p>
+<p class="wp-block-paragraph">As an aside, this is what my short would look like if I rebalanced it back to $1,000 of VIXY exposure daily and let the profit accrue as cash (trading and short borrow costs not included). </p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-81768 perfmatters-lazy" data-sizes="(max-width: 798px) 100vw, 798px" data-src="https://media.robotwealth.com/wp-content/uploads/2023/10/21155043/Growth-of-constant-1000-short-VIXY-exposure.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2023/10/21155043/Growth-of-constant-1000-short-VIXY-exposure.png 798w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155043/Growth-of-constant-1000-short-VIXY-exposure-300x186.png 300w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155043/Growth-of-constant-1000-short-VIXY-exposure-768x475.png 768w" decoding="async" height="494" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='798'%20height='494'%20viewBox='0%200%20798%20494'%3E%3C/svg%3E" width="798"/></figure>
+</div>
+<p class="wp-block-paragraph">This has been a nicer ride but was far from immune to the shocks associated with harnessing the VRP. It also implies some suggestions for managing short volatility positions (<em>keep them small</em>).</p>
+<h2 class="wp-block-heading" id="how-i-approach-the-erp-and-vrp">How I approach the ERP and VRP</h2>
+<p class="wp-block-paragraph">Personally, I do little to try to time the ERP. </p>
+<p class="wp-block-paragraph">I maintain a constant exposure to US and international equities, target a constant volatility contribution, add some exposure to bonds and gold for diversification, and tilt the weights slightly as stock-bond-gold correlations change.</p>
+<p class="wp-block-paragraph">Simple. Easy to understand. Almost no operational overhead. </p>
+<p class="wp-block-paragraph">On the other hand, I <strong><em>do </em></strong>try to time exposure to the VRP. I’m short volatility (in small size) most of the time, but occasionally, I’ll go flat or even flip long based on various signals from across the VIX term structure.</p>
+<p class="wp-block-paragraph">This requires a little more operational overhead and daily checking of the various volatility signals. </p>
+<p class="wp-block-paragraph">My approach is basically the same as the approach we discuss in depth in Trade Like a Quant Bootcamp, which combines VRP and ERP harvesting using ETFs and simple trading rules. This is the simulated performance as I manage it (reinvest profits regularly, target constant portfolio volatility, cap leverage at 2x):</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-81769 perfmatters-lazy" data-sizes="(max-width: 872px) 100vw, 872px" data-src="https://media.robotwealth.com/wp-content/uploads/2023/10/21155042/tlaq-erp-vrp-me.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2023/10/21155042/tlaq-erp-vrp-me.png 872w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155042/tlaq-erp-vrp-me-300x136.png 300w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155042/tlaq-erp-vrp-me-768x347.png 768w" decoding="async" height="394" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='872'%20height='394'%20viewBox='0%200%20872%20394'%3E%3C/svg%3E" width="872"/></figure>
+</div>
+<p class="wp-block-paragraph">The colours represent exposure to the different ETFs in the portfolio, as well as cash. Negative cash indicates when we’ve dipped into some leverage, which happens sometimes in quiet periods in order to meet volatility targets. I used VIXY for exposure to long volatility and SVXY for short volatility exposure.</p>
+<p class="wp-block-paragraph">And this is what it looks like without reinvesting and letting profits accrue as cash (gives you a better idea of performance over time):</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-full"><img alt="" class="wp-image-81770 perfmatters-lazy" data-sizes="(max-width: 872px) 100vw, 872px" data-src="https://media.robotwealth.com/wp-content/uploads/2023/10/21155042/tlaq-erp-vrp-basic.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2023/10/21155042/tlaq-erp-vrp-basic.png 872w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155042/tlaq-erp-vrp-basic-300x136.png 300w, https://media.robotwealth.com/wp-content/uploads/2023/10/21155042/tlaq-erp-vrp-basic-768x347.png 768w" decoding="async" height="394" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='872'%20height='394'%20viewBox='0%200%20872%20394'%3E%3C/svg%3E" width="872"/></figure>
+</div>
+<h2 class="wp-block-heading" id="summary">Summary</h2>
+<ul class="wp-block-list">
+<li>ERP and VRP are two sources of returns with some similarities and some marked differences.</li>
+<li>The ERP is largely not amenable to timing.  Constant exposure to the ERP is, in my view, a better bet than trying to pick stocks or time index exposure (aka outsmart the market). It’s not as sexy, but it’s historically been much more reliable. And it requires very little work.</li>
+<li>Exposure to the VRP has also historically been a good bet. But it requires more careful management and smaller sizing. SVXY is the short volatility ETF, which gives you exposure to the VRP for a management fee and is more straightforward than managing a portfolio of options.</li>
+<li>Evidence suggests a greater scope to time the VRP.</li>
+</ul>
+<p class="wp-block-paragraph">I think that these types of risk premia should be among the first edges that traders should consider because:</p>
+<ul class="wp-block-list">
+<li>They’ve been persistent</li>
+<li>We can have confidence that they will carry on (they’re based on rational responses to risk)</li>
+<li>They’re uncompetitive (they don’t rely on you being the fastest or smartest or best capitalised)</li>
+<li>They’re relatively simple to harness, requiring relatively little operational overhead.</li>
+</ul>
+<p class="wp-block-paragraph">Done right, they can give a lovely tailwind for your portfolio, which in turn gives you the confidence to go out and chase more fleeting, competitive sources of alpha to layer on top.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8"></div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">12 thoughts on “Diving Deep: My Personal Approach to Equity and Volatility Risk Premia”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-34709">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 10/04/2023 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-34735">
+<article class="comment-body" id="div-comment-34735" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great article! Love all the risk premia content you put out!</p>
+<p>What’s your preferred method of volatility targeting?</p>
+<span class="reply"><a aria-label="Reply to Brett Elliot" class="comment-reply-link" data-belowelement="div-comment-34735" data-commentid="34735" data-postid="81761" data-replyto="Reply to Brett Elliot" data-respondelement="respond" href="#comment-34735" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-34756">
+<article class="comment-body" id="div-comment-34756" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Brett! I tend to keep it really simple with volatility targeting. I just calculate recent realised volatility and extrapolate it forward (no GARCH or anything fancy).  Certainly there are ways to get a better volatility forecast, but it’s a trade-off. The older I get, the more I seem to favour simplicity over complexity.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-34756" data-commentid="34756" data-postid="81761" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-34756" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-34779">
+<div class="comment-body">
+				Pingback: Diving Deep: My Personal Approach to Equity and Volatility Risk Premia - QuantInfo - Empowering Algorithmic Trading Insights 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-34791">
+<div class="comment-body">
+				Pingback: Beyond Stocks: The Surprising Volatility Returns of Oil and Gold - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-34792">
+<div class="comment-body">
+				Pingback: Beyond Stocks: The Surprising Volatility Returns of Oil and Gold | GPTTradeAssist.com 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-34794">
+<div class="comment-body">
+				Pingback: Beyond Stocks: The Surprising Volatility Returns of Oil and Gold - QuantInfo - Empowering Algorithmic Trading Insights 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-34850">
+<div class="comment-body">
+				Pingback: Alpha's Underdogs: How Part-Time Traders Can Still Win - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-34851">
+<div class="comment-body">
+				Pingback: Alpha's Underdogs: How Part-Time Traders Can Still Win | GPTTradeAssist.com 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-34852">
+<div class="comment-body">
+				Pingback: Alpha’s Underdogs: How Part-Time Traders Can Still Win - QuantInfo - Empowering Algorithmic Trading Insights 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/diving-deep-my-personal-approach-to-equity-and-volatility-risk-premia/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,249 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Backtesting Bias: Feels Good, Until You Blow Up</title>
+<!-- source: https://robotwealth.com/backtesting-bias-feels-good-until-you-blow-up/ -->
+<h1>Backtesting Bias: Feels Good, Until You Blow Up</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-5842 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-think-like-a-trader tag-backtesting tag-bias tag-look-ahead tag-overfitting tag-selection-bias pmpro-has-access" id="post-5842">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 15, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Backtesting Bias: <br/>Feels Good, Until You Blow Up</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Backtesting Bias: &lt;br&gt;Feels Good, Until You Blow Up" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><span style="font-weight: 400;">In an ideal trading universe (free from backtesting bias), we’d all have a big golden “causation magnifying glass”. Through the lens of this fictional tool, you’d zoom in and understand the fleeting, enigmatic nature of the financial markets, stripping bare all its </span><i><span style="font-weight: 400;">causes and effects</span></i><span style="font-weight: 400;">. </span>
+<span style="font-weight: 400;">Knowing exactly what causes exploitable inefficiencies would make predicting market behaviour and building profitable trading strategies a fairly cushy gig, right? </span>
+<span style="font-weight: 400;">If you’re an engineer or scientist reading this, you are probably nodding along, hoping I’ll say the financial markets show some kind of</span><i><span style="font-weight: 400;"> domino effect</span></i><span style="font-weight: 400;"> for capitalists. That you can model them with the kinds of analytical methods you’d throw at a construction project or the petri dish. But unfortunately, trying to shoehorn the markets into formulas is a futile exercise… like stuffing Robot Wealth’s frontman Kris into a suit.</span>
+<span style="font-weight: 400;">Since the markets aren’t strictly deterministic, this makes testing your new and exciting strategy ideas a bit tricky. We’d all love to know for sure whether our ideas will be profitable before we throw real money at them. But, since you can’t realistically apply mathematical equations to your strategy to derive its future performance, you’ll need to resort to the next best thing — </span><b>experimentation.</b>
+<span style="font-weight: 400;">By experimenting with your trading strategy during development, you’re left wide open to some </span><i><span style="font-weight: 400;">fatal errors</span></i><span style="font-weight: 400;"> when assessing its potential future performance. These can, and will, cost you time, money and many, many headaches.</span>
+<b>In this post, you’re going to learn how to identify and avoid several common, often expensive backtesting bias so you can build more robust, more profitable systematic trading strategies. Let’s go!</b>
+<h2><span style="font-weight: 400;">How do you experiment as a systematic trader?</span></h2>
+<span style="font-weight: 400;">As far as I know, you’ve got two options when it comes to testing systematic trading strategies:</span>
+<ol>
+<li style="font-weight: 400;"><span style="font-weight: 400;">You can find out the </span><b>actual</b><span style="font-weight: 400;"> performance of your strategy</span></li>
+<li style="font-weight: 400;"><span style="font-weight: 400;">You can find out the </span><b>likely</b><span style="font-weight: 400;"> performance of your strategy</span></li>
+</ol>
+<span style="font-weight: 400;">The first option simply involves throwing real money at a live version of your strategy and seeing if it does anything exciting. The second is </span><b>testing your strategy</b><span style="font-weight: 400;">, usually on past data, before following option 1 later down the pipeline. If like us, you </span><i><span style="font-weight: 400;">don’t</span></i><span style="font-weight: 400;"> enjoy needlessly throwing away wads of your capital, you’ll first test your strategy via simulation, assessing whether it is likely to perform as well in the future as it did in the past. </span>
+<span style="font-weight: 400;">In financial trading, such a simulation of past performance is called a </span><b><a href="https://www.investopedia.com/terms/b/backtesting.asp" rel="noopener noreferrer" target="_blank">backtest</a>.</b>
+<span style="font-weight: 400;">Despite what you’ll read online in what I’ll call </span><i><span style="font-weight: 400;">retail trading folklore</span></i><span style="font-weight: 400;">, backtesting your strategies is not as simple as aligning signals with entry and exit prices and summoning the results. Simply doing a backtest is one thing, but gaining accurate, actionable data that will help you keep more of your capital is another</span>
+<span style="font-weight: 400;">Such simplistic approaches will undoubtedly lead to </span><i><span style="font-weight: 400;">some </span></i><b>backtest bias</b><span style="font-weight: 400;">. </span>
+<span style="font-weight: 400;">In this post, we’re going to focus on a few ways that biases in your </span><b>development methodology</b><span style="font-weight: 400;"> can hold you back from successful trading. Many of these effects are subtle yet profound: they can and will creep into your development process and can have disastrous effects on strategy performance.</span>
+<h2><span style="font-weight: 400;">Look-Ahead Bias aka Peeking Bias</span></h2>
+<span style="font-weight: 400;">If you could travel back in time, you’d probably be quite tactical about your “creative” work wherever you landed. Google? Your idea. </span><i><span style="font-weight: 400;">Predicting</span></i><span style="font-weight: 400;"> future events to become a local deity? Hold my feather crown. </span>
+<span style="font-weight: 400;">In trading, you might want to hold off on all that. Look-ahead bias is a type of backtesting bias introduced by allowing future knowledge to affect your decisions around historical scenarios or events. As a trader running backtests, this bias impacts your trade decisions by </span><b>acting upon knowledge that</b> <b>would not have been available</b><span style="font-weight: 400;"> at the time the original trade decision was taken. </span>
+<span style="font-weight: 400;">What does this look like in practice? </span>
+<span style="font-weight: 400;">A popular example is executing an intra-day trade on the basis of the day’s closing price, when that closing price is not actually known until the end of the day. </span>
+<span style="font-weight: 400;">Even if you use backtesting software that’s designed against lookahead bias, you need to be careful. A subtle but potentially serious mistake is to use the entire simulation period to calculate a trade parameter (for example, a portfolio optimization parameter) which is then retrospectively applied at the beginning of the simulation.</span>
+<span style="font-weight: 400;">This error is so common that you must always double check for it. And triple check if your backtest looks really good.</span>
+<h2><span style="font-weight: 400;">Overfitting Bias aka Over-Optimization Bias</span></h2>
+<span style="font-weight: 400;">If you run a backtest producing annual returns in the ballpark of </span><b>thousands of percent</b><span style="font-weight: 400;">, don’t quit your day job – you’ve likely stumbled across overfitting bias. Apart from being comedic firewood for your favourite FX forum, these backtests are useless for real, systematic trading purposes.</span>
+<span style="font-weight: 400;">Check out the following plots to see overfitting as backtesting bias in action. The blue squares in the figure below are an artificially generated quadratic function with some noise added to distort the underlying signal. The lines represent various models fitted to the data points. The red line is a linear regression line; the green, blue and orange lines are quadratic, cubic and quartic functions respectively. Apart from the linear regression line, these all do a decent job of modelling the data, for this region in the parameter space.</span>
+<span style="font-weight: 400;">The pink line is a high-order polynomial regression: notice that it fits this data best of all:</span>
+<img alt="overfitting as backtesting bias in action" class="aligncenter wp-image-5843 size-full perfmatters-lazy" data-sizes="(max-width: 601px) 100vw, 601px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170114/Screenshot-2019-05-15-at-10.42.08.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170114/Screenshot-2019-05-15-at-10.42.08.png 601w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170114/Screenshot-2019-05-15-at-10.42.08-300x241.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170114/Screenshot-2019-05-15-at-10.42.08-600x482.png 600w" decoding="async" height="483" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='601'%20height='483'%20viewBox='0%200%20601%20483'%3E%3C/svg%3E" width="601"/>
+<span style="font-weight: 400;">But do these models hold up out-of-sample? What I’m really asking is, how well do they generalize to data that was not used in the model-fitting process?</span>
+<span style="font-weight: 400;">Well, the next plot shows the performance of the quadratic, cubic and quartic functions in a new region of the observed variable space, meaning an out-of-sample data set. In this case, the quadratic function is </span><i><span style="font-weight: 400;">clearly the best performer</span></i><span style="font-weight: 400;">, and we know that it most closely matches the underlying generating function – </span><b>this is an example of a well-fit model.</b>
+<span style="font-weight: 400;">The other models do a pretty crummy job of predicting the value of the function for this new, unseen region of parameter space, even though they looked pretty attractive on the in-sample data.</span>
+<img alt="a chart showing a bad prediction of the value of the function for this parameter space" class="aligncenter wp-image-5844 size-full perfmatters-lazy" data-sizes="(max-width: 455px) 100vw, 455px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170114/Screenshot-2019-05-15-at-10.43.17.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170114/Screenshot-2019-05-15-at-10.43.17.png 455w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170114/Screenshot-2019-05-15-at-10.43.17-300x230.png 300w" decoding="async" height="349" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='455'%20height='349'%20viewBox='0%200%20455%20349'%3E%3C/svg%3E" width="455"/>
+<span style="font-weight: 400;">The best model on the in-sample data set, the high-order polynomial, does a terrible job of modeling this out-of-sample region. In fact, in order to see it, we have to look at a completely different portion of the y-axis, and even use a logarithmic scale to make sense of it: </span>
+<img alt="that's not a very useful trend - backtesting bias" class="aligncenter wp-image-5845 size-full perfmatters-lazy" data-sizes="(max-width: 460px) 100vw, 460px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170113/Screenshot-2019-05-15-at-10.44.10.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170113/Screenshot-2019-05-15-at-10.44.10.png 460w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170113/Screenshot-2019-05-15-at-10.44.10-300x230.png 300w" decoding="async" height="353" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='460'%20height='353'%20viewBox='0%200%20460%20353'%3E%3C/svg%3E" width="460"/>
+<span style="font-weight: 400;">This model is predicting hugely negative values of our function when we know that it could </span><i><span style="font-weight: 400;">never</span></i><span style="font-weight: 400;"> generate a single negative value (thanks to the quadratic term in the underlying function). The function looks nothing like a quadratic function: it is more like a hyperbolic function. Or bad modern art.</span>
+<span style="font-weight: 400;">This misrepresentation of the underlying process is a classic example of overfitting, and it’ll have you banging your head against the wall a lot in your early days of algo trading. In fact, you’ll face this problem </span><i><span style="font-weight: 400;">every day </span></i><span style="font-weight: 400;">in your strategy development, you just learn how to eat its punches with experience.</span>
+<span style="font-weight: 400;">Overfitting bias affects strategies that are tested on in-sample data. The same data is used to optimize and then test the strategy. Common sense will tell you that a strategy will perform well on the data with which it was optimized – </span><i><span style="font-weight: 400;">that’s the whole point of optimization! </span></i><span style="font-weight: 400;">What’s more, exhaustively searching the parameter space and choosing a local performance maximum will undoubtedly lead to overfitting and failure in an out-of-sample test.</span>
+<span style="font-weight: 400;">It is crucial to understand that the purpose of the in-sample data set is </span><i><span style="font-weight: 400;">not</span></i><span style="font-weight: 400;"> to measure the performance of a strategy. The in-sample data is used to </span><b><i>develop</i></b><span style="font-weight: 400;"> the strategy and find parameter values that may be suitable. At best, you should consider the in-sample results to be </span><i><span style="font-weight: 400;">indicative</span></i><span style="font-weight: 400;"> of whether the strategy can be profitable at all. </span>
+<i><span style="font-weight: 400;">Avoid using the in-sample results to benchmark likely future performance of a strategy.</span></i>
+<span style="font-weight: 400;">Look again at the figures above. The model with the best in-sample performance was the high-order polynomial shown by the magenta line. That said, its out-of-sample performance was as enviable as stepping on a plug. The quadratic, cubic and fourth-order models all performed reasonably well in the in-sample test, but the quadratic model was the clear star performer in the out-of-sample test. Obviously, you can infer little about performance on unseen data using in-sample testing.</span>
+<span style="font-weight: 400;">Here’s the real insidious part….</span>
+<span style="font-weight: 400;">When you fit a model (a trading strategy) to a noisy data set (and financial data is a rave), </span><b>you risk fitting your model to the noise, rather than the underlying signal.</b><span style="font-weight: 400;"> The underlying signal is the anomaly or price effect that you believe provides profitable trading opportunities, and this signal is what you are actually trying to capture with your model. </span>
+<span style="font-weight: 400;">Noise gets between you and the money. It’s a random process, and it’s unlikely to repeat itself exactly the same way. If you fit your model to the noise, you’ll end up with a random model. Unless you enjoy paying for your broker’s 12oz rib-eye steak, this isn’t something you should ever trade.</span>
+<img alt="the expected payout of a random model is zero, but with costs factored in it is less than zero" class="aligncenter wp-image-5849 size-full perfmatters-lazy" data-sizes="(max-width: 728px) 100vw, 728px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/05/21170112/Screenshot-2019-05-15-at-11.00.40.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/05/21170112/Screenshot-2019-05-15-at-11.00.40.png 728w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170112/Screenshot-2019-05-15-at-11.00.40-600x186.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/05/21170112/Screenshot-2019-05-15-at-11.00.40-300x93.png 300w" decoding="async" height="226" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='728'%20height='226'%20viewBox='0%200%20728%20226'%3E%3C/svg%3E" width="728"/>
+<span style="font-weight: 400;">So what’s the overarching lesson from all this? </span>
+<span style="font-weight: 400;">Well, in-sample data is only useful in the following ways:</span>
+<ol>
+<li style="font-weight: 400;"><span style="font-weight: 400;">Finding out whether a strategy can be profitable and under what conditions</span></li>
+<li style="font-weight: 400;"><span style="font-weight: 400;">Determining which parameters have a significant impact on performance</span></li>
+<li style="font-weight: 400;"><span style="font-weight: 400;">Determining sensible ranges over which parameters might be optimized</span></li>
+<li style="font-weight: 400;"><span style="font-weight: 400;">Debugging the strategy, that is, ensuring trades are being entered as expected</span></li>
+</ol>
+<span style="font-weight: 400;">Given the topic of this post, you’ll notice something missing from that list: </span><i><span style="font-weight: 400;">measuring the performance of a trading strategy. </span></i>
+<span style="font-weight: 400;">Any estimate of performance you derive from an in-sample test is plagued with overfitting and similar backtesting bias and is likely to be an optimistic estimate – unless your entire development process is watertight…but that’s a story for another time. </span>
+<span style="font-weight: 400;">The solution to overfitting bias is adopting a sensible approach to the markets and strategy development. This includes:</span>
+<ul>
+<li style="font-weight: 400;"><span style="font-weight: 400;">Keeping trades simple. The fewer the number of fittable parameters, the better.</span></li>
+<li style="font-weight: 400;"><span style="font-weight: 400;">Favouring trades that can be rationalised in a sentence, over blindly data mining for trading rules.</span></li>
+<li style="font-weight: 400;"><span style="font-weight: 400;">Optimising for robustness, not in-sample performance (more on this later).</span></li>
+<li style="font-weight: 400;"><span style="font-weight: 400;">Avoid the temptation to be precise in your model specification. Market data is noisy and fickle, and any signal is weak.</span></li>
+<li style="font-weight: 400;"><span style="font-weight: 400;">Avoid trades that will, at best, marginally cover retail trading costs, such as scalping.</span></li>
+</ul>
+<b>I’ll repeat myself: don’t use in-sample data to measure your strategy’s performance unless you have been very very very careful!</b>
+<h2><span style="font-weight: 400;">Data-Mining Bias aka Selection Bias</span></h2>
+<span style="font-weight: 400;">This one is unavoidable. So, rather than spending an eternity trying to eliminate this bias entirely, just be aware of it and accept that, generally, your strategies won’t perform as well in the markets as they did in your simulations.</span>
+<span style="font-weight: 400;">You’ll commonly introduce data-mining bias when selecting the best performer from a bunch of strategy variants, variables or markets to continue developing. If you’re persistent enough in trying strategies and markets, you’ll eventually find one that performs well simply due to luck. </span>
+<span style="font-weight: 400;">Think of it this way. Say you develop a trend following strategy in FX. The strategy crushes its backtest on EUR/USD but flops on USD/JPY. Any sensible person would trade the EUR/USD market, right? Sure, but you’ve just introduced selection bias into your process. Now, your estimate of the strategy’s performance is upwardly biased. Should you throw the strategy in the bin? Not necessarily. Maybe it performed well on EUR/USD specifically for good reason. But nevertheless, some selection bias has crept into your development process.</span>
+<span style="font-weight: 400;">There are statistical tests to account for data mining bias, including comparing the performance of the strategy with a distribution of random performances. You can find examples of this in the Robot Wealth Advanced Course. </span>
+<span style="font-weight: 400;">You can also use out-of-sample data, but this quickly becomes problematic as we only have a finite amount of historical data on which to develop. </span>
+<span style="font-weight: 400;">So your best bet to overcome selection bias is simply adopting a sensible, measured approach to strategy development, as outlined above.</span>
+<h2><span style="font-weight: 400;">Backtesting Bias: Conclusion</span></h2>
+<span style="font-weight: 400;">As a rule of thumb, you want to build </span><b>robust trading strategies</b><span style="font-weight: 400;"> that exploit real market anomalies or inefficiencies. What’s more, you want to do this with an approach grounded in </span><b>simplicity.</b><span style="font-weight: 400;"> The more complex your approach, the more likely you are to fall into the backtesting bias traps we’ve talked about above. Either way, it’s surprisingly easy to find strategies that appear to do well, but whose performance turns out to be due to luck or randomness. That’s part of the game.</span>
+<span style="font-weight: 400;">You have probably noticed that I introduced the concept of a “sensible approach to strategy development”. But what does that look like? We’ve covered it at a conceptual level, which is useful in its own right. That said, we think that teaching our approach in detail is much better accomplished through our </span><a href="https://robotwealth.com/bootcamp"><span style="font-weight: 400;">Algo Bootcamps</span></a><span style="font-weight: 400;">. In Bootcamp, you can learn first-hand by watching us apply the process in real-time and participating in the development of real trading strategies. There are some very smart people inside our community, too, who can keep you on the right track.</span>
+<span style="font-weight: 400;">This Backtesting Bias blog post originally appears as an excerpt from our </span><i><span style="font-weight: 400;">Algorithmic</span></i> <i><span style="font-weight: 400;">Trading with Zorro</span></i><span style="font-weight: 400;"> course, which will be available in the coming weeks.</span>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>backtesting</span>, <span>bias</span>, <span>look-ahead</span>, <span>Overfitting</span>, <span>selection bias</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">5 thoughts on “Backtesting Bias: &lt;br&gt;Feels Good, Until You Blow Up”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-4107">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 05/15/2019 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-4210">
+<div class="comment-body">
+				Pingback: Research links: modeling noise | AlltopCash.com 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-4336">
+<div class="comment-body">
+				Pingback: Artikel über Trading und Investments 26.05.2019 | Pipsologie 			</div>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-minshengw odd alt thread-odd thread-alt depth-1" id="comment-4537">
+<article class="comment-body" id="div-comment-4537" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This is a good post on robust trading. If the parameter during back-test has a big range , it is more robust else it is more fragile.</p>
+<span class="reply"><a aria-label="Reply to Minsheng Wu" class="comment-reply-link" data-belowelement="div-comment-4537" data-commentid="4537" data-postid="5842" data-replyto="Reply to Minsheng Wu" data-respondelement="respond" href="#comment-4537" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-14677">
+<div class="comment-body">
+				Pingback: Rolling and Expanding Windows For Dummies - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/backtesting-bias-feels-good-until-you-blow-up/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

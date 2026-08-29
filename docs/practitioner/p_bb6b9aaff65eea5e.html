@@ -1,0 +1,242 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Trading Signals in High Definition</title>
+<!-- source: https://robotwealth.com/trading-signals-in-high-definition/ -->
+<h1>Trading Signals in High Definition</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-118832 post type-post status-publish format-standard has-post-thumbnail hentry category-crypto category-data-analysis category-think-like-a-trader tag-crypto tag-quantitative-analysis tag-r tag-trading-strategies pmpro-has-access" id="post-118832">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">August 15, 2025</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Trading Signals in High Definition</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Trading Signals in High Definition" class="ipa-media gb-media-81e19d89" data-media-id="118842" decoding="async" fetchpriority="high" height="683" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-1024x683.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-1024x683.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-300x200.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def-768x512.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235639/trading_signals_high_def.webp 1536w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">We’ve all used on/off type trading signals at some point. But you can nearly always extract more insight with a simple adjustment that focuses on using data efficiently.</p>
+<p class="wp-block-paragraph">Let me show you how using a crypto trend example.</p>
+<h2 class="wp-block-heading">The problem with binary signals</h2>
+<p class="wp-block-paragraph">You’ve seen them everywhere.</p>
+<p class="wp-block-paragraph">“If price is above the 20-day moving average, be long. If it’s below, be short.”</p>
+<p class="wp-block-paragraph">That’s a binary signal. It’s either ON or OFF. And while it works (sort of), it’s missing a ton of potential insights.</p>
+<p class="wp-block-paragraph">Why? Three main reasons:</p>
+<ol class="wp-block-list">
+<li>There’s nothing magical about crossing a threshold. Markets don’t fundamentally change when price crosses a moving average.</li>
+<li>When we collapse all information into two states, we miss potentially valuable nuance.</li>
+<li>It creates weirdly aggressive and abrupt trading. Flipping positions every time you cross a line is hard to justify.</li>
+</ol>
+<h2 class="wp-block-heading">Start with the edge</h2>
+<p class="wp-block-paragraph">I always start by trying to understand the underlying edge.</p>
+<p class="wp-block-paragraph">Our signal is trying to measure trend in crypto. So start by asking: <em>“Why would crypto trend?”</em></p>
+<p class="wp-block-paragraph">A plausible hypothesis is that FOMO drives prices, amplified by leverage and the lack of a firm anchor for fair value.</p>
+<p class="wp-block-paragraph">Next, how do we measure trend?</p>
+<p class="wp-block-paragraph">Simple – it’s when positive returns are followed by more positive returns, and negative returns lead to more negative returns.</p>
+<p class="wp-block-paragraph">A moving average is a reasonable approach. When price is above its moving average, that tells us price has gone up in the recent past.</p>
+<p class="wp-block-paragraph"><em>But that only gives us two states – above or below.</em></p>
+<p class="wp-block-paragraph">Let’s start by looking at this binary signal. Then we’ll come up with an alternative.</p>
+<p class="wp-block-paragraph">A binary price-moving average signal on BTC would look like this:</p>
+<figure class="wp-block-image"><img alt="" class="wp-image-118849 perfmatters-lazy" data-sizes="(max-width: 1680px) 100vw, 1680px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235732/email.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235732/email.png 1680w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235732/email-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235732/email-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235732/email-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235732/email-1536x768.png 1536w" decoding="async" height="840" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1680'%20height='840'%20viewBox='0%200%201680%20840'%3E%3C/svg%3E" width="1680"/><figcaption class="wp-element-caption"><em>I wonder what scanning this at the supermarket would do</em></figcaption></figure>
+<p class="wp-block-paragraph">And if we plot the signal value vs forward returns, we get this:</p>
+<figure class="wp-block-image"><img alt="" class="wp-image-118847 perfmatters-lazy" data-sizes="(max-width: 1680px) 100vw, 1680px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235728/email-16de12ac-ddb1-4e75-aeed-7e9e1d714027.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235728/email-16de12ac-ddb1-4e75-aeed-7e9e1d714027.png 1680w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235728/email-16de12ac-ddb1-4e75-aeed-7e9e1d714027-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235728/email-16de12ac-ddb1-4e75-aeed-7e9e1d714027-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235728/email-16de12ac-ddb1-4e75-aeed-7e9e1d714027-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235728/email-16de12ac-ddb1-4e75-aeed-7e9e1d714027-1536x768.png 1536w" decoding="async" height="840" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1680'%20height='840'%20viewBox='0%200%201680%20840'%3E%3C/svg%3E" width="1680"/></figure>
+<p class="wp-block-paragraph">That’s useful, in that it shows that a simple binary trend measure noisily discriminates between high and low future returns. Returns look higher on average when the signal is “on” (1) than when it’s “off” (-1).</p>
+<p class="wp-block-paragraph">But it leaves gaps in our understanding. In particular, what happens in the middle of the relationship?</p>
+<p class="wp-block-paragraph"><em>Trading research is all about understanding an effect first and foremost.</em></p>
+<p class="wp-block-paragraph">If you start with the mindset of trying to understand the effect, you’ll nearly always end up in the right place. And here, we have a big and obvious gap in our understanding.</p>
+<p class="wp-block-paragraph">So with our “understanding first” mindset, let’s think about how we can fill it.</p>
+<p class="wp-block-paragraph">How can we measure trend in a way that fills in the middle of that relationship? That is, how can we use every data point available to us, rather than just the points at which price crossed the moving average?</p>
+<p class="wp-block-paragraph">This is a key point:<em> when seeking to understand an edge, always maximise the use of your data.</em></p>
+<p class="wp-block-paragraph">Constructing a binary signal is, in essence, throwing away a huge chunk of information. And financial data is already in short supply.</p>
+<p class="wp-block-paragraph">Here’s a slight adjustment to our trend measurement that takes care of this:</p>
+<p class="wp-block-paragraph">Instead of the binary above/below signal, calculate the ratio of price and the moving average. In R, you could do something like this:</p>
+<figure class="wp-block-image"><img alt="" class="wp-image-118845 perfmatters-lazy" data-sizes="(max-width: 788px) 100vw, 788px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-6558e35e-be88-4951-b952-9d2e7b23b37d.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-6558e35e-be88-4951-b952-9d2e7b23b37d.jpg 788w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-6558e35e-be88-4951-b952-9d2e7b23b37d-300x65.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-6558e35e-be88-4951-b952-9d2e7b23b37d-768x167.jpg 768w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='788'%20height='171'%20viewBox='0%200%20788%20171'%3E%3C/svg%3E" width="788"/></figure>
+<p class="wp-block-paragraph">This wasn’t some clever trick I had up my sleeve.</p>
+<p class="wp-block-paragraph">It emerged naturally from asking, “How can I measure the strength of the trend at every point, not just when it crosses a threshold?”</p>
+<p class="wp-block-paragraph">This is the same insight, just expressed more fully. When price is further above the moving average, the ratio will be higher (stronger uptrend). When it’s below, the ratio will be lower (stronger downtrend).</p>
+<p class="wp-block-paragraph">But the real benefit is that this will give you a signal value for <em>every single day</em>.</p>
+<p class="wp-block-paragraph">Furthermore, the signal can take on <em>any</em> value (as opposed to only two), which means we can do more interesting analysis.</p>
+<p class="wp-block-paragraph">Here’s what it looks like:</p>
+<figure class="wp-block-image"><img alt="" class="wp-image-118850 perfmatters-lazy" data-sizes="(max-width: 1680px) 100vw, 1680px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-d81141a9-f9f4-40ce-8cff-b1f1e74f1833.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-d81141a9-f9f4-40ce-8cff-b1f1e74f1833.png 1680w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-d81141a9-f9f4-40ce-8cff-b1f1e74f1833-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-d81141a9-f9f4-40ce-8cff-b1f1e74f1833-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-d81141a9-f9f4-40ce-8cff-b1f1e74f1833-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-d81141a9-f9f4-40ce-8cff-b1f1e74f1833-1536x768.png 1536w" decoding="async" height="840" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1680'%20height='840'%20viewBox='0%200%201680%20840'%3E%3C/svg%3E" width="1680"/></figure>
+<p class="wp-block-paragraph">It’s a good idea to always plot these things and look for obvious changes in the signal over time.</p>
+<p class="wp-block-paragraph">In this case, we might say that the signal was more volatile earlier in its history, so we might want to vol-scale it to account for that. We’ll gloss over that for now.</p>
+<p class="wp-block-paragraph">Let’s now look at a scatter plot of our continuous signal:</p>
+<figure class="wp-block-image"><img alt="" class="wp-image-118844 perfmatters-lazy" data-sizes="(max-width: 1680px) 100vw, 1680px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-159ce337-174e-46f5-ae98-2adce699896f.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-159ce337-174e-46f5-ae98-2adce699896f.jpg 1680w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-159ce337-174e-46f5-ae98-2adce699896f-300x150.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-159ce337-174e-46f5-ae98-2adce699896f-1024x512.jpg 1024w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-159ce337-174e-46f5-ae98-2adce699896f-768x384.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-159ce337-174e-46f5-ae98-2adce699896f-1536x768.jpg 1536w" decoding="async" height="840" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1680'%20height='840'%20viewBox='0%200%201680%20840'%3E%3C/svg%3E" width="1680"/></figure>
+<p class="wp-block-paragraph">This has filled in the relationship and told us some interesting things we couldn’t infer from the binary signal:</p>
+<ul class="wp-block-list">
+<li>The relationship is somewhat linear – as our trend signal increases, so do future returns (on average)</li>
+<li>The relationship is very noisy (welcome to trading!)</li>
+</ul>
+<p class="wp-block-paragraph">We now understand more than we did. And this gives us clues for how we might trade this:</p>
+<ul class="wp-block-list">
+<li>Since the relationship is roughly linear, we might scale position size by the magnitude of the feature.</li>
+<li>Since it’s very noisy (everything is), we set proper expectations around short-term return variance.</li>
+</ul>
+<p class="wp-block-paragraph">At this point, we might want to collapse our data into something more discrete – this helps us highlight average effects, but the downside is that it hides the variance. It’s just another view on our effect.</p>
+<p class="wp-block-paragraph">A good way to do this is to split our signal values into 10 equal buckets. The bottom 10% of values go into bucket 1, the next 10% in bucket 2, and so on.</p>
+<figure class="wp-block-image"><img alt="" class="wp-image-118843 perfmatters-lazy" data-sizes="(max-width: 1680px) 100vw, 1680px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-1bf8f3ed-f25e-49d1-9162-259e6ea7d4cd.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-1bf8f3ed-f25e-49d1-9162-259e6ea7d4cd.png 1680w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-1bf8f3ed-f25e-49d1-9162-259e6ea7d4cd-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-1bf8f3ed-f25e-49d1-9162-259e6ea7d4cd-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-1bf8f3ed-f25e-49d1-9162-259e6ea7d4cd-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235726/email-1bf8f3ed-f25e-49d1-9162-259e6ea7d4cd-1536x768.png 1536w" decoding="async" height="840" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1680'%20height='840'%20viewBox='0%200%201680%20840'%3E%3C/svg%3E" width="1680"/></figure>
+<p class="wp-block-paragraph">You can see how this sort of analysis highlights average effects that are hard to make out in the scatter plot.</p>
+<p class="wp-block-paragraph">Here we see a noisy and very imperfect relationship between the signal bucket and future returns.</p>
+<p class="wp-block-paragraph">We can also see a reversal off extreme negative returns – see the positive return in bucket 1. We might want to include that in our strategy explicitly, or dig into it as its own thing.</p>
+<p class="wp-block-paragraph"><em>The interesting thing is that we’d never have noticed this if we used the binary signal</em>.</p>
+<p class="wp-block-paragraph">But by making better use of our data, the effect starts to reveal itself.</p>
+<p class="wp-block-paragraph">This insight wasn’t the result of clever strategy design. It appeared because I was focused on understanding the effect.</p>
+<p class="wp-block-paragraph">Finally, I like to plot a timeseries of cumulative returns to our signal. This looks like a backtest, but it’s not – it’s just the returns attributed to the signal and doesn’t account for costs or real-world trading constraints.</p>
+<figure class="wp-block-image"><img alt="" class="wp-image-118846 perfmatters-lazy" data-sizes="(max-width: 1680px) 100vw, 1680px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235729/email-06f93964-0d64-47b0-b966-2e3d6bfda012.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235729/email-06f93964-0d64-47b0-b966-2e3d6bfda012.png 1680w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235729/email-06f93964-0d64-47b0-b966-2e3d6bfda012-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235729/email-06f93964-0d64-47b0-b966-2e3d6bfda012-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235729/email-06f93964-0d64-47b0-b966-2e3d6bfda012-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235729/email-06f93964-0d64-47b0-b966-2e3d6bfda012-1536x768.png 1536w" decoding="async" height="840" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1680'%20height='840'%20viewBox='0%200%201680%20840'%3E%3C/svg%3E" width="1680"/></figure>
+<p class="wp-block-paragraph">For comparison, here’s what the binary signal looks like:</p>
+<figure class="wp-block-image"><img alt="" class="wp-image-118848 perfmatters-lazy" data-sizes="(max-width: 1680px) 100vw, 1680px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-a8d9e858-dffb-4e75-aa32-6844e9878b4c.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-a8d9e858-dffb-4e75-aa32-6844e9878b4c.png 1680w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-a8d9e858-dffb-4e75-aa32-6844e9878b4c-300x150.png 300w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-a8d9e858-dffb-4e75-aa32-6844e9878b4c-1024x512.png 1024w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-a8d9e858-dffb-4e75-aa32-6844e9878b4c-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2025/08/15235731/email-a8d9e858-dffb-4e75-aa32-6844e9878b4c-1536x768.png 1536w" decoding="async" height="840" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1680'%20height='840'%20viewBox='0%200%201680%20840'%3E%3C/svg%3E" width="1680"/></figure>
+<p class="wp-block-paragraph"><em>(I scaled the two time-series plots so that they realised the same volatility – just makes comparison easier).</em></p>
+<h2 class="wp-block-heading">Summary</h2>
+<p class="wp-block-paragraph">We all make the mistake of jumping straight to strategy design. No one is more guilty of this than me. But that’s getting things backward. The better approach is to:</p>
+<ul class="wp-block-list">
+<li>Focus on understanding your edge first,</li>
+<li>Use all your data, not just some of it,</li>
+<li>Let the right strategy emerge from your understanding.</li>
+</ul>
+<p class="wp-block-paragraph">When you adopt this mindset, you’ll find that:</p>
+<ul class="wp-block-list">
+<li>You spend less time on complex solutions that aren’t needed,</li>
+<li>You discover nuances in your edge that you’d otherwise miss,</li>
+<li>The optimal trading approach becomes obvious rather than forced.</li>
+</ul>
+<p class="wp-block-paragraph">This approach deepens your understanding of how your edge actually works. And that understanding often leads to refinements and entirely new trading ideas that you’d never discover otherwise.</p>
+<h2 class="wp-block-heading">Want the code?</h2>
+<p class="wp-block-paragraph">It’s all in <a href="https://github.com/Robot-Wealth/trader-tales/blob/master/quant-techniques/Convert_Binary_Signals_to_Continuous.ipynb">​this notebook​</a>. You can run it yourself in Colab by clicking the “Open in Colab” button and then running all the cells one by one.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>crypto</span>, <span>quantitative analysis</span>, <span>R</span>, <span>trading strategies</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-133234 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai tag-data-mining tag-llms pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/for-the-love-of-the-game/"><img alt="For The Love of The Game" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="133235" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-80x69.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-480x413.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game.png 893w" decoding="async" height="660" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='660'%20viewBox='0%200%20768%20660'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-132449 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/to-trend-or-not-to-trend-wrong-question/"><img alt="To Trend or Not To Trend? (Wrong question)" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="132450" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-131547 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/brave-new-backtest/"><img alt="Brave New Backtest" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="131550" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-150x150.jpeg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-80x80.jpeg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-480x480.jpeg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-960x960.jpeg 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst.jpeg 1024w" decoding="async" height="768" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='768'%20viewBox='0%200%20768%20768'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">1 thought on “Trading Signals in High Definition”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-51574">
+<div class="comment-body">
+				Pingback: Recent Quant Links from Quantocracy as of 08/16/2025 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/trading-signals-in-high-definition/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

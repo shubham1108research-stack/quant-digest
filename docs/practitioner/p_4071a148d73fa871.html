@@ -1,0 +1,475 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How to Run Trading Algorithms on Google Cloud Platform in 6 Easy Steps</title>
+<!-- source: https://robotwealth.com/run-trading-algorithms-google-cloud-platform-6-easy-steps/ -->
+<h1>How to Run Trading Algorithms on Google Cloud Platform in 6 Easy Steps</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-2830 post type-post status-publish format-standard hentry category-quant-trading category-r category-trading-infrastructure category-zorro tag-algorithmic-trading tag-r tag-zorro pmpro-has-access" id="post-2830">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">July 20, 2017</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">How to Run Trading Algorithms on Google Cloud Platform in 6 Easy Steps</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="How to Run Trading Algorithms on Google Cloud Platform in 6 Easy Steps" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Earlier this year, I attended the <a href="https://cloudnext.withgoogle.com/" rel="noopener noreferrer" target="_blank">Google Next</a> conference in San Francisco and gained some first-hand perspective into what’s possible with Google’s cloud infrastructure. Since then, I’ve been leaning on <strong>Google Cloud Platform</strong> (GCP) to run my trading algorithms (and much more) and it has quickly become an important tool in my workflow!
+
+<img alt="google cloud platform logo" class="aligncenter wp-image-12882 perfmatters-lazy" data-sizes="(max-width: 556px) 100vw, 556px" data-src="https://media.robotwealth.com/wp-content/uploads/2017/07/21164224/google-cloud-platform-1024x633.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2017/07/21164224/google-cloud-platform-1024x633.png 1024w, https://media.robotwealth.com/wp-content/uploads/2017/07/21164224/google-cloud-platform-600x371.png 600w, https://media.robotwealth.com/wp-content/uploads/2017/07/21164224/google-cloud-platform-300x185.png 300w, https://media.robotwealth.com/wp-content/uploads/2017/07/21164224/google-cloud-platform-768x474.png 768w, https://media.robotwealth.com/wp-content/uploads/2017/07/21164224/google-cloud-platform-971x600.png 971w" decoding="async" height="344" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='556'%20height='344'%20viewBox='0%200%20556%20344'%3E%3C/svg%3E" width="556"/>In this post, I’m going to show you how to set up a Google Cloud Platform compute instance to act as a server for hosting a trading algorithm. We’ll also see why such a setup can be a good option and when it might pay to consider alternatives. Cloud compute instances are just a tiny fraction of the whole GCP ecosystem, so before we go any further, let’s take a high-level overview of the various components that make up Google Cloud Platform.
+
+<h2>What is Google Cloud Platform?</h2>
+
+GCP consists of a suite of cloud storage, compute, analytics and development infrastructure and services. Google says that GCP runs on the very same infrastructure that Google uses for its own products, such as Google Search. This suite of services and infrastructure goes well beyond simple cloud storage and compute resources, providing some very handy and affordable machine learning, big data, and analytics tools.
+Google Cloud Platform consists of:
+
+<ul>
+<li>Google Compute Engine: on-demand virtual machines and an application development platform.</li>
+<li>Google Storage: scalable object storage; like an (almost) infinite disk drive in the cloud.</li>
+<li>BigTable and Cloud SQL: scalable NoSQL and SQL databases hosted in the cloud.</li>
+<li>Big Data Tools:
+<ul>
+<li>BigQuery: big data warehouse geared up for analytics</li>
+<li>DataFlow: data processing management</li>
+<li>DataProc: managed Spark and Hadoop service</li>
+<li>DataLab: analytics and visualization platform, like a <a href="https://jupyter.org/" rel="noopener noreferrer" target="_blank">Jupyter notebook</a> in the cloud.</li>
+<li>Data Studio: for turning data into nice visualizations and reports</li>
+</ul>
+</li>
+<li>Cloud Machine Learning: train your own models in the cloud, or access Google’s pre-trained neural network models for video intelligence, image classification, speech recognition, text processing and language translation.</li>
+<li>Cloud Pub/Sub: send and receive messages between independent applications.</li>
+<li>Management and Developer Tools: monitoring, logging, alerting and performance analytics, plus command line/powershell tools, hosted git repositories, and other tools for application development.</li>
+<li>More which I haven’t mentioned here!</li>
+</ul>
+
+The services and infrastructure generally play nicely with each other and with the standard open-source tools of development and analytics. For example, DataLab integrates with BigQuery and Cloud Machine Learning and runs Python code. Google has tried to make GCP a self-contained, one-stop-shop for development, analytics, and hosting. And from what I have seen, they are succeeding!
+
+<h2>Using Google Compute Engine to Host a Trading Algorithm</h2>
+<h3>Introduction</h3>
+<a href="https://cloud.google.com/compute/" rel="noopener noreferrer" target="_blank">Google Compute Engine</a> (GCE) provides virtual machines (VMs) that run on hardware located in Google’s global network of data centres (a VM is simply an emulation of a computer system that provides the functionality of a physical computer). You can essentially use a VM just like you would a normal computer, without actually owning the requisite hardware. In the example below, I used a VM instance to:
+
+<ul>
+<li>Host and run some software applications (<a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro</a> and <a href="https://cran.r-project.org/" rel="noopener noreferrer" target="_blank">R</a>) that execute the code for the trading system.</li>
+<li>Connect to a broker to receive market data and execute trades (in this case, using the Interactive Brokers IB Gateway software).</li>
+</ul>
+
+GCE allows you to quickly launch an instance using predefined CPU, RAM and storage specifications, as well as to create your own custom machine. You can also select from several pre-defined ‘images’, which consist of the operating system (both Linux and Windows options are available), its configuration and some standard software. What’s really nice is that that GCE enables you to create your own custom image that includes the software and tools specific to your use case. This means that you don’t have to upload your software and trading infrastructure each time you want to launch a new instance – you can simply create an instance from an image that you saved previously.
+Before we get into a walk-through of setting up an instance and running a trading algorithm, I will touch on the advantages and disadvantages of GCE for this use case, as well as the cost.
+
+<h3>Pros and Cons of Running Trading Algorithms on Google Compute Engine</h3>
+
+There’s a lot to like about using GCE for managing one’s trading infrastructure. But of course, there will always be edge cases where other solutions will be more suitable. I can only think of one (see below), but if you come up with more, I’d love to hear about them in the comments.
+
+<h4>Pros:</h4>
+<ul>
+<li>GCE <strong>abstracts the need to maintain or update infrastructure</strong>, which allows the trader to focus on high-value tasks instead, like performance monitoring and further research.</li>
+<li>The <strong>cost</strong> of a cloud compute instance capable of running a trading algorithm is very reasonable (I’ll go into specifics below). In addition, you only pay for what you use, but can always increase the available resources if needed.</li>
+<li><strong>Imaging</strong>: it is possible to create an ‘image’ of your operating system configuration and any applications/packages necessary to run your algorithm. You can start a new compute instance with that image without having to manually install applications and configure the operating system. This is a big time-saver.</li>
+<li><strong>Scalability</strong>: if you find that you need more compute resources, you can add them easily, however, this will interrupt your algorithm.</li>
+<li><strong>Security</strong>: Google claims to have excellent security and employ a team of over 750 experts in that field, and take measures to protect the physical security of their data centres and the cybersecurity of their servers and software.</li>
+<li><strong>Uptime</strong>: Google commits to providing 99.95% uptime for GCE. If that level of uptime isn’t met in any particular month, Google issues credit against future billing cycles.</li>
+<li><strong>Access to other services</strong>: since the GCP services all play nicely together, you can easily access storage, data management, and analytical tools to complement or extend a compute instance, or indeed to build a bigger workflow on GCP that incorporates data management, research and analytics.</li>
+</ul>
+<h4>Cons:</h4>
+<ul>
+<li>If your trading algorithm is <strong>latency sensitive</strong>, GCE may not be the best solution. While you do have some choice over where your algorithm is physically hosted, this won’t be ideal if latency is a significant concern. For the vast majority of independent traders, this is unlikely to be a deal-breaker, but it is certainly worth mentioning.</li>
+</ul>
+
+I was almost going to list security as a disadvantage, since it can be easy to assume that if security is not handled in-house, then it is a potential issue. However, one would think that Google would do security much better than any individual could possibly do (at least, that’s what you’d think after reading <a href="https://cloud.google.com/security/" rel="noopener noreferrer" target="_blank">Google’s spiel on security</a>) and that therefore it makes sense to include the outsourcing of security as an advantage. This issue might get a little more complicated for a trading firm which may prefer to keep security in-house, but for most individuals, it probably makes sense to outsource it to an expert.
+
+<h2>Pricing</h2>
+
+GCE is surprisingly affordable. The cost of hosting and running my algorithm is approximately 7.6 cents per hour, which works out to around $55 per month (if I leave the instance running 24/7) including a sustained use discount, which is applied automatically. Factoring the $300 of free credit I received for signing up for GCP, the first year’s operation will cost me about $360.
+This price could come down significantly, depending on the infrastructure I use, as I’ll explain below.
+<strong>I used an n1-standard-1 machine from GCE’s list of standard machine types</strong>. This machine type utilizes a single CPU and allocates 3.75 GB of memory, and I attached a 50GB persistent disk. This was enough to run my trading algorithm via the <a href="https://robotwealth.com/tag/zorro/" rel="noopener noreferrer" target="_blank">Zorro trading automation software</a> (which requires Windows), executed through <a href="https://www.interactivebrokers.com" rel="noopener noreferrer" target="_blank">Interactive Brokers</a> via the IB Gateway. The algorithm in question generates trading signals (for a portfolio of three futures markets) by processing hourly data with callouts to a feedforward neural network written as an R script, and it monitors tick-wise price data for micro-management of individual trades. The machine type I chose handled this job reasonably well, despite recommendations from Google’s automated monitoring that I assign some additional resources. These recommendations generally arise as a result of retraining my neural network, a task that proved to be more resource intensive than the actual trading. Thankfully, this only happens periodically and I have so far chosen to ignore Google’s recommendations without apparent negative consequence.
+I used a Windows Server 2016 image (since my trading application runs on Windows only) and a 50GB persistent disk, which is the minimum required to run such an image. The Windows Server image accounts for the lion’s share of the cost – approximately $29 per month.
+A scaled-down version running Linux (Ubuntu 17.04) with a smaller persistent disk runs at less than half this cost: 3.4 cents per hour or $24.67 per month with a sustained use discount. Clearly there are big savings to be made if you can move away from Windows-based applications for your trading infrastructure.
+Also worth mentioning is that you are only charged for what you use. If you need to stop your algorithm in the middle of the month, you’ll only be charged for the time that your instance was actually running. Most of the niche providers of private trading servers will charge you at best for the full month, regardless of when you stop running your algorithm.
+
+<h2>How to Run a Trading Algorithm on GCE</h2>
+
+As you can see from the previous descriptions, Google Cloud Platform consists of a LOT of different services. Finding one’s way around for the first time can be a bit tricky. This part of the article consists of a walk-through on setting up and running a trading algorithm on GCE, aimed at the new GCP user.
+
+<h3>Step 1: Sign up for Google Cloud Platform</h3>
+
+Go to <a href="https://cloud.google.com/" rel="noopener noreferrer" target="_blank">https://cloud.google.com/</a> and log in to your Google account (or sign up for an account if you don’t have one). Note the $300 in free credits you receive for use within the first 12 months.
+
+<h3>Step 2: Navigate to Google Compute Engine</h3>
+
+Firstly, from the GCP homepage, navigate to your GCP Console via one of the options shown below:
+<a href="https://robotwealth.com/wp-content/uploads/2017/07/2.-a.-Navigate-to-console.png"><img alt="google cloud platform console screen" class="aligncenter wp-image-2936 size-large perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/07/2.-a.-Navigate-to-console-1024x373.png" decoding="async" height="272" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='272'%20viewBox='0%200%20748%20272'%3E%3C/svg%3E" width="748"/></a>Then, navigate to the Compute Engine dashboard like so:
+
+<h3><a href="https://robotwealth.com/wp-content/uploads/2017/07/2.-b.-Navigate-to-google-compute-engine.png"><img alt="google cloud platform compute engine dashboard" class="aligncenter wp-image-2937 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/07/2.-b.-Navigate-to-google-compute-engine.png" decoding="async" height="845" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='930'%20height='845'%20viewBox='0%200%20930%20845'%3E%3C/svg%3E" width="930"/></a></h3>
+<h3>Step 3: Create a new VM instance</h3>
+
+Simply click on <em>Create</em> in the VM Instances screen on your GCE dashboard, like so:
+<a href="https://robotwealth.com/wp-content/uploads/2017/07/3.Create-instance.png"><img alt="create a new VM instance" class="aligncenter wp-image-2938 size-large perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/07/3.Create-instance-1024x484.png" decoding="async" height="354" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='354'%20viewBox='0%200%20748%20354'%3E%3C/svg%3E" width="748"/></a>
+Then fill out the specs for your new instance. The specs I used look like this (you can see the cost estimate on the right):
+<a href="https://robotwealth.com/wp-content/uploads/2017/07/3.-b.-Fill-out-VM-specs.png"><img alt="fill out the specifications of your google cloud platform VM" class="aligncenter wp-image-2939 size-large perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/07/3.-b.-Fill-out-VM-specs-1024x706.png" decoding="async" height="516" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='516'%20viewBox='0%200%20748%20516'%3E%3C/svg%3E" width="748"/></a>I used one of Google Cloud Platform’s US east-coast data centres since IB’s servers are located in the New York area. My algorithm isn’t latency-sensitive, but every little bit helps.
+After clicking <em>Create</em>, the instance will take a few moments to spin up, then it will appear in your VM dashboard like so:
+
+<h3><a href="https://robotwealth.com/wp-content/uploads/2017/07/3.c.-spun-up-instance.png"><img alt="a complete google cloud platform VM instance" class="aligncenter wp-image-2940 size-large perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/07/3.c.-spun-up-instance-1024x616.png" decoding="async" height="450" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='450'%20viewBox='0%200%20748%20450'%3E%3C/svg%3E" width="748"/></a></h3>
+<h3>Step 4: Set up access control</h3>
+
+Next, you need to set up a password for accessing the instance.  Click the arrow next to <em>RDP</em> and select <em>Set Windows password</em> like so:
+<a href="https://robotwealth.com/wp-content/uploads/2017/07/3.d.Setwindows-password-1.png"><img alt="set up a windows password for your VM instance" class="aligncenter wp-image-2946 size-large perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/07/3.d.Setwindows-password-1-1024x616.png" decoding="async" height="450" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='450'%20viewBox='0%200%20748%20450'%3E%3C/svg%3E" width="748"/></a>
+Follow the prompts, and then copy the password and keep safe. Now you’re ready to connect to your instance!
+
+<h3>Step 5: Connect and test</h3>
+
+You can connect directly from the VM dashboard using Google’s remote desktop application for Chrome by clicking <em>RDP</em> (ensuring the correct VM is selected), or download the Windows RDP:
+<a href="https://robotwealth.com/wp-content/uploads/2017/07/4.-connect-1.png"><img alt="connect to your VM instance dashboard" class="aligncenter wp-image-2947 size-large perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/07/4.-connect-1-1024x616.png" decoding="async" height="450" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='450'%20viewBox='0%200%20748%20450'%3E%3C/svg%3E" width="748"/></a>
+Once connected to the instance, it should look like a normal (although somewhat Spartan) Windows desktop. To test that it can connect to Interactive Brokers (IB), we are going to connect to IB’s test page. But first, we have to adjust some default internet settings. To do this, open Internet Explorer. Select the <em>Settings</em> cog in the top right of the browser then <em>Internet Options</em>, then <em>Security</em>, then <em>Trusted Sites</em>. Click the <em>Sites</em> button and add <a href="https://www.interactivebrokers.com" rel="noopener noreferrer" target="_blank">https://www.interactivebrokers.com</a> to the list of trusted sites. Then save the changes. Here’s a visual from my instance:
+<a href="https://robotwealth.com/wp-content/uploads/2017/07/5.-internet-security-options.png"><img alt="configure the security to connect to google cloud platform VM" class="aligncenter wp-image-2943 size-large perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/07/5.-internet-security-options-1024x709.png" decoding="async" height="518" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='518'%20viewBox='0%200%20748%20518'%3E%3C/svg%3E" width="748"/></a>
+Now, connect to IB’s test page to check that your instance can communicate with IB’s servers. Simply navigate to https://www.interactivebrokers.com/cgi-bin/conn_test.pl in Internet Explorer. If the instance is connecting properly, you should see a page that looks like this:
+<a href="https://robotwealth.com/wp-content/uploads/2017/07/5.-succesful-test.png"><img alt="Connect to interactive broker's test page" class="aligncenter wp-image-2944 size-large perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/07/5.-succesful-test-1024x537.png" decoding="async" height="392" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='392'%20viewBox='0%200%20748%20392'%3E%3C/svg%3E" width="748"/></a>
+You can now upload your trading software and algorithm to your instance by simply copying and pasting from your home computer, or download any required software from the net. Note that to copy and paste from your home computer, you will need to access the instance using Windows RDP, not Chrome RDP (this may change with future updates to Chrome RDP).
+
+<h3>Gotcha: changing permissions of root directory for Windows Server:</h3>
+
+I found that I wasn’t able to install R packages from a script due to restrictions on accessing certain parts of the Windows file structure. To resolve this, I followed these steps:
+
+<ul>
+<li>In Windows Explorer, navigate to the R installation directory and right-click it, then choose <em>Properties</em>.</li>
+<li>Go to the <em>Security</em> tab.</li>
+<li>Click <em>Advanced</em>, then <em>Change Permissions</em>.</li>
+<li>Highlight your username, and click <em>Edit</em>.</li>
+<li>Choose <em>This folder, subfolders and files</em> under <em>Applies to:</em></li>
+<li>Choose <em>Full Control</em> under <em>Basic Permissions</em>.</li>
+<li>Click OK.</li>
+</ul>
+<h3>Step 6: Don’t’ forget to stop the instance!</h3>
+
+If you need to stop trading your algorithm, it is usually a good idea to stop the instance so that you aren’t charged for compute resources that you aren’t using. Do so from the VM dashboard:
+<a href="https://robotwealth.com/wp-content/uploads/2017/07/6.-stop-instance.png"><img alt="to stop your trading algorithm, don't forget to stop the instance" class="aligncenter wp-image-2945 size-large perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/07/6.-stop-instance-1024x603.png" decoding="async" height="440" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='440'%20viewBox='0%200%20748%20440'%3E%3C/svg%3E" width="748"/></a>
+So long as you don’t delete the instance, you can always restart it from the same state at which it was stopped, meaning you don’t have to re-upload your software and scripts. You are not billed for an instance that has been stopped.
+On the other hand, if you delete your instance and later want to restart, you will have to create a whole new instance and re-upload all your trading infrastructure. That’s where images come in handy: you can save an image of your setup, and then start an identical instance from the console. I’ll show you how to do that in another post.
+
+<h2><strong>Concluding Remarks</strong></h2>
+<h3>Google Cloud Platform on the Command Line</h3>
+
+In this post, I’ve demonstrated how to set up and run instances using the GCP Console. The same can be achieved using the Gcloud Command Line tool, which is worth learning to use if you start using GCP extensively thanks to the boost in productivity that comes with familiarity.
+
+<h3>Going Further</h3>
+
+There’s a lot that can be done on GCP, including big data analytics and machine learning. We can also apply some simpler workflows to make our lives easier, such as creating custom images as mentioned above, or integrating with cloud storage infrastructure for managing historical data and using Data Studio for monitoring performance via attractive dashboard-style interfaces. I’m in a good position to show you the ropes on how to use these tools in your trading workflow, so if there is something in particular that you would like me to showcase, let me know in the comments.
+Happy Googling!
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>algorithmic trading</span>, <span>R</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">27 thoughts on “How to Run Trading Algorithms on Google Cloud Platform in 6 Easy Steps”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-767">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 07/19/2017 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-768">
+<article class="comment-body" id="div-comment-768" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thank you for the article, really great 🙂<br/>
+Adding to the cons: I used AWS for hosting my algos which adds a little bit of mitigation to latency as Amazon has more data centers around the world and you can try to find the one that is closer to your broker’s server.<br/>
+Having said that, latency still will be an issue comparing to hosting a VPS right next to your broker’s server. But I agree with you, most retail guys aren’t HFT so +- 10-20 ms is not going to make a huge difference. I once hosted my algorithm in London only 6km from my broker’s server. The ping was marvelous yet the algo was losing… nothing beats a good strategy 🙂</p>
+<span class="reply"><a aria-label="Reply to Yury" class="comment-reply-link" data-belowelement="div-comment-768" data-commentid="768" data-postid="2830" data-replyto="Reply to Yury" data-respondelement="respond" href="#comment-768" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-771">
+<article class="comment-body" id="div-comment-771" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Indeed! Thanks for telling us about your experience, Yury.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-771" data-commentid="771" data-postid="2830" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-771" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-2" id="comment-773">
+<article class="comment-body" id="div-comment-773" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>which was that 6km VPS you used Yury?</p>
+<span class="reply"><a aria-label="Reply to Mariano" class="comment-reply-link" data-belowelement="div-comment-773" data-commentid="773" data-postid="2830" data-replyto="Reply to Mariano" data-respondelement="respond" href="#comment-773" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-769">
+<article class="comment-body" id="div-comment-769" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I tried out Amazon, Microsoft and Google’s VPS offerings a while back and found Amazon’s latency was noticeably less here on the east coast of Australia. I liked Google’s setup (and even MS) better than Amazon but in the end I stuck with Amazon as the local data centre made using the server via RDP almost as quick as a local machine.<br/>
+Google are apparently going to have a local presence soon so maybe that will speed things up somewhat.</p>
+<span class="reply"><a aria-label="Reply to rollbahn" class="comment-reply-link" data-belowelement="div-comment-769" data-commentid="769" data-postid="2830" data-replyto="Reply to rollbahn" data-respondelement="respond" href="#comment-769" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-770">
+<article class="comment-body" id="div-comment-770" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for sharing your experience! While latency associated with RDP or other access mechanisms is important for some applications, it is generally less so for trading algorithms. More important is the latency between the server and the execution venue. My experience is that I haven’t experienced an appreciable difference between Google and Amazon’s US east cost data centres (however I use neither of these options for anything that is particularly latency sensitive).</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-770" data-commentid="770" data-postid="2830" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-770" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3" id="comment-772">
+<article class="comment-body" id="div-comment-772" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very true Kris – I was using MT4 at the time in my testing so the latency was very important in terms of providing a fast enough screen redraw to provide a pleasant desktop-like experience. There was a VERY noticeable difference between the local points of presence and anything overseas.<br/>
+But as you mentioned this is not necessarily a problem when you’re using trading algos.</p>
+<span class="reply"><a aria-label="Reply to rollbahn" class="comment-reply-link" data-belowelement="div-comment-772" data-commentid="772" data-postid="2830" data-replyto="Reply to rollbahn" data-respondelement="respond" href="#comment-772" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-774">
+<article class="comment-body" id="div-comment-774" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I think it would be great to see a comparison between different VPS performance in a post somewhere.<br/>
+From my experience google VPS support is quite poor compare to amazon.<br/>
+A really important thing is that the VPS does not break, neither needs to reboot time to time and therefore I think amazon is better, since they have longer experienced providing VPS.<br/>
+Besides you can get it cheaper than 55$ I think.<br/>
+What about the use of ubuntu? did you try zorro on it? does it work ok?<br/>
+ </p>
+<span class="reply"><a aria-label="Reply to Mariano" class="comment-reply-link" data-belowelement="div-comment-774" data-commentid="774" data-postid="2830" data-replyto="Reply to Mariano" data-respondelement="respond" href="#comment-774" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-775">
+<article class="comment-body" id="div-comment-775" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Have you consider connecting two VPS? One small for trading, the other bigger for training which is only activated when training is needed. Then both vps share the Data folder of the trading one so that the new trained model is saved on the Zorro/Data folder of the cheap vps.</p>
+<span class="reply"><a aria-label="Reply to MarianoA" class="comment-reply-link" data-belowelement="div-comment-775" data-commentid="775" data-postid="2830" data-replyto="Reply to MarianoA" data-respondelement="respond" href="#comment-775" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-776">
+<article class="comment-body" id="div-comment-776" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I haven’t done this myself, but nice idea, thanks for sharing. If I understood the concept, you’d need a separate storage repository for holding your data. But hey, storage is cheap!</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-776" data-commentid="776" data-postid="2830" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-776" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3" id="comment-777">
+<article class="comment-body" id="div-comment-777" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Well storing the data in the live trading vps is not problem beside it is not much data but the train part becomes a problem since more cpu and ram resources are needed than just for live trading.<br/>
+So then yeah one can train the strategy in a expensive vps and then copy manually the output files to the data folder in the live trading vps manually. Or one can just train the strategy in their home computer and then copy manully those files to the live trading vps but when it comes into outsourcing then sharing folders would the work.</p>
+<span class="reply"><a aria-label="Reply to MarianoA" class="comment-reply-link" data-belowelement="div-comment-777" data-commentid="777" data-postid="2830" data-replyto="Reply to MarianoA" data-respondelement="respond" href="#comment-777" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-778">
+<article class="comment-body" id="div-comment-778" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Kris, I wonder if would be more powerful to write deep learning and machine learning algorithms directly using TensorFlow in google instead of R. I mean, TensorFlow  probably is simpler and it scales, so it is possible to train neural nets or run algorithms in seconds instead of hours in R. Would you suggest to start studying R, or would you suggest to start directly using  TensorFlow? Could you give some suggestion about this?<br/>
+Thanks, I’m already enrolled in your course, very interesting 🙂</p>
+<span class="reply"><a aria-label="Reply to lindezas" class="comment-reply-link" data-belowelement="div-comment-778" data-commentid="778" data-postid="2830" data-replyto="Reply to lindezas" data-respondelement="respond" href="#comment-778" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-779">
+<article class="comment-body" id="div-comment-779" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I wouldn’t say TensorFlow is simple! I also wouldn’t say that something that takes hours in R would take seconds in TensorFlow. Yes, it’s a library for mathematical computation and will be optimized as such, but still if you got that sort of speedup I’d say something was seriously wrong with the R code!<br/>
+Whether you learn TensorFlow or R first really depends on what you want to do. I gather you’re interested in training neural networks for trading applications. For that, I’d start learning Keras, which is designed for rapid prototyping and experimentation with neural networks, and can be configured to use TensorFlow, Theano or CNTK as the backend computational library. Keras is implemented in Python and R. Trust me, it will make your life easier than diving straight into TensorFlow!<br/>
+Glad to hear you’re enjoying the course!</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-779" data-commentid="779" data-postid="2830" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-779" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-780">
+<div class="comment-body">
+				Pingback: How to Run Trading Algorithms on Google Cloud Platform in 6 Easy Steps | Tradezam 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-782">
+<div class="comment-body">
+				Pingback: How to Run Trading Algorithms on Google Cloud Platform in 6 Easy Steps – Aitraiding – The First Machine Learining Platform for robotrading 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-908">
+<div class="comment-body">
+				Pingback: From Retail to Professional: Five Technology Tips to Move into the Professional Space, Part 1 | Quant News 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1" id="comment-1922">
+<article class="comment-body" id="div-comment-1922" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very impressive Kris! Thanks for taking the time to share your experience with us.</p>
+<span class="reply"><a aria-label="Reply to Paul Martin" class="comment-reply-link" data-belowelement="div-comment-1922" data-commentid="1922" data-postid="2830" data-replyto="Reply to Paul Martin" data-respondelement="respond" href="#comment-1922" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-10088">
+<div class="comment-body">
+				Pingback: Deep Learning for Trading Part 4: Fighting Overfitting with Dropout and Regularization - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-13708">
+<div class="comment-body">
+				Pingback: Optimising MetaTrader for Algorithmic Trading - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-14431">
+<article class="comment-body" id="div-comment-14431" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>First, I would not recommend implementing this technique because the Platform does not offer a Windows Server as part of their promotion anymore. Simply put, a Windows Server would cost three times as much compared to what you mention. Second, reliability is questionable, simply because the VM could crash and the third party vendors that you mention do not offer any warranty so personally speaking I would not rely on any software vendor out of the API broker. In any case, I would suggest you show your followers how to reset (Ctrl+Alt+Del) the VM as well.</p>
+<span class="reply"><a aria-label="Reply to Rod Jay" class="comment-reply-link" data-belowelement="div-comment-14431" data-commentid="14431" data-postid="2830" data-replyto="Reply to Rod Jay" data-respondelement="respond" href="#comment-14431" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-14609">
+<article class="comment-body" id="div-comment-14609" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Rod. Thanks for sharing your views. </p>
+<p>I just jumped on GCP to take a look at what you mentioned about price. Seems I’m able to rent the same machine type with the same OS as in the post for the same price. Which is actually astounding given that nearly three years have passed since that post was released! I could be missing something of course – where do you get your 3x figure from?</p>
+<p>I’m not sure I agree about reliability. Certainly, it would be preferable to use a Linux-based OS, but sometimes the ability to use a Windows-only tool trumps the convenience you’d get from a Linux box. However in my experience, the Windows machines that we’ve been using have been incredibly reliable. I’ve not had a single crash in several years of using them. Maybe I’ve just been lucky. Having said that, those annoying automatic updates can catch you out if you’re not careful…</p>
+<p>Also, I don’t know any software vendors that would provide a warranty against a crashing VM. Is that actually a thing?</p>
+<p>Finally I don’t think anyone needs a tutorial on using Ctrl-Alt-Del!</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14609" data-commentid="14609" data-postid="2830" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14609" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-beamersgb odd alt thread-odd thread-alt depth-1" id="comment-16451">
+<article class="comment-body" id="div-comment-16451" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Zorro will run fine under Wine (www.winehq.com) in a Linux box if you want to save the $29 a month for the windows machine.</p>
+<span class="reply"><a aria-label="Reply to BeamerSGB" class="comment-reply-link" data-belowelement="div-comment-16451" data-commentid="16451" data-postid="2830" data-replyto="Reply to BeamerSGB" data-respondelement="respond" href="#comment-16451" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/run-trading-algorithms-google-cloud-platform-6-easy-steps/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,280 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Simulating Variable FX Swaps in Zorro and Python</title>
+<!-- source: https://robotwealth.com/simulating-variable-fx-swaps-in-zorro-and-python/ -->
+<h1>Simulating Variable FX Swaps in Zorro and Python</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-4523 post type-post status-publish format-standard hentry category-backtesting category-fx category-python category-zorro tag-forex tag-fx tag-python tag-roll tag-swap tag-zorro pmpro-has-access" id="post-4523">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">July 10, 2018</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Simulating Variable FX Swaps in Zorro and Python</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Simulating Variable FX Swaps in Zorro and Python" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">One of the ongoing research projects inside the Robot Wealth community involves an FX strategy with some multi-week hold periods. Such a strategy can be significantly impacted by the swap, or the cost of financing the position. These costs change over time, and we decided that for the sake of more accurate simulations, we would incorporate these changes into our backtests.
+This post shows you how to simulate variable FX swaps in both Python and the Zorro trading automation software platform.
+
+<h2>What is Swap?</h2>
+
+The swap (also called the roll) is the cost of financing an FX position. It is typically derived from the central bank interest rate differential of the two currencies in the exchange rate being traded, plus some additional fee for your broker. Most brokers apply it on a daily basis, and typically apply three times the regular amount on a Wednesday to account for the weekend. Swap can be both credited to and debited from a trader’s account, depending on the actual position taken.
+
+<h2>Why is it Important?</h2>
+
+Swap can have a big impact on strategies with long hold periods, such as the typical momentum strategy. Therefore, accurately accounting for it is important in such cases.  Zorro’s default swap calculation relies on a constant derived from the Assets List used in the simulation, which is fine for most situations, but might lead to unrealistic results when the hold period is very long.
+
+<h2>Simulating Variable Swaps in Zorro and in Python</h2>
+
+Here’s some code for simulating historical swaps. It takes historical central bank data from the Bank of International Settlements, via Quandl. I’ve included code for the historical interest rates of the G8 countries – to get others, you just need the relevant Quandl code.
+For the Zorro version, you’ll also need Zorro S, as the Quandl bridge is not available in the free version of Zorro. However, at the end of this article, I’ve also included a Python script for downloading the data from Quandl that you can save and then import into your backtesting platform. The advantage of the Zorro version is that you can access the relevant data from within a trading script via direct link to the Quandl API. That’s super convenient and all but eliminates the need to do any data wrangling at all. The advantage of the Python version is that it is completely free, but using the data in a trading script requires a little more messing around.
+
+<h3>The Zorro Version</h3>
+
+In order to access data from Quandl within Zorro, you’ll need a Quandl API key (get it from the Quandl website) and enter it in your ZorroFix.ini or Zorro.ini file.
+Here’s the Zorro script:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Simulate variable swaps in Zorro">/*
+Download historical central bank policy rates from Quandl and use to calculate historical swaps.
+Zorro's FX swap is interest per day per 10000 units traded, in account currency.
+*/
+#include &lt;contract.c&gt;
+var calculate_roll_long(var base_ir, var quote_ir, var broker_fee)
+{
+    /*Calculates Zorro roll long in units of quote currency*/
+    var ird = (base_ir - quote_ir)/100;
+    return 10000*ird/365 - broker_fee;
+}
+var calculate_roll_short(var base_ir, var quote_ir, var broker_fee)
+{
+    /*Calculates Zorro roll short in units of quote currency*/
+    var ird = (quote_ir - base_ir)/100;
+    return 10000*ird/365 - broker_fee;
+}
+function run()
+{
+    set(PLOTNOW);
+    PlotWidth = 800;
+    PlotHeight1 = 400;
+    PlotHeight2 = 250;
+    StartDate = 20100101;
+    EndDate = 20180630;
+    // daily policy rates of major central banks, from Bank of International Settlements, via Quandl
+    var usd_ir = dataFromQuandl(1, "%Y-%m-%d,f", "BIS/PD_DUS", 1);
+    var jpy_ir = dataFromQuandl(2, "%Y-%m-%d,f", "BIS/PD_DJP", 1);
+    var aud_ir = dataFromQuandl(3, "%Y-%m-%d,f", "BIS/PD_DAU", 1);
+    var eur_ir = dataFromQuandl(4, "%Y-%m-%d,f", "BIS/PD_DXM", 1);
+    var cad_ir = dataFromQuandl(5, "%Y-%m-%d,f", "BIS/PD_DCA", 1);
+    var chf_ir = dataFromQuandl(6, "%Y-%m-%d,f", "BIS/PD_DCH", 1);
+    var nzd_ir = dataFromQuandl(7, "%Y-%m-%d,f", "BIS/PD_DNZ", 1);
+    var gbp_ir = dataFromQuandl(8, "%Y-%m-%d,f", "BIS/PD_DGB", 1);
+    // What the broker takes in addition to the interest rate differential
+    // Will vary by broker, by pair, and even by direction! Make a conservative assumption.
+    var broker_fee = 0.5;
+    // EUR/USD roll in AUD example
+    asset("EUR/USD");
+    //calculate roll long in units of quote currency
+    var rl = calculate_roll_long(eur_ir, usd_ir, broker_fee);
+    // convert to units of account currency - here the account currency is AUD
+    // not required if account currency is the same as the quote currency
+    string current_asset = Asset; // store name of currently selected asset
+    asset("AUD/USD"); // switch to ACCT_CCY/QUOTE_CCY
+    var p = priceClose();
+    asset(current_asset); // switch back to original asset
+    RollLong = rl/p; // adjust roll long calculation and set Zorro's RollLong variable
+    //calculate roll short in units of quote currency
+    var rs = calculate_roll_short(eur_ir, usd_ir, broker_fee);
+    // convert to units of account currency - here the account currency is AUD
+    // not required if account currency is the same as the quote currency
+    RollShort = rs/p; // adjust roll short calculation and set Zorro's RollShort variable
+    // plot roll in units of account currency
+    plot("Roll Long", RollLong, NEW, BLUE);
+    plot("Roll Short", RollShort, 0, RED);
+}</pre>
+
+One major thing to remember is that your FX broker won’t charge/pay swaps based on the exact interest rate differential. In practice, they might take some additional fat for themselves, or even adjust their actual swaps on the basis of perceived upside/downside volatility – and these may not even be symmetrical! The short story is that the broker’s cut will vary by broker, FX pair, and even by direction! You can verify that yourself by searching various brokers’ websites for their current swap rates.
+So the upshot of all that is that if you want to include an additional broker fee in your simulation, recognise that it will be an estimate, do some research on what brokers are currently charging, and err on the conservative side. In the code above, the broker fee is set in line 44; you can also set this to zero if you like.
+The trickiest part is converting the interest rate differential of the base-quote currencies to Zorro’s <span class="lang:c decode:true crayon-inline">RollLong</span>  and <span class="lang:c decode:true crayon-inline">RollShort</span>  variables – but the advantage is that once you get that right, Zorro will take care of simulating the roll for you – you literally won’t have to do another thing! These variables represent the swap in account currency per 10,000 traded FX units. Most of that conversion is taken care of the in the <span class="lang:c decode:true crayon-inline">calculate_roll_long()</span>  and <span class="lang:c decode:true crayon-inline">calculate_roll_short()</span>  functions in the code above. But these functions output the swap in units of the <em><strong>quote</strong></em> currency, not the <em><strong>account</strong></em> currency. This requires some more conversion.
+The code also contains an example of converting the EUR/USD roll for an account denominated in AUD. This is accomplished from line 46.
+Here’s the output of running the script. You can see how the swap for long and short trades has changed over time. At some point in 2014, it became a less expensive proposition to sell the EUR against the USD rather than buy it. You can also see that the value of the swap is constantly changing; that’s because the calculation considers the contemporaneous exchange rate of the account currency (AUD) against the quote currency (USD) of the pair being traded.
+<a href="https://robotwealth.com/wp-content/uploads/2018/07/EUR-USD-variable-swamp-in-AUD.png"><img alt="variable fx swap" class="aligncenter size-full wp-image-4518 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/07/EUR-USD-variable-swamp-in-AUD.png" decoding="async" height="618" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='618'%20viewBox='0%200%20879%20618'%3E%3C/svg%3E" width="879"/></a>
+<h3>The Python Version</h3>
+
+Here’s a python script for downloading the same data set as used above (albeit with a longer history) from Quandl, and a function for calculating the swap. This time, the function calculates the swap per standard FX lot, which is 100,000 units of the quote currency (the Zorro script above calculates the swap per 10,000 units which is required for Zorro’s <span class="lang:c decode:true crayon-inline">RollLong</span>  and <span class="lang:c decode:true crayon-inline">RollShort</span>  variables).
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="Historical swaps in Python">import pandas as pd
+import matplotlib.pyplot as plt
+import quandl
+cad = quandl.get("BIS/PD_DCA")
+jpy = quandl.get("BIS/PD_DJP")
+chf = quandl.get("BIS/PD_DCH")
+aud = quandl.get("BIS/PD_DAU")
+gbp = quandl.get("BIS/PD_DGB")
+nzd = quandl.get("BIS/PD_DNZ")
+eur = quandl.get("BIS/PD_DXM")
+usd = quandl.get("BIS/PD_DUS") # this is the effective fed funds rate
+def calculate_rolls(base, quote, broker_fee):
+    ird = 100000*(base - quote)/(100*365) - broker_fee
+    ird.columns = ["IRD"]
+    ird.fillna(method="ffill", inplace=True)
+    ird["roll_long"] = ird["IRD"] - broker_fee
+    ird["roll_short"] = -ird["IRD"] - broker_fee
+    return ird</pre>
+
+Plotting the historical effective fed funds rate, you can see that the data set might have some problems prior to about 1985. You may need to smooth the data or remove outliers to use it effectively.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="">ax = usd.plot(grid=True)
+ax.legend(["USD Effective Fed Funds Rate"])
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2018/07/historical-effective-fed-funds-rate.png"><img alt="fed funds rate" class="aligncenter size-full wp-image-4519 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/07/historical-effective-fed-funds-rate.png" decoding="async" height="949" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1920'%20height='949'%20viewBox='0%200%201920%20949'%3E%3C/svg%3E" width="1920"/></a>
+We can simulate and plot the historical swap of the AUD/CAD exchange rate as follows:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="python" data-enlighter-title="">broker_fee = 5 # how much does the broker take per lot of the quote currency?
+aud_cad = calculate_rolls(aud, cad, broker_fee)
+aud_cad[["roll_long", "roll_short"]].dropna().plot(grid=True)</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2018/07/historical-aud-cad-variable-swap.png"><img alt="" class="aligncenter size-full wp-image-4521 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/07/historical-aud-cad-variable-swap.png" decoding="async" height="949" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1920'%20height='949'%20viewBox='0%200%201920%20949'%3E%3C/svg%3E" width="1920"/></a>Again, you can see some potential data issues prior to about 1990.
+
+<h2>Conclusion</h2>
+
+The cost of financing a long-term FX position can have a significant impact on the overall result of the trade. This post demonstrated a simple and inexpensive way to simulate the historical variable financing costs for FX.
+
+<hr/>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>forex</span>, <span>fx</span>, <span>python</span>, <span>roll</span>, <span>swap</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-91137 post type-post status-publish format-standard has-post-thumbnail hentry category-python category-quant-trading category-trading-strategies tag-0dte tag-ibkr tag-options pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/trading-0dte-options-with-the-ibkr-native-api/"><img alt="Trading 0DTE Options with the IBKR Native API" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="91138" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/03/21154830/straddles_0dte.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-89281 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-factors category-quant-trading category-r category-trading-strategies tag-crypto tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-simple-effective-way-to-manage-turnover-and-not-get-killed-by-costs/"><img alt="A Simple, Effective Way to Manage Turnover and Not Get Killed by Costs" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="89282" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-33396 post type-post status-publish format-standard has-post-thumbnail hentry category-r category-zorro pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/exporting-zorro-data-to-csv/"><img alt="Exporting Zorro Data to CSV" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="35919" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-300x157.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-300x157.png 300w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-600x314.png 600w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-1024x536.png 1024w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-768x402.png 768w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-1000x523.png 1000w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7.png 1200w" decoding="async" height="157" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='157'%20viewBox='0%200%20300%20157'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">1 thought on “Simulating Variable FX Swaps in Zorro and Python”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-836">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 07/09/2018 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/simulating-variable-fx-swaps-in-zorro-and-python/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

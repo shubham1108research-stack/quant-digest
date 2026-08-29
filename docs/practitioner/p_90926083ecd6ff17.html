@@ -1,0 +1,422 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>How to Run Python from R Studio</title>
+<!-- source: https://robotwealth.com/using-python-from-the-comfort-of-r-studio/ -->
+<h1>How to Run Python from R Studio</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-23167 post type-post status-publish format-standard has-post-thumbnail hentry category-python category-r category-tools-of-the-trade tag-r-studio tag-reticulate pmpro-has-access" id="post-23167">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 15, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">How to Run Python from R Studio</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="How to Run Python from R Studio" class="ipa-media gb-media-81e19d89" data-media-id="23177" decoding="async" fetchpriority="high" height="788" sizes="(max-width: 940px) 100vw, 940px" src="https://media.robotwealth.com/wp-content/uploads/2020/05/21162012/PythonRStudio.png" srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21162012/PythonRStudio.png 940w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162012/PythonRStudio-600x503.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162012/PythonRStudio-300x251.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162012/PythonRStudio-768x644.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/05/21162012/PythonRStudio-716x600.png 716w" width="940"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Modern data science is fundamentally <em>multi-lingual.</em>
+
+At a minimum, most data scientists are comfortable working in R, Python and SQL; many add Java and/or Scala to their toolkit, and it’s not uncommon to also know one’s way around JavaScript.
+
+Personally, I prefer to use R for data analysis. But, until recently, I’d tend to reach for Python for anything more general, like scraping web data or interacting with an API. Tools for doing this sort of thing in R’s <a href="https://robotwealth.com/financial-data-manipulation-in-dplyr-for-quant-traders/">tidyverse</a> are really maturing, so I’m doing more and more of this without leaving R.
+
+But I also have a pile of Python scripts that I used to lean on, and it would be nice to be able to continue to leverage that past work. Other data scientists who work in bigger teams would likely have even more of a need to switch contexts regularly.
+
+<h3>Reticulate to the rescue</h3>
+
+Thanks to the <code>reticulate</code> package (<code>install.packages('reticulate')</code>) and its integration with R Studio, we can run our Python code without ever leaving the comfort of home.
+
+Some useful features of <code>reticulate</code> include:
+
+<ul>
+<li>Ability to call Python flexibly from within R:
+<ul>
+<li>sourcing Python scripts</li>
+<li>importing Python modules</li>
+<li>using Python interactively in an R session</li>
+<li>embedding Python code in an R Markdown document</li>
+</ul>
+</li>
+<li>Direct object translation (eg <code>pandas.DataFrame</code>–<code>data.frame</code>, <code>numpy.array</code>–<code>matrix</code> etc)</li>
+<li>Ability to bind to different Python environments</li>
+</ul>
+
+For me, the main benefit of <code>reticulate</code> is streamlining my workflow. In this post, I’ll share an example. It’s trivial and we could replace this Python script with R code in no time at all, but I’m sure you have more complex Python scripts that you don’t feel like re-writing in R…
+
+<h2>Scraping ETF Constituents with Python from R Studio</h2>
+
+I have a Python script, <code>download_spdr_holdings.py</code> for scraping ETF constituents from the SPDR website:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">"""download ETF holdings to csv file"""
+import pandas as pd
+
+def get_holdings(spdr_ticker):
+
+    url = f'http://www.sectorspdr.com/sectorspdr/IDCO.Client.Spdrs.Holdings/Export/ExportCsv?symbol={spdr_ticker}'
+    df = pd.read_csv(url, skiprows=1).to_csv(f'{spdr_ticker}_holdings.csv', index=False)
+
+    return df
+
+
+if __name__ == "__main__":
+
+    tickers = ['XLB', 'XLE', 'XLF', 'XLI', 'XLK', 'XLP', 'XLU', 'XLV', 'XLY']
+
+    for t in tickers:
+        get_holdings(t)
+</pre>
+
+This simple script contains a function for saving the current constituents of a SPDR ETF to a csv file. When called as a module <code>python -m download_spdr_holdings</code>, the script loops through a bunch of ETF tickers and saves their constituents to individual CSV files.
+
+The intent is that these CSV files then get read into an R session where any actual analysis takes place.
+
+With <code>reticulate</code>, I can remove the disk I/O operations and read my data directly into my R session, using my existing Python script.
+
+<h3>Connect reticulate to Python</h3>
+
+First, I need to tell <code>reticulate</code> about the Python environment I want it to use. <code>reticulate</code> is smart enough to use the version of Python found on your <code>PATH</code> by default, but I have a Conda environment running Python 3.7 named “py37” that I’d like to use. Hooking <code>reticulate</code> into that environment is as easy as doing:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(reticulate)
+reticulate::use_condaenv("py37")
+</pre>
+<code>reticulate</code> is flexible in its ability to hook into your various Python environments. In addition to <code>use_condaenv()</code> for Conda environments, there’s <code>use_virtualenv()</code> for virtual environments and <code>use_python()</code> to specify a Python version that isn’t on your <code>PATH</code>.
+
+<h3>Bring Python code to R</h3>
+
+To use my Python script as is directly in R Studio, I could source it by doing <code>reticulate::source_python("download_spdr_holdings.py")</code>.
+
+This will cause the Python script to run as if it were called from the command line as a module and will loop through all the tickers and save their constituents to CSV files as before. It will also add the function <code>get_holdings</code> to my R session, and I can call it as I would any R function.
+
+For instance, <code>get_holdings('XLF')</code> will scrape the constituents of the XLF ETF and save them to disk.
+
+<em>Pretty cool, no?</em>
+
+However, the point of this exercise was to skip the disk I/O operations and read the ETF constituents directly into my R session. So I would need to modify my Python <code>def</code> and call <code>source_python()</code> again. I could also just copy the modified <code>def</code> directly in an R Markdown notebook (I just need to specify my chunk as <code>{python}</code> rather than <code>{r}</code>:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">import pandas as pd
+
+def get_holdings(spdr_ticker):
+
+    """read in ETF holdings"""
+
+    url = f"http://www.sectorspdr.com/sectorspdr/IDCO.Client.Spdrs.Holdings/Export/ExportCsv?symbol={spdr_ticker}"
+    df = pd.read_csv(url, skiprows=1, usecols=[i for i in range(3)]) 
+
+    return df
+</pre>
+
+I now have the <code>get_holdings</code> function in my R session, and can call it as if it were an R function <strong>attached to the <code>py</code> object</strong> that <code>reticulate</code> creates to hold the Python session:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(tidyverse)
+
+xlf &lt;- py$get_holdings('XLF')
+xlf %&gt;%
+  arrange(desc(`Index Weight`)) %&gt;%
+  head(10)
+</pre>
+<pre>##    Symbol                  Company Name Index Weight
+## 1     BAC          Bank of America Corp        7.39%
+## 2     WFC              Wells Fargo &amp; Co        3.90%
+## 3       C                 Citigroup Inc        3.86%
+## 4    SPGI                S&amp;P Global Inc        3.09%
+## 5     CME               CME Group Inc A        2.72%
+## 6     BLK                 BlackRock Inc        2.47%
+## 7     AXP           American Express Co        2.37%
+## 8      GS       Goldman Sachs Group Inc        2.34%
+## 9     MMC    Marsh &amp; McLennan Companies        2.25%
+## 10    ICE Intercontinental Exchange Inc        2.18%
+</pre>
+
+Notice that to use the <code>def</code> from the Python session embedded in my R session, I had to ask for it using <code>py$object_name</code> – this is different than if I sourced a Python file directly, in which case the Python function becomes available <em>directly</em> in the R session (ie I don’t need <code>py$</code>).
+
+<h3>Importing Python modules</h3>
+
+Importing Python modules with <code>reticulate::import()</code> produces the same behaviour:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">np &lt;- import("numpy")
+
+np$array(list(c(1, 2, 3), c(4, 5, 6)))
+</pre>
+<pre>##      [,1] [,2] [,3]
+## [1,]    1    2    3
+## [2,]    4    5    6
+</pre>
+
+Notice that my <em>numpy</em> array is created using R list objects in a manner analogous to Python lists: <code>np.array([[1, 2, 3], [4, 5, 6]])</code>.
+
+<h3>REPL-ing Python in R Studio</h3>
+
+You can also open an interactive Python session within R by calling <code>reticulate::repl_python()</code>. Any objects created within the Python session are available in the R session via the <code>py</code> object.
+
+<div style="position: relative; padding-bottom: 56.25%; height: 0;"></div>
+<h2>Conclusion</h2>
+
+With<code>reticulate</code> you can run your Python scripts in RStudio. It embeds a Python session within an R session, and allows you to pass objects between the two sessions.
+
+<div class="convertful-36233"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>R studio</span>, <span>reticulate</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-111077 post type-post status-publish format-standard hentry category-excel category-think-like-a-trader category-tools-of-the-trade tag-excel tag-gld tag-research tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110579 post type-post status-publish format-standard hentry category-data-analysis category-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-110175 post type-post status-publish format-standard has-post-thumbnail hentry category-excel category-quant-trading tag-data tag-excel pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/quick-fix-yahoo-finance-data-access-with-excel/"><img alt="Quick fix: Yahoo Finance data access with Excel" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="110222" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2025/03/24231852/excel_trader.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">14 thoughts on “How to Run Python from R Studio”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-14529">
+<article class="comment-body" id="div-comment-14529" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for all the great stuff from Robot Wealth. If you used Python rather than R in general, then Robot Wealth would be my home page.</p>
+<span class="reply"><a aria-label="Reply to JonB451" class="comment-reply-link" data-belowelement="div-comment-14529" data-commentid="14529" data-postid="23167" data-replyto="Reply to JonB451" data-respondelement="respond" href="#comment-14529" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-14533">
+<article class="comment-body" id="div-comment-14533" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Is there any discussion on Robot Wealth about when R would be more useful, and when would Python? With limited time it is difficult to decide whether to commit to R when you are already competent in Python and have so many other demands on learning time. Do you think R will still have any advantages over Python in some contexts in 5 years time?</p>
+<span class="reply"><a aria-label="Reply to JonB451" class="comment-reply-link" data-belowelement="div-comment-14533" data-commentid="14533" data-postid="23167" data-replyto="Reply to JonB451" data-respondelement="respond" href="#comment-14533" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-jameshodges even depth-3 parent" id="comment-14541">
+<article class="comment-body" id="div-comment-14541" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Our view on that is:</p>
+<p>R is more productive for data analysis and has better libraries (especially for finance, derivative pricing and time series analysis). </p>
+<p>Python is a better all-purpose programming language. </p>
+<p>So we use R for all interactive data analysis (where possible) and Python for most plumbing tasks. </p>
+<p>Most of our data processing pipeline is written in python and SQL. Most of our execution code is in C or Java. Most of our research is in R, and some is in python.</p>
+<span class="reply"><a aria-label="Reply to Robot James" class="comment-reply-link" data-belowelement="div-comment-14541" data-commentid="14541" data-postid="23167" data-replyto="Reply to Robot James" data-respondelement="respond" href="#comment-14541" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4" id="comment-14591">
+<article class="comment-body" id="div-comment-14591" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks James. Would you mind expanding on when that research (mostly in R, some in Python) might be in Python and when in R?</p>
+<span class="reply"><a aria-label="Reply to JonB451" class="comment-reply-link" data-belowelement="div-comment-14591" data-commentid="14591" data-postid="23167" data-replyto="Reply to JonB451" data-respondelement="respond" href="#comment-14591" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2 parent" id="comment-14607">
+<article class="comment-body" id="div-comment-14607" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>We like to use the best tool for the job. For data analysis, that’s nearly always R. I love Python too and we use it extensively, just not in the things that we usually show on the blog (as those things are generally related to data analysis). </p>
+<p>My personal view is that even if you’re an experienced Python coder, learning R for data analysis pays immense dividends in terms of productivity.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14607" data-commentid="14607" data-postid="23167" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14607" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-14643">
+<article class="comment-body" id="div-comment-14643" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Kris. You and James taking the time to answer is really appreciated. I understand that R’s relative strengths lie in data analysis, research and statistics, and i’ve heard good things about Tidyverse and R Studio, but i was really wondering about specifics about what R can do that Python cannot do as well or as easily? Is Pandas really behind R’s equivalent when it comes to time series for example? If R is still ahead in some specifics, do you think that there are Python packages that are catching up? Thanks again and all the best, Jon.</p>
+<span class="reply"><a aria-label="Reply to Jon" class="comment-reply-link" data-belowelement="div-comment-14643" data-commentid="14643" data-postid="23167" data-replyto="Reply to Jon" data-respondelement="respond" href="#comment-14643" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4" id="comment-14671">
+<article class="comment-body" id="div-comment-14671" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Python, from having just finished a data science bootcamp, is probably what you want to use for things like more general ML algos (your random forests, XG boosts, etc.), since it’s very easy to get a model set up, and probably easier to work with the deep learning stuff (keras, etc.)</p>
+<p>But for quantitative finance, R blows Python out of the water. There are just so many more libraries devoted for quantitative finance, like xts, zoo, quantmod, PerformanceAnalytics, PortfolioAnalytics, blotter/quantstrat, etc.  </p>
+<p>These aren’t libraries that some student can just port over in his free time, since they’re libraries written by very high-level practitioners in industry over many years. And if you need those specific tools, Python is completely outclassed. But even the basic portfolio management stuff is just much easier in R than Python.</p>
+<span class="reply"><a aria-label="Reply to Ilya Kipnis" class="comment-reply-link" data-belowelement="div-comment-14671" data-commentid="14671" data-postid="23167" data-replyto="Reply to Ilya Kipnis" data-respondelement="respond" href="#comment-14671" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-4 parent" id="comment-14673">
+<article class="comment-body" id="div-comment-14673" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>No problem Jon. I wouldn’t say it’s so much about pandas being <em>behind </em>the tidyverse tools – it’s just different. In my experience, the biggest benefit of choosing R for data analysis is that you can be incredibly productive in a relatively short amount of time. It leverages functional programming concepts, which are a really nice fit for data analysis problems generally, and allows you to structure an analysis worfklow that matches the way you’d intuitively think about a problem. There are a bunch of specific examples of tidyverse workflows on the blog – if you’re interested it’s worth your time to look at them and think about how you’d solve the same problem in pandas. </p>
+<p>But if I were you I’d just bite the bullet and learn R!! After all, R and python don’t represent an all or nothing choice. Being fluent in both is a superpower. </p>
+<p>Illya makes some very good points about the R packages for quant finance in one of the other comments too. That’s extremely relevant.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14673" data-commentid="14673" data-postid="23167" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14673" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-5" id="comment-14753">
+<article class="comment-body" id="div-comment-14753" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks loads Kris and Ilya. Those answers definitely take me a step forward and that is much appreciated.</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-14804">
+<div class="comment-body">
+				Pingback: Why We Use Apache Beam For Our Systematic Trading Data Pipeline - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-17321">
+<article class="comment-body" id="div-comment-17321" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi<br/>
+Thanks for your descriptions.<br/>
+I want to run a command in terminal by a R script.<br/>
+In past, I used a python script and ran following commands:</p>
+<p>os.chdir(‘../Routing/SourceCode’)<br/>
+os.system(‘./rout ../../RoutingSetup/Hableh.txt’)</p>
+<p>Is there a way for runing this commands in R?</p>
+<span class="reply"><a aria-label="Reply to Hossein" class="comment-reply-link" data-belowelement="div-comment-17321" data-commentid="17321" data-postid="23167" data-replyto="Reply to Hossein" data-respondelement="respond" href="#comment-17321" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-18250">
+<article class="comment-body" id="div-comment-18250" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>¡Asombroso!  — Amazing!<br/>
+Thanks a lot!!!</p>
+<span class="reply"><a aria-label="Reply to María Luisa" class="comment-reply-link" data-belowelement="div-comment-18250" data-commentid="18250" data-postid="23167" data-replyto="Reply to María Luisa" data-respondelement="respond" href="#comment-18250" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-19040">
+<article class="comment-body" id="div-comment-19040" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very worthy comments, thank you all, specially Kris and IIya. I’m R practitioner who is incursioning in Python with the need to build criteria in how and when to use and bring the best of each tool.</p>
+<span class="reply"><a aria-label="Reply to Luis Urbina" class="comment-reply-link" data-belowelement="div-comment-19040" data-commentid="19040" data-postid="23167" data-replyto="Reply to Luis Urbina" data-respondelement="respond" href="#comment-19040" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-34770">
+<article class="comment-body" id="div-comment-34770" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Another good article which sets the framework for R and Python in RStudio comes from posit: <a href="https://support.posit.co/hc/en-us/articles/1500007929061-Using-Python-with-the-RStudio-IDE" rel="nofollow ugc">https://support.posit.co/hc/en-us/articles/1500007929061-Using-Python-with-the-RStudio-IDE</a></p>
+<span class="reply"><a aria-label="Reply to Dragos" class="comment-reply-link" data-belowelement="div-comment-34770" data-commentid="34770" data-postid="23167" data-replyto="Reply to Dragos" data-respondelement="respond" href="#comment-34770" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/using-python-from-the-comfort-of-r-studio/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,444 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>ETF Rotation Strategies in Zorro</title>
+<!-- source: https://robotwealth.com/etf-rotation-strategies-in-zorro/ -->
+<h1>ETF Rotation Strategies in Zorro</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-4407 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-think-like-a-trader category-trading-strategies category-zorro tag-dual-momentum tag-etf-rotation tag-etfs tag-trading-strategies tag-zorro pmpro-has-access" id="post-4407">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">June 4, 2018</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">ETF Rotation Strategies in Zorro</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="ETF Rotation Strategies in Zorro" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">At Robot Wealth we get more questions than even the most sleep-deprived trader can handle. So whilst we develop the algo equivalent of Siri and brag about how we <em>managed</em> to get 6 hours downtime last night, we thought we’d start a new format of blog posts — answering your most burning questions.
+Lately our <a href="https://robotwealth.com/tlaq-qlat-aqtt-landing-page/" rel="noopener" target="_blank">Class to Quant members</a> have been looking to implement rotation-style ETF and equities strategies in Zorro, but just like your old high-school essays, starting is the biggest barrier. These types of strategies typically scan a universe of instruments and select one or more to hold until the subsequent rebalancing period. Zorro is my go-to choice for researching and even executing such strategies: its speed makes scanning even large universes of stocks quick and painless, and its scripting environment facilitates fast prototyping and iteration of the algorithm itself – once you’ve wrestled it for a while.
+I’m going to walk you through a general design paradigm for constructing strategies like this with Zorro, and demonstrate the entire process with a simple rotation algorithm based on <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2042750" rel="noopener noreferrer" target="_blank">Gary Antonacci’s Dual Momentum</a>. By the end you should have the skills needed to build a similar strategy yourself. Let’s begin!
+
+<h2>ETF Rotation Strategy Design Paradigm</h2>
+
+To construct a rotation style strategy in Zorro, we’d follow these general design steps:
+
+<ol>
+<li>Construct your universe of instruments by adding them to an assets list CSV file. There are examples in Zorro’s History folder, and I’ll put one together for you below.</li>
+<li>Set up your rebalancing period using Zorro’s time and date functions.</li>
+<li>Tell Zorro to reference the asset list you just created using the <span class="lang:c highlight:0 decode:true crayon-inline">assetList</span>  command.</li>
+<li>Loop through each instrument in the list and perform whatever calculations or analysis your strategy requires for the selection of which instruments to hold.</li>
+<li>Compare the results of the calculations/analysis performed in the prior step and construct the positions for the next period.</li>
+</ol>
+
+That’s pretty much it! Of course, the details of each step might differ slightly depending on the algorithm, and you will also need some position sizing and risk management, but in general, following these steps will get you 90% of the way there.
+Not happy trading with a 90% complete strategy? No problem, let’s look at what this looks like in practice.
+
+<h2>An Example</h2>
+
+This example is based on Gary Antonacci’s Dual Momentum. We will simplify Gary’s slightly more nuanced version to the following: if US equities outperformed global equities <strong><em>and</em></strong> its return was positive, hold US equities. If global equities outperformed US equities <em><strong>and </strong></em>its return was positive, hold global equities. Otherwise, hold bonds.
+Gary has done a mountain of research on Dual Momentum and found that it has outperformed for decades. In particular, it has tended to kick you out of equities during extended bear markets, while still getting you in for most of the bull markets. Check out <a href="https://www.dualmomentum.net/" rel="noopener noreferrer" target="_blank">Gary’s website</a> for more information and consider getting hold of a copy of his book – you can <a href="https://robotwealth.com/dual-momentum-review/" rel="noopener noreferrer" target="_blank">read my review here</a>.
+Our simplified version of the strategy will use a universe of three ETFs that track US equities, global equities and short-term bonds. We will use the returns of these ETFs for both generation of our trading signals and actual trading (Gary’s approach is slightly more nuanced than that – again check out his website and book for more details).
+
+<h3>Step 1: Construct our asset list</h3>
+
+Our asset list contains the universe of instruments we wish to scan. In our case, we only need three ETFs. We’ll choose SPY for our US equities instrument, EFA for our global equities and SHY for our bonds ETF.
+Zorro’s asset lists are CSV files that contain a bunch of parameters about the trading conditions of each instrument. This information is used in Zorro’s simulations, so it’s important to make it as accurate as possible. In many cases, Zorro can populate these files for us automatically by simply connecting to a broker, but in others, we need to do it manually (explained in our Zorro video course).
+Our asset list for this strategy will look like this:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="vim" data-enlighter-title="Dual Momentum Asset List">Name,Price,Spread,RollLong,RollShort,PIP,PIPCost,MarginCost,Leverage,LotAmount,Commission,Symbol
+SPY,269.02,0.1,0,0,0.01,0.01,0,1,1,0.02,
+SHY,83.61,0.1,0,0,0.01,0.01,0,1,1,0.02,
+EFA,69.44,0.1,0,0,0.01,0.01,0,1,1,0.02,
+</pre>
+
+You can see that most of the parameters are actually the same for each instrument, so we can use copy and paste to make the construction of this file less tedious than it would otherwise be. For other examples of such files, just look in Zorro’s History folder.
+Save this file as a CSV file called AssetsDM.csv and place it in your History folder (which is where Zorro will go looking for it shortly).
+
+<h3>Step 2: Set up rebalance period</h3>
+
+Here we are going to rebalance our portfolio every month. We decided to avoid the precise start/end of the month and rebalance on the third trading day of the month. You can experiment with this parameter to get a feel for how much it affects the strategy.
+Simply wrap the trading logic in the following <span class="lang:c highlight:0 decode:true crayon-inline">if()</span>  statement:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="">if(tdm() == 3)
+{
+...
+}</pre>
+<h3>Step 3: Tell Zorro about your new asset list</h3>
+
+In the initial run of the script, we want Zorro to reference the newly created asset list. Also, if we don’t have data for these instruments, we want to download it in the initial run. We’ll use <a href="https://www.alphavantage.co/" rel="noopener noreferrer" target="_blank">Alpha Vantage</a> end-of-day data, which can be accessed directly from within Zorro scripts. These lines of code take care of that for us:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Set up assets and get data">if(is(INITRUN))
+    {
+        assetList("History\\AssetsDM.csv");
+        string Name;
+        while(Name = loop(Assets))
+        {
+            assetHistory(Name, FROM_AV);
+        }
+    }</pre>
+
+Note that this assumes you’ve entered your Alpha Vantage API key in the Zorro.ini or ZorroFix.ini configuration files, which live in Zorro’s base directory. If you don’t have an Alpha Vantage API key head over to the <a href="https://www.alphavantage.co/" rel="noopener noreferrer" target="_blank">Alpha Vantage</a> website to claim one.
+
+<h3>Step 4: Loop through instruments and perform calculations</h3>
+
+For our dual momentum strategy, we need to know the return of each instrument over the portfolio formation period. So we can loop through each asset in our list, calculate the return, and store it in an array for later use.
+If you intend on using Zorro’s optimizer, perform the loop operation using a construct like:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="">for(i=0; Name=Assets[i]; i++)
+{
+...
+}</pre>
+
+If you don’t intend on using the optimizer, you can safely use the more convenient <span class="lang:c decode:true crayon-inline">while(loop(Assets))</span>  construct.
+The reason we don’t use the latter in an optimization run is that the <span class="lang:c decode:true crayon-inline">loop()</span>  function is handled differently in Zorro’s Train mode, and will actually run a separate simulation for each instrument in the loop. This is perfect in the instance we want to trade a particular algorithm across multiple, known instruments – something like a moving average crossover traded on each stock in the S&amp;P500, where we wanted to optimize the moving average periods separately for each instrument<span class="inline-footnote" style="" title="Not that I would recommend such a strategy of course!">1<span class="footnoteContent" style="display:none;">Not that I would recommend such a strategy of course!</span></span>. But in an algorithm that compares and selects instruments from a universe of instruments, optimizing some parameter set on each one individually wouldn’t make sense.
+This is actually a really common mistake when developing these type of strategies in Zorro, but if you understand the behavior of <span class="lang:c decode:true crayon-inline">loop()</span>  in Zorro’s Train mode, it’s one that you probably won’t make again.
+Here’s the code for performing the looped return calculations:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Calculate returns">if(tdm()==3)
+    {
+        asset_num = 0;
+        while(loop(Assets))
+        {
+            asset(Loop1);
+            Returns[asset_num] = (priceClose(0)-priceClose(DAYS))/priceClose(DAYS);
+            asset_num++;
+        }
+    ...</pre>
+<h3>Step 5 Compare the results and construct the positions for the next period.</h3>
+
+Recalling our dual momentum trading logic, we firstly check if US equities outperformed global equities. If so, we then check that their absolute return was positive. If so, then we hold US equities. If global bonds outperformed US equities, we check that their absolute return was positive. If so, then we hold global equities. If neither US equities nor global equities had a positive return, we hold bonds.
+If you stop and think about that logic, we are really just holding the instrument with the highest return in the formation period, with the added condition that for the equities instruments, they also had a positive absolute return. We could implement that trading logic like so:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Trading logic">// sort returns lowest to highest
+int* idx = sortIdx(Returns, asset_num);
+// exit any positions where asset is ranked in bottom 2 and is not bonds
+int i;
+for(i=0;i&lt;2;i++)
+{
+    asset(Assets[idx[i]]);
+    if(Asset != "SHY")
+    {
+        if(NumOpenLong &gt; 0)
+        {
+            printf("\nAsset to close: %s", Asset);
+            exitLong();
+        }
+    }
+}
+// asset to hold
+asset(Assets[idx[2]]);
+/*
+check if asset is bonds, if so buy
+if not, if return of highest ranked asset is positive, buy
+otherwise, switch to bonds and buy
+*/
+if(Asset == "SHY")
+{
+    // don't apply time series momentum to bonds
+    enterLong();
+}
+else if(Returns[idx[2]] &gt; 0) //time-series momentum condition
+{
+    enterLong();
+    asset("SHY");
+    exitLong();
+}
+else
+{
+    // switch to bonds and buy
+    asset("SHY");
+    enterLong();
+}
+}</pre>
+
+This is probably the most confusing part of the script, so let’s talk about it in some detail. Firstly, the line
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="">int* idx = sortIdx(Returns, asset_num)</pre>
+
+returns an array of the indexes of the <span class="lang:c highlight:0 decode:true crayon-inline">Returns</span>  array, sorted from lowest to highest. Say our <span class="lang:c highlight:0 decode:true crayon-inline">Returns</span>  array held the numbers 4, -2, 2. Our array <span class="lang:c highlight:0 decode:true crayon-inline">idx</span>  would contain 1, 2, 0 because the item at <span class="lang:c highlight:0 decode:true crayon-inline">Returns[1]</span>  is the lowest number, followed by the number at <span class="lang:c highlight:0 decode:true crayon-inline">Returns[2]</span> , with <span class="lang:c highlight:0 decode:true crayon-inline">Returns[0]</span>  being the highest number. This might seem confusing, but it will provide us with a convenient way to access the highest ranked instrument directly from the Assets array, which holds the names of the instruments in the order called by our <span class="lang:c highlight:0 decode:true crayon-inline">loop()</span>  function.
+In lines 5-17, we firstly use this feature to exit any open positions that aren’t the highest ranked asset – provided those lower ranked assets aren’t bonds. Remember, we might want to hold a bond position, even if it isn’t the highest ranked asset. So we won’t exit any open bond positions just yet.
+Next, in line 20, we switch the highest ranked instrument. If that instrument is bonds, we don’t bother checking the absolute return condition (it doesn’t apply to bonds) and go long. If that instrument is one of the equities ETFs, we check the absolute return condition. If that turns out to be true, we enter a long position in that ETF, then switch to bonds and exit any open position we may have been holding.
+Finally, if the absolute return condition on our top-ranked equities ETFs wasn’t true, we switch to bonds and enter a long position.
+
+<h3>Position Sizing</h3>
+
+In this case we are simply going to be fully invested with all of our starting capital and any accrued profits in the currently selected instrument. Here’s the code for accomplishing that:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Position sizing">Capital = 10000;
+Margin = Capital+WinTotal-LossTotal;
+</pre>
+
+Note that this is only possible because we are trading these instruments with no leverage (leverage is defined in the asset list above). If we were using leverage, we’d obviously have to reduce the amount of margin invested in a given position.
+
+<h2>Putting it all Together</h2>
+
+Finally, here’s the complete code listing for our simple Dual Momentum algorithm. In order for the script to run, remember to save a copy of the asset list in Zorro’s History folder, and enter your Alpha Vantage API key in the Zorro.ini or ZorroFix.ini configuration files.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Dual Momentum">/*
+Dual momentum in Zorro
+*/
+#define NUM_ASSETS 3
+#define DAYS 252
+int asset_num;
+function run()
+{
+    set(PLOTNOW);
+    PlotWidth = 1200;
+    StartDate = 20040101;
+    EndDate = 20170630;
+    BarPeriod = 1440;
+    LookBack = DAYS;
+    MaxLong = 1;
+    if(is(INITRUN))
+    {
+        assetList("History\\AssetsDM.csv");
+        string Name;
+        while(Name = loop(Assets))
+        {
+            assetHistory(Name, FROM_AV);
+        }
+    }
+    var Returns[NUM_ASSETS];
+    int position_diff;
+    if(tdm()==3)
+    {
+        asset_num = 0;
+        while(loop(Assets))
+        {
+            asset(Loop1);
+            Returns[asset_num] = (priceClose(0)-priceClose(DAYS))/priceClose(DAYS);
+            asset_num++;
+        }
+        Capital = 10000;
+        Margin = Capital+WinTotal-LossTotal;
+        // sort returns lowest to highest
+        int* idx = sortIdx(Returns, asset_num);
+        // exit any positions where asset is ranked in bottom 2 and is not bonds
+        int i;
+        for(i=0;i&lt;2;i++)
+        {
+            asset(Assets[idx[i]]);
+            if(Asset != "SHY")
+            {
+                if(NumOpenLong &gt; 0)
+                {
+                    printf("\nAsset to close: %s", Asset);
+                    exitLong();
+                }
+            }
+        }
+        // asset to hold
+        asset(Assets[idx[2]]);
+        /*
+        check if asset is bonds, if so buy
+        if not, if return of highest ranked asset is positive, buy
+        otherwise, switch to bonds and buy
+        */
+        if(Asset == "SHY")
+        {
+            // don't apply time series momentum to bonds
+            enterLong();
+        }
+        else if(Returns[idx[2]] &gt; 0) //time-series momentum condition
+        {
+            enterLong();
+            asset("SHY");
+            exitLong();
+        }
+        else
+        {
+            // switch to bonds and buy
+            asset("SHY");
+            enterLong();
+        }
+    }
+}
+</pre>
+
+Over the simulation period, the strategy returns a Sharpe Ratio of 0.52. That’s pretty healthy for something that trades so infrequently. In terms of gross returns, the starting capital of $10,000 was almost tripled, and the maximum drawdown was approximately $4,700. One of the main limitations of the strategy is that by design, it is highly concentrated, taking only single position at a time.
+Here’s the equity curve:
+<a href="https://robotwealth.com/wp-content/uploads/2018/06/DualMomentumEquity.png"><img alt="" class="aligncenter size-full wp-image-4408 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/06/DualMomentumEquity.png" decoding="async" height="401" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='779'%20height='401'%20viewBox='0%200%20779%20401'%3E%3C/svg%3E" width="779"/></a>
+<div class="phenom-desc">
+<div class="comment-container">
+<div class="action-comment can-edit markeddown js-comment" dir="auto">
+<div class="current-comment js-friendly-links js-open-card">However, being fully invested at all times may not be the smartest way to construct a portfolio. A more thoughtful approach to position sizing and careful use of leverage, as we teach inside the <a href="https://robotwealth.com/class-to-quant-sign-up/">Robot Wealth community</a>, can yield better risk-adjusted returns. For example, something like this gives a similar return, while the maximum drawdown is reduced by around 25%:
+<a href="https://robotwealth.com/wp-content/uploads/2018/06/VS.png"><img alt="" class="aligncenter size-full wp-image-4412 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/06/VS.png" decoding="async" height="401" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='779'%20height='401'%20viewBox='0%200%20779%20401'%3E%3C/svg%3E" width="779"/></a>
+Robot Wealth Members can access the script that produced these results via the Strategies and Tools section of their <a href="https://robotwealth.com/bootcamp-dashboard/" rel="noopener noreferrer" target="_blank">dashboard</a>.</div>
+</div>
+</div>
+</div>
+<h2>Conclusion</h2>
+
+Rotation style strategies* require a slightly different design approach than strategies for whom the tradable subset of instruments is static. By following the five broad design principles described here, you can leverage Zorro’s speed, power and flexibility to develop these types of strategies. Good luck and happy profits!
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>dual momentum</span>, <span>ETF rotation</span>, <span>ETFs</span>, <span>trading strategies</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">4 thoughts on “ETF Rotation Strategies in Zorro”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-832">
+<article class="comment-body" id="div-comment-832" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Love it!</p>
+<span class="reply"><a aria-label="Reply to MichaelM" class="comment-reply-link" data-belowelement="div-comment-832" data-commentid="832" data-postid="4407" data-replyto="Reply to MichaelM" data-respondelement="respond" href="#comment-832" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-834">
+<article class="comment-body" id="div-comment-834" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>yeah Loved it</p>
+<span class="reply"><a aria-label="Reply to James Morrison" class="comment-reply-link" data-belowelement="div-comment-834" data-commentid="834" data-postid="4407" data-replyto="Reply to James Morrison" data-respondelement="respond" href="#comment-834" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-833">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 06/04/2018 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-11873">
+<article class="comment-body" id="div-comment-11873" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks a lot, this is a very valuable article. There are many things that I like a lot about it:<br/>
+1. It trades without leverage.<br/>
+2. It uses standard oldschool assets.<br/>
+3. It is possible to trade this with a small portfolio.<br/>
+4. It is slow, so it is possible to be used next to your job.<br/>
+5. It goes through the 2008 crash beautifully without any drawdown.</p>
+<p>Thanks a lot. It is an inspiration for a momentum system with worldwide ETFs i want to create that has a lot of similar characteristics.</p>
+<span class="reply"><a aria-label="Reply to Flinsenberger" class="comment-reply-link" data-belowelement="div-comment-11873" data-commentid="11873" data-postid="4407" data-replyto="Reply to Flinsenberger" data-respondelement="respond" href="#comment-11873" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/etf-rotation-strategies-in-zorro/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

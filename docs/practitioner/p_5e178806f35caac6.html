@@ -1,0 +1,214 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>My experience dealing with Zorro’s support team</title>
+<!-- source: https://robotwealth.com/my-experience-dealing-with-zorros-support-team/ -->
+<h1>My experience dealing with Zorro’s support team</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1246 post type-post status-publish format-standard hentry category-zorro tag-opinion tag-zorro pmpro-has-access" id="post-1246">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">April 14, 2016</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">My experience dealing with Zorro’s support team</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="My experience dealing with Zorro’s support team" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Disclaimer: I am not posting this at the behest of the developers of Zorro, nor do I receive any form of payment or commission for this post. I felt that I should relay this experience because it was an example of customer service that went way above and beyond the call of duty in terms of its promptness and professionalism. Credit where credit is due.
+I have been using the Zorro platform for trading systems research for almost two years now. I continue to use it because it combines simplicity, flexibility and power with an integrated development and implementation environment, which also makes it very convenient. It facilitates robust strategy development by providing powerful optimization tools that are designed against curve-fitting.  Data-snooping is, for all intents and purposes, completely designed out of the platform. Providing a direct connection to R enables the user to leverage its extensive array of packages that cover machine learning, econometrics, statistics, time series analysis, and a host of other fields of study. In addition to its research and development functions, Zorro is also an implementation engine, enabling direct connection to a number of brokerages via API, including Interactive Brokers.
+Clearly, there’s a lot to like, and like it I do.
+Recently, I was exposed to another side of Zorro that I previously had little to do with: their technical support team. To cut a long story short, I had been engaged by a client to optimize and automate their trading strategy and we agreed to use Zorro for the task. Development proceeded quickly and we were live within a few days. The only problem was that we were seeing some odd trades being triggered. Needless to say, we very quickly stopped the strategy and I investigated, fearing my professional pride was on the line.
+I eventually came to the conclusion that there was something buggy in the way Zorro was receiving price ticks from the broker feed. Every so often, Zorro would report a price quote whose magnitude was clearly erroneous – for example twice or three times as large as the previous tick. This was throwing some of the script’s internal calculations into disarray and occasionally an unintended trade was the result.
+In this case, real-time market data was being handled and trades executed via a DLL that provides the functionality for Zorro to communicate with the MetaTrader 4 terminal. It was logical that this was the likely source of the problem, since the bad ticks never showed up in the MetaTrader terminal.
+I contacted Zorro support that very day (a Thursday) and explained what was happening and what I thought the issue might have been. Within a couple of hours, Zorro tech support had responded with a temporary workaround (a script to suppress outlying ticks) and a promise to investigate the issue.
+Having provided the temporary workaround, the team then issued a call on the Zorro user forum for other users to try to reproduce the issue. There were a few responses. This was on Friday. Come Monday, the Zorro team had identified a bug in the recently updated MetaTrader bridge and released a new version in the which the bug was fixed. Happy days.
+Only…my problem persisted, but now instead of getting high ticks, I was getting erroneous prices on the downside. Of course, I raised this issue with tech support and they diligently began looking for another bug.
+By now, I imagine the Zorro support team were getting a little sick of me. I certainly would have been, if I were them. If you look at the forum thread where I was communicating with Zorro’s chief engineer, you can see that I was pestering him every couple of hours. Anyway, he patiently looked into my script in more detail and found that I was coming up against a limitation (related to referencing multiple price sampling frequencies) of one of the indicators in the open source Technical Analysis Library that Zorro uses. He then provided me with a new version of the indicator that he’d written himself that would not be subject to these limitations. Amazing!
+70 forum posts, a dozen emails and one week later, both problems had been investigated and were solved.
+Zorro’s support team, including the chief engineer, provided a prompt, professional, systematic and objective solution to the problems I was experiencing. At all times they took what I said seriously and kept me informed with regular and honest progress updates. When a bug was found, a solution was released within a matter of hours.
+Zorro gets a massive vote of confidence from me because of this experience. I have no hesitation in utilizing Zorro heavily as my trading business grows. If you haven’t checked it out yet, my experience with tech support is one more reason to do so.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>opinion</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-33396 post type-post status-publish format-standard has-post-thumbnail hentry category-r category-zorro pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/exporting-zorro-data-to-csv/"><img alt="Exporting Zorro Data to CSV" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="35919" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-300x157.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-300x157.png 300w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-600x314.png 600w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-1024x536.png 1024w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-768x402.png 768w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-1000x523.png 1000w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7.png 1200w" decoding="async" height="157" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='157'%20viewBox='0%200%20300%20157'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-32069 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-fx category-r category-time-series-modelling category-trading-strategies category-zorro tag-acr tag-arima tag-autoregressive-model tag-fx tag-mean-reversion tag-pacf tag-time-series pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/trading-fx-using-autoregressive-models/"><img alt="Trading FX using Autoregressive Models" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="32151" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-300x157.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-300x157.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-600x314.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-1024x536.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-768x402.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-1000x523.png 1000w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models.png 1200w" decoding="async" height="157" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='157'%20viewBox='0%200%20300%20157'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-23728 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-fx category-quant-trading category-zorro tag-algorithmic-trading tag-backtesting tag-fx tag-trading-strategies tag-zorro pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/exploiting-the-non-farm-payrolls-drift/"><img alt="Exploiting The Non-Farm Payrolls Drift" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="23903" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161854/non-farm-payrolls-300x169.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161854/non-farm-payrolls-300x169.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161854/non-farm-payrolls.jpg 512w" decoding="async" height="169" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='169'%20viewBox='0%200%20300%20169'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">8 thoughts on “My experience dealing with Zorro’s support team”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-675">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 04/14/2016 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-676">
+<article class="comment-body" id="div-comment-676" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This is good to hear.<br/>
+ <br/>
+In your experience with zorro trader, have you noted any other bugs at all?</p>
+<span class="reply"><a aria-label="Reply to Andrew Bannerman" class="comment-reply-link" data-belowelement="div-comment-676" data-commentid="676" data-postid="1246" data-replyto="Reply to Andrew Bannerman" data-respondelement="respond" href="#comment-676" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-677">
+<article class="comment-body" id="div-comment-677" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Of course! Bugs get found and squashed in nearly every release, like most software.<br/>
+Aside from the one I mentioned in this post, I’ve not found anything else that I’d consider overly serious – certainly nothing that’s cost me money or wasted much time. The software is becoming quite mature: the rare bugs that seem to crop up these days are very minor.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-677" data-commentid="677" data-postid="1246" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-677" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-678">
+<article class="comment-body" id="div-comment-678" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for sharing your experience Kris. Is there a community or a group of traders are using zorro-trader? I was just wondering whether there’s a forum to share ideas in Zorro-trade. Thanks.</p>
+<span class="reply"><a aria-label="Reply to jack" class="comment-reply-link" data-belowelement="div-comment-678" data-commentid="678" data-postid="1246" data-replyto="Reply to jack" data-respondelement="respond" href="#comment-678" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-679">
+<article class="comment-body" id="div-comment-679" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Jack, there’s a community of traders using Zorro right here at Robot Wealth! Join us by clicking on ‘Start Here’ in the menu and following the links on that page. There’s also the forums over at zorro-trader.com.<br/>
+Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-679" data-commentid="679" data-postid="1246" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-679" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-13719">
+<div class="comment-body">
+				Pingback: A Review of Zorro for Systematic Trading - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/my-experience-dealing-with-zorros-support-team/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

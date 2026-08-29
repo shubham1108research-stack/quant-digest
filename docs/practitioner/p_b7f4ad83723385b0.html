@@ -1,0 +1,2128 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Exploring the finnhub.io API</title>
+<!-- source: https://robotwealth.com/finnhub-api/ -->
+<h1>Exploring the finnhub.io API</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-72040 post type-post status-publish format-standard has-post-thumbnail hentry category-data tag-data tag-finnhub-io tag-notebook tag-sentiment pmpro-has-access" id="post-72040">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">February 23, 2023</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Exploring the finnhub.io API</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Exploring the finnhub.io API" class="ipa-media gb-media-81e19d89" data-media-id="72046" decoding="async" fetchpriority="high" height="475" sizes="(max-width: 1024px) 100vw, 1024px" src="https://media.robotwealth.com/wp-content/uploads/2023/02/21155119/finnhub-1024x475.png" srcset="https://media.robotwealth.com/wp-content/uploads/2023/02/21155119/finnhub-1024x475.png 1024w, https://media.robotwealth.com/wp-content/uploads/2023/02/21155119/finnhub-300x139.png 300w, https://media.robotwealth.com/wp-content/uploads/2023/02/21155119/finnhub-768x356.png 768w, https://media.robotwealth.com/wp-content/uploads/2023/02/21155119/finnhub.png 1532w" width="1024"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<div id="notebook-holder"><div class="nb-notebook"><div class="nb-worksheet"><div class="nb-cell nb-markdown-cell"><h2 id="exploring-the-finnhubio-api">The changing face of market data providers</h2>
+<p>Over the last few years, a number of new market data providers have come online. They tend to have modern websites, broad coverage, and well-documented RESTful APIs. Their services are often priced very competitively – especially for personal use – and usually have generous free tiers. </p>
+<p>One such newcomer is <a href="https://finnhub.io/">finnhub.io </a>. Its offering includes stock, bond, crpto, and FX historical price data and real time trades and quotes. Their fundamental data offering is noticably broad and includes current values and point-in-time snapshots for numerous metrics. There are also some interesting alternative data sets including measures of social media sentiment, insider transactions and insider sentiment, senate lobbying, government spending, and others. In addition, there’s a real-time newsfeed delivered over websockets. </p>
+<p>The free tier is quite generous and offers more than enough for doing proof of concept work and testing ideas. While you only get a year’s worth of historical data per API call on the free tier (more if you specify a lower resolution, like monthly), you can make up to 50 calls per minute.  </p>
+<p>In this post, we’ll explore the finnhub.io free tier via its REST API. </p>
+<h2 id="get-started">Get started</h2>
+<p>A nice <a href="https://github.com/Finnhub-Stock-API/finnhub-python">python library for working with the finnhub.io</a> is available: <code>pip install finnhub-python</code></p>
+<p>To access the API, you’ll need an API key. <a href="https://finnhub.io/register">Get one here</a>.</p>
+<p>To get started, import the libraries we need and set up a <code>finnhub.Client</code> with your API key:</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="1"><pre class="language-python"><code class="language-python" data-language="python"><span class="token keyword">import</span> finnhub
+<span class="token keyword">import</span> os
+<span class="token keyword">import</span> time
+<span class="token keyword">import</span> datetime
+<span class="token keyword">from</span> zoneinfo <span class="token keyword">import</span> ZoneInfo
+<span class="token keyword">import</span> pandas <span class="token keyword">as</span> pd
+<span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> seaborn <span class="token keyword">as</span> sns
+<span class="token keyword">import</span> matplotlib<span class="token punctuation">.</span>pyplot <span class="token keyword">as</span> plt
+
+<span class="token comment"># Set up client</span>
+<span class="token comment"># Note the FINNHUB_KEY environment variable stores my API key</span>
+finnhub_client <span class="token operator">=</span> finnhub<span class="token punctuation">.</span>Client<span class="token punctuation">(</span>api_key<span class="token operator">=</span>os<span class="token punctuation">.</span>environ<span class="token punctuation">[</span><span class="token string">'FINNHUB_KEY'</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre></div></div><div class="nb-cell nb-markdown-cell"><h2 id="ohlcv-stock-prices">OHLCV stock prices</h2>
+<p>The stock prices endpoint requires a symbol, a resolution (‘D’ for daily data), and a date range consisting of ‘from’ and ‘to’ values as UNIX timestamps. </p>
+<p>We’ll get a week’s worth of AAPL data from February 2023.</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="2"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># helper function for making UNIX timestamps</span>
+<span class="token keyword">def</span> <span class="token function">unix_timestamp_from_date</span><span class="token punctuation">(</span>date<span class="token punctuation">,</span> <span class="token builtin">format</span><span class="token operator">=</span><span class="token string">'%Y-%m-%d'</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">'''Transform human readable date string to UNIX timestamp'''</span>
+    <span class="token keyword">return</span> <span class="token builtin">int</span><span class="token punctuation">(</span>
+        datetime<span class="token punctuation">.</span>datetime<span class="token punctuation">.</span>strptime<span class="token punctuation">(</span>date<span class="token punctuation">,</span> <span class="token builtin">format</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span>replace<span class="token punctuation">(</span>tzinfo<span class="token operator">=</span>ZoneInfo<span class="token punctuation">(</span><span class="token string">'US/Eastern'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span>timestamp<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span>
+
+<span class="token comment"># api query paramters</span>
+symbol <span class="token operator">=</span> <span class="token string">'AAPL'</span>
+resolution <span class="token operator">=</span> <span class="token string">'D'</span>
+from_date <span class="token operator">=</span> unix_timestamp_from_date<span class="token punctuation">(</span><span class="token string">'2023-02-06'</span><span class="token punctuation">)</span>
+to_date <span class="token operator">=</span>  unix_timestamp_from_date<span class="token punctuation">(</span><span class="token string">'2023-02-10'</span><span class="token punctuation">)</span>
+
+<span class="token comment"># make request and print</span>
+res <span class="token operator">=</span> finnhub_client<span class="token punctuation">.</span>stock_candles<span class="token punctuation">(</span>
+        symbol<span class="token punctuation">,</span> 
+        resolution<span class="token punctuation">,</span> 
+        from_date<span class="token punctuation">,</span> 
+        to_date
+      <span class="token punctuation">)</span>
+
+display<span class="token punctuation">(</span>res<span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="2"><pre class="nb-text-output">{'c': [151.73, 154.65, 151.92, 150.87, 151.01],
+ 'h': [153.1, 155.23, 154.58, 154.33, 151.3401],
+ 'l': [150.78, 150.64, 151.168, 150.42, 149.22],
+ 'o': [152.575, 150.64, 153.88, 153.775, 149.46],
+ 's': 'ok',
+ 't': [1675641600, 1675728000, 1675814400, 1675900800, 1675987200],
+ 'v': [69858306, 83322551, 64120079, 56007143, 57450708]}</pre></div></div><div class="nb-cell nb-markdown-cell"><p>The data comes down as a dictionary of lists. The docs state that prices are adjusted for splits. Spot checking some data against other sources suggests it’s also adjusted for dividends. </p>
+<p>The dictionary keys consist of letters that represent:</p>
+<ul>
+<li><code>c</code>: close prices</li>
+<li><code>h</code>: high prices</li>
+<li><code>l</code>: low prices</li>
+<li><code>o</code>: open prices</li>
+<li><code>s</code>: status </li>
+<li><code>t</code>: timestamps</li>
+<li><code>v</code>: volume traded</li>
+</ul>
+<p>We’ll want to transform that response data into a <code>pandas DataFrame</code>:</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="3"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># Ditch the status code</span>
+<span class="token keyword">try</span><span class="token punctuation">:</span>
+  res<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token string">'s'</span><span class="token punctuation">)</span>
+<span class="token keyword">except</span> KeyError <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+  <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Already ditched status code"</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Create dataframe from remaining records</span>
+df <span class="token operator">=</span> pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>res<span class="token punctuation">)</span> \
+  <span class="token punctuation">.</span>rename<span class="token punctuation">(</span>columns<span class="token operator">=</span><span class="token punctuation">{</span>
+    <span class="token string">'c'</span><span class="token punctuation">:</span> <span class="token string">'close'</span><span class="token punctuation">,</span> 
+    <span class="token string">'h'</span><span class="token punctuation">:</span> <span class="token string">'high'</span><span class="token punctuation">,</span> 
+    <span class="token string">'l'</span><span class="token punctuation">:</span> <span class="token string">'low'</span><span class="token punctuation">,</span> 
+    <span class="token string">'o'</span><span class="token punctuation">:</span> <span class="token string">'open'</span><span class="token punctuation">,</span> 
+    <span class="token string">'t'</span><span class="token punctuation">:</span> <span class="token string">'timestamp'</span><span class="token punctuation">,</span> 
+    <span class="token string">'v'</span><span class="token punctuation">:</span> <span class="token string">'volume'</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span> \
+  <span class="token punctuation">.</span>set_index<span class="token punctuation">(</span>keys <span class="token operator">=</span> <span class="token string">'timestamp'</span><span class="token punctuation">)</span>
+
+<span class="token comment"># I like things in a certain order</span>
+df <span class="token operator">=</span> df<span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token string">'open'</span><span class="token punctuation">,</span> <span class="token string">'high'</span><span class="token punctuation">,</span> <span class="token string">'low'</span><span class="token punctuation">,</span> <span class="token string">'close'</span><span class="token punctuation">,</span> <span class="token string">'volume'</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+
+<span class="token comment"># Convert index to human-readable date format</span>
+df<span class="token punctuation">.</span>index <span class="token operator">=</span> pd<span class="token punctuation">.</span>to_datetime<span class="token punctuation">(</span>df<span class="token punctuation">.</span>index<span class="token punctuation">,</span> unit<span class="token operator">=</span><span class="token string">'s'</span><span class="token punctuation">)</span>
+
+display<span class="token punctuation">(</span>df<span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="3"><div class="nb-html-output"><div>
+
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>open</th>
+<th>high</th>
+<th>low</th>
+<th>close</th>
+<th>volume</th>
+</tr>
+<tr>
+<th>timestamp</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2023-02-06</th>
+<td>152.575</td>
+<td>153.1000</td>
+<td>150.780</td>
+<td>151.73</td>
+<td>69858306</td>
+</tr>
+<tr>
+<th>2023-02-07</th>
+<td>150.640</td>
+<td>155.2300</td>
+<td>150.640</td>
+<td>154.65</td>
+<td>83322551</td>
+</tr>
+<tr>
+<th>2023-02-08</th>
+<td>153.880</td>
+<td>154.5800</td>
+<td>151.168</td>
+<td>151.92</td>
+<td>64120079</td>
+</tr>
+<tr>
+<th>2023-02-09</th>
+<td>153.775</td>
+<td>154.3300</td>
+<td>150.420</td>
+<td>150.87</td>
+<td>56007143</td>
+</tr>
+<tr>
+<th>2023-02-10</th>
+<td>149.460</td>
+<td>151.3401</td>
+<td>149.220</td>
+<td>151.01</td>
+<td>57450708</td>
+</tr>
+</tbody>
+</table>
+</div></div></div></div><div class="nb-cell nb-markdown-cell"><p>Looks good!</p>
+</div><div class="nb-cell nb-markdown-cell"><h2 id="fundamental-data">Fundamental data</h2>
+<p>The basic company financials endpoint serves quite a lot of data. The response object is a dictionary of dictionaries that includes current values for various metrics (under the <code>metric</code> outer key) as well as historical point-in-time snapshots (under the <code>series</code> outer key).</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="4"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># Get basic company financials</span>
+financials <span class="token operator">=</span> finnhub_client<span class="token punctuation">.</span>company_basic_financials<span class="token punctuation">(</span>symbol<span class="token punctuation">,</span> <span class="token string">'all'</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Outer keys of response object</span>
+display<span class="token punctuation">(</span>financials<span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="4"><pre class="nb-text-output">dict_keys(['metric', 'metricType', 'series', 'symbol'])</pre></div></div><div class="nb-cell nb-markdown-cell"><h3 id="current-metrics">Current metrics</h3>
+<p>Let’s check out how many current metrics we have and display the first ten:</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="5"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># current metrics</span>
+
+<span class="token comment"># how many?</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>f"Response contains <span class="token punctuation">{</span><span class="token builtin">len</span><span class="token punctuation">(</span>financials<span class="token punctuation">[</span><span class="token string">'metric'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">}</span> \
+current fundamental data points\n"<span class="token punctuation">)</span>
+
+<span class="token comment"># display the first ten</span>
+display<span class="token punctuation">(</span><span class="token builtin">list</span><span class="token punctuation">(</span>financials<span class="token punctuation">[</span><span class="token string">'metric'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">10</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="5"><pre class="nb-stdout">Response contains 117 current fundamental data points
+
+</pre></div><div class="nb-output" data-prompt-number="5"><pre class="nb-text-output">[('10DayAverageTradingVolume', 64.76467),
+ ('13WeekPriceReturnDaily', 0.83284),
+ ('26WeekPriceReturnDaily', -11.05993),
+ ('3MonthAverageTradingVolume', 1528.63578),
+ ('52WeekHigh', 179.61),
+ ('52WeekHighDate', '2022-03-30'),
+ ('52WeekLow', 124.18),
+ ('52WeekLowDate', '2023-01-03'),
+ ('52WeekPriceReturnDaily', -9.66959),
+ ('5DayPriceReturnDaily', 1.0198)]</pre></div></div><div class="nb-cell nb-markdown-cell"><p>That looks quite comprehensive! For this ticker, we have values for 117 fundamental metrics.</p>
+<h3 id="historical-point-in-time-snapshots">Historical point-in-time snapshots</h3>
+<p>The historical point-in-time data is under the <code>series</code> outer key. The data is further organised into annual and quarterly metrics, like this:</p>
+<pre class="language-python"><code class="language-python"><span class="token punctuation">{</span>
+    <span class="token string">'annual'</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">'annual_metric1'</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> 
+            etc
+        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token string">'annual_metric2'</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> 
+            etc
+        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">'quarterly'</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">'quarterly_metric1'</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> 
+            etc
+        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token string">'quarterly_metric2'</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">{</span><span class="token string">'period'</span><span class="token punctuation">:</span> date_string<span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">:</span> value<span class="token punctuation">}</span><span class="token punctuation">,</span> 
+            <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> 
+            etc
+        <span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>Let’s first look at what annual series we get:</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="6"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># point-in-time values</span>
+display<span class="token punctuation">(</span>financials<span class="token punctuation">[</span><span class="token string">'series'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'annual'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="6"><pre class="nb-text-output">dict_keys(['bookValue', 'cashRatio', 'currentRatio', 'ebitPerShare', 'eps', 'ev', 'fcfMargin', 'grossMargin', 'longtermDebtTotalAsset', 'longtermDebtTotalCapital', 'longtermDebtTotalEquity', 'netDebtToTotalCapital', 'netDebtToTotalEquity', 'netMargin', 'operatingMargin', 'pb', 'pe', 'pfcf', 'pretaxMargin', 'ps', 'quickRatio', 'roa', 'roe', 'roic', 'rotc', 'salesPerShare', 'sgaToSale', 'totalDebtToEquity', 'totalDebtToTotalAsset', 'totalDebtToTotalCapital', 'totalRatio'])</pre></div></div><div class="nb-cell nb-markdown-cell"><p>Again, pretty comprehensive. Let’s put that data into a dataframe:</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="7"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># Make a list of the available quarterly metrics</span>
+annual_metric_names <span class="token operator">=</span> <span class="token builtin">list</span><span class="token punctuation">(</span>financials<span class="token punctuation">[</span><span class="token string">'series'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'annual'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Make a list of dataframes of each metric indexed by period and named appropriately</span>
+dfs <span class="token operator">=</span> <span class="token punctuation">[</span>
+    pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>financials<span class="token punctuation">[</span><span class="token string">'series'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'annual'</span><span class="token punctuation">]</span><span class="token punctuation">[</span>metric<span class="token punctuation">]</span><span class="token punctuation">)</span> \
+      <span class="token punctuation">.</span>rename<span class="token punctuation">(</span>columns<span class="token operator">=</span><span class="token punctuation">{</span><span class="token string">'v'</span><span class="token punctuation">:</span>metric<span class="token punctuation">}</span><span class="token punctuation">)</span> \
+      <span class="token punctuation">.</span>set_index<span class="token punctuation">(</span>keys<span class="token operator">=</span><span class="token string">'period'</span><span class="token punctuation">)</span> \
+    <span class="token keyword">for</span> metric <span class="token keyword">in</span> annual_metric_names
+<span class="token punctuation">]</span>
+
+<span class="token comment"># Join dataframes on index</span>
+annual_metrics <span class="token operator">=</span> dfs<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span>join<span class="token punctuation">(</span>dfs<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> how<span class="token operator">=</span><span class="token string">'outer'</span><span class="token punctuation">)</span>
+
+annual_metrics</code></pre></div><div class="nb-output" data-prompt-number="7"><div class="nb-html-output"><div>
+
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>bookValue</th>
+<th>cashRatio</th>
+<th>currentRatio</th>
+<th>ebitPerShare</th>
+<th>eps</th>
+<th>ev</th>
+<th>fcfMargin</th>
+<th>grossMargin</th>
+<th>longtermDebtTotalAsset</th>
+<th>longtermDebtTotalCapital</th>
+<th>…</th>
+<th>roa</th>
+<th>roe</th>
+<th>roic</th>
+<th>rotc</th>
+<th>salesPerShare</th>
+<th>sgaToSale</th>
+<th>totalDebtToEquity</th>
+<th>totalDebtToTotalAsset</th>
+<th>totalDebtToTotalCapital</th>
+<th>totalRatio</th>
+</tr>
+<tr>
+<th>period</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2022-09-24</th>
+<td>50672</td>
+<td>0.153563</td>
+<td>0.8794</td>
+<td>7.3158</td>
+<td>6.1132</td>
+<td>2514884.00</td>
+<td>0.3369</td>
+<td>0.4331</td>
+<td>0.2805</td>
+<td>0.5764</td>
+<td>…</td>
+<td>0.2829</td>
+<td>1.9696</td>
+<td>0.5813</td>
+<td>0.6957</td>
+<td>24.1536</td>
+<td>0.5669</td>
+<td>2.3881</td>
+<td>0.3430</td>
+<td>0.7048</td>
+<td>1.1677</td>
+</tr>
+<tr>
+<th>2021-09-25</th>
+<td>63090</td>
+<td>0.278449</td>
+<td>1.0746</td>
+<td>6.4601</td>
+<td>5.6140</td>
+<td>2493617.00</td>
+<td>0.3147</td>
+<td>0.4178</td>
+<td>0.3108</td>
+<td>0.5783</td>
+<td>…</td>
+<td>0.2697</td>
+<td>1.5007</td>
+<td>0.5019</td>
+<td>0.5775</td>
+<td>21.6909</td>
+<td>0.5822</td>
+<td>1.9903</td>
+<td>0.3577</td>
+<td>0.6656</td>
+<td>1.2191</td>
+</tr>
+<tr>
+<th>2020-09-26</th>
+<td>65339</td>
+<td>0.360710</td>
+<td>1.3636</td>
+<td>3.7818</td>
+<td>3.2754</td>
+<td>2041191.00</td>
+<td>0.3205</td>
+<td>0.3823</td>
+<td>0.3046</td>
+<td>0.5530</td>
+<td>…</td>
+<td>0.1773</td>
+<td>0.8787</td>
+<td>0.3217</td>
+<td>0.3715</td>
+<td>15.6615</td>
+<td>0.6177</td>
+<td>1.7309</td>
+<td>0.3492</td>
+<td>0.6338</td>
+<td>1.2527</td>
+</tr>
+<tr>
+<th>2019-09-28</th>
+<td>90488</td>
+<td>0.462022</td>
+<td>1.5401</td>
+<td>3.4378</td>
+<td>2.9714</td>
+<td>1071363.00</td>
+<td>0.3070</td>
+<td>0.3782</td>
+<td>0.2712</td>
+<td>0.4624</td>
+<td>…</td>
+<td>0.1632</td>
+<td>0.6106</td>
+<td>0.2783</td>
+<td>0.3220</td>
+<td>13.9909</td>
+<td>0.6218</td>
+<td>1.1940</td>
+<td>0.3192</td>
+<td>0.5442</td>
+<td>1.3648</td>
+</tr>
+<tr>
+<th>2018-09-29</th>
+<td>107147</td>
+<td>0.223525</td>
+<td>1.1329</td>
+<td>3.5449</td>
+<td>2.9766</td>
+<td>1186220.00</td>
+<td>0.3417</td>
+<td>0.3834</td>
+<td>0.2563</td>
+<td>0.4229</td>
+<td>…</td>
+<td>0.1628</td>
+<td>0.5556</td>
+<td>0.2686</td>
+<td>0.3199</td>
+<td>13.2797</td>
+<td>0.6166</td>
+<td>1.0685</td>
+<td>0.3130</td>
+<td>0.5166</td>
+<td>1.4144</td>
+</tr>
+<tr>
+<th>2017-09-30</th>
+<td>134047</td>
+<td>0.201252</td>
+<td>1.2761</td>
+<td>2.9202</td>
+<td>2.3017</td>
+<td>889855.00</td>
+<td>0.3345</td>
+<td>0.3847</td>
+<td>0.2590</td>
+<td>0.3893</td>
+<td>…</td>
+<td>0.1288</td>
+<td>0.3607</td>
+<td>0.1936</td>
+<td>0.2456</td>
+<td>10.9123</td>
+<td>0.6153</td>
+<td>0.8630</td>
+<td>0.3082</td>
+<td>0.4632</td>
+<td>1.5556</td>
+</tr>
+<tr>
+<th>2016-09-24</th>
+<td>128249</td>
+<td>0.259271</td>
+<td>1.3527</td>
+<td>2.7282</td>
+<td>2.0766</td>
+<td>674795.00</td>
+<td>0.3662</td>
+<td>0.3908</td>
+<td>0.2345</td>
+<td>0.3504</td>
+<td>…</td>
+<td>0.1420</td>
+<td>0.3562</td>
+<td>0.2122</td>
+<td>0.2788</td>
+<td>9.8013</td>
+<td>0.6092</td>
+<td>0.6786</td>
+<td>0.2705</td>
+<td>0.4043</td>
+<td>1.6630</td>
+</tr>
+<tr>
+<th>2015-09-26</th>
+<td>119355</td>
+<td>0.262002</td>
+<td>1.1088</td>
+<td>3.0740</td>
+<td>2.3042</td>
+<td>670483.00</td>
+<td>0.3969</td>
+<td>0.4006</td>
+<td>0.1837</td>
+<td>0.2903</td>
+<td>…</td>
+<td>0.1839</td>
+<td>0.4474</td>
+<td>0.2907</td>
+<td>0.3878</td>
+<td>10.0861</td>
+<td>0.5994</td>
+<td>0.5390</td>
+<td>0.2216</td>
+<td>0.3502</td>
+<td>1.6980</td>
+</tr>
+<tr>
+<th>2014-09-27</th>
+<td>111547</td>
+<td>0.218194</td>
+<td>1.0801</td>
+<td>2.1438</td>
+<td>1.6132</td>
+<td>608712.00</td>
+<td>0.3803</td>
+<td>0.3859</td>
+<td>0.1250</td>
+<td>0.1974</td>
+<td>…</td>
+<td>0.1704</td>
+<td>0.3542</td>
+<td>0.2691</td>
+<td>0.3575</td>
+<td>7.4638</td>
+<td>0.6141</td>
+<td>0.3164</td>
+<td>0.1522</td>
+<td>0.2404</td>
+<td>1.9273</td>
+</tr>
+<tr>
+<th>2013-09-28</th>
+<td>123549</td>
+<td>0.326607</td>
+<td>1.6786</td>
+<td>1.8784</td>
+<td>1.4198</td>
+<td>435827.00</td>
+<td>0.3671</td>
+<td>0.3762</td>
+<td>0.0819</td>
+<td>0.1207</td>
+<td>…</td>
+<td>0.1789</td>
+<td>0.2998</td>
+<td>0.2636</td>
+<td>0.3487</td>
+<td>6.5518</td>
+<td>0.6238</td>
+<td>0.1373</td>
+<td>0.0819</td>
+<td>0.1207</td>
+<td>2.4805</td>
+</tr>
+<tr>
+<th>2012-09-29</th>
+<td>118210</td>
+<td>0.278813</td>
+<td>1.4958</td>
+<td>2.0870</td>
+<td>1.5767</td>
+<td>607370.00</td>
+<td>0.3850</td>
+<td>0.4387</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>…</td>
+<td>0.2370</td>
+<td>0.3530</td>
+<td>0.3530</td>
+<td>0.4673</td>
+<td>5.9129</td>
+<td>0.5613</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>3.0432</td>
+</tr>
+<tr>
+<th>2011-09-24</th>
+<td>76615</td>
+<td>0.350912</td>
+<td>1.6084</td>
+<td>1.2884</td>
+<td>0.9884</td>
+<td>364842.00</td>
+<td>0.4155</td>
+<td>0.4048</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>…</td>
+<td>0.2228</td>
+<td>0.3383</td>
+<td>0.3383</td>
+<td>0.4410</td>
+<td>4.1275</td>
+<td>0.5952</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>2.9271</td>
+</tr>
+<tr>
+<th>2010-09-25</th>
+<td>47791</td>
+<td>0.543432</td>
+<td>2.0113</td>
+<td>0.7101</td>
+<td>0.5412</td>
+<td>254736.00</td>
+<td>0.3176</td>
+<td>0.3938</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>…</td>
+<td>0.1864</td>
+<td>0.2932</td>
+<td>0.2932</td>
+<td>0.3847</td>
+<td>2.5191</td>
+<td>0.6062</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>2.7447</td>
+</tr>
+<tr>
+<th>2009-09-26</th>
+<td>31640</td>
+<td>0.457414</td>
+<td>2.7425</td>
+<td>0.4623</td>
+<td>0.3243</td>
+<td>161495.00</td>
+<td>0.2651</td>
+<td>0.4014</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>…</td>
+<td>0.1734</td>
+<td>0.2603</td>
+<td>0.2603</td>
+<td>0.3710</td>
+<td>1.6894</td>
+<td>0.5986</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>2.9948</td>
+</tr>
+<tr>
+<th>2008-09-27</th>
+<td>22297</td>
+<td>1.045242</td>
+<td>2.6411</td>
+<td>0.3297</td>
+<td>0.2422</td>
+<td>81372.30</td>
+<td>0.2879</td>
+<td>0.3520</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>…</td>
+<td>0.1692</td>
+<td>0.2744</td>
+<td>0.2744</td>
+<td>0.3735</td>
+<td>1.4842</td>
+<td>0.6480</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>2.6071</td>
+</tr>
+<tr>
+<th>2007-09-29</th>
+<td>14532</td>
+<td>1.007759</td>
+<td>2.3659</td>
+<td>0.1770</td>
+<td>0.1404</td>
+<td>126607.00</td>
+<td>0.2627</td>
+<td>0.3317</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>…</td>
+<td>0.1379</td>
+<td>0.2405</td>
+<td>0.2405</td>
+<td>0.3033</td>
+<td>0.9871</td>
+<td>0.6683</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>2.3437</td>
+</tr>
+<tr>
+<th>2006-09-30</th>
+<td>9984</td>
+<td>0.992084</td>
+<td>2.2519</td>
+<td>0.0998</td>
+<td>0.0809</td>
+<td>57277.00</td>
+<td>0.1490</td>
+<td>0.2898</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>…</td>
+<td>0.1156</td>
+<td>0.1992</td>
+<td>0.1992</td>
+<td>0.2457</td>
+<td>0.7861</td>
+<td>0.7102</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>2.3826</td>
+</tr>
+<tr>
+<th>2005-09-24</th>
+<td>7428</td>
+<td>1.001147</td>
+<td>2.9538</td>
+<td>0.0685</td>
+<td>0.0553</td>
+<td>41187.00</td>
+<td>0.2006</td>
+<td>0.2901</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>…</td>
+<td>0.1153</td>
+<td>0.1788</td>
+<td>0.1788</td>
+<td>0.2212</td>
+<td>0.5806</td>
+<td>0.7099</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>2.8170</td>
+</tr>
+<tr>
+<th>2004-09-25</th>
+<td>5076</td>
+<td>1.119955</td>
+<td>2.6613</td>
+<td>0.0144</td>
+<td>0.0123</td>
+<td>11589.80</td>
+<td>0.1341</td>
+<td>0.2726</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>…</td>
+<td>0.0330</td>
+<td>0.0524</td>
+<td>0.0524</td>
+<td>0.0617</td>
+<td>0.3816</td>
+<td>0.7274</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>2.7068</td>
+</tr>
+<tr>
+<th>2003-09-27</th>
+<td>4223</td>
+<td>1.440815</td>
+<td>2.4977</td>
+<td>0.0000</td>
+<td>0.0034</td>
+<td>4629.27</td>
+<td>0.0730</td>
+<td>0.2752</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>…</td>
+<td>0.0101</td>
+<td>0.0163</td>
+<td>0.0152</td>
+<td>NaN</td>
+<td>0.3050</td>
+<td>0.7248</td>
+<td>0.0720</td>
+<td>0.0446</td>
+<td>0.0672</td>
+<td>2.6292</td>
+</tr>
+<tr>
+<th>2002-09-28</th>
+<td>4095</td>
+<td>1.358263</td>
+<td>3.2497</td>
+<td>0.0008</td>
+<td>0.0032</td>
+<td>3267.85</td>
+<td>0.0458</td>
+<td>0.2792</td>
+<td>0.0502</td>
+<td>0.0716</td>
+<td>…</td>
+<td>0.0103</td>
+<td>0.0159</td>
+<td>0.0147</td>
+<td>0.0039</td>
+<td>0.2834</td>
+<td>0.7208</td>
+<td>0.0772</td>
+<td>0.0502</td>
+<td>0.0716</td>
+<td>2.8588</td>
+</tr>
+<tr>
+<th>2001-09-29</th>
+<td>3920</td>
+<td>1.521739</td>
+<td>3.3880</td>
+<td>-0.0178</td>
+<td>-0.0013</td>
+<td>3384.29</td>
+<td>0.0778</td>
+<td>0.2303</td>
+<td>0.0526</td>
+<td>0.0748</td>
+<td>…</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>0.2771</td>
+<td>0.7697</td>
+<td>0.0809</td>
+<td>0.0526</td>
+<td>0.0748</td>
+<td>2.8658</td>
+</tr>
+<tr>
+<th>2000-09-30</th>
+<td>4107</td>
+<td>0.616141</td>
+<td>2.8076</td>
+<td>0.0259</td>
+<td>0.0390</td>
+<td>6989.50</td>
+<td>0.1265</td>
+<td>0.2713</td>
+<td>0.0441</td>
+<td>0.0681</td>
+<td>…</td>
+<td>0.1155</td>
+<td>0.1914</td>
+<td>0.1784</td>
+<td>0.1184</td>
+<td>0.3956</td>
+<td>0.7287</td>
+<td>0.0730</td>
+<td>0.0441</td>
+<td>0.0681</td>
+<td>2.5234</td>
+</tr>
+</tbody>
+</table>
+<p>23 rows × 31 columns</p>
+</div></div></div></div><div class="nb-cell nb-markdown-cell"><p>Pretty handy… we have 23 years worth of annual company fundamentals. </p>
+<p>Let’s do the same thing with the quarterly series. First, what metrics do we get?</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="8"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># point-in-time values</span>
+display<span class="token punctuation">(</span>financials<span class="token punctuation">[</span><span class="token string">'series'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'quarterly'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="8"><pre class="nb-text-output">dict_keys(['bookValue', 'cashRatio', 'currentRatio', 'ebitPerShare', 'eps', 'ev', 'fcfMargin', 'fcfPerShareTTM', 'grossMargin', 'longtermDebtTotalAsset', 'longtermDebtTotalCapital', 'longtermDebtTotalEquity', 'netDebtToTotalCapital', 'netDebtToTotalEquity', 'netMargin', 'operatingMargin', 'pb', 'peTTM', 'pfcfTTM', 'pretaxMargin', 'psTTM', 'quickRatio', 'roaTTM', 'roeTTM', 'roicTTM', 'rotcTTM', 'salesPerShare', 'sgaToSale', 'totalDebtToEquity', 'totalDebtToTotalAsset', 'totalDebtToTotalCapital', 'totalRatio'])</pre></div></div><div class="nb-cell nb-markdown-cell"><p>Let’s stick this data into a dataframe:</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="9"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># Make a list of the available quarterly metrics</span>
+quarterly_metric_names <span class="token operator">=</span> <span class="token builtin">list</span><span class="token punctuation">(</span>financials<span class="token punctuation">[</span><span class="token string">'series'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'quarterly'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Make a list of dataframes indexed by period and named by metric</span>
+dfs <span class="token operator">=</span> <span class="token punctuation">[</span>
+    pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>financials<span class="token punctuation">[</span><span class="token string">'series'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'quarterly'</span><span class="token punctuation">]</span><span class="token punctuation">[</span>metric<span class="token punctuation">]</span><span class="token punctuation">)</span> \
+      <span class="token punctuation">.</span>rename<span class="token punctuation">(</span>columns<span class="token operator">=</span><span class="token punctuation">{</span><span class="token string">'v'</span><span class="token punctuation">:</span> metric<span class="token punctuation">}</span><span class="token punctuation">)</span> \
+      <span class="token punctuation">.</span>set_index<span class="token punctuation">(</span>keys<span class="token operator">=</span><span class="token string">'period'</span><span class="token punctuation">)</span> \
+    <span class="token keyword">for</span> metric <span class="token keyword">in</span> quarterly_metric_names
+<span class="token punctuation">]</span>
+
+<span class="token comment"># Join dataframes on index</span>
+quarterly_metrics <span class="token operator">=</span> dfs<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span>join<span class="token punctuation">(</span>dfs<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> how<span class="token operator">=</span><span class="token string">'outer'</span><span class="token punctuation">)</span>
+
+quarterly_metrics</code></pre></div><div class="nb-output" data-prompt-number="9"><div class="nb-html-output"><div>
+
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>bookValue</th>
+<th>cashRatio</th>
+<th>currentRatio</th>
+<th>ebitPerShare</th>
+<th>eps</th>
+<th>ev</th>
+<th>fcfMargin</th>
+<th>fcfPerShareTTM</th>
+<th>grossMargin</th>
+<th>longtermDebtTotalAsset</th>
+<th>…</th>
+<th>roaTTM</th>
+<th>roeTTM</th>
+<th>roicTTM</th>
+<th>rotcTTM</th>
+<th>salesPerShare</th>
+<th>sgaToSale</th>
+<th>totalDebtToEquity</th>
+<th>totalDebtToTotalAsset</th>
+<th>totalDebtToTotalCapital</th>
+<th>totalRatio</th>
+</tr>
+<tr>
+<th>period</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2022-12-31</th>
+<td>56727</td>
+<td>0.149578</td>
+<td>0.9380</td>
+<td>2.2572</td>
+<td>1.8801</td>
+<td>2157515.00</td>
+<td>0.3226</td>
+<td>7.6303</td>
+<td>0.4296</td>
+<td>0.2873</td>
+<td>…</td>
+<td>0.2746</td>
+<td>1.6345</td>
+<td>0.5409</td>
+<td>0.6478</td>
+<td>7.3424</td>
+<td>0.5704</td>
+<td>1.9587</td>
+<td>0.3204</td>
+<td>0.6620</td>
+<td>1.1956</td>
+</tr>
+<tr>
+<th>2022-09-24</th>
+<td>50672</td>
+<td>0.153563</td>
+<td>0.8794</td>
+<td>1.5444</td>
+<td>1.2855</td>
+<td>2513943.00</td>
+<td>0.3041</td>
+<td>8.3332</td>
+<td>0.4226</td>
+<td>0.2805</td>
+<td>…</td>
+<td>0.2810</td>
+<td>1.6090</td>
+<td>0.5464</td>
+<td>0.6539</td>
+<td>5.5927</td>
+<td>0.5774</td>
+<td>2.3695</td>
+<td>0.3404</td>
+<td>0.7032</td>
+<td>1.1677</td>
+</tr>
+<tr>
+<th>2022-06-25</th>
+<td>58107</td>
+<td>0.211761</td>
+<td>0.8646</td>
+<td>1.4190</td>
+<td>1.1955</td>
+<td>2384979.00</td>
+<td>0.3013</td>
+<td>8.0064</td>
+<td>0.4326</td>
+<td>0.2816</td>
+<td>…</td>
+<td>0.2808</td>
+<td>1.5297</td>
+<td>0.5324</td>
+<td>0.6323</td>
+<td>5.1013</td>
+<td>0.5674</td>
+<td>2.0598</td>
+<td>0.3559</td>
+<td>0.6732</td>
+<td>1.2089</td>
+</tr>
+<tr>
+<th>2022-03-26</th>
+<td>67399</td>
+<td>0.220363</td>
+<td>0.9268</td>
+<td>1.8277</td>
+<td>1.5247</td>
+<td>2957573.00</td>
+<td>0.3154</td>
+<td>7.8393</td>
+<td>0.4375</td>
+<td>0.2947</td>
+<td>…</td>
+<td>0.2886</td>
+<td>1.5288</td>
+<td>0.5387</td>
+<td>0.6309</td>
+<td>5.9305</td>
+<td>0.5625</td>
+<td>1.7802</td>
+<td>0.3422</td>
+<td>0.6403</td>
+<td>1.2379</td>
+</tr>
+<tr>
+<th>2021-12-25</th>
+<td>71932</td>
+<td>0.251528</td>
+<td>1.0378</td>
+<td>2.5115</td>
+<td>2.0964</td>
+<td>3032429.00</td>
+<td>0.4015</td>
+<td>7.5044</td>
+<td>0.4376</td>
+<td>0.2797</td>
+<td>…</td>
+<td>0.2875</td>
+<td>1.4981</td>
+<td>0.5290</td>
+<td>0.6151</td>
+<td>7.5032</td>
+<td>0.5624</td>
+<td>1.7071</td>
+<td>0.3221</td>
+<td>0.6306</td>
+<td>1.2326</td>
+</tr>
+<tr>
+<th>…</th>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+</tr>
+<tr>
+<th>2000-12-30</th>
+<td>3712</td>
+<td>1.061087</td>
+<td>3.0092</td>
+<td>-0.0222</td>
+<td>-0.0103</td>
+<td>3570.24</td>
+<td>0.0089</td>
+<td>0.0314</td>
+<td>-0.0209</td>
+<td>0.0520</td>
+<td>…</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>0.0533</td>
+<td>1.0209</td>
+<td>0.0838</td>
+<td>0.0520</td>
+<td>0.0773</td>
+<td>2.6324</td>
+</tr>
+<tr>
+<th>2000-09-30</th>
+<td>4107</td>
+<td>0.616141</td>
+<td>2.8076</td>
+<td>0.0041</td>
+<td>0.0084</td>
+<td>6989.50</td>
+<td>0.1422</td>
+<td>0.0537</td>
+<td>0.2497</td>
+<td>0.0441</td>
+<td>…</td>
+<td>0.1110</td>
+<td>0.1859</td>
+<td>0.1736</td>
+<td>0.1153</td>
+<td>0.0923</td>
+<td>0.7503</td>
+<td>0.0730</td>
+<td>0.0441</td>
+<td>0.0681</td>
+<td>2.5234</td>
+</tr>
+<tr>
+<th>2000-07-01</th>
+<td>4176</td>
+<td>0.717565</td>
+<td>2.7533</td>
+<td>0.0083</td>
+<td>0.0099</td>
+<td>16308.50</td>
+<td>0.1342</td>
+<td>NaN</td>
+<td>0.2975</td>
+<td>0.0433</td>
+<td>…</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>0.0901</td>
+<td>0.7025</td>
+<td>0.0718</td>
+<td>0.0433</td>
+<td>0.0670</td>
+<td>2.5152</td>
+</tr>
+<tr>
+<th>2000-04-01</th>
+<td>4215</td>
+<td>0.896924</td>
+<td>2.6508</td>
+<td>0.0083</td>
+<td>0.0114</td>
+<td>20122.50</td>
+<td>0.0452</td>
+<td>NaN</td>
+<td>0.2823</td>
+<td>0.0428</td>
+<td>…</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>0.0954</td>
+<td>0.7177</td>
+<td>0.0712</td>
+<td>0.0428</td>
+<td>0.0664</td>
+<td>2.5097</td>
+</tr>
+<tr>
+<th>2000-01-01</th>
+<td>4414</td>
+<td>0.807125</td>
+<td>2.4982</td>
+<td>0.0050</td>
+<td>0.0092</td>
+<td>16753.70</td>
+<td>0.1754</td>
+<td>NaN</td>
+<td>0.2591</td>
+<td>0.0395</td>
+<td>…</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>0.1172</td>
+<td>0.7409</td>
+<td>0.0680</td>
+<td>0.0395</td>
+<td>0.0636</td>
+<td>2.3916</td>
+</tr>
+</tbody>
+</table>
+<p>93 rows × 32 columns</p>
+</div></div></div></div><div class="nb-cell nb-markdown-cell"><p>Looks like we have essentially the same data as for the annual series, but at a quarterly resolution. Neat!</p>
+<h3 id="restatements">Restatements</h3>
+<p>One thing to be aware of with this sort of data is that sometimes companies will “restate” their reported financials after the initial filing, usually to correct an error. </p>
+<p>Using a dataset based on restatements can introduce some bias into an analysis because you’d be using data that you didn’t have available at the time you thought you had it. </p>
+<p>To correct for that, you’d need an “as reported” dataset – something that recorded that information available at each point in time, and not corrected retrospectively. </p>
+<p>The finnhub.io API docs don’t specify whether the endpoint I used here contains restatements. However, I suspect that it <strong>doesn’t</strong> because there’s an additional endpoint called “Financials As Reported”, which isn’t available on the free tier. </p>
+</div><div class="nb-cell nb-markdown-cell"><h2 id="alternative-data">Alternative data</h2>
+<p>finnhub.io serves some interesting alternative data:</p>
+<ul>
+<li>Insider sentiment</li>
+<li>Social media sentiment</li>
+<li>Senate lobbying disclosures</li>
+<li>Government spending</li>
+<li>Visa applications submitted by companies</li>
+<li>Many others</li>
+</ul>
+<h3 id="example-insider-sentiment">Example: insider sentiment</h3>
+<p> The “Insider Sentiment” endpoint serves the Monthly Share Purchase Ratio (MSPR), which is a measure of whether insider transactions are dominated by buying (a value closer to 100) or selling (a value closer to -100) over the previous month. You can read about the MSPR and how it’s calculated <a href="https://medium.com/@stock-api/finnhub-insiders-sentiment-analysis-cc43f9f64b3a">here</a>.</p>
+<p>For now, let’s just grab 10 years worth of this data for a single stock and plot it against the stock’s forward returns on the understanding that we don’t have enough data to say anything meaningful (around 120 observations total).</p>
+<p>This API can understand human-readable date strings, unlike the prices API.</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="10"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># Get ten year's worth of insider sentiment data</span>
+
+<span class="token comment"># api query paramters</span>
+symbol <span class="token operator">=</span> <span class="token string">'AAPL'</span>
+from_date <span class="token operator">=</span> <span class="token string">'2013-01-01'</span>
+to_date <span class="token operator">=</span> <span class="token string">'2023-02-21'</span> 
+
+is_response <span class="token operator">=</span> finnhub_client<span class="token punctuation">.</span>stock_insider_sentiment<span class="token punctuation">(</span>
+    symbol<span class="token punctuation">,</span> 
+    from_date<span class="token punctuation">,</span> 
+    to_date
+<span class="token punctuation">)</span>
+
+<span class="token comment"># Print the first few records</span>
+display<span class="token punctuation">(</span>is_response<span class="token punctuation">[</span><span class="token string">'data'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="10"><pre class="nb-text-output">[{'symbol': 'AAPL',
+  'year': 2013,
+  'month': 1,
+  'change': 246,
+  'mspr': 0.2078967},
+ {'symbol': 'AAPL',
+  'year': 2013,
+  'month': 2,
+  'change': 3934,
+  'mspr': 42.06587},
+ {'symbol': 'AAPL',
+  'year': 2013,
+  'month': 3,
+  'change': -26460,
+  'mspr': -20.025429},
+ {'symbol': 'AAPL',
+  'year': 2013,
+  'month': 4,
+  'change': -9818,
+  'mspr': -21.024454}]</pre></div></div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="11"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># Make a dataframe from insider sentiment data</span>
+is_df <span class="token operator">=</span> pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>is_response<span class="token punctuation">[</span><span class="token string">'data'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+is_df<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="11"><div class="nb-html-output"><div>
+
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>symbol</th>
+<th>year</th>
+<th>month</th>
+<th>change</th>
+<th>mspr</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>0</th>
+<td>AAPL</td>
+<td>2013</td>
+<td>1</td>
+<td>246</td>
+<td>0.207897</td>
+</tr>
+<tr>
+<th>1</th>
+<td>AAPL</td>
+<td>2013</td>
+<td>2</td>
+<td>3934</td>
+<td>42.065870</td>
+</tr>
+<tr>
+<th>2</th>
+<td>AAPL</td>
+<td>2013</td>
+<td>3</td>
+<td>-26460</td>
+<td>-20.025429</td>
+</tr>
+<tr>
+<th>3</th>
+<td>AAPL</td>
+<td>2013</td>
+<td>4</td>
+<td>-9818</td>
+<td>-21.024454</td>
+</tr>
+<tr>
+<th>4</th>
+<td>AAPL</td>
+<td>2013</td>
+<td>6</td>
+<td>-321301</td>
+<td>-28.045816</td>
+</tr>
+<tr>
+<th>5</th>
+<td>AAPL</td>
+<td>2013</td>
+<td>7</td>
+<td>-79734</td>
+<td>-48.365260</td>
+</tr>
+<tr>
+<th>6</th>
+<td>AAPL</td>
+<td>2013</td>
+<td>8</td>
+<td>-75200</td>
+<td>-34.034233</td>
+</tr>
+<tr>
+<th>7</th>
+<td>AAPL</td>
+<td>2013</td>
+<td>9</td>
+<td>-28171</td>
+<td>-31.069471</td>
+</tr>
+<tr>
+<th>8</th>
+<td>AAPL</td>
+<td>2013</td>
+<td>10</td>
+<td>1930</td>
+<td>3.064367</td>
+</tr>
+<tr>
+<th>9</th>
+<td>AAPL</td>
+<td>2013</td>
+<td>11</td>
+<td>-4486</td>
+<td>-100.000000</td>
+</tr>
+</tbody>
+</table>
+</div></div></div></div><div class="nb-cell nb-markdown-cell"><p>Notice that we have some missing data – above we don’t have a record for month 5. We’ll need to deal with that later. </p>
+<p>I’ll also need to lag the <code>mspr</code> field (the sentiment score) to align it with the date on which it would have been actionable. We’ll do this once we have some price data.</p>
+</div><div class="nb-cell nb-markdown-cell"><p>Next we’ll grab some monthly price data and munge it for our needs:</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="12"><pre class="language-python"><code class="language-python" data-language="python">resolution <span class="token operator">=</span> <span class="token string">'M'</span>
+unix_from_date <span class="token operator">=</span> unix_timestamp_from_date<span class="token punctuation">(</span>from_date<span class="token punctuation">)</span>
+unix_to_date <span class="token operator">=</span> unix_timestamp_from_date<span class="token punctuation">(</span>to_date<span class="token punctuation">)</span>
+
+price_response <span class="token operator">=</span> finnhub_client<span class="token punctuation">.</span>stock_candles<span class="token punctuation">(</span>
+    symbol<span class="token punctuation">,</span> 
+    resolution<span class="token punctuation">,</span> 
+    unix_from_date<span class="token punctuation">,</span> 
+    unix_to_date
+<span class="token punctuation">)</span></code></pre></div></div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="13"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># Ditch the status code</span>
+<span class="token keyword">try</span><span class="token punctuation">:</span>
+  price_response<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token string">'s'</span><span class="token punctuation">)</span>
+<span class="token keyword">except</span> KeyError <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+  <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Already ditched status code"</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Create dataframe from remaining records</span>
+price_df <span class="token operator">=</span> pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>price_response<span class="token punctuation">)</span> \
+  <span class="token punctuation">.</span>rename<span class="token punctuation">(</span>columns<span class="token operator">=</span><span class="token punctuation">{</span>
+    <span class="token string">'c'</span><span class="token punctuation">:</span> <span class="token string">'close'</span><span class="token punctuation">,</span> 
+    <span class="token string">'h'</span><span class="token punctuation">:</span> <span class="token string">'high'</span><span class="token punctuation">,</span> 
+    <span class="token string">'l'</span><span class="token punctuation">:</span> <span class="token string">'low'</span><span class="token punctuation">,</span> 
+    <span class="token string">'o'</span><span class="token punctuation">:</span> <span class="token string">'open'</span><span class="token punctuation">,</span> 
+    <span class="token string">'t'</span><span class="token punctuation">:</span> <span class="token string">'timestamp'</span><span class="token punctuation">,</span> 
+    <span class="token string">'v'</span><span class="token punctuation">:</span> <span class="token string">'volume'</span>
+  <span class="token punctuation">}</span><span class="token punctuation">)</span> 
+
+<span class="token comment"># Ditch stuff we won't need</span>
+price_df <span class="token operator">=</span> price_df<span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token string">'timestamp'</span><span class="token punctuation">,</span> <span class="token string">'close'</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+
+<span class="token comment"># Convert timestamp to human-readable date format</span>
+price_df<span class="token punctuation">[</span><span class="token string">'date'</span><span class="token punctuation">]</span> <span class="token operator">=</span> pd<span class="token punctuation">.</span>to_datetime<span class="token punctuation">(</span>price_df<span class="token punctuation">[</span><span class="token string">'timestamp'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> unit<span class="token operator">=</span><span class="token string">'s'</span><span class="token punctuation">)</span>
+
+<span class="token comment"># create year and month fields</span>
+price_df<span class="token punctuation">[</span><span class="token string">'year'</span><span class="token punctuation">]</span> <span class="token operator">=</span> price_df<span class="token punctuation">[</span><span class="token string">'date'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>dt<span class="token punctuation">.</span>year
+price_df<span class="token punctuation">[</span><span class="token string">'month'</span><span class="token punctuation">]</span> <span class="token operator">=</span> price_df<span class="token punctuation">[</span><span class="token string">'date'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>dt<span class="token punctuation">.</span>month
+
+price_df<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="13"><div class="nb-html-output"><div>
+
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>timestamp</th>
+<th>close</th>
+<th>date</th>
+<th>year</th>
+<th>month</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>0</th>
+<td>1356998400</td>
+<td>16.267479</td>
+<td>2013-01-01</td>
+<td>2013</td>
+<td>1</td>
+</tr>
+<tr>
+<th>1</th>
+<td>1359676800</td>
+<td>15.764271</td>
+<td>2013-02-01</td>
+<td>2013</td>
+<td>2</td>
+</tr>
+<tr>
+<th>2</th>
+<td>1362096000</td>
+<td>15.809271</td>
+<td>2013-03-01</td>
+<td>2013</td>
+<td>3</td>
+</tr>
+<tr>
+<th>3</th>
+<td>1364774400</td>
+<td>15.813561</td>
+<td>2013-04-01</td>
+<td>2013</td>
+<td>4</td>
+</tr>
+<tr>
+<th>4</th>
+<td>1367366400</td>
+<td>16.061950</td>
+<td>2013-05-01</td>
+<td>2013</td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+</div></div></div></div><div class="nb-cell nb-markdown-cell"><p>You can see that our data isn’t going to overlap neatly. There are some months in our sentiment dataframe that are missing from our prices dataframe and vice versa. </p>
+<p>I’ll merge the two dataframes using an outer join – this will preserve all of our data and insert NaN into any record that’s missing.</p>
+<p>From there, I can lag the sentiment score appropriately. Only then can I remove records that contain NaN (doing so prior would misalign some of our data).</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="14"><pre class="language-python"><code class="language-python" data-language="python">df <span class="token operator">=</span> pd<span class="token punctuation">.</span>merge<span class="token punctuation">(</span>price_df<span class="token punctuation">,</span> is_df<span class="token punctuation">,</span> on<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">'year'</span><span class="token punctuation">,</span> <span class="token string">'month'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> how<span class="token operator">=</span><span class="token string">'outer'</span><span class="token punctuation">)</span> \
+    <span class="token punctuation">.</span>sort_values<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token string">'year'</span><span class="token punctuation">,</span> <span class="token string">'month'</span><span class="token punctuation">]</span><span class="token punctuation">)</span> \
+    <span class="token punctuation">.</span>set_index<span class="token punctuation">(</span>keys<span class="token operator">=</span><span class="token string">'date'</span><span class="token punctuation">)</span>
+    
+df<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="14"><div class="nb-html-output"><div>
+
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>timestamp</th>
+<th>close</th>
+<th>year</th>
+<th>month</th>
+<th>symbol</th>
+<th>change</th>
+<th>mspr</th>
+</tr>
+<tr>
+<th>date</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2013-01-01</th>
+<td>1356998400</td>
+<td>16.267479</td>
+<td>2013</td>
+<td>1</td>
+<td>AAPL</td>
+<td>246.0</td>
+<td>0.207897</td>
+</tr>
+<tr>
+<th>2013-02-01</th>
+<td>1359676800</td>
+<td>15.764271</td>
+<td>2013</td>
+<td>2</td>
+<td>AAPL</td>
+<td>3934.0</td>
+<td>42.065870</td>
+</tr>
+<tr>
+<th>2013-03-01</th>
+<td>1362096000</td>
+<td>15.809271</td>
+<td>2013</td>
+<td>3</td>
+<td>AAPL</td>
+<td>-26460.0</td>
+<td>-20.025429</td>
+</tr>
+<tr>
+<th>2013-04-01</th>
+<td>1364774400</td>
+<td>15.813561</td>
+<td>2013</td>
+<td>4</td>
+<td>AAPL</td>
+<td>-9818.0</td>
+<td>-21.024454</td>
+</tr>
+<tr>
+<th>2013-05-01</th>
+<td>1367366400</td>
+<td>16.061950</td>
+<td>2013</td>
+<td>5</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>2013-06-01</th>
+<td>1370044800</td>
+<td>14.161771</td>
+<td>2013</td>
+<td>6</td>
+<td>AAPL</td>
+<td>-321301.0</td>
+<td>-28.045816</td>
+</tr>
+<tr>
+<th>2013-07-01</th>
+<td>1372636800</td>
+<td>16.161771</td>
+<td>2013</td>
+<td>7</td>
+<td>AAPL</td>
+<td>-79734.0</td>
+<td>-48.365260</td>
+</tr>
+<tr>
+<th>2013-08-01</th>
+<td>1375315200</td>
+<td>17.400550</td>
+<td>2013</td>
+<td>8</td>
+<td>AAPL</td>
+<td>-75200.0</td>
+<td>-34.034233</td>
+</tr>
+<tr>
+<th>2013-09-01</th>
+<td>1377993600</td>
+<td>17.026771</td>
+<td>2013</td>
+<td>9</td>
+<td>AAPL</td>
+<td>-28171.0</td>
+<td>-31.069471</td>
+</tr>
+<tr>
+<th>2013-10-01</th>
+<td>1380585600</td>
+<td>18.667911</td>
+<td>2013</td>
+<td>10</td>
+<td>AAPL</td>
+<td>1930.0</td>
+<td>3.064367</td>
+</tr>
+</tbody>
+</table>
+</div></div></div></div><div class="nb-cell nb-markdown-cell"><p>Now we can calculate close-to-close monthly returns and lag the sentiment score:</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="15"><pre class="language-python"><code class="language-python" data-language="python"><span class="token comment"># Calculate monthly open-to-close returns</span>
+df<span class="token punctuation">[</span><span class="token string">'return'</span><span class="token punctuation">]</span> <span class="token operator">=</span> np<span class="token punctuation">.</span>log<span class="token punctuation">(</span>df<span class="token punctuation">.</span>close<span class="token operator">/</span>df<span class="token punctuation">.</span>close<span class="token punctuation">.</span>shift<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Lag sentiment score</span>
+df<span class="token punctuation">[</span><span class="token string">'mspr_lag'</span><span class="token punctuation">]</span> <span class="token operator">=</span> df<span class="token punctuation">[</span><span class="token string">'mspr'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>shift<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+df<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span></code></pre></div><div class="nb-output" data-prompt-number="15"><div class="nb-html-output"><div>
+
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>timestamp</th>
+<th>close</th>
+<th>year</th>
+<th>month</th>
+<th>symbol</th>
+<th>change</th>
+<th>mspr</th>
+<th>return</th>
+<th>mspr_lag</th>
+</tr>
+<tr>
+<th>date</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2013-01-01</th>
+<td>1356998400</td>
+<td>16.267479</td>
+<td>2013</td>
+<td>1</td>
+<td>AAPL</td>
+<td>246.0</td>
+<td>0.207897</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>2013-02-01</th>
+<td>1359676800</td>
+<td>15.764271</td>
+<td>2013</td>
+<td>2</td>
+<td>AAPL</td>
+<td>3934.0</td>
+<td>42.065870</td>
+<td>-0.031422</td>
+<td>0.207897</td>
+</tr>
+<tr>
+<th>2013-03-01</th>
+<td>1362096000</td>
+<td>15.809271</td>
+<td>2013</td>
+<td>3</td>
+<td>AAPL</td>
+<td>-26460.0</td>
+<td>-20.025429</td>
+<td>0.002850</td>
+<td>42.065870</td>
+</tr>
+<tr>
+<th>2013-04-01</th>
+<td>1364774400</td>
+<td>15.813561</td>
+<td>2013</td>
+<td>4</td>
+<td>AAPL</td>
+<td>-9818.0</td>
+<td>-21.024454</td>
+<td>0.000271</td>
+<td>-20.025429</td>
+</tr>
+<tr>
+<th>2013-05-01</th>
+<td>1367366400</td>
+<td>16.061950</td>
+<td>2013</td>
+<td>5</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>0.015585</td>
+<td>-21.024454</td>
+</tr>
+<tr>
+<th>2013-06-01</th>
+<td>1370044800</td>
+<td>14.161771</td>
+<td>2013</td>
+<td>6</td>
+<td>AAPL</td>
+<td>-321301.0</td>
+<td>-28.045816</td>
+<td>-0.125907</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>2013-07-01</th>
+<td>1372636800</td>
+<td>16.161771</td>
+<td>2013</td>
+<td>7</td>
+<td>AAPL</td>
+<td>-79734.0</td>
+<td>-48.365260</td>
+<td>0.132102</td>
+<td>-28.045816</td>
+</tr>
+<tr>
+<th>2013-08-01</th>
+<td>1375315200</td>
+<td>17.400550</td>
+<td>2013</td>
+<td>8</td>
+<td>AAPL</td>
+<td>-75200.0</td>
+<td>-34.034233</td>
+<td>0.073853</td>
+<td>-48.365260</td>
+</tr>
+<tr>
+<th>2013-09-01</th>
+<td>1377993600</td>
+<td>17.026771</td>
+<td>2013</td>
+<td>9</td>
+<td>AAPL</td>
+<td>-28171.0</td>
+<td>-31.069471</td>
+<td>-0.021715</td>
+<td>-34.034233</td>
+</tr>
+<tr>
+<th>2013-10-01</th>
+<td>1380585600</td>
+<td>18.667911</td>
+<td>2013</td>
+<td>10</td>
+<td>AAPL</td>
+<td>1930.0</td>
+<td>3.064367</td>
+<td>0.092019</td>
+<td>-31.069471</td>
+</tr>
+</tbody>
+</table>
+</div></div></div></div><div class="nb-cell nb-markdown-cell"><p>An easy way to look for a relationship between this sentiment metric and next month’s returns is to just scatter plot them:</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="16"><pre class="language-python"><code class="language-python" data-language="python">sns<span class="token punctuation">.</span>lmplot<span class="token punctuation">(</span>data<span class="token operator">=</span>df<span class="token punctuation">,</span> x<span class="token operator">=</span><span class="token string">'mspr_lag'</span><span class="token punctuation">,</span> y<span class="token operator">=</span><span class="token string">'return'</span><span class="token punctuation">,</span> height<span class="token operator">=</span><span class="token number">4</span><span class="token punctuation">,</span> aspect<span class="token operator">=</span><span class="token number">1.5</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre></div><div class="nb-output" data-prompt-number="16"><img class="nb-image-output" decoding="async" src="data:image/png;base64,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Q0MDAG+C+dNPP40vv/wSP/zwA1599VXcfvvt+M1vfoN+/frF/kSJNIpLrBBRMtBE0AQAr776KkaNGoXp06dj1qxZmDp1Kl544QX//S6XC/v370dra6t/25o1azBhwgR/DaYLLrgAEyZMwDvvvAPAO8z2+uuvY9q0aRgzZgwefvhh3H777UHHJaLwcIkVIkp0XEYlCriMCtEpXGKFiBKVJkoOEJF2+JZYISJKNJoZniMiIiKKJwZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBgZNRERERGFg0EREREQUBs0ETQ0NDZgzZw7MZjOys7Nxww03wG63d7v/zTffjJEjRyI1NRWDBw/GLbfcgqampqD9Dh06hMsuuwxpaWnIz8/HnXfeCbfb3denQ0RERBqjj3cDwjVnzhzU1NRg06ZNcLlcmDdvHm688Ua89tprIfevrq5GdXU1Hn/8cYwePRo//vgjfv/736O6uhr/9//+XwCAx+PBZZddBovFgm3btqGmpgbXXXcdDAYDHnnkkVieHhEREamcJIQQ8W7E6VRUVGD06NHYtWsXJk2aBADYuHEjZs2ahSNHjqCwsDCs47z11lv4zW9+g5aWFuj1erz//vv4t3/7N1RXV6OgoAAAsGbNGvzxj3/EsWPHYDQawzquzWZDVlYWmpqaYDabIztJoj6iKAL7qm1oaHUiJ82IMYVmyLIU72YREWmOJnqatm/fjuzsbH/ABAAzZsyALMvYsWMHrrjiirCO4wtq9Hq9/7hjx471B0wAUFZWhgULFmDfvn2YMGFCyOM4HA44HA7/zzabLZLTIupz2yrrsXprFarq7HB5BAw6CcPyM7Bg2jBMGZ4b7+YREWmKJnKarFYr8vPzg7bp9Xrk5OTAarWGdYz6+no89NBDuPHGG4OOGxgwAfD/3N1xly9fjqysLP9t0KBB4Z4KUcxsq6zHPRv2oqLGhnSTHvmZJqSb9KioacY9G/ZiW2V9vJtIRKQp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"/></div></div><div class="nb-cell nb-markdown-cell"><p>Unfortunately, we don’t see much of any kind of relationship. </p>
+<p>The sentiment metric does jump around quite a bit – let’s see if smoothing it with a 3-month moving average reveals anything interesting:</p>
+</div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="17"><pre class="language-python"><code class="language-python" data-language="python">df<span class="token punctuation">[</span><span class="token string">'mspr_roll'</span><span class="token punctuation">]</span> <span class="token operator">=</span> df<span class="token punctuation">[</span><span class="token string">'mspr_lag'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>rolling<span class="token punctuation">(</span>window<span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">.</span>mean<span class="token punctuation">(</span><span class="token punctuation">)</span>
+df</code></pre></div><div class="nb-output" data-prompt-number="17"><div class="nb-html-output"><div>
+
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>timestamp</th>
+<th>close</th>
+<th>year</th>
+<th>month</th>
+<th>symbol</th>
+<th>change</th>
+<th>mspr</th>
+<th>return</th>
+<th>mspr_lag</th>
+<th>mspr_roll</th>
+</tr>
+<tr>
+<th>date</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2013-01-01</th>
+<td>1356998400</td>
+<td>16.267479</td>
+<td>2013</td>
+<td>1</td>
+<td>AAPL</td>
+<td>246.0</td>
+<td>0.207897</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>2013-02-01</th>
+<td>1359676800</td>
+<td>15.764271</td>
+<td>2013</td>
+<td>2</td>
+<td>AAPL</td>
+<td>3934.0</td>
+<td>42.065870</td>
+<td>-0.031422</td>
+<td>0.207897</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>2013-03-01</th>
+<td>1362096000</td>
+<td>15.809271</td>
+<td>2013</td>
+<td>3</td>
+<td>AAPL</td>
+<td>-26460.0</td>
+<td>-20.025429</td>
+<td>0.002850</td>
+<td>42.065870</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>2013-04-01</th>
+<td>1364774400</td>
+<td>15.813561</td>
+<td>2013</td>
+<td>4</td>
+<td>AAPL</td>
+<td>-9818.0</td>
+<td>-21.024454</td>
+<td>0.000271</td>
+<td>-20.025429</td>
+<td>7.416113</td>
+</tr>
+<tr>
+<th>2013-05-01</th>
+<td>1367366400</td>
+<td>16.061950</td>
+<td>2013</td>
+<td>5</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>0.015585</td>
+<td>-21.024454</td>
+<td>0.338662</td>
+</tr>
+<tr>
+<th>…</th>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+</tr>
+<tr>
+<th>2022-10-01</th>
+<td>1664582400</td>
+<td>153.340000</td>
+<td>2022</td>
+<td>10</td>
+<td>AAPL</td>
+<td>-1297681.0</td>
+<td>-30.305650</td>
+<td>0.103956</td>
+<td>100.000000</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>2022-11-01</th>
+<td>1667260800</td>
+<td>148.030000</td>
+<td>2022</td>
+<td>11</td>
+<td>AAPL</td>
+<td>-20200.0</td>
+<td>-100.000000</td>
+<td>-0.035243</td>
+<td>-30.305650</td>
+<td>-3.333313</td>
+</tr>
+<tr>
+<th>2022-12-01</th>
+<td>1669852800</td>
+<td>129.930000</td>
+<td>2022</td>
+<td>12</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>-0.130419</td>
+<td>-100.000000</td>
+<td>-10.101883</td>
+</tr>
+<tr>
+<th>2023-01-01</th>
+<td>1672531200</td>
+<td>144.290000</td>
+<td>2023</td>
+<td>1</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>0.104829</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr>
+<th>2023-02-01</th>
+<td>1675209600</td>
+<td>152.550000</td>
+<td>2023</td>
+<td>2</td>
+<td>AAPL</td>
+<td>-1685.0</td>
+<td>-5.882353</td>
+<td>0.055667</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+</tbody>
+</table>
+<p>122 rows × 10 columns</p>
+</div></div></div></div><div class="nb-cell nb-code-cell"><div class="nb-input" data-prompt-number="18"><pre class="language-python"><code class="language-python" data-language="python">sns<span class="token punctuation">.</span>lmplot<span class="token punctuation">(</span>data<span class="token operator">=</span>df<span class="token punctuation">,</span> x<span class="token operator">=</span><span class="token string">'mspr_roll'</span><span class="token punctuation">,</span> y<span class="token operator">=</span><span class="token string">'return'</span><span class="token punctuation">,</span> height<span class="token operator">=</span><span class="token number">4</span><span class="token punctuation">,</span> aspect<span class="token operator">=</span><span class="token number">1.5</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre></div><div class="nb-output" data-prompt-number="18"><img class="nb-image-output" decoding="async" src="data:image/png;base64,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hs1mgyRJaG1t7XPOiBEjIElS2GXNmjVJ6gUREVH2CCxWmHVOKcafVZj1QROgocBp/vz52LdvH7Zs2YJXX30V77zzDm666aYBb+NyuTBnzhysWrVqwPMeeOABHD9+PHi59dZbE9l0IiIiyhKaKEewf/9+bN68Ge+99x6mTJkCAFi7di3mzp2LRx99FFVVVRFvt3TpUgDA22+/PeD9W61WVFRUJLLJRERElIU0MeLU0NCAoqKiYNAEAHV1dZBlGTt27Bj0/a9ZswZDhw7FpEmT8Mgjj8Dn8w14vtvthsPhCLsQERFR9tPEiJPdbkdZWVnYMb1ejyFDhsButw/qvm+77TZ8/etfx5AhQ7B9+3asXLkSx48fx2OPPdbvbVavXo37779/UI9LRERE2pPWEacVK1b0Sczuffn000+T2oZly5bh4osvxvnnn4+bb74ZP//5z7F27Vq43e5+b7Ny5Uq0tbUFL4cPH05qG4mIiCgzpHXEafny5ViwYMGA59TU1KCiogLNzc1hx30+H1paWhKemzRt2jT4fD58+eWX+NrXvhbxHJPJBJPJlNDHJSIiosyX1sCptLQUpaWlZzxvxowZaG1txa5duzB58mQAwJtvvglVVTFt2rSEtmnPnj2QZbnP1CARERGRJnKcamtrMWfOHCxatAjr16+H1+vFkiVLcM011wRX1B09ehSzZ8/Gs88+i6lTpwLw50bZ7XY0NjYCAPbu3Qur1Yrhw4djyJAhaGhowI4dO/Ctb30LVqsVDQ0NuOOOO3DdddehuLg4bf0lIiKizKSJVXUA8Nxzz+Hcc8/F7NmzMXfuXFx44YV46qmngtd7vV4cOHAALpcreGz9+vWYNGkSFi1aBAC46KKLMGnSJLzyyisA/FNumzZtwqxZszBu3Dg8+OCDuOOOO8Lul4iIiCiAW64kALdcISIiyg2aGXEiIiIiSjcGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERRYuBEREREFCUGTkRERERR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"/></div></div><div class="nb-cell nb-markdown-cell"><p>The relationship is still super noisy. If anything, it’s a little opposite to what we’d expect, especially at the extreme values of our smoothed metric. </p>
+<p>Maybe the SEC is succeeding in stamping out insider trading. </p>
+<p>The reality is that insiders buy and sell for all sorts of reasons, many of which have nothing to do with their views on the stock itself.</p>
+<p>As I mentioned, there aren’t a whole lot of data points here – perhaps this would be interesting to revisit using a broader universe of stocks. </p>
+</div><div class="nb-cell nb-markdown-cell"><h2 id="conclusion">Conclusion</h2>
+<p><a href="https://finnhub.io/">finnhub.io</a> is a modern market data service with a well-documented REST API, open source client libraries, broad coverage, interesting data sets, and a generous free tier. </p>
+<p><em>What’s your preferred source of market data and why? Let me know in the comments!</em></p>
+</div></div></div></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>data</span>, <span>finnhub.io</span>, <span>notebook</span>, <span>sentiment</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-92479 post type-post status-publish format-standard has-post-thumbnail hentry category-data category-r category-time-series-modelling tag-quantitative-analysis tag-r tag-tidyverse pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-simple-trick-for-dealing-with-overlapping-data/"><img alt="A Simple Trick for Dealing with Overlapping Data" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="92480" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-300x171.webp" data-srcset="https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-300x171.webp 300w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-1024x585.webp 1024w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-768x439.webp 768w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-1536x878.webp 1536w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-84868 post type-post status-publish format-standard hentry category-data category-tools-of-the-trade tag-tradingview pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-81952 post type-post status-publish format-standard hentry category-data category-options category-quant-trading category-r tag-options tag-orats tag-quantitative-analysis tag-r pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">8 thoughts on “Exploring the finnhub.io API”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-32045">
+<article class="comment-body" id="div-comment-32045" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Kris. I enjoyed this blog and found it interesting the amount data and how reasonably easy it is to fetch, process and do some visual analysis of it.</p>
+<p>Looking forward to your next blog.</p>
+<p>Cheers,<br/>
+Alen</p>
+<span class="reply"><a aria-label="Reply to Alen Yokhanis" class="comment-reply-link" data-belowelement="div-comment-32045" data-commentid="32045" data-postid="72040" data-replyto="Reply to Alen Yokhanis" data-respondelement="respond" href="#comment-32045" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-32047">
+<article class="comment-body" id="div-comment-32047" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for reading Alen! Same here – it’s such a luxury having all that data at your fingertips and so easy to work with.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-32047" data-commentid="32047" data-postid="72040" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-32047" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-32050">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 02/23/2023 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-32052">
+<article class="comment-body" id="div-comment-32052" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Kris, enjoyed the post. Suss on the value of the alternate data but really wont know till tested.</p>
+<span class="reply"><a aria-label="Reply to Steven Pola" class="comment-reply-link" data-belowelement="div-comment-32052" data-commentid="32052" data-postid="72040" data-replyto="Reply to Steven Pola" data-respondelement="respond" href="#comment-32052" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-32160">
+<article class="comment-body" id="div-comment-32160" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Steven, yeah I agree. My personal experience is that much of that stuff tends to be correlated with contemporaneous returns, but not very useful in trying to predict forward returns. I’m sure there are exceptions out there, as well as novel use cases.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-32160" data-commentid="32160" data-postid="72040" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-32160" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-32153">
+<article class="comment-body" id="div-comment-32153" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thank you! </p>
+<p>Very useful, kind of standing on two legs these days.. Learned a ton of R coding during your classes in RW, but also I see the use of doing stuff in Python from time to time. Currently working with Airflow (thanks to Ajet of RW) then Python comes in handy as well although running R code with Airflow is working as well using a sidecar.</p>
+<p>Wes</p>
+<span class="reply"><a aria-label="Reply to Wes" class="comment-reply-link" data-belowelement="div-comment-32153" data-commentid="32153" data-postid="72040" data-replyto="Reply to Wes" data-respondelement="respond" href="#comment-32153" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-32159">
+<article class="comment-body" id="div-comment-32159" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Wes! Thanks for the comment. I’m with you on that one… I like doing data analysis in R more than any other language I’ve tried, but for data plumbing type applications, Python is usually my first choice.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-32159" data-commentid="32159" data-postid="72040" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-32159" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-32979">
+<div class="comment-body">
+				Pingback: Why Is My Finnhub.Io Request Returning Same Response Each Time? Update Mới - Chuyenphatnhanhdhlvn 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/finnhub-api/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

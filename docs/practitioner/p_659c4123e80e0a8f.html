@@ -1,0 +1,446 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>A Review of Zorro for Systematic Trading</title>
+<!-- source: https://robotwealth.com/systematic-trading-zorro/ -->
+<h1>A Review of Zorro for Systematic Trading</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-21833 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-trading-as-a-business category-trading-infrastructure category-zorro tag-opinion tag-trading-as-a-business tag-zorro pmpro-has-access" id="post-21833">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">April 16, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">A Review of Zorro for Systematic Trading</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="A Review of Zorro for Systematic Trading" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">One of the keys to running a successful systematic trading business is a relentless focus on <em>high return-on-investment activities</em>.
+
+High ROI activities include:
+
+<ul>
+<li>Implementing new trading strategies within a proven framework. An example might be to implement a portfolio of pairs trades in the equity market.</li>
+<li>Scaling existing strategies to new instruments or markets. For example, porting the pair trading setup to a different international equity market.</li>
+<li>Well planned iterative research, set up in such a way that you can test and invalidate ideas quickly. This is the kind of research we show in our Bootcamps.</li>
+</ul>
+
+Low ROI activities include:
+
+<ul>
+<li>Large scale data mining exercises or any research that requires significant effort be expended before the idea can be invalidated.</li>
+<li>Looking for unique alpha ideas when you could be implementing simple trades within a proven framework.</li>
+<li>Building your own backtesting platform<span class="inline-footnote" style="" title="You probably think you’ll learn a ton doing this and you’re not wrong about that – but it’s going to suck a huge amount of your time on something that you can buy in cost-effectively.">1<span class="footnoteContent" style="display:none;">You probably think you’ll learn a ton doing this and you’re not wrong about that – but it’s going to suck a huge amount of your time on something that you can buy in cost-effectively.</span></span></li>
+<li>Building your own execution platform<span class="inline-footnote" style="" title="Ditto.">2<span class="footnoteContent" style="display:none;">Ditto.</span></span></li>
+</ul>
+<img class="aligncenter perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2019/06/21165909/Screenshot-2019-07-14-at-22.32.50.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/>
+
+Of course, there’s room for fun and creativity in every business.
+
+But, if you’re serious about trading, you want to prioritise the activities that are most effective and give yourself the maximum chance of return on your capital, time and expenses.
+
+You want to <strong>Run it Like a Business.</strong>
+<img alt="" class="aligncenter wp-image-7415 perfmatters-lazy" data-sizes="(max-width: 450px) 100vw, 450px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/06/21165923/run_it_like_a_business-284x300.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/06/21165923/run_it_like_a_business-284x300.png 284w, https://media.robotwealth.com/wp-content/uploads/2019/06/21165923/run_it_like_a_business-600x633.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/06/21165923/run_it_like_a_business-768x810.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/06/21165923/run_it_like_a_business-971x1024.png 971w, https://media.robotwealth.com/wp-content/uploads/2019/06/21165923/run_it_like_a_business-569x600.png 569w" decoding="async" height="475" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='450'%20height='475'%20viewBox='0%200%20450%20475'%3E%3C/svg%3E" width="450"/>
+<h2>Reviewing the Zorro Platform</h2>
+<a href="https://robotwealth.com/tag/zorro/" rel="noopener noreferrer" target="_blank">Zorro</a> is a tool that can level-up the productivity of a systematic trading operation.
+
+<img class="aligncenter perfmatters-lazy" data-src="https://www.zorro-trader.com/images/zorro.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/>
+
+Zorro is more than an automated trading platform. It is:
+
+<ul>
+<li>Professional grade backtesting software</li>
+<li>An execution engine that supports multiple brokers and asset classes out of the box, as well as essentially any trading strategy you can dream up</li>
+<li>A suite of analytical tools from the fields of statistics, machine learning, signal processing, optimisation and more</li>
+<li>A collection of systematic trading utilities – tools for getting data from multiple sources, controlling other programs, building custom user-interfaces for individual strategies or portfolios, post-trade reporting/reconciliation/analysis</li>
+</ul>
+
+The breadth of Zorro’s feature list is astounding, and it continues to grow as the software is actively developed and <a href="https://robotwealth.com/my-experience-dealing-with-zorros-support-team/" rel="noopener noreferrer" target="_blank">supported</a>.
+
+<div class="convertful-34035"></div>
+<h3>How Zorro facilitates high ROI activities</h3>
+
+If you’re starting out with systematic trading and looking for options for your technology stack, Zorro is one of the fastest and most efficient paths to sensible, serious automated trading for independent traders.
+
+It allows you to focus on the things that lead to results – strategy development and analysis – without spending a lot of time and effort on low ROI activities. It helps you devote more time to the few vital tasks that affect your bottom line:
+
+<img class="aligncenter perfmatters-lazy" data-src="https://dearsystems.com/wp-content/uploads/2019/07/8020.png" decoding="async" height="555" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1046'%20height='555'%20viewBox='0%200%201046%20555'%3E%3C/svg%3E" width="1046"/>
+<h3>Zorro’s features</h3>
+
+Zorro’s <strong>scripting language is very easy to pick up</strong> – complete beginners can be quite productive within days, coders with another language under their belts within hours.
+
+It comes bundled with <strong>hundreds of pre-coded functions</strong>, including:
+
+<ul>
+<li>Mean-variance optimisation</li>
+<li>Statistical functions (moments, covariance, correlation, regression etc)</li>
+<li>Machine learning algorithms</li>
+<li>The suite of technical analysis tools</li>
+<li>Tools for producing random data, and shuffling, detrending and bootstrapping price curves</li>
+<li>Trade-related functions for opening, closing and managing positions, even on a tick-by-tick basis</li>
+</ul>
+
+There are literally too many tools to list and they cover an incredible breadth of functionality – from algorithms that detect so-called support and resistance levels through to a function that even downloads and parses the Commitment of Traders report!
+
+Zorro supports various approaches to <strong>parameter optimisation</strong> out of the box:
+
+<ul>
+<li>Walk-forward</li>
+<li>Brute-force (that is, trying every possible combination)</li>
+<li>Independent optimisation (optimises each parameter separately rather than trying every combination)</li>
+<li>Genetic optimisation</li>
+<li>Ability to optimise towards either single peaks or plateus of performance</li>
+<li>Ability to optimise for any goal you can write in a function (for instance, maximising sharpe ratio)</li>
+<li>Train on oversampled price data (shifts bar boundaries to generate new price curves derived from the original)</li>
+</ul>
+
+With Zorro you can also work with <strong>data from numerous sources</strong> directly within the software:
+
+<ul>
+<li>A broker</li>
+<li>Any website via included HTTP functions</li>
+<li>An FTP site via included FTP functions</li>
+<li>Various web services directly via API (Qandl, Alpha Vantage, IEX, Stooq, Google, NxCore, Bittrex, CryptoCompare)</li>
+<li>Local files – csv, text or binary</li>
+</ul>
+<strong>Zorro’s backtests are fast</strong> – really fast. A benchmark simple technical strategy backtested over ten years of one-minute price data took around 3 seconds with Zorro, while the same strategy on TradeStation took around 70 seconds, on MultiCharts around 155 seconds, and on MetaTrader’s backtester, around 110 seconds.
+
+Zorro’s backtests are not only fast, they’re also <strong>very accurate</strong>. Simulation is suprisingly close to real trading, and the software is clear about the assumptions it makes, as well as the user’s ability to customise them.
+
+It’s also easy to test simulation against reality – in fact, Zorro can simulate a strategy that’s been trading for a while to directly compare the simulated results to real performance.
+
+Zorro also has some nice tools for <strong>debugging trading strategies</strong>. Debugging a trading strategy is the process of ensuring that your intended trade logic is actually borne out by the code that you write (as opposed to debugging code that doesn’t compile).
+
+Using Zorro’s interactive charting window, you can replay your strategy on a bar-by-bar or trade-by-trade basis, reconciling it visually with your intended logic.
+
+Here’s a short video that shows that feature in action
+
+<div style="position: relative; padding-bottom: 56.25%; height: 0;"></div>
+
+ 
+
+Zorro is also <strong>highly extensible</strong> (if its hundreds of out of the box tools weren’t enough for you). It can initialise and communicate with <strong>R and Python</strong> processes in order to leverage anything you write in those languages, or any package or library written for them, from within a Zorro script.
+
+That makes Zorro very much <em>not</em> an all or nothing choice. Anything you like to do in Python or R, you can do in Zorro too.
+
+Finally, there is <strong>little overhead to go from research to live trading</strong>. You can literally just click a different button on the Zorro interface to trade instead of simulate.
+
+We typically add a bunch of implementation detail to our scripts – custom logging and reporting, sizing based on portfolio volatility targeting, automated data pulling from the broker to later check simulation vs reality, etc. But the ability to trade the same script that you used in your development process is a big win.
+
+Out of the box, Zorro can <strong>trade via direct API connection</strong> with:
+
+<ul>
+<li>Interactive Brokers (through both TWS and Gateway)</li>
+<li>IEX</li>
+<li>Oanda</li>
+<li>IG Markets</li>
+<li>Dukascopy</li>
+<li>AllyInvest</li>
+<li>Sierra Chart</li>
+<li>MT4/MT5 brokers (by directly controlling the MT4/MT5 platform)</li>
+<li>Bittrex</li>
+<li>Bitfinex</li>
+<li>Binance</li>
+<li>Coinigy</li>
+</ul>
+
+Zorro also supports <strong>multiple asset classes</strong> including equities, futures, options, foreign exchange and cryptocurrency.
+
+Finally, Zorro can do a number of niche things that you just don’t see in typical trading software.
+
+For instance, you can connect a single Zorro to up to 12 different brokers and attempt to <strong>arbitrage high-frequency discrepancies</strong> in their price feeds (this doesn’t happen often, but it can happen when brokers offer OTC products or make markets). You can even simulate such strategies using tick data obtained from the different brokers directly in Zorro.
+
+<h3>Cost</h3>
+
+Zorro is offered under an incredibly generous commercial model. There’s a free version which can do <em>almost</em> everything mentioned above (most notably, the free version won’t connect to all the listed brokers or data sources).
+
+The free version of Zorro is limited to trading accounts capitalised up to $30,000 and has a profit limit of $7,000 in a year. If you make more than that, you’ll be prompted to upgrade to Zorro S (the commercial version) to continue using the software.
+
+This strikes me as incredibly generous. The developers are essentially saying “Here, use our software as much as you like. You can start paying us if you make some actual money with it.”
+
+<h2>Downsides</h2>
+
+Of course, no trading platform is perfect, and each is limited in its own way. This is my take on Zorro’s limitations.
+
+Firstly, Zorro is a backtesting and trading tool. And when you start thinking about a trading idea, there’s usually a lot of research you do before you get to the backtesing stage. For that higher level analysis – where we try to pick apart the core idea without resorting to trading rules – we need a different tool. My go-to tool for that sort of thing is R, but lots of people use Python or other things.
+
+This is not a limitation of Zorro <em>per se</em>, but it does imply that Zorro alone isn’t going to represent your entire research and development stack. But it would be unreasonable to expect that of any tool.
+
+Next, C-based languages are a bit old-school. On the one hand, people coming from high level interpreted languages (think Python, R) will find things like variable typing a quaint anachronism. And they might be horrified to work with pointers directly. But on the other hand, you could quite easily make the argument that you become a better programmer if you know a little C because it forces you to think about things that are abstracted from you in languages like Python and R.
+
+In any event, Zorro’s C-based scripting language is about as simple as C gets, so I don’t think this is a big deal at all.
+
+Probably the most important thing to think about when picking up Zorro is that Zorro makes it easy to do quite high-powered things at the outset.
+
+<blockquote>
+<em>Hang on. That doesn’t sound like a limitation at all.</em></blockquote>
+
+I guess it’s not a limitation. But it can quite easily bring you unstuck.
+
+For instance, if you’re a beginner and you pick up Zorro, the first thing you do is fire up Zorro’s optimisation engine and mine a price curve for patterns that worked in the past. And with Zorro, that’s <em>incredibly</em> easy to do. It’s literally half an hour’s work.
+
+The danger with that is that it’s not really a very useful thing to start with. In fact, it’s almost guaranteed to send you into a spiral of chasing down random effects without ever really getting to a good, robust strategy.
+
+The place you really want to start is with an understanding of the core effect your’re trying to harness. And Zorro isn’t really the right tool for that job. Sure, once you’ve understood the effect, Zorro is absolutely a good choice to design and test trading rules with which to harness it.
+
+Said differently, it’s easy to abuse the tools that Zorro provides.
+
+<h2>Conclusions</h2>
+
+As an independent trader, your time is precious. You need to be using it as effectively as possible to do the things that make a difference to your bottom line. Those things are nearly always centred on researching and testing trading ideas.
+
+Don’t fall into the trap of doing low ROI activities, like developing your own simulation tools, when they already exist. Someone else has solved this, and let’s be honest, has solved it better than you or I could ever dream of solving it. So leverage that. And focus instead on the things that bring dollars through the door of your trading operation.
+
+At every step, ask how you can achieve your goals as quickly as possible. Choose a technology stack that pushes you towards that goal.
+
+Zorro is a great choice as a backtesting and trading engine because:
+
+<ul>
+<li>It uses a simple scripting language</li>
+<li>It has a huge array of included functions, ready to use out of the box</li>
+<li>It can access data from multiple sources with just a few lines of code</li>
+<li>It has a range of parameter optimisation and walk-forward tools</li>
+<li>Its backtests are accurate and can easily be compared with real performance for assumption checking</li>
+<li>You can visually debug strategy logic</li>
+<li>It leverages popular languages like Python and R and their collection of libraries</li>
+<li>You can go from backtesting to trading with a button click</li>
+<li>A variety of brokers and asset classes are supported</li>
+<li>Backtests are lightning fast</li>
+<li>It has a generous commercial model</li>
+</ul>
+
+But with Zorro it’s useful to consider that with great power comes great responsibility. Zorro’s powerful optimisation, machine learning, and other tools make it very easy to fall into an inappropriate reliance on them. This is more than unhelpful – it’s potentially a death sentence for a trading operation.
+
+We see beginners fall into this trap all the time. And who can blame them? Of course you’re going to reach for that genetic optimiser if all it takes to use it is two lines of code. And let’s be honest…every experienced systematic trader has done this at some point or another.
+
+The good news is that we can show you how to harness these powerful tools into a smart research and development workflow that scales as you grow. In our upcoming <a href="https://robotwealth.com/zorro-priority-org/">Zero to Robot Master Bootcamp</a>, we’ll teach you not only how to operate the software, but also how to use it wisely as part of a broader research and development effort. We’ll include extensive code examples, we’ll talk them through with you in our weekly webinars, and most importantly, we’ll place them within the context of a sensible research approach that forms the basis of our own trading operation.
+
+<div class="convertful-34041"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>opinion</span>, <span>trading as a business</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">11 thoughts on “A Review of Zorro for Systematic Trading”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-13721">
+<article class="comment-body" id="div-comment-13721" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>There’s another huge downside to Zorro: It kinda sucks to keep a Zorro instance up-to-date and running reliably. There’s very limited automation of Zorro itself, no way to easily monitor it and very little in the way of performance monitoring (I’m not aware of a robust way other than connecting to the underlying account and looking at performance there)</p>
+<span class="reply"><a aria-label="Reply to Bob" class="comment-reply-link" data-belowelement="div-comment-13721" data-commentid="13721" data-postid="21833" data-replyto="Reply to Bob" data-respondelement="respond" href="#comment-13721" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-14615">
+<article class="comment-body" id="div-comment-14615" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This is a good point Bob. There’s definitely an overhead to managing and monitoring a Zorro instance…although that’s very much par for the course in any automated trading system. </p>
+<p>There is minimal performance reporting in Zorro out of the box – it writes a bunch of stuff to an HTML file that you can view in a browser. But we tend to write our own custom logging functions so that we can see the things that we think are interesting. Again, par for the course. </p>
+<p>One of our Robot Wealth Pro members put together a framework for managing Zorro output via firebase which you might find helpful: <a href="https://github.com/phl3x0r/zorro-fire-log" rel="nofollow ugc">https://github.com/phl3x0r/zorro-fire-log</a></p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14615" data-commentid="14615" data-postid="21833" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14615" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-minshengw even thread-odd thread-alt depth-1" id="comment-14183">
+<article class="comment-body" id="div-comment-14183" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Zorro is cheap and good. Looking forward to the Zero to Robot Master bootcamp.</p>
+<span class="reply"><a aria-label="Reply to Minsheng Wu" class="comment-reply-link" data-belowelement="div-comment-14183" data-commentid="14183" data-postid="21833" data-replyto="Reply to Minsheng Wu" data-respondelement="respond" href="#comment-14183" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-32187">
+<article class="comment-body" id="div-comment-32187" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>So Kris, 3 years later, are you still using Zorro?</p>
+<p>After over a decade using Tradestation I’m currently evaluating Zorro S and there are indeed  a lot of things to like. However, Zorro could use more popularity but for that the interface would need a major facelift (or better redesign) with some basic features added and 2023 charting capabilities. Otherwise it will stay a niche-product, that in time will disappear from the scene.</p>
+<span class="reply"><a aria-label="Reply to Max" class="comment-reply-link" data-belowelement="div-comment-32187" data-commentid="32187" data-postid="21833" data-replyto="Reply to Max" data-respondelement="respond" href="#comment-32187" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2 parent" id="comment-32206">
+<article class="comment-body" id="div-comment-32206" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Max. Yeah, still using Zorro for various bits and pieces. I agree that the interface is not to everyone’s liking. It’s still very good for fast backtesting applications, and as a trading engine in certain circumstances.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-32206" data-commentid="32206" data-postid="21833" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-32206" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-33808">
+<article class="comment-body" id="div-comment-33808" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello, Kris, do you have an email where I can write to you to talk with you and ask you some specific questions about zorro?</p>
+<span class="reply"><a aria-label="Reply to Edgar Herrera" class="comment-reply-link" data-belowelement="div-comment-33808" data-commentid="33808" data-postid="21833" data-replyto="Reply to Edgar Herrera" data-respondelement="respond" href="#comment-33808" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-4" id="comment-36299">
+<article class="comment-body" id="div-comment-36299" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Edgar, sure, you can get in touch via <a href="/cdn-cgi/l/email-protection#bcdfd3d2c8dddfc8fcced3ded3c8cbd9ddd0c8d492dfd3d1"><span class="__cf_email__" data-cfemail="f3909c9d87929087b3819c919c878496929f879bdd909c9e">[email protected]</span></a></p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-36299" data-commentid="36299" data-postid="21833" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-36299" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-36249">
+<article class="comment-body" id="div-comment-36249" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,</p>
+<p>can we know what you offer at ZORROs bootcamp?<br/>
+In the FAQ i have read, that no special ZORRO programming knowledge will play a role. But thats I want to learn.</p>
+<p>Regards Jürgen</p>
+<span class="reply"><a aria-label="Reply to Jürgen" class="comment-reply-link" data-belowelement="div-comment-36249" data-commentid="36249" data-postid="21833" data-replyto="Reply to Jürgen" data-respondelement="respond" href="#comment-36249" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-36298">
+<article class="comment-body" id="div-comment-36298" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Jürgen,</p>
+<p>We do have some courses on using Zorro that we offer to our membership group. I will send you an email with details. </p>
+<p>Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-36298" data-commentid="36298" data-postid="21833" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-36298" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-48500">
+<div class="comment-body">
+				Pingback: Exploiting The Non-Farm Payrolls Drift - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/systematic-trading-zorro/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,237 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Quant Signal Trade-Offs in the Real World</title>
+<!-- source: https://robotwealth.com/quant-signal-trade-offs-in-the-real-world/ -->
+<h1>Quant Signal Trade-Offs in the Real World</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-81407 post type-post status-publish format-standard hentry category-factors category-quant-trading category-think-like-a-trader tag-quant-signals tag-quantitative-trading pmpro-has-access" id="post-81407">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">September 22, 2023</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Quant Signal Trade-Offs in the Real World</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Quant Signal Trade-Offs in the Real World" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">I want to discuss a couple of simple trade-off considerations around quant trading signals that may not be obvious.</p>
+<p class="wp-block-paragraph">Here’s the price of some asset:</p>
+<figure class="wp-block-image"><img alt="" class="perfmatters-lazy" data-src="https://therobotjames.com/media/img1.jpg" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></figure>
+<p class="wp-block-paragraph">Our main job is to predict how it’s likely to move. To do this, you use information about it that you think is predictive. And at any point in time:</p>
+<ul class="wp-block-list">
+<li>New information is appearing (trades, quotes, events, chatter).</li>
+<li>Old information that used to be very important is becoming less so.</li>
+</ul>
+<figure class="wp-block-image"><img alt="" class="perfmatters-lazy" data-src="https://therobotjames.com/media/ing2.jpg" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></figure>
+<p class="wp-block-paragraph">You use this information to try to create a forecast (explicit or implicit) of how you expect price to move over some future period.</p>
+<p class="wp-block-paragraph">To figure out if your forecast is any good, you might get a bunch of observations of your forecast and the price changes in some forward period (let’s say a minute).</p>
+<p class="wp-block-paragraph">Then, you might plot the subsequent returns against the forecast and, ideally, it’d look a bit like this:</p>
+<figure class="wp-block-image"><img alt="" class="perfmatters-lazy" data-src="https://therobotjames.com/media/img4.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></figure>
+<p class="wp-block-paragraph">But you’ve probably got more observations than usefully fit on a scatter plot, and it’s going to look like a big old blob because market returns are super random.</p>
+<p class="wp-block-paragraph">So instead, you’ll do some reduction. You might sort your observations into deciles or centiles or similar and plot mean returns.</p>
+<p class="wp-block-paragraph">And you may need to transform it in some way so that it’s clamped to some range, distributed in a way you understand, and doesn’t go crazy in the tails:</p>
+<figure class="wp-block-image"><img alt="" class="perfmatters-lazy" data-src="https://therobotjames.com/media/centile.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></figure>
+<p class="wp-block-paragraph">This is all well and good. However, <strong><em>being able to predict short-term returns might not be the win you think it is.</em></strong></p>
+<p class="wp-block-paragraph">Trading is expensive, and it’s even more expensive if you are doing it when <em>you </em>want to (rather than someone else).</p>
+<p class="wp-block-paragraph">If your forecast signal looks like this, you will have a bad time:</p>
+<figure class="wp-block-image"><img alt="" class="perfmatters-lazy" data-src="https://therobotjames.com/media/pic5.jpg" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></figure>
+<p class="wp-block-paragraph">You might be really good at predicting minute-ahead returns, but you don’t actually want to turn over every minute.</p>
+<p class="wp-block-paragraph"><strong><em>You can’t afford that.</em></strong></p>
+<p class="wp-block-paragraph">So you’d prefer your signal to be less volatile, more auto-correlated, smoother, like this:</p>
+<div class="gb-container gb-container-b82e3ab0">
+<figure class="wp-block-image size-full"><img alt="" class="wp-image-81409 perfmatters-lazy" data-sizes="(max-width: 921px) 100vw, 921px" data-src="https://media.robotwealth.com/wp-content/uploads/2023/09/21155049/smoothsignal.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2023/09/21155049/smoothsignal.jpg 921w, https://media.robotwealth.com/wp-content/uploads/2023/09/21155049/smoothsignal-300x136.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2023/09/21155049/smoothsignal-768x349.jpg 768w" decoding="async" height="419" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='921'%20height='419'%20viewBox='0%200%20921%20419'%3E%3C/svg%3E" width="921"/></figure>
+</div>
+<p class="wp-block-paragraph">Thus, the first trade-off is between how effective your forecast is versus how auto-correlated your signal is.</p>
+<p class="wp-block-paragraph"><strong><em>You’d prefer a smoother signal over a hyperactive, jumpy one with a slightly higher correlation to future returns.</em></strong></p>
+<p class="wp-block-paragraph">Some things are naturally more auto-correlated <em>(carry, rv signals)</em>. Other naturally jumpy signals can be smoothed with EWMAs and the like, which nicely model new information appearing and old information becoming slowly redundant.</p>
+<p class="wp-block-paragraph"><strong>We can look at this from the other direction, too.</strong></p>
+<p class="wp-block-paragraph">The choice of 1 min future returns was arbitrary. We might be making trading decisions on that frequency, but we don’t intend to turn over at that frequency.</p>
+<p class="wp-block-paragraph">So we care about how predictive our signal is over longer horizons, too.</p>
+<p class="wp-block-paragraph">We might calculate the correlation of our signal with future returns over a range of other horizons. And we’d much rather this decayed slowly than quickly:</p>
+<figure class="wp-block-image"><img alt="" class="perfmatters-lazy" data-src="https://therobotjames.com/media/decayslow.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></figure>
+<p class="wp-block-paragraph">If it decays quickly, then it’s going to be very competitive to get in for the good bit. You’re going to need to be fast. </p>
+<p class="wp-block-paragraph">And, if we’re going to trade it successfully after costs, we’re going to have to be sat in positions with zero or very low expected return until we can get out of them cost-effectively.</p>
+<p class="wp-block-paragraph"><strong><em>So, all things being equal, we’d prefer the slightly less predictive signal that decayed more slowly.</em></strong></p>
+<p class="wp-block-paragraph">These trade-offs are important and aren’t always easy to navigate and reason about.</p>
+<p class="wp-block-paragraph"><strong>Some tips:</strong></p>
+<ul class="wp-block-list">
+<li>Plot everything – it pays to understand your signal.</li>
+<li>Keep everything as simple as possible, chunk big problems down, and think through things as clearly as possible.</li>
+<li>But also understand that, while you might chunk things down and look at them separately, the parts interact in wonderful, confusing ways.</li>
+<li>Use simulation to explore this as best you can.</li>
+<li>Thank the market gods.</li>
+</ul>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>quant signals</span>, <span>quantitative trading</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">5 thoughts on “Quant Signal Trade-Offs in the Real World”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-34541">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 09/22/2023 - Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-34717">
+<article class="comment-body" id="div-comment-34717" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>but how would you do it in quantitative way ? to know that this more frequent signal is turning over too much and cannot beat the cost of trading ?</p>
+<span class="reply"><a aria-label="Reply to ting yuan" class="comment-reply-link" data-belowelement="div-comment-34717" data-commentid="34717" data-postid="81407" data-replyto="Reply to ting yuan" data-respondelement="respond" href="#comment-34717" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2 parent" id="comment-34719">
+<article class="comment-body" id="div-comment-34719" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>You could do some analysis and model it out, but I’d normally attempt to simulate it as accurately as possible to explore the turnover/cost trade-off. </p>
+<p>There are a number of decent simulation frameworks out there, but I wrote <a href="https://github.com/Robot-Wealth/rsims" rel="noopener nofollow ugc" target="_blank">this one</a> for R users for exactly this purpose – exploring the turnover/cost trade-off.</p>
+<p>It was built for speed, so that you could run big simulations quickly to explore different approaches to dampening your signals. It takes matrixes of portfolio component weights at each timestep, which is often the output (or easy to derive from the output) of a quant research process. I built it in R because I do most of my research work in R. </p>
+<p>If it’s of interest, maybe I can do an article with an example of this.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-34719" data-commentid="34719" data-postid="81407" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-34719" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3" id="comment-34763">
+<article class="comment-body" id="div-comment-34763" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>what I actually meant was how would you make decision based on this tradeoff. suppose you will have the expected return per capita, as well as the raw trading cost model which is usually independent of your trading strategy, in most of the cases this return cannot beat the cost, while you may estimate the total model after considering all kinds of factors, but at the stage of selecting factors I have not seen a clear path towards this</p>
+<span class="reply"><a aria-label="Reply to ting yuan" class="comment-reply-link" data-belowelement="div-comment-34763" data-commentid="34763" data-postid="81407" data-replyto="Reply to ting yuan" data-respondelement="respond" href="#comment-34763" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-34780">
+<div class="comment-body">
+				Pingback: Quant Signal Trade-Offs in the Real World - QuantInfo - Empowering Algorithmic Trading Insights 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/quant-signal-trade-offs-in-the-real-world/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

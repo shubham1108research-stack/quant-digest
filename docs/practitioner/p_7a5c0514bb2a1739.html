@@ -1,0 +1,692 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>https://www.aqr.com/insights/perspectives/efficient-frontier-theory-for-the-long-run</title>
+<!-- source: https://www.aqr.com/insights/perspectives/efficient-frontier-theory-for-the-long-run -->
+<h1></h1>
+
+<div class="article-page page-body">
+<div class="article-page__header__container">
+<div class="container">
+
+<!-- icons -->
+<div class="article-page__header__secondary">
+<div>
+</div>
+<div class="article-page__icons__container" data-script="shareIcons" style="">
+<div class="article-page__ellipsis">
+<a class="icon-more"></a>
+</div>
+<div class="article-page__icons">
+<a class="icon-share" data-analytics='{"intCategory":"article","intAction":"share","intLabel":"Efficient Frontier “Theory” for the Long Run","event":"interaction_event"}' data-script="clickTracker" title="Share"></a>
+<a class="icon-subscribe" data-analytics='{"intCategory":"global","intAction":"subscribe","intLabel":"Subscribe","event":"interaction_event"}' data-script="clickTracker" href="/MyAQR/My-Subscriptions" title="Subscribe"></a>
+</div>
+<div class="article-page__icons__sub">
+<a class="icon-twitter" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"twitter","event":"interaction_event"}' data-script="clickTracker" href="https://twitter.com/share?text=Efficient%20Frontier%20%e2%80%9cTheory%e2%80%9d%20for%20the%20Long%20Run&amp;url=https%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fEfficient-Frontier-Theory-for-the-Long-Run&amp;via=AQRCapital" target="blank"></a>
+<a class="icon-linkedin" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"linked in","event":"interaction_event"}' data-script="clickTracker" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fEfficient-Frontier-Theory-for-the-Long-Run&amp;title=Efficient%20Frontier%20%e2%80%9cTheory%e2%80%9d%20for%20the%20Long%20Run&amp;summary=Financial+theory+has+taken+a+lot+of+abuse+recently%2c+specifically+some+of+the+basic+tenets+of+modern+portfolio+theory.+We+think+it%27s+better+to+step+back+and+judge+ideas+over+the+long-term+and+we+show+why." target="blank"></a>
+<a class="icon-email" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"email","event":"interaction_event"}' data-script="clickTracker" href="mailto:?subject=AQR%20%7c%20Efficient%20Frontier%20%e2%80%9cTheory%e2%80%9d%20for%20the%20Long%20Run&amp;body=Efficient%20Frontier%20%e2%80%9cTheory%e2%80%9d%20for%20the%20Long%20Run%0ahttps%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fEfficient-Frontier-Theory-for-the-Long-Run"></a>
+</div>
+</div>
+</div>
+<!-- icons -->
+</div>
+</div>
+<div class="article-nav" data-script="articleNav" id="article-nav" v-bind:class="[{ _open: open }, { _fix: scrolled }, { _empty: empty }]">
+<div class="container">
+<div class="article-nav__left">
+<span class="article-nav__current text--default" v-on:click="openClose()">
+<span class="article-nav__section-number" v-bind:class="{ _showing: numberSection }">${ numberSection }</span>
+<span class="article-nav__section-title">${ text }</span>
+<i class="icon-caret"></i>
+</span>
+</div>
+<div class="article-nav__right">
+<div class="article-page__header__secondary">
+<div class="article-page__icons__container" v-bind:class="[{ active: shareOpen }, { open: linksOpen }]">
+<div class="article-page__ellipsis">
+<a class="icon-more" v-on:click="showIcons"></a>
+</div>
+<div class="article-page__icons">
+<a class="icon-share" title="Share" v-on:click="showHideShare"></a>
+<a class="icon-subscribe" data-analytics='{"intCategory":"global","intAction":"subscribe","intLabel":"Subscribe","event":"interaction_event"}' data-script="clickTracker" href="/MyAQR/My-Subscriptions" title="Subscribe"></a>
+</div>
+<div class="article-page__icons__sub">
+<a class="icon-twitter" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"twitter","event":"interaction_event"}' data-script="clickTracker" href="https://twitter.com/share?text=Efficient%20Frontier%20%e2%80%9cTheory%e2%80%9d%20for%20the%20Long%20Run&amp;url=https%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fEfficient-Frontier-Theory-for-the-Long-Run&amp;via=AQRCapital" target="blank"></a>
+<a class="icon-linkedin" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"linked in","event":"interaction_event"}' data-script="clickTracker" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fEfficient-Frontier-Theory-for-the-Long-Run&amp;title=Efficient%20Frontier%20%e2%80%9cTheory%e2%80%9d%20for%20the%20Long%20Run&amp;summary=Financial+theory+has+taken+a+lot+of+abuse+recently%2c+specifically+some+of+the+basic+tenets+of+modern+portfolio+theory.+We+think+it%27s+better+to+step+back+and+judge+ideas+over+the+long-term+and+we+show+why." target="blank"></a>
+<a class="icon-email" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"email","event":"interaction_event"}' data-script="clickTracker" href="mailto:?subject=AQR%20%7c%20Efficient%20Frontier%20%e2%80%9cTheory%e2%80%9d%20for%20the%20Long%20Run&amp;body=Efficient%20Frontier%20%e2%80%9cTheory%e2%80%9d%20for%20the%20Long%20Run%0ahttps%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fEfficient-Frontier-Theory-for-the-Long-Run"></a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container article-nav__toc-wrap">
+<span class="article-nav__inner-title">
+                Efficient Frontier “Theory” for the Long Run
+            </span>
+</div>
+<div class="article-nav__outside"></div>
+</div>
+<div class="article-page__content">
+<div class="article-page__body">
+<div class="article-page-body">
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p>(Corrected December 12, 2014)</p><p>Financial theory has taken a lot of abuse recently, specifically some of the basic tenets of modern portfolio theory. Some of it we at AQR aid and abet (just two examples: <a href="/sitecore/service/notfound.aspx?item=web%3a%7bD6343B8F-54FB-47FB-ACB0-EF726DE14BD8%7d%40en"></a><a href="/Insights/Research/Journal-Article/The-Great-Divide">markets are good but not perfect</a>, and <a href="/sitecore/service/notfound.aspx?item=web%3a%7bE6E60788-FD88-45DB-AA37-45964353B2AF%7d%40en"></a><a href="/Insights/Perspectives/Risk-Parity-Why-We-Fight-Lever">risk balancing beats capitalization weighting</a>). But a fair chunk of the abuse comes from our industry’s collective tendency to judge ideas over relatively short periods, even if — or precisely because — short periods often feel like long periods. Thus, it’s important to occasionally step back and note that when examined properly, the very basics hold up better than many think or sometimes casually assert.</p><p>To explore this, I’m going to do some analysis very similar to something I saw <a href="http://en.wikipedia.org/wiki/Gary_P._Brinson">Gary Brinson</a> do many years ago (at least I think it was Gary; of course, while I’ve stolen the basic idea, any errors of concept or execution are my own). While the whole concept is borrowed, a fair amount of this will be out of sample as I’m getting old and it was a while ago! To start off, if you wanted to create an efficient frontier of stocks, bonds and commodities (here, I just look at the U.S., though I think, from distant memory, that Gary’s version included international and possibly small stocks, too) you’d probably expect:</p><ul>
+<li>Bonds (U.S. 10-year Treasury bonds) to be lower volatility and lower expected return;</li>
+<li>Stocks (S&amp;P 500) and commodities (S&amp;P GSCI) to be higher volatility and higher expected return. Having said this, commodity expected returns are more difficult to pin down. Why? Certainly they are harder because their weight within the market portfolio is quite arguable, but also because they seem to have low correlation with the market portfolio of wealth. So, unlike equities you probably expect lower returns compared with their volatility. In fact, whether or not you expect positive excess returns over cash for commodities is a controversial topic. We would (just our opinion) expect positive — but not as high as stocks (again, because their risk is more diversifiable) — even though commodities have been, and probably will remain, quite volatile. Of course, we also have the benefit of knowing what the final figure at the end of this piece looks like!</li>
+</ul><p>All of the analysis below is done using excess returns over cash, and represent annualized realized monthly arithmetic average returns and annualized monthly standard deviations.</p><p>We begin with 1970-1974 and proceed in five-year increments (for all of the charts I keep the range of the X axes constant, as is my preference for comparing exhibits, but I can’t indulge this preference for the Y axes because they just vary too much).</p>
+</div>
+</div>
+<section class="article-page__image" data-experience-editor-mode-on="False" data-script="featureimage">
+<input class="hasmobileimage" id="hasmobileimage" type="hidden" value="false"/>
+<div class="container">
+<article class="article-page__image__header">
+<p class="article-page__image__title" style="font-size: 20px"></p>
+<p class="article-page__image__desc text--small"></p>
+</article>
+</div>
+<div class="container imgContainer modalTrigger">
+<div class="article-page__image__container">
+<picture><source media="(max-width: 768px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to1974RMRA.png?w=768&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=FF8989F8EC0CA6DA17CD6C0BD75C9B2B 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to1974RMRA.png?w=1536&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=BF62B2B2EF31E252B8FC7D1A8C923F59 2x"><source media="(max-width: 1024px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to1974RMRA.png?w=1024&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=733271FA7F31136D1F84A457AF38B2CE 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to1974RMRA.png?w=2048&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=C7B96E2F457E4F126B5ABAD8EFE5C459 2x"><img alt="Realized Monthly Returns Annualized 1970-74" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to1974RMRA.png?usecustomfunctions=1&amp;centercrop=1 "/></source></source></picture> <img class="article-page__image-pdf" data-aqr-image-pdf="https://www.aqr.com/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to1974RMRA.png"/>
+</div>
+</div>
+<div class="container containermobile" style="display:none">
+<div class="article-page__image__container">
+</div>
+</div>
+</section>
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p>Well the first five-year period certainly doesn’t look right! Stocks shouldn’t have a lower expected return than bonds (I’m foreshadowing the ultimate point here of course as these are not “expected” returns but realized returns). And negative to boot! And commodities can’t be that good. What gives? This theory stuff is not starting out well… Maybe the next five years will restore some sanity?</p>
+</div>
+</div>
+<section class="article-page__image" data-experience-editor-mode-on="False" data-script="featureimage">
+<input class="hasmobileimage" id="hasmobileimage" type="hidden" value="false"/>
+<div class="container">
+<article class="article-page__image__header">
+<p class="article-page__image__title" style="font-size: 20px"></p>
+<p class="article-page__image__desc text--small"></p>
+</article>
+</div>
+<div class="container imgContainer modalTrigger">
+<div class="article-page__image__container">
+<picture><source media="(max-width: 768px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1975to1979RMRA.png?w=768&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=34F718A4E07E95F8BBEBDB0EE5D72894 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1975to1979RMRA.png?w=1536&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=9F22A7F16281347F7ECC56FF0E0DE701 2x"><source media="(max-width: 1024px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1975to1979RMRA.png?w=1024&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=3552B2A49D9798A197951CE57CCDBCBD 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1975to1979RMRA.png?w=2048&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=F3025BD6D07B7B6D1ECC60DF77B8132E 2x"><img alt="Realized Monthly Returns Annualized 1975-79" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1975to1979RMRA.png?usecustomfunctions=1&amp;centercrop=1 "/></source></source></picture> <img class="article-page__image-pdf" data-aqr-image-pdf="https://www.aqr.com/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1975to1979RMRA.png"/>
+</div>
+</div>
+<div class="container containermobile" style="display:none">
+<div class="article-page__image__container">
+</div>
+</div>
+</section>
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p>Darn, different but not much better. Stocks earned positive returns (though not enough to offset the early-decade losses). But now bonds are losing money: they sure aren't riskless. Investing is hard.</p><p>Maybe the next five years will do it. I certainly hope so…</p>
+</div>
+</div>
+<section class="article-page__image" data-experience-editor-mode-on="False" data-script="featureimage">
+<input class="hasmobileimage" id="hasmobileimage" type="hidden" value="false"/>
+<div class="container">
+<article class="article-page__image__header">
+<p class="article-page__image__title" style="font-size: 20px"></p>
+<p class="article-page__image__desc text--small"></p>
+</article>
+</div>
+<div class="container imgContainer modalTrigger">
+<div class="article-page__image__container">
+<picture><source media="(max-width: 768px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1980to1984RMRA.png?w=768&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=D708816C4E8A116023400B8F05017BF9 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1980to1984RMRA.png?w=1536&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=0C2FB6C37713E2AE6CEB94244D6481F2 2x"><source media="(max-width: 1024px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1980to1984RMRA.png?w=1024&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=D79390A7657538AB3EEAAC285155FE3A 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1980to1984RMRA.png?w=2048&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=E96E37D85D16E0A128CD29C653F591B5 2x"><img alt="Realized Monthly Returns Annualized 1980-84" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1980to1984RMRA.png?usecustomfunctions=1&amp;centercrop=1 "/></source></source></picture> <img class="article-page__image-pdf" data-aqr-image-pdf="https://www.aqr.com/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1980to1984RMRA.png"/>
+</div>
+</div>
+<div class="container containermobile" style="display:none">
+<div class="article-page__image__container">
+</div>
+</div>
+</section>
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p>Finally, stocks and bonds demonstrate a pretty reasonable fit with our priors, albeit with an incredibly volatile period for bonds (almost as volatile as stocks and commodities). And it’s doubtful anyone would ever invest in commodities, perhaps not even as a hedge, with an expected loss of nearly 10% per annum and a lot of volatility to boot. Finally, as a premium over cash, &lt;4% on equities is certainly more reasonable than losing money, but ain’t so great. Theory isn’t as disastrous here but certainly not looking strong.</p><p>By the way, you might remember we had a fairly devastating recession during this period. It really crushed stocks and made bonds soar for the whole five years, didn’t it? Well, no, it didn’t. It probably was responsible for crushing commodities if that helps get you through this long dark night of efficient frontiers, but stocks seemed to survive OK. It’s just a nice statement (one we’ll emphasize again a few times) that the headline events over even a five year period often are short-term and less impactful than you might think.</p><p>The next five years have to make sense, they just have to…</p>
+</div>
+</div>
+<section class="article-page__image" data-experience-editor-mode-on="False" data-script="featureimage">
+<input class="hasmobileimage" id="hasmobileimage" type="hidden" value="false"/>
+<div class="container">
+<article class="article-page__image__header">
+<p class="article-page__image__title" style="font-size: 20px"></p>
+<p class="article-page__image__desc text--small"></p>
+</article>
+</div>
+<div class="container imgContainer modalTrigger">
+<div class="article-page__image__container">
+<picture><source media="(max-width: 768px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1985to1989RMRA.png?w=768&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=0923748BACE7D25A76AD9D9CC8BB6B05 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1985to1989RMRA.png?w=1536&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=EB72145A31526843B74F6A6E9556FDAD 2x"><source media="(max-width: 1024px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1985to1989RMRA.png?w=1024&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=74E7469D6033B2723839B316A6068C6A 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1985to1989RMRA.png?w=2048&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=C28E2661548D0D91327F51ADB9E57A32 2x"><img alt="Realized Monthly Returns Annualized 1985-89" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1985to1989RMRA.png?usecustomfunctions=1&amp;centercrop=1 "/></source></source></picture> <img class="article-page__image-pdf" data-aqr-image-pdf="https://www.aqr.com/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1985to1989RMRA.png"/>
+</div>
+</div>
+<div class="container containermobile" style="display:none">
+<div class="article-page__image__container">
+</div>
+</div>
+</section>
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p>OK, now we’re talking. Bond volatility, though still high by historic standards, is more reasonable than that crazy 1980-84 ride. All realized returns are positive over cash, and stocks &gt; commodities &gt; bonds. All is good in the world. Except… Nah, it would be churlish to object now. OK I’ll say it. These returns are pretty high. Really high. Do people really expect/require 12% over cash (over cash!) to own stocks? Do they need 7% over cash to own bonds? Theory doesn’t predict negative expected returns but it also doesn’t predict giant positive ones. I’m beginning to think this theory stuff is really overrated…</p><p>Also remember that this period includes the great crash of October 1987. See how such a crash can kill stock returns? They only made about 12% over cash this period. Wait, that’s an awesome return. But there was a crash, I know there was… Also, though stock volatility does look a bit high, it’s not close to crazy high. But a massive crash happened! Something odd is going on…</p><p>But I have high hopes for 1990-94. Really. I do. Promise.</p>
+</div>
+</div>
+<section class="article-page__image" data-experience-editor-mode-on="False" data-script="featureimage">
+<input class="hasmobileimage" id="hasmobileimage" type="hidden" value="false"/>
+<div class="container">
+<article class="article-page__image__header">
+<p class="article-page__image__title" style="font-size: 20px"></p>
+<p class="article-page__image__desc text--small"></p>
+</article>
+</div>
+<div class="container imgContainer modalTrigger">
+<div class="article-page__image__container">
+<picture><source media="(max-width: 768px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1990to1994RMRA.png?w=768&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=AA26EFA15FFA5601AD35B157DCDFA597 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1990to1994RMRA.png?w=1536&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=D312C01F06706F92C91E88CA0DB36E6C 2x"><source media="(max-width: 1024px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1990to1994RMRA.png?w=1024&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=D033871232F65772A1F2DE020E82067E 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1990to1994RMRA.png?w=2048&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=7DD8D6B95FA0BB5F075E72557FA182E5 2x"><img alt="Realized Monthly Returns Annualized 1990-94" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1990to1994RMRA.png?usecustomfunctions=1&amp;centercrop=1 "/></source></source></picture> <img class="article-page__image-pdf" data-aqr-image-pdf="https://www.aqr.com/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1990to1994RMRA.png"/>
+</div>
+</div>
+<div class="container containermobile" style="display:none">
+<div class="article-page__image__container">
+</div>
+</div>
+</section>
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p>Well those hopes were partially realized. 1990-94 is the best one yet. Both bonds and stocks look pretty reasonable, though the GSCI is a big disappointment. Taking that kind of wild volatile ride only to lose money vs. cash can’t be rational can it?</p><p>Oh, and recall that a crushing period for bonds, the 1994 Fed hike, is included in this period. But you really can’t see its effects can you?</p><p>All in all, definitely this efficient frontier looks the most intuitive so far, even if far from perfect. Maybe we’re on a roll. Come on 1995-1999!</p>
+</div>
+</div>
+<section class="article-page__image" data-experience-editor-mode-on="False" data-script="featureimage">
+<input class="hasmobileimage" id="hasmobileimage" type="hidden" value="false"/>
+<div class="container">
+<article class="article-page__image__header">
+<p class="article-page__image__title" style="font-size: 20px"></p>
+<p class="article-page__image__desc text--small"></p>
+</article>
+</div>
+<div class="container imgContainer modalTrigger">
+<div class="article-page__image__container">
+<picture><source media="(max-width: 768px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1995to1999RMRA.png?w=768&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=3E2D5392C478C16BA24F3EE38E37B9FA 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1995to1999RMRA.png?w=1536&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=394F2ADCE77BEDDCCC64FDEAF55D38AA 2x"><source media="(max-width: 1024px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1995to1999RMRA.png?w=1024&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=33BA72AF0A04E1AC031BAD073B7B4627 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1995to1999RMRA.png?w=2048&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=48260A60D58C0384287219F0568EB741 2x"><img alt="Realized Monthly Returns Annualized 1995-99" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1995to1999RMRA.png?usecustomfunctions=1&amp;centercrop=1 "/></source></source></picture> <img class="article-page__image-pdf" data-aqr-image-pdf="https://www.aqr.com/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1995to1999RMRA.png"/>
+</div>
+</div>
+<div class="container containermobile" style="display:none">
+<div class="article-page__image__container">
+</div>
+</div>
+</section>
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p>Wow! By the end of this period people were shouting Dow 36,000! Stocks for the long run! So, our hopes for a roll have been dashed. This doesn’t look right at all. Remember, too high is as wrong (for theory, more fun for investors) as too low.</p><p>Equity returns are way higher than we’d rationally ever expect/demand, bonds far lower versus stocks (though perhaps reasonable on their own), and the GSCI basically flat for half a decade; hardly a win for such a high-volatility asset class. This period is a bust. It doesn’t fit theory at all. Maybe it is theory that’s a bust.</p><p>So, after such a weird five years, we’re owed a “normal” looking five-year efficient frontier, right?</p>
+</div>
+</div>
+<section class="article-page__image" data-experience-editor-mode-on="False" data-script="featureimage">
+<input class="hasmobileimage" id="hasmobileimage" type="hidden" value="false"/>
+<div class="container">
+<article class="article-page__image__header">
+<p class="article-page__image__title" style="font-size: 20px"></p>
+<p class="article-page__image__desc text--small"></p>
+</article>
+</div>
+<div class="container imgContainer modalTrigger">
+<div class="article-page__image__container">
+<picture><source media="(max-width: 768px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2000to2004RMRA.png?w=768&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=458EB40DEC3ED7E9ACCD51115B3D3A97 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2000to2004RMRA.png?w=1536&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=019CB8B320015C18AFD8F24A88A96EB6 2x"><source media="(max-width: 1024px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2000to2004RMRA.png?w=1024&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=1A0D582880153B50B737682BAE0CDAE7 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2000to2004RMRA.png?w=2048&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=DE99A73784BB8065F62C079EDD5FBF48 2x"><img alt="Realized Monthly Returns Annualized 2000-04" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2000to2004RMRA.png?usecustomfunctions=1&amp;centercrop=1 "/></source></source></picture> <img class="article-page__image-pdf" data-aqr-image-pdf="https://www.aqr.com/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2000to2004RMRA.png"/>
+</div>
+</div>
+<div class="container containermobile" style="display:none">
+<div class="article-page__image__container">
+</div>
+</div>
+</section>
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p>Nope. Sigh. So very far from normal. Horrifically far from normal. Really, really not even close to normal. I think you’re getting my drift. It doesn’t look normal. Theory stinks.</p><p>It was a great time to own bonds and commodities, but a terrible time to own the asset we’d expect the most from, stocks.</p><p>As a side note, this was the period of coming down from the great dot-com bubble. Given that ex post knowledge, the poor stock returns are not so surprising. But perhaps you are surprised that stock market volatility was again quite restrained (around 16% per annum) when viewed over the full five years. It seems even knowing what happened (at least some of the things that happened) it’s hard to get this stuff right. My wife and I (mainly her) did have four children within an 18-month stretch of this five year period so some things were indeed pretty volatile (at least for me). But stocks? Not so much.</p><p>I’m feeling very good about 2005-09 though, aren’t you?</p>
+</div>
+</div>
+<section class="article-page__image" data-experience-editor-mode-on="False" data-script="featureimage">
+<input class="hasmobileimage" id="hasmobileimage" type="hidden" value="false"/>
+<div class="container">
+<article class="article-page__image__header">
+<p class="article-page__image__title" style="font-size: 20px"></p>
+<p class="article-page__image__desc text--small"></p>
+</article>
+</div>
+<div class="container imgContainer modalTrigger">
+<div class="article-page__image__container">
+<picture><source media="(max-width: 768px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2005to2009RMRA.png?w=768&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=0B076F2639DEA7C2078DD23100A28EC5 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2005to2009RMRA.png?w=1536&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=7A6D13A316F5D9B23934B5C8B4659B75 2x"><source media="(max-width: 1024px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2005to2009RMRA.png?w=1024&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=612F6A2C7E9CC35D8E58B1E9E5BC9893 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2005to2009RMRA.png?w=2048&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=379918CF9E345F84F70F8B9C1EADB37A 2x"><img alt="Realized Monthly Returns Annualized 2005-09" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2005to2009RMRA.png?usecustomfunctions=1&amp;centercrop=1 "/></source></source></picture> <img class="article-page__image-pdf" data-aqr-image-pdf="https://www.aqr.com/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2005to2009RMRA.png"/>
+</div>
+</div>
+<div class="container containermobile" style="display:none">
+<div class="article-page__image__container">
+</div>
+</div>
+</section>
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p>This is ridiculous! After losing money for the prior five years, stocks have lost money again. This finance/efficient-frontier stuff is for the birds. I mean, besides stocks, commodities lost even worse and at huge volatility. Who would call that rational? Who’s running this place?</p><p>Note this was the period of the Global Financial Crisis. So at the very least we’d certainly expect this to be a period of wild and crazy stock market volatility, no? Well, again, no, not really when viewed over the whole five years. Volatility of 16% or so is maybe a tad high but mostly pretty darn normal. It seems you can’t even count on the seminal financial event of our times anymore to produce what you expect, when you wait at least 5 years to judge.</p><p>OK, we have one five year period left, 2010-14 (one month short actually as we’re ending in November). It’s all up to you 2010-14, you’ve always been my favorite!</p>
+</div>
+</div>
+<section class="article-page__image" data-experience-editor-mode-on="False" data-script="featureimage">
+<input class="hasmobileimage" id="hasmobileimage" type="hidden" value="false"/>
+<div class="container">
+<article class="article-page__image__header">
+<p class="article-page__image__title" style="font-size: 20px"></p>
+<p class="article-page__image__desc text--small"></p>
+</article>
+</div>
+<div class="container imgContainer modalTrigger">
+<div class="article-page__image__container">
+<picture><source media="(max-width: 768px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2010to2015RMRA.png?w=768&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=C102793463B85968483BB22DB1804A8C 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2010to2015RMRA.png?w=1536&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=3C54F574723602CB195761FD4AD33462 2x"><source media="(max-width: 1024px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2010to2015RMRA.png?w=1024&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=1DF15A59A6EB60EDF4BCB2C768B863A0 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2010to2015RMRA.png?w=2048&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=1247DD0727CEF5523079ADF74A202367 2x"><img alt="Realized Monthly Returns Annualized 2010-14" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2010to2015RMRA.png?usecustomfunctions=1&amp;centercrop=1 "/></source></source></picture> <img class="article-page__image-pdf" data-aqr-image-pdf="https://www.aqr.com/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/2010to2015RMRA.png"/>
+</div>
+</div>
+<div class="container containermobile" style="display:none">
+<div class="article-page__image__container">
+</div>
+</div>
+</section>
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p class="textInfo">* 2014 includes 11 months, January-November.</p><p>OK, this is just nuts. Returns and volatility are greater for stocks than bonds, that’s nice, it fits our theories well. But a 15% or so annual premium for stocks over cash? No sir. Not an efficient frontier I’d call reasonable. And commodities again a big and volatile loser, that makes no sense. Who would own those things if that were their expected return? Finally, if you get more than 6% over cash on your 10-year U.S. Treasury holdings, you should be praising your higher power, as it’s certainly more than a rational investor expects/demands.</p><p>Nope, while kind of pleasant ex commodities, the above is not a normal-looking efficient frontier, and not one theory takes kindly to (or vice versa).</p><p>We have one more card to play. Thankfully it’s a really good card.</p>
+</div>
+</div>
+<section class="article-page__image" data-experience-editor-mode-on="False" data-script="featureimage">
+<input class="hasmobileimage" id="hasmobileimage" type="hidden" value="false"/>
+<div class="container">
+<article class="article-page__image__header">
+<p class="article-page__image__title" style="font-size: 20px"></p>
+<p class="article-page__image__desc text--small"></p>
+</article>
+</div>
+<div class="container imgContainer modalTrigger">
+<div class="article-page__image__container">
+<picture><source media="(max-width: 768px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to2014RMRA.png?w=768&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=E64F64E815C44266D45740171573A5C8 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to2014RMRA.png?w=1536&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=0B158A1DBE50151FB603A42A5480B4FA 2x"><source media="(max-width: 1024px)" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to2014RMRA.png?w=1024&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=F4E0013A07693B4493FD063ED60588A9 1x,/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to2014RMRA.png?w=2048&amp;usecustomfunctions=1&amp;centercrop=1&amp;hash=DF733E5030DD3A54AE33D87CFCCEEB63 2x"><img alt="Realized Monthly Returns Annualized 1975-79" srcset="/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to2014RMRA.png?usecustomfunctions=1&amp;centercrop=1 "/></source></source></picture> <img class="article-page__image-pdf" data-aqr-image-pdf="https://www.aqr.com/-/media/AQR/Images/Perspectives/Efficient-Frontier-Theory-Article/1970to2014RMRA.png"/>
+</div>
+</div>
+<div class="container containermobile" style="display:none">
+<div class="article-page__image__container">
+</div>
+</div>
+</section>
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p class="textInfo">* 2014 includes 11 months, January-November.</p><p>Yep, you’re looking at the same calculation methodology as before, but now we are using the full 45-year (OK, one month shy) period.</p><p>My God it is beautiful.</p><p>Bonds at about a 3.5% premium to cash. That’s probably a higher premium than we’d expect long-term, but more reasonable than most of the other periods (as I’m typing this, bond yields are about 230 basis points over cash — while many people predict bonds will suffer price declines caused by rising rates going forward, that kind of yield premium makes a number like 3.5% look at least not so crazy).</p><p>Stocks at just over a 5% premium to cash look reasonable. It’s hard to get annoyed with that in either direction, as an investor or as a theorist.</p><p>Commodities have done well, but not as well as stocks. Remember, even though they are more volatile they’re also more diversifying (again, in theory you get paid for bearing risk you have to bear, not volatility you can diversify away). So, over this 45-year period, theory is feeling pretty good about itself.</p><p>Here’s another way to view it, ordering each asset class increasing from left to right, done separately for ordering by average return and realized volatility over the period.</p><p>
+</p><table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+<tbody>
+<tr style="height: 0.3in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.3in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong> </strong></p>
+</td>
+<td colspan="3" rowspan="1" style="padding: 2.15pt; width: 170.05pt; height: 0.3in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%; text-align: center;"><strong>Ordered by Average Return</strong></p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1970-74</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.55pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.5pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1975-79</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.55pt; height: 0.2in;">GSCI</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.5pt; height: 0.2in;">S&amp;P 500</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1980-84</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.55pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.5pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1985-89</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.55pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.5pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1990-94</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.55pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.5pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1995-99</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.55pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.5pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>2000-04</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.55pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.5pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>2005-09</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.55pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.5pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>2010-14*</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.55pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.5pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>Full Period</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.55pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 58.5pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+</tr>
+</tbody>
+</table><p style="margin: 0.35pt 0in 0pt; line-height: 125%;"> </p><p style="margin: 0.35pt 0in 0pt; line-height: 125%;"> </p><table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+<tbody>
+<tr style="height: 0.3in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.3in;">
+<p style="line-height: 125%;"> </p>
+</td>
+<td colspan="3" rowspan="1" style="padding: 2.15pt; width: 170.05pt; height: 0.3in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%; text-align: center;"><strong>Ordered by Volatility</strong></p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1970-74</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1975-79</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1980-84</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1985-89</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1990-94</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>1995-99</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>2000-04</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>2005-09</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>2010-14*</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+</tr>
+<tr style="height: 0.2in;">
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;"><strong>Full Period</strong></p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">Bonds</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 64pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">S&amp;P 500</p>
+</td>
+<td colspan="1" rowspan="1" style="padding: 2.15pt; width: 53.05pt; height: 0.2in;">
+<p style="margin: 0.75pt 0in 0pt; line-height: 125%;">GSCI</p>
+</td>
+</tr>
+</tbody>
+</table><br/><p class="textInfo">* 2014 includes 11 months, January-November.</p><p>Basically, we know a lot more about volatility than the level of returns over the short term (and remember five years is still pretty short-term). I think we all know this already, and it’s implied by basic mathematics, but it helps to be reminded of its importance occasionally.</p><p>All in all, this full 45-year period is our most reasonable looking realized efficient frontier yet. So what lessons do we take away from the above, and also from living a fair amount of these 45 years “real time”?</p><ul>
+<li>Five years is not a very long time. You see crazy things over five years. Of course, it often feels like a lifetime to actually live through it.</li>
+<li>Over the long haul (which I’ll call 45 years here though there is no perfect agreed upon definition) some of the most basic parts of financial theory look pretty darn good.</li>
+<li>The long haul is a really long time. It sometimes feels like several lifetimes to actually live through it.</li>
+</ul><p>Without trying to quantify it here, I’d wager that remembering and implementing these lessons (patience, how long is long term?, basic relationships holding up if you only have enough patience, etc.) are worth a lot of “alpha” in a loose use of that word, and are available to all free of charge. Well, free of charge unless you count the internal organ damage some of those “short-term” periods can inflict.</p><p>The point here is certainly not that theory is perfect, that markets are perfectly efficient, that the CAPM holds, that security returns are “normally distributed,” that all you should care about is mean and variance, that mean and variance are best estimated from monthly historical experience, and so on. Indeed, we have, to a significant degree, spent our careers arguing against these propositions and investigating where value can be added. The point is not arguing for perfection. The point is that the very basic tenets of our field are better than what’s often casually asserted, implied, inferred, imputed, and assumed; and that those assailing these basic tenets are too short-term oriented and sometimes far too triumphalist. The point is that even if not perfect, you have to give it up for the 45-year mean-variance plot of the three main asset classes!</p><p>Bottom line: Let’s all be nicer to theory. If we stick with it long enough, it will probably be nice to us.</p>
+</div>
+</div>
+<section class="article-body__breadcrumb">
+<div class="container">
+<ul class="breadcrumb__items__container">
+<li class="breadcrumb__items">
+<a class="cta cta--cyan" data-analytics='{"intCategory":"article","intAction":"cta click","intLabel":"/Insights","event":"interaction_event"}' data-script="clickTracker" href="/Insights">Insights</a>
+</li>
+<li class="breadcrumb__items">
+<a class="cta cta--cyan" data-analytics='{"intCategory":"article","intAction":"cta click","intLabel":"/Insights/Perspectives","event":"interaction_event"}' data-script="clickTracker" href="/Insights/Perspectives">Cliff's Perspective</a>
+</li>
+</ul>
+</div>
+</section>
+<!--Pdf Footnote-->
+</div>
+<div class="article-page__related__content" data-script="articleRelatedContent" style="">
+<section class="article-page__related__insight">
+<div class="container">
+<div class="related-insight__container">
+<div class="separator"></div>
+<div class="related__insight">
+<h5 class="related__insight__title eyebrow--accent">Related Thinking</h5>
+<ul class="related__items">
+<li>
+<div class="related__items__item" data-script="readingList">
+<a class="cta cta--black" href="/Insights/Research/Journal-Article/The-Great-Divide"><h5 data-analytics='{"intCategory":"article","intAction":"related item click","intLabel":"/Insights/Research/Journal-Article/The-Great-Divide","event":"interaction_event"}' data-script="clickTracker">The Great Divide</h5></a>
+</div>
+<div class="related__items__byline">
+<p class="text--small-c">
+<span>Journal Article</span>
+<span>-</span>
+<span>January 1, 2014</span>
+</p>
+</div>
+</li>
+<li>
+<div class="related__items__item" data-script="readingList">
+<a class="cta cta--black" href="/Insights/Perspectives/Risk-Parity-Why-We-Fight-Lever"><h5 data-analytics='{"intCategory":"article","intAction":"related item click","intLabel":"/Insights/Perspectives/Risk-Parity-Why-We-Fight-Lever","event":"interaction_event"}' data-script="clickTracker">Risk Parity: Why We Lever</h5></a>
+</div>
+<div class="related__items__byline">
+<p class="text--small-c">
+<span>Perspective</span>
+<span>-</span>
+<span>September 24, 2014</span>
+</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</div>
+
+
+<section class="article-page__disclaimer">
+<div class="container">
+<div class="richtext">
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;">The views and opinions expressed herein are those of the author and do not necessarily reflect the views of AQR Capital Management, LLC, its affiliates or its employees.</p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;"> </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;">This document has been provided to you solely for information purposes and does not constitute an offer or solicitation of an offer or any advice or recommendation to purchase any securities or other financial instruments and may not be construed as such. </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;"> </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;">The investment strategy and themes discussed herein may be unsuitable for investors depending on their specific investment objectives and financial situation. Diversification does not eliminate the risk of experiencing investment losses. </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;"> </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;">Please note that changes in the rate of exchange of a currency may affect the value, price or income of an investment adversely.</p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;"> </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;">The factual information set forth herein has been obtained or derived from sources believed by the author and AQR Capital Management, LLC (“AQR”) to be reliable but it is not necessarily all-inclusive and is not guaranteed as to its accuracy and is not to be regarded as a representation or warranty, express or implied, as to the information’s accuracy or completeness, nor should the attached information serve as the basis of any investment decision. </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;"> </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;">Information contained on third party websites that AQR Capital Management, LLC, (“AQR”) may link to are not reviewed in their entirety for accuracy and AQR assumes no liability for the information contained on these websites.</p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;"> </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;">No part of this material may be reproduced in any form, or referred to in any other publication, without express written permission from AQR. </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;"> </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;">Broad-based securities indices are unmanaged and are not subject to fees and expenses typically associated with managed accounts or investment funds. Investments cannot be made directly in an index.</p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;"> </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px;"> </p>
+</div>
+</div>
+</section>
+

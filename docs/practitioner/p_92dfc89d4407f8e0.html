@@ -1,0 +1,255 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>The Metamorphosis</title>
+<!-- source: https://robotwealth.com/the-metamorphosis/ -->
+<h1>The Metamorphosis</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access" id="post-134094">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 22, 2026</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">The Metamorphosis</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="The Metamorphosis" class="ipa-media gb-media-81e19d89" data-media-id="134095" decoding="async" fetchpriority="high" height="960" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg" srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<h2 class="gb-text">From Pairs to Portfolio</h2>
+<p class="wp-block-paragraph"><em>Part 4 of 6: Statistical Arbitrage for Independent Traders</em></p>
+<p class="wp-block-paragraph">Previously:</p>
+<ul class="wp-block-list">
+<li><a href="https://robotwealth.com/a-tale-of-two-prices/" rel="noreferrer noopener" target="_blank">​A Tale of Two Prices </a>(the core idea of stat arb)​</li>
+<li><a href="https://robotwealth.com/moneyball-finding-undervalued-pairs-using-unconventional-metrics/" rel="noreferrer noopener" target="_blank">​Moneyball </a>(finding undervalued pairs using unconventional metrics)​</li>
+<li><a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/" rel="noreferrer noopener" target="_blank">The Winter of our Pairs Trading Discontent</a> (problems, limitations, frustrations)</li>
+</ul>
+<p class="wp-block-paragraph">Pairs trading remains a feasible approach for the indie trader. But, as we saw last time, there are inherent limitations. Trading both legs eats a lot of buying power and limits the number of pairs you can trade.</p>
+<p class="wp-block-paragraph">Trading only the mispriced leg helps, but introduces a ton of variance. Essentially, the trade-off is accepting a wilder ride in exchange for higher expected returns and better capital efficiency.</p>
+<p class="wp-block-paragraph">In the last article, I alluded to an approach that might offer a third route: we give up a little simplicity, but in exchange, we get higher expected returns and some variance control.</p>
+<p class="wp-block-paragraph">Here’s an example based on a small universe of spreads constructed from energy stocks. Six stocks, eight spreads.</p>
+<p class="wp-block-paragraph">Here are the z-scores of these spreads:</p>
+<a href="https://substackcdn.com/image/fetch/$s_!Pbk0!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F34deddc8-836f-40e2-8945-a96217af4477_900x450.png" rel="noopener" target="_blank"><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!Pbk0!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F34deddc8-836f-40e2-8945-a96217af4477_900x450.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a>
+<p class="wp-block-paragraph">Every spread involving XOM is stretched. The spreads <em>not</em> involving XOM are all near zero. SLB, CVX, OXY, EOG, COP trade fairly against each other. XOM is the outlier.</p>
+<p class="wp-block-paragraph">The network of overlapping spreads tells us something specific: XOM is the mispriced security.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">In <a href="https://open.substack.com/pub/krislongmore/p/the-winter-of-our-pairs-trading-discontent?utm_campaign=post-expanded-share&amp;utm_medium=web">Part 3</a>, we talked about the constraints of traditional pairs trading. You trade spreads because it gives you built-in variance reduction. Long one leg, short the other, and you’re insulated from broad market moves. That’s valuable.</p>
+<p class="wp-block-paragraph">But you pay for it. Half your capital sits on a leg that might be fairly priced. You pay double the transaction costs. And when your selection pipeline identifies 100 good pairs but you can only trade 10, most of your signal goes unused.</p>
+<p class="wp-block-paragraph">Now, you could try to trade just the mispriced leg. With a handful of pairs, you might even identify it by observing which stock moved. If XOM rallied 10% while SLB was flat, XOM probably drove the divergence.</p>
+<p class="wp-block-paragraph">But that’s not foolproof. Sometimes stocks move on beta, and the one left behind is actually the mispriced leg. “Which one moved” is useful information, but it’s not the whole picture.</p>
+<p class="wp-block-paragraph">One thing you can do is directly model market- and even sector-beta in your spread construction.</p>
+<p class="wp-block-paragraph">That’s a useful thing to do on average. If you <em>can</em> build a better model, then you <em>should</em>, all else being equal.</p>
+<p class="wp-block-paragraph">But that’s a big <em>“if.”</em></p>
+<p class="wp-block-paragraph">Betas aren’t stable, and they’re prone to measurement error:</p>
+<a href="https://substackcdn.com/image/fetch/$s_!Pc5G!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F5961dc0e-7b1f-4b97-942d-45b53ca8ee5f_900x450.png" target="_blank"><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!Pc5G!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F5961dc0e-7b1f-4b97-942d-45b53ca8ee5f_900x450.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a>
+<p class="wp-block-paragraph">It’s difficult to model this stuff well in a way that’s of practical benefit to the trader.</p>
+<p class="wp-block-paragraph">But there’s another source of information here that’s hiding in plain sight, requires little modelling skill to extract, and is relevant right at the time you measure it.</p>
+<p class="wp-block-paragraph">I’m referring to the network of interconnected tickers that arises from a collection of overlapping spreads:</p>
+<a href="https://substackcdn.com/image/fetch/$s_!L6mQ!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0cefa008-3947-4ecb-b542-9af992cc672c_2400x1800.png" target="_blank"><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!L6mQ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0cefa008-3947-4ecb-b542-9af992cc672c_2400x1800.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a>
+<p class="wp-block-paragraph">An edge between two ticker nodes indicates that those two tickers are connected in a spread.</p>
+<p class="wp-block-paragraph">We can visualise the state of the network at any point in time by incorporating the z-scores of each spread:</p>
+<a href="https://substackcdn.com/image/fetch/$s_!YTBN!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F6c8679a1-992e-4135-8375-559be3b74e0f_2400x1800.png" target="_blank"><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!YTBN!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F6c8679a1-992e-4135-8375-559be3b74e0f_2400x1800.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a>
+<ul class="wp-block-list">
+<li>Arrows indicate the rich ticker in each pair (z-score positive)</li>
+<li>The thickness of each connection represents the magnitude of the z-score
+<ul class="wp-block-list">
+<li>Thin shows a z-score close to zero</li>
+<li>Thick shows a z-score that’s stretched</li>
+</ul>
+</li>
+<li>The colour of each ticker node represents that ticker’s <em><strong>aggregated z-score from all of its connections </strong></em>(orange = positive, purple = negative).</li>
+</ul>
+<p class="wp-block-paragraph">You can see how the state of the network evolves through time as the spreads diverge and converge:</p>
+<a href="https://substackcdn.com/image/fetch/$s_!Yk-i!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fbba58e5e-bec7-426b-a02a-514a1da78d67_700x700.gif" target="_blank"><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!Yk-i!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fbba58e5e-bec7-426b-a02a-514a1da78d67_700x700.gif" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a>
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="wp-block-paragraph">The network gives you more information than any single spread can. When XOM is stretched against <em>everyone</em>, you have powerful collective evidence.</p>
+</blockquote>
+<p class="wp-block-paragraph">I call this <strong>Triangulated Stat Arb</strong> (not to be confused with triangular arbitrage, which is a different thing entirely.) We’ll get into exactly why that name makes sense in the next article.</p>
+<p class="wp-block-paragraph">For now, the key insight is this: instead of trading spreads, you trade the securities themselves. And instead of choosing between conviction and variance control, you get both. But you lose some simplicity.</p>
+<a href="https://substackcdn.com/image/fetch/$s_!F5u6!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F963dea20-df4f-4d58-85f4-debe67c011f9_3169x1507.png" target="_blank"><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!F5u6!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F963dea20-df4f-4d58-85f4-debe67c011f9_3169x1507.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">Traditional pairs trading operates at the spread level. You see a divergent spread, you trade both legs, you wait for convergence.</p>
+<p class="wp-block-paragraph">The shift I’m describing operates at the ticker level. You use all those spreads as <em>information</em> about individual securities. Then you trade the securities directly.</p>
+<a href="https://substackcdn.com/image/fetch/$s_!sg2B!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3931775b-6f3b-4a83-8bbf-fef768a8faa9_3101x1103.png" target="_blank"><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!sg2B!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3931775b-6f3b-4a83-8bbf-fef768a8faa9_3101x1103.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a>
+<p class="wp-block-paragraph">The mechanics are straightforward. I call it “flattening” because you’re collapsing spread-level signals down to ticker-level signals.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">Here’s how flattening works:</p>
+<p class="wp-block-paragraph">Take any spread signal at some point in time and decompose it into two ticker signals.</p>
+<p class="wp-block-paragraph">Say you’ve got the XOM-SLB spread with zscore +2.3. That means XOM is rich relative to SLB. So:</p>
+<ul class="wp-block-list">
+<li>XOM gets +2.3 (appears expensive)</li>
+<li>SLB gets -2.3 (appears cheap)</li>
+</ul>
+<p class="wp-block-paragraph">Same magnitude, opposite signs. One spread becomes two votes.</p>
+<a href="https://substackcdn.com/image/fetch/$s_!z0ZO!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3e73f289-9909-4330-89e8-ab5ffbbecade_4056x1314.png" target="_blank"><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!z0ZO!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3e73f289-9909-4330-89e8-ab5ffbbecade_4056x1314.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a>
+<p class="wp-block-paragraph">Do this for every spread in your universe at the current point in time. Now you’ve got a bunch of votes for each ticker. Some tickers appear in many spreads, some in few. Each spread casts a vote on both its legs.</p>
+<p class="wp-block-paragraph">Now aggregate. XOM appears in three spreads, all saying it’s rich. Average those signals. You get a strong positive aggregate. Strong positive means “this looks expensive.”</p>
+<p class="wp-block-paragraph">SLB appears in three spreads as well. One says it’s cheap (relative to XOM), the others say it’s roughly fair. The SLB signals disagree – weaker conviction. It’s probably not the mispriced leg in its one divergent spread.</p>
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="wp-block-paragraph">This is the power of triangulated stat arb. Stuff that’s genuinely mispriced shows up as mispriced against multiple partners. Noise tends to wash out, while the signal gets reinforced.</p>
+</blockquote>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">With ticker-level signals, you build a long/short portfolio.</p>
+<p class="wp-block-paragraph">Tickers with strong negative signals (cheap against multiple partners) go in the long book. Tickers with strong positive signals (rich against multiple partners) go in the short book.</p>
+<p class="wp-block-paragraph">The key insight is that you’re not building a portfolio of “one mispriced leg plus one fair-value leg” repeated many times, as in a pair trade:</p>
+<a href="https://substackcdn.com/image/fetch/$s_!0C5U!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb1852a39-4f28-45ee-a74b-a7d94e4f4e1f_2937x1514.png" target="_blank"><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!0C5U!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb1852a39-4f28-45ee-a74b-a7d94e4f4e1f_2937x1514.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a>
+<p class="wp-block-paragraph">Instead, you’re building a portfolio of mispriced tickers. The longs are cheap. The shorts are rich.</p>
+<a href="https://substackcdn.com/image/fetch/$s_!He0J!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff4956706-d475-4083-ba6a-f15221b11a23_2934x1277.png" target="_blank"><img alt="" class="perfmatters-lazy" data-src="https://substackcdn.com/image/fetch/$s_!He0J!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff4956706-d475-4083-ba6a-f15221b11a23_2934x1277.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E"/></a>
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="wp-block-paragraph"><em>Both</em> sides are working for you.</p>
+</blockquote>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">There are many ways you can construct a portfolio with this insight.</p>
+<p class="wp-block-paragraph">You’ll find that the effect tends to concentrate in the extremes, but there can be value in trading the broader distribution. It really depends on what else you’re doing and what you want to achieve.</p>
+<p class="wp-block-paragraph">If you want, you can size it so your net market exposure is roughly zero. This will give you similar variance reduction to pairs trading, but through portfolio construction rather than pair-by-pair hedging.</p>
+<p class="wp-block-paragraph">I’ve been letting the portfolio drift net long or net short, depending on the relative magnitude of the signals in the long and short books. This tends to juice returns at the expense of some higher variance.</p>
+<p class="wp-block-paragraph">There are many possible implementations, including weighting by the quality of the spreads the ticker-level signals come from, and accounting for how many times a ticker appears in the network (more votes lead to more conviction). More on these ideas later.</p>
+<p class="wp-block-paragraph">But essentially, this is the “have your cake and eat it too” part. You’re targeting the mispriced legs directly. But because you’re long a basket of cheap tickers and short a basket of rich tickers, you still get the low-variance benefits of a hedged approach.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">This approach – triangulated stat arb – addresses the problems we identified in <a href="https://open.substack.com/pub/krislongmore/p/the-winter-of-our-pairs-trading-discontent?r=w5un&amp;utm_campaign=post&amp;utm_medium=web&amp;showWelcomeOnShare=true">Part 3</a>.</p>
+<p class="wp-block-paragraph"><strong>Capital efficiency.</strong> You’re deploying capital on legs that are actually mispriced. Not tying up half your position on fair-value hedges.</p>
+<p class="wp-block-paragraph"><strong>Signal utilisation.</strong> Remember the 100-pairs problem? Your selection pipeline identifies heaps of good pairs, but you could only trade 10 due to capital inefficiency. Now you’re aggregating information from your entire universe. More of your research actually gets used.</p>
+<p class="wp-block-paragraph"><strong>Lower transaction costs.</strong> You only pay for the legs that are actually mispriced.</p>
+<p class="wp-block-paragraph"><strong>Diversification.</strong> You’re holding positions in individual securities, not paired positions. More natural diversification (that you can dial up or down to fit your objectives).</p>
+<p class="wp-block-paragraph">Perhaps most exciting is that the portfolio approach can be incorporated into a broader multi-factor long/short portfolio – the aggregated pairs signals can be viewed as just another factor.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">There’s something I haven’t fully addressed.</p>
+<p class="wp-block-paragraph">In our network of energy stock spreads, the case for XOM being mispriced was compelling. We had a lot of overlapping spreads all pointing in the same direction.</p>
+<p class="wp-block-paragraph">Often in practice, it won’t be that clean.</p>
+<p class="wp-block-paragraph">We might have sparser areas of the network with fewer connections. Stocks moving on noisy betas to their sector and the broader market can cloud things as well.</p>
+<p class="wp-block-paragraph">Figuring out which one moved helps, but it’s not definitive. What else can we use?</p>
+<p class="wp-block-paragraph">When do multiple spreads agreeing give you genuine conviction versus just coincidence? How do you measure the network’s agreement? How do you know when you’ve got a clearer signal versus noise?</p>
+<p class="wp-block-paragraph">That’s where triangulated stat arb really earns its name. The navigation metaphor provides a nice, simple mechanism for assessing the quality of an aggregated signal.</p>
+<p class="wp-block-paragraph">In the next article, I’ll show you how it works.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section>
+<p class="wp-block-paragraph"></p>
+<div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>quantitative trading</span>, <span>stat arb</span>, <span>trading strategies</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130666 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/"><img alt="The Winter of our Pairs Trading Discontent: Problems, limitations, frustrations" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130667" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/the-metamorphosis/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

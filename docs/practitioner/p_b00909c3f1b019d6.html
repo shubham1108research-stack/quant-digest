@@ -1,0 +1,475 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Episode #395: Rob Koyfman, Koyfin – Building The Go-To Investing Platform</title>
+<!-- source: https://mebfaber.com/2022/03/02/e395-rob-koyfman/ -->
+<h1>Episode #395: Rob Koyfman, Koyfin – Building The Go-To Investing Platform</h1>
+
+<div class="td-scroll-up" data-style="style1"><i class="td-icon-menu-up"></i></div>
+<div class="td-menu-background" style="visibility:hidden"></div>
+<div id="td-mobile-nav" style="visibility:hidden">
+<div class="td-mobile-container">
+<!-- mobile menu top section -->
+<div class="td-menu-socials-wrap">
+<!-- socials -->
+<div class="td-menu-socials">
+<span class="td-social-icon-wrap">
+<a href="https://www.linkedin.com/in/mebanefaber/" target="_blank" title="Linkedin">
+<i class="td-icon-font td-icon-linkedin"></i>
+<span style="display: none">Linkedin</span>
+</a>
+</span>
+<span class="td-social-icon-wrap">
+<a href="https://mebfaber.com/feed/rss/" target="_blank" title="RSS">
+<i class="td-icon-font td-icon-rss"></i>
+<span style="display: none">RSS</span>
+</a>
+</span>
+<span class="td-social-icon-wrap">
+<a href="https://twitter.com/mebfaber" target="_blank" title="X">
+<i class="td-icon-font td-icon-twitter"></i>
+<span style="display: none">X</span>
+</a>
+</span>
+<span class="td-social-icon-wrap">
+<a href="https://www.youtube.com/channel/UCKvWzzrVUA_DSCoKXL6GU2w?sub_confirmation=1" target="_blank" title="Youtube">
+<i class="td-icon-font td-icon-youtube"></i>
+<span style="display: none">Youtube</span>
+</a>
+</span> </div>
+<!-- close button -->
+<div class="td-mobile-close">
+<span><i class="td-icon-close-mobile"></i></span>
+</div>
+</div>
+<!-- login section -->
+<!-- menu section -->
+<div class="td-mobile-content">
+<div class="menu-main-menu-container"><ul class="td-mobile-main-menu" id="menu-main-menu"><li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-first menu-item-20576" id="menu-item-20576"><a href="https://mebfaber.com/">Home</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-20577" id="menu-item-20577"><a href="https://mebfaber.com/about/">About</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-20578" id="menu-item-20578"><a href="https://mebfaber.com/books/">Books</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-20579" id="menu-item-20579"><a href="https://mebfaber.com/timing-model/">Data Resources</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-20580" id="menu-item-20580"><a href="https://mebfaber.com/managed-assets/">Managed Assets</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-20581" id="menu-item-20581"><a href="https://mebfaber.com/white-papers/">White Papers</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-20582" id="menu-item-20582"><a href="https://mebfaber.com/speaking/">Speaking</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-20584" id="menu-item-20584"><a href="https://www.themebfabershow.com/" target="_blank">Podcasts</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-20583" id="menu-item-20583"><a href="https://mebfaber.com/contact/">Contact</a></li>
+</ul></div> </div>
+</div>
+<!-- register/login section -->
+</div><div class="td-search-background" style="visibility:hidden"></div>
+<div class="td-search-wrap-mob" style="visibility:hidden">
+<div class="td-drop-down-search">
+
+<div class="td-ajax-search-flex" id="td-aj-search-mob"></div>
+</div>
+</div>
+<div class="td-theme-wrap" id="td-outer-wrap">
+<div class="tdc-header-wrap">
+<!--
+Header style 1
+-->
+<div class="td-header-wrap td-header-style-1">
+<div class="td-header-top-menu-full td-container-wrap">
+<div class="td-container td-header-row td-header-top-menu">
+<div class="top-bar-style-1">
+<div class="td-header-sp-top-menu">
+</div>
+<div class="td-header-sp-top-widget">
+<span class="td-social-icon-wrap">
+<a href="https://www.linkedin.com/in/mebanefaber/" target="_blank" title="Linkedin">
+<i class="td-icon-font td-icon-linkedin"></i>
+<span style="display: none">Linkedin</span>
+</a>
+</span>
+<span class="td-social-icon-wrap">
+<a href="https://mebfaber.com/feed/rss/" target="_blank" title="RSS">
+<i class="td-icon-font td-icon-rss"></i>
+<span style="display: none">RSS</span>
+</a>
+</span>
+<span class="td-social-icon-wrap">
+<a href="https://twitter.com/mebfaber" target="_blank" title="X">
+<i class="td-icon-font td-icon-twitter"></i>
+<span style="display: none">X</span>
+</a>
+</span>
+<span class="td-social-icon-wrap">
+<a href="https://www.youtube.com/channel/UCKvWzzrVUA_DSCoKXL6GU2w?sub_confirmation=1" target="_blank" title="Youtube">
+<i class="td-icon-font td-icon-youtube"></i>
+<span style="display: none">Youtube</span>
+</a>
+</span> </div>
+</div>
+<!-- LOGIN MODAL -->
+<div class="white-popup-block mfp-hide mfp-with-anim td-login-modal-wrap" id="login-form">
+<div class="td-login-wrap">
+<a aria-label="Back" class="td-back-button" href="#"><i class="td-icon-modal-back"></i></a>
+<div class="td-login-form-div td-display-block" id="td-login-div">
+<div class="td-login-panel-title">Sign in</div>
+<div class="td-login-panel-descr">Welcome! Log into your account</div>
+<div class="td_display_err"></div>
+
+<div class="td-login-info-text"><a href="#" id="forgot-pass-link">Forgot your password? Get help</a></div>
+<div class="td-login-info-text"><a class="privacy-policy-link" href="https://mebfaber.com/privacy-policy/">Privacy Policy</a></div>
+</div>
+<div class="td-login-form-div td-display-none" id="td-forgot-pass-div">
+<div class="td-login-panel-title">Password recovery</div>
+<div class="td-login-panel-descr">Recover your password</div>
+<div class="td_display_err"></div>
+
+<div class="td-login-info-text">A password will be e-mailed to you.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="td-banner-wrap-full td-logo-wrap-full td-container-wrap">
+<div class="td-container td-header-row td-header-header">
+<div class="td-header-sp-logo">
+<a class="td-main-logo" href="https://mebfaber.com/">
+<img alt="" class="td-retina-data" data-retina="https://mebfaber.com/wp-content/uploads/2021/09/meb-faber-logo-2.png" height="" src="https://mebfaber.com/wp-content/uploads/2021/09/meb-faber-logo-2-300x45.png" width=""/>
+<span class="td-visual-hidden">Meb Faber Research – Stock Market and Investing Blog</span>
+</a>
+</div>
+</div>
+</div>
+<div class="td-header-menu-wrap-full td-container-wrap">
+<div class="td-header-menu-wrap td-header-gradient">
+<div class="td-container td-header-row td-header-main-menu">
+<div id="td-header-menu" role="navigation">
+<div id="td-top-mobile-toggle"><a aria-label="Menu" href="#" role="button"><i class="td-icon-font td-icon-mobile"></i></a></div>
+<div class="td-main-menu-logo td-logo-in-header">
+<a class="td-main-logo" href="https://mebfaber.com/">
+<img alt="" class="td-retina-data" data-retina="https://mebfaber.com/wp-content/uploads/2021/09/meb-faber-logo-2.png" height="" src="https://mebfaber.com/wp-content/uploads/2021/09/meb-faber-logo-2-300x45.png" width=""/>
+</a>
+</div>
+<div class="menu-main-menu-container"><ul class="sf-menu" id="menu-main-menu-1"><li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-first td-menu-item td-normal-menu menu-item-20576"><a href="https://mebfaber.com/">Home</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page td-menu-item td-normal-menu menu-item-20577"><a href="https://mebfaber.com/about/">About</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page td-menu-item td-normal-menu menu-item-20578"><a href="https://mebfaber.com/books/">Books</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page td-menu-item td-normal-menu menu-item-20579"><a href="https://mebfaber.com/timing-model/">Data Resources</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page td-menu-item td-normal-menu menu-item-20580"><a href="https://mebfaber.com/managed-assets/">Managed Assets</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page td-menu-item td-normal-menu menu-item-20581"><a href="https://mebfaber.com/white-papers/">White Papers</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page td-menu-item td-normal-menu menu-item-20582"><a href="https://mebfaber.com/speaking/">Speaking</a></li>
+<li class="menu-item menu-item-type-custom menu-item-object-custom td-menu-item td-normal-menu menu-item-20584"><a href="https://www.themebfabershow.com/" target="_blank">Podcasts</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page td-menu-item td-normal-menu menu-item-20583"><a href="https://mebfaber.com/contact/">Contact</a></li>
+</ul></div></div>
+<div class="header-search-wrap">
+<div class="td-search-btns-wrap">
+<a aria-label="Search" class="dropdown-toggle" data-toggle="dropdown" href="#" id="td-header-search-button" role="button"><i class="td-icon-search"></i></a>
+<a aria-label="Search" class="dropdown-toggle" data-toggle="dropdown" href="#" id="td-header-search-button-mob" role="button"><i class="td-icon-search"></i></a>
+</div>
+<div aria-labelledby="td-header-search-button" class="td-drop-down-search">
+
+<div id="td-aj-search"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="td-main-content-wrap td-container-wrap">
+<div class="td-container td-post-template-default">
+<div class="td-crumb-container"></div>
+<div class="td-pb-row">
+<div class="td-pb-span8 td-main-content" role="main">
+<div class="td-ss-main-content">
+<article class="post-16558 post type-post status-publish format-standard hentry category-fintech category-founder-series category-podcasts" id="post-16558" itemscope="" itemtype="https://schema.org/Article">
+<div class="td-post-header">
+<!-- category -->
+
+</div>
+<div class="td-post-sharing-top"><div class="td-post-sharing td-ps-bg td-ps-notext td-post-sharing-style1" id="td_social_sharing_article_top">
+
+<div class="td-post-sharing-visible"><a class="td-social-sharing-button td-social-sharing-button-js td-social-network td-social-facebook" href="https://www.facebook.com/sharer.php?u=https%3A%2F%2Fmebfaber.com%2F2022%2F03%2F02%2Fe395-rob-koyfman%2F" title="Facebook"><div class="td-social-but-icon"><i class="td-icon-facebook"></i></div><div class="td-social-but-text">Facebook</div></a><a class="td-social-sharing-button td-social-sharing-button-js td-social-network td-social-twitter" href="https://x.com/intent/post?text=Episode+%23395%3A+Rob+Koyfman%2C+Koyfin+%E2%80%93+Building+The+Go-To+Investing+Platform&amp;url=https%3A%2F%2Fmebfaber.com%2F2022%2F03%2F02%2Fe395-rob-koyfman%2F&amp;via=Meb+Faber+Research+-+Stock+Market+and+Investing+Blog" title="X"><div class="td-social-but-icon"><i class="td-icon-twitter"></i></div><div class="td-social-but-text">X</div></a><a class="td-social-sharing-button td-social-sharing-button-js td-social-network td-social-whatsapp" href="https://api.whatsapp.com/send?text=Episode+%23395%3A+Rob+Koyfman%2C+Koyfin+%E2%80%93+Building+The+Go-To+Investing+Platform %0A%0A https://mebfaber.com/2022/03/02/e395-rob-koyfman/" title="WhatsApp"><div class="td-social-but-icon"><i class="td-icon-whatsapp"></i></div><div class="td-social-but-text">WhatsApp</div></a><a class="td-social-sharing-button td-social-sharing-button-js td-social-network td-social-linkedin" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://mebfaber.com/2022/03/02/e395-rob-koyfman/&amp;title=Episode+%23395%3A+Rob+Koyfman%2C+Koyfin+%E2%80%93+Building+The+Go-To+Investing+Platform" title="Linkedin"><div class="td-social-but-icon"><i class="td-icon-linkedin"></i></div><div class="td-social-but-text">Linkedin</div></a><a class="td-social-sharing-button td-social-sharing-button-js td-social-network td-social-mail" href="mailto:?subject=Episode #395: Rob Koyfman, Koyfin – Building The Go-To Investing Platform&amp;body=https://mebfaber.com/2022/03/02/e395-rob-koyfman/" title="Email"><div class="td-social-but-icon"><i class="td-icon-mail"></i></div><div class="td-social-but-text">Email</div></a><a class="td-social-sharing-button td-social-sharing-button-js td-social-network td-social-print" href="#" title="Print"><div class="td-social-but-icon"><i class="td-icon-print"></i></div><div class="td-social-but-text">Print</div></a></div><div class="td-social-sharing-hidden"><ul class="td-pulldown-filter-list"></ul><a class="td-social-sharing-button td-social-handler td-social-expand-tabs" data-block-uid="td_social_sharing_article_top" href="#" title="More">
+<div class="td-social-but-icon"><i class="td-icon-plus td-social-expand-tabs-icon"></i></div>
+</a></div></div></div>
+<div class="td-post-content tagdiv-type">
+<!-- image -->
+<!-- content --><p><strong>Episode #395: Rob Koyfman, Koyfin – Building The Go-To Investing Platform</strong></p>
+<p><img alt="" class="wp-image-16559 alignnone" decoding="async" height="275" loading="lazy" sizes="(max-width: 275px) 100vw, 275px" src="https://mebfaber.com/wp-content/uploads/2022/02/Rob-Koyfman-300x300.jpeg" srcset="https://mebfaber.com/wp-content/uploads/2022/02/Rob-Koyfman-300x300.jpeg 300w, https://mebfaber.com/wp-content/uploads/2022/02/Rob-Koyfman-150x150.jpeg 150w, https://mebfaber.com/wp-content/uploads/2022/02/Rob-Koyfman.jpeg 406w" width="275"/></p>
+<p><a href="https://podcasts.apple.com/us/podcast/395-rob-koyfman-koyfin-building-the-go-to-investing/id1128955736?i=1000552732005"><img alt="" class="alignleft wp-image-14286" decoding="async" height="25" loading="lazy" sizes="(max-width: 25px) 100vw, 25px" src="https://mebfaber.com/wp-content/uploads/2021/06/600px-Podcasts_iOS.svg_-300x300.png" srcset="https://mebfaber.com/wp-content/uploads/2021/06/600px-Podcasts_iOS.svg_-300x300.png 300w, https://mebfaber.com/wp-content/uploads/2021/06/600px-Podcasts_iOS.svg_-150x150.png 150w, https://mebfaber.com/wp-content/uploads/2021/06/600px-Podcasts_iOS.svg_-356x364.png 356w, https://mebfaber.com/wp-content/uploads/2021/06/600px-Podcasts_iOS.svg_.png 600w, https://mebfaber.com/wp-content/uploads/2021/06/600px-Podcasts_iOS.svg_-420x420.png 420w" width="25"/></a> <a href="https://pdcn.co/e/traffic.libsyn.com/secure/mebfaber/EP.395_-_Rob_Koyfman_FINAL.mp3"><img alt="" class="alignleft wp-image-14287" decoding="async" height="25" loading="lazy" sizes="(max-width: 25px) 100vw, 25px" src="https://mebfaber.com/wp-content/uploads/2021/06/2397526-200.png" srcset="https://mebfaber.com/wp-content/uploads/2021/06/2397526-200.png 200w, https://mebfaber.com/wp-content/uploads/2021/06/2397526-200-150x150.png 150w" width="25"/></a> <a href="https://podcasts.google.com/feed/aHR0cHM6Ly9tZWJmYWJlci5saWJzeW4uY29tL3Jzcw/episode/NzhiNmVhNjMtYjFjMS00ZmIwLTg2N2MtY2M5M2UyOGZmZmNi?sa=X&amp;ved=0CA0QkfYCahcKEwiw3LmcpKj2AhUAAAAAHQAAAAAQAQ"><img alt="" class="alignleft wp-image-14288" decoding="async" height="25" loading="lazy" sizes="(max-width: 25px) 100vw, 25px" src="https://mebfaber.com/wp-content/uploads/2021/06/Google-Podcasts-Logo-300x300.png" srcset="https://mebfaber.com/wp-content/uploads/2021/06/Google-Podcasts-Logo-300x300.png 300w, https://mebfaber.com/wp-content/uploads/2021/06/Google-Podcasts-Logo-150x150.png 150w, https://mebfaber.com/wp-content/uploads/2021/06/Google-Podcasts-Logo-356x364.png 356w, https://mebfaber.com/wp-content/uploads/2021/06/Google-Podcasts-Logo.png 512w, https://mebfaber.com/wp-content/uploads/2021/06/Google-Podcasts-Logo-420x420.png 420w" width="25"/></a> <a href="https://open.spotify.com/episode/3PTkY9ob55fCu0Bf1ncbQI?si=b590fc4f3ca745c7"><img alt="" class="alignleft wp-image-14289" decoding="async" height="25" loading="lazy" sizes="(max-width: 44px) 100vw, 44px" src="https://mebfaber.com/wp-content/uploads/2021/06/Spotify-logo-768x432-1-300x169.png" srcset="https://mebfaber.com/wp-content/uploads/2021/06/Spotify-logo-768x432-1-300x169.png 300w, https://mebfaber.com/wp-content/uploads/2021/06/Spotify-logo-768x432-1-696x385.png 696w, https://mebfaber.com/wp-content/uploads/2021/06/Spotify-logo-768x432-1-741x432.png 741w, https://mebfaber.com/wp-content/uploads/2021/06/Spotify-logo-768x432-1-747x420.png 747w, https://mebfaber.com/wp-content/uploads/2021/06/Spotify-logo-768x432-1.png 768w" width="44"/></a> <a href="https://podcastaddict.com/episode/https%3A%2F%2Fpdcn.co%2Fe%2Ftraffic.libsyn.com%2Fsecure%2Fmebfaber%2FEP.395_-_Rob_Koyfman_FINAL.mp3%3Fdest-id%3D388788&amp;podcastId=2212747"><img alt="" class="alignleft wp-image-14290" decoding="async" height="25" loading="lazy" sizes="(max-width: 25px) 100vw, 25px" src="https://mebfaber.com/wp-content/uploads/2021/06/unnamed-300x300.png" srcset="https://mebfaber.com/wp-content/uploads/2021/06/unnamed-300x300.png 300w, https://mebfaber.com/wp-content/uploads/2021/06/unnamed-150x150.png 150w, https://mebfaber.com/wp-content/uploads/2021/06/unnamed-356x364.png 356w, https://mebfaber.com/wp-content/uploads/2021/06/unnamed.png 512w, https://mebfaber.com/wp-content/uploads/2021/06/unnamed-420x420.png 420w" width="25"/></a></p>
+<p> </p>
+<p><strong>Guest: <a href="https://www.linkedin.com/in/rob-koyfman-8b693317">Rob Koyfman </a></strong>is the founder and CEO of Koyfin.</p>
+<p><strong>Date Recorded:</strong> 2/2/2022     |     <strong>Run-Time: </strong>42:49</p>
+<hr/>
+<p><strong>Summary: </strong>In today’s episode, we start with Rob’s background at Goldman Sachs under the now Chief U.S. Equity Strategist, David Kostin. Then he shares why a personal pain point later in his career led him to start Koyfin. Rob walks us through the platform, which provides investors without Bloomberg access to professional grade data coverage and the analytical tools. We hear about the ability to use visual tools and create a customized dashboard to see what’s most important to you.</p>
+<p>As we wind down, we touch on some wonky client emails and Rob’s annual April Fools emails to users.</p>
+<p>As a special offer to listeners of The Meb Faber Show, click <strong><a href="https://www.koyfin.com/?utm_campaign=Meb&amp;utm_medium=referral&amp;utm_source=rewardful&amp;via=meb">here</a></strong> for<strong> 10% off </strong>for new users.</p>
+<hr/>
+<p><strong>Sponsor: </strong>If you’re seeking the less obvious and are curious about the ever-changing world and how it affects investing, <a href="https://active.williamblair.com/insights/the-active-share-podcast/"><strong><em>The Active Share</em></strong></a> <em><strong>podcast</strong></em> is for you. Hear thought-provoking conversations with thought leaders, company executives, and William Blair Investment Management’s own analysts and portfolio managers as they share unique perspectives on investing in a world that’s always evolving. Listen to <em>The Active Share </em>on <a data-saferedirecturl="https://www.google.com/url?q=https://podcasts.apple.com/us/podcast/the-active-share/id1473139558&amp;source=gmail&amp;ust=1646244430593000&amp;usg=AOvVaw0-4Y05A_QL4ZiqC2chVZy8" href="https://podcasts.apple.com/us/podcast/the-active-share/id1473139558">Apple Podcasts</a>, <a data-saferedirecturl="https://www.google.com/url?q=https://podcasts.google.com/feed/aHR0cHM6Ly9mZWVkcy5ibHVicnJ5LmNvbS9mZWVkcy90aGVfYWN0aXZlX3NoYXJlLnhtbA&amp;source=gmail&amp;ust=1646244430593000&amp;usg=AOvVaw0k4aFyLQSYKTC1k5OKaA-f" href="https://podcasts.google.com/feed/aHR0cHM6Ly9mZWVkcy5ibHVicnJ5LmNvbS9mZWVkcy90aGVfYWN0aXZlX3NoYXJlLnhtbA">Google Podcasts</a>, <a data-saferedirecturl="https://www.google.com/url?q=https://app.stitcher.com/browse/feed/443593/details&amp;source=gmail&amp;ust=1646244430593000&amp;usg=AOvVaw3yc3-v46ptWdwxcfHDDF5J" href="https://app.stitcher.com/browse/feed/443593/details">Stitcher</a>, <a data-saferedirecturl="https://www.google.com/url?q=https://open.spotify.com/show/7cd8ano4miwMxS7VTsuaAL&amp;source=gmail&amp;ust=1646244430593000&amp;usg=AOvVaw2p9nSDyao6hnYUAL5njSA-" href="https://open.spotify.com/show/7cd8ano4miwMxS7VTsuaAL">Spotify</a> or <a data-saferedirecturl="https://www.google.com/url?q=http://tun.in/pjuce&amp;source=gmail&amp;ust=1646244430593000&amp;usg=AOvVaw1y1F2aCfo3vXxx3emW2YEI" href="http://tun.in/pjuce">TuneIn</a> or visit <a data-saferedirecturl="https://www.google.com/url?q=https://active.williamblair.com/insights/the-active-share-podcast/&amp;source=gmail&amp;ust=1646244430593000&amp;usg=AOvVaw3GHMRgKSaXHovRhF5m-ESL" href="https://active.williamblair.com/insights/the-active-share-podcast/">here</a>.</p>
+<p><a href="https://active.williamblair.com/insights/the-active-share-podcast/"><img alt="" class="wp-image-16612 aligncenter" decoding="async" height="198" loading="lazy" sizes="(max-width: 396px) 100vw, 396px" src="https://mebfaber.com/wp-content/uploads/2022/03/ActiveShare1000x500-300x150.jpg" srcset="https://mebfaber.com/wp-content/uploads/2022/03/ActiveShare1000x500-300x150.jpg 300w, https://mebfaber.com/wp-content/uploads/2022/03/ActiveShare1000x500-768x384.jpg 768w, https://mebfaber.com/wp-content/uploads/2022/03/ActiveShare1000x500-696x348.jpg 696w, https://mebfaber.com/wp-content/uploads/2022/03/ActiveShare1000x500-840x420.jpg 840w, https://mebfaber.com/wp-content/uploads/2022/03/ActiveShare1000x500.jpg 1000w" width="396"/></a></p>
+<hr/>
+<p><strong>Comments or suggestions?</strong> <strong>Interested in sponsoring an episode?</strong> Email Colby at <a href="mailto:colby@cambriainvestments.com">colby@cambriainvestments.com</a></p>
+<p><span class="embed-youtube" style="text-align:center; display: block;"></span></p>
+<p><strong>Links from the Episode:</strong></p>
+<ul>
+<li>1:15 – Intro</li>
+<li>2:05 – Welcome to our guest, Rob Koyfman</li>
+<li>4:19 – Thoughts on how the Russian/Ukrainian tension might resolve</li>
+<li>5:46 – Starting his career at Goldman Sachs &amp; later in the hedge fund industry</li>
+<li>14:37 – Rob’s investment style</li>
+<li>16:45 – The insight that led Rob to start Koyfin</li>
+<li>22:55 – Building the product</li>
+<li>26:38 – The current user base &amp; the different subscription models</li>
+<li>33:01 – Plans to build an app and take the software mobile by April 2022</li>
+<li>35:03 – Highlights and lowlights of building investor software</li>
+<li>38:15 – The future of Koyfin</li>
+<li>38:52 – His most memorable investment across his career</li>
+<li>40:11 – Learn more about Rob; <strong><a href="https://www.koyfin.com/?utm_campaign=Meb&amp;utm_medium=referral&amp;utm_source=rewardful&amp;via=meb">koyfin.com</a> for 10% off</strong></li>
+</ul>
+<p><strong> </strong></p>
+<p><strong>Transcript of Episode 395: </strong><strong> </strong></p>
+<p><strong>Meb:</strong> Welcome to the “Meb Faber Show” where the focus is on helping you grow and preserve your wealth. Join us as we discuss the craft of investing and uncover new and profitable ideas, all to help you grow wealthier and wiser. Better investing starts here.</p>
+<p>Disclaimer: Meb Faber is the co-founder and chief investment officer at Cambria Investment Management. Due to industry regulations, he will not discuss any of Cambria’s funds on this podcast. All opinions expressed by podcast participants are solely their own opinions and do not reflect the opinion of Cambria Investment Management or its affiliates. For more information, visit cambriainvestments.com.</p>
+<p><strong>Meb:</strong> What’s up, friends? We got a great episode for you today. Our guest is the founder and CEO of Koyfin, a financial data and analytics platform for researching stocks and understanding market trends. In today’s show, we start with our guest’s background at the vampire squid, Goldman Sachs, under the now chief U.S. equity strategist, David Kostin. Then, our guest shares why a personal pain point later in his career led him to start Koyfin. He walks us through the platform, which provides investors without Bloomberg access to professional-grade data coverage and analytical tools. We hear about the ability to use visual tools and create a customized dashboard to see what’s most important to you. As we wind down, we touch on some wonky client emails and Rob’s annual April Fool email to users. A special offer to listeners of the “MEB Faber Show,” click on the link in the show notes for a 10% discount for new users. Please enjoy this episode with Koyfin’s Rob Koyfman. Rob, welcome to the show.</p>
+<p><strong>Rob:</strong> Thanks, Meb. Great to be here.</p>
+<p><strong>Meb:</strong> Where’s here? I just heard you, like every other VC and crypto maniac on the planet, have decamped to Miami. What was the reasoning there? Had enough of the New York winters or what?</p>
+<p><strong>Rob:</strong> That’s exactly right. So, I was down here in Miami for my wife’s maternity leave after we had our first son and loved it. Loved not having snow or winter and figured we’d be outside a lot more with a new kid. And so just decided to explore moving down to Miami and just pulled the trigger. I was very surprised we actually pulled it off, but, yeah, ended up down here and loving it.</p>
+<p><strong>Meb:</strong> Cool. Well, as we chatted about before the podcast started, I’ll be down there. And so hopefully we can meet up in person one of these days. The ETF conference, listeners, is now been moved to April. So, if you want to go and say hi, I’ll be there. If you’re an advisor and you want a free ticket, hit me up. I think we got some extras. Anyway, you’re originally Ukrainian, right?</p>
+<p><strong>Rob:</strong> I was born in Ukraine. I was born in a city called Chernivtsi, which is the same city that Mila Kunis was born in.</p>
+<p><strong>Meb:</strong> Oh, beauty. What’s the vibe, man? Do you still have family there? Kind of a tense time, huh?</p>
+<p><strong>Rob:</strong> It is a tense time. So, not a lot of family there. My wife’s family lives in Ternopil, which is another city in the West. But basically, Ukraine split down the middle, which is where Kyiv is. So, if you’re in the western part, a little more ethnic Ukrainian and probably speak Ukrainian. If you’re in the eastern part, you’re probably a little bit more ethnically Russian, or maybe are aligned with more of the Russian way of thinking about things. So, in the West, I don’t think they’re worried about any sort of invasion or takeover. I think the eastern provinces are the ones that real risk where all the problems and the drama is.</p>
+<p><strong>Meb:</strong> Do you have some employees based out of Ukraine?</p>
+<p><strong>Rob:</strong> A large majority of our employees are based in Ukraine. When I started Koyfin, the first engineers I hired were in Ukraine. And so we are a remote company, we’re remote in the U.S. We have some folks in Argentina. But we actually have an office in Ukraine because we have so many people there. We have an office where people go into. And so we do have a pretty big presence there. Our employees have been a little bit nervous and anxious in seeing what’s going on.</p>
+<p><strong>Meb:</strong> Western side?</p>
+<p><strong>Rob:</strong> Majority of them are Kyiv.</p>
+<p><strong>Meb:</strong> Yeah. Been on my to-do list to visit one day.</p>
+<p><strong>Rob:</strong> Beautiful city.</p>
+<p><strong>Meb:</strong> Before becoming a software entrepreneur, you’re an investment guy. If you had to guess taking your insights as an investor, what’s your insight as to a potential outcome here? Do you have any over a coffee estimation on how this resolves itself? We’re recording this, by the way, listeners, beginning of February. So, by the time this publishes, we’ll see if Rob is right or wrong. But what do you think the actual outcome is here?</p>
+<p><strong>Rob:</strong> I don’t have an educated guess. I’m just sort of like scratching my head like everyone else and being like, “What the hell is going on?” It doesn’t seem like there’s an endgame or any sort of strategy or plan by Putin, sort of flexing his muscle trying to stay in power and just showing that he’s the victim. I do think that, at some point, they will probably take some other regions, just like they did with Crimea. So, probably some of the regions bordering Russia, and maybe some of the regions bordering the Black Sea. There’s a country called Moldova on the western side, which is Russian controlled. So, there may be some areas there which they take over. I think that’s what’s going to happen eventually, and I think there will be some kind of agreement signed or understanding signed that’ll sort of keep the peace. I do think Russia has this fear of NATO. And as a wannabe superpower, they’re a little bit uneasy about NATO encroaching and expanding, and they’re, obviously, not in NATO. And so their alignment with China, I think, makes sense in pushing back on this NATO presence. And so, unfortunately, Ukraine is caught in the middle. And I really hope that it’s going to sort itself out and peacefully, in some way.</p>
+<p><strong>Meb:</strong> Yeah, fingers crossed. You were a Goldman city guy in a previous lifetime, back before they were the vampire squid, or the hero, depending on your perspective. What was your focus? Were you a fundy guy? Were you a macro guy? Real estate? What were you doing?</p>
+<p><strong>Rob:</strong> I started on Wall Street covering REITs, real estate investment trusts. At the time, it was the smallest sub-sector in the S&amp;P 500, this was 2002. And doing south side stuff, building models, writing research reports to give me a really nice entry into Wall Street and how to look at companies. And then about a year after I started, my boss at the time, David Kostin, was moved into a group called Portfolio Strategy to replace Abby Joseph Cohen, who was the strategist at the time. Basically, they wanted him to do just a lot more bottom-up analyses. Abby was just macro market call. And so I transitioned to portfolio strategy in Goldman Sachs research and then started focusing on the entire market. So, we were looking at every single company, every single sector, global trends, and really trying to analyze the data, analyze trends that are going on with valuation, with fundamentals, with different top-down and bottom-up themes, make sense of it all and tell our clients, at the time, what to do with their money, what sectors to overweight, what sectors to underweight, stuff like that. So, that was a lot of fun.</p>
+<p><strong>Meb:</strong> He’s now the head equity strategist, right?</p>
+<p><strong>Rob:</strong> So, he was the equity strategist when he transitioned in 2003. Abby was there for a number of years being the…I forget the exact titles they had. They were doing slightly different things. And then, at a certain point, Abby moved to…I think she’s in wealth management now, or some part of Goldman. And so he remains the chief U.S. strategist.</p>
+<p><strong>Meb:</strong> He puts out some great work. REITs must have an interesting time there because they’ve been around for a long time, but particularly, I feel like after the Internet bubble burst REITs had a big moment because there were certain asset classes that sailed through that 2000, 2003. Not so much in the financial crisis, but in that early 2000s period, they really started to get a bunch of tailwinds. Was that accurate?</p>
+<p><strong>Rob:</strong> Yeah. So, REITs’ kind of interesting. They have their own designation, which means that they have a special tax structure. They don’t have to kind of pay taxes. Investors pay taxes, but the caveat is they have to pass within 90% of their income out as dividend. What’s interesting about our group at Goldman, and the reason David was promoted to portfolio strategist, which has a role with much higher visibility, is he looked at the real estate sector from a corporate perspective. So, he looked at return on equity and return on cash and CapEx, and how they’re allocating money and their growth rate. And all these companies were doing it very capital effective and capital efficiently and generating a very high return on capital at a time in 2000, 2001, 2002, when you had all these tech stocks that were falling off of very high valuations. And so, at that time, the sector started getting more and more exposure and more mutual funds, and pension funds started paying attention to the sector. And I think David did a really good job of putting the context of how a REIT makes money versus other sectors. And that’s why people noticed him internally and why people externally recommended him to be a portfolio strategist.</p>
+<p>But REITs started, it was like EOP and EQR, maybe GGP or Boston Properties were in the S&amp;P. And then over the years, more and more were added to the S&amp;P 500. As the sector grew, as more capital got allocated, as these companies were acquiring more properties around the country, and I don’t know what the sector is now, tech sector, but at the time, it was just a sub-sector. I remember David famously, we had a morning call at Goldman and the analysts would go on and talk to the salesforce and pitch them research that they just put out. And all these tech people would go on and be like, “Sienna is going to go up 100x and CMGI.” And he would always get up and be like, “And now for a company that actually makes money, let me tell you about whatever.” And so he always had a really interesting style of delivering things.</p>
+<p>One of the most memorable things I did there was introduce a report called the hedge fund trend monitor. Basically, I stumbled on this data one day and Fax said I was playing around with it. I was like, “Holy crap. Do hedge funds report their holdings? This doesn’t seem right. Hedge funds are secretive.” And then we started looking at that and discovered 13Fs, and David’s like, “Put it together, see what you can come up with.” And I started aggregating stuff, and we started thinking about how to think about the most concentrated names, how to think about different sector exposures, how to think about where things are changing. And that was a really popular report that I think still has a lot of traction in the investment community.</p>
+<p><strong>Meb:</strong> Unknowingly, I’ve certainly referenced you over the years. We ended up writing a book on 13F investing. And I remember that report being a particularly insightful one, and so all comes full circle there. It’s funny because I always wished that REITs, farmland as a pet topic we talked a lot about in this podcast, that’s hard as hell to invest in for most folks. And I’ve always said I’m surprised more farming conglomerates or funds don’t try to roll out a REIT structure, but maybe one day. In a different job that would be my career choice, but too much work for me at this point.</p>
+<p><strong>Rob:</strong> A lot of benefits there on the tax side, a lot of benefits on the cash flow side and leverage side. They’re just able to have a very high return on equity because of the high leverage of the steady cash flows. I remember doing the analysis when we started looking at sector allocations and looking at the analysis of the best performing sector, this was in 2003 or ’04. I was like, “It has to be tech. Tech grows fast, tech is a high earner.” And it was Staples. Staples was the best performing sector for 30 or 40 or 50 years. And when we looked at that I was like, “This isn’t right. Staples are boring companies. They only grow earnings 4%.” And at the end of the day, as long as you’re steadily compounding earnings, that’s what matters and not having these huge cycles. I’m sure tech, at some point over the past couple of years, has surpassed Staples because of the run. But at that point, it was Staples.</p>
+<p><strong>Meb:</strong> We did a research piece or a webinar on REITs, where we were showing that REITs, I forget the exact timeframe, but it might have been the last 20 years, was the best performing asset class across the board, which I think would surprise a lot of people. But even going back to the 1920s, we talked about this of the 30 or so French pharma industries. If you look at top one and two, one is tobacco, and two is beer. So, say what you may about boring but the cash cows anytime you sell to human desires ends up being a pretty good market. So, you are in this financial world in New York, crushing it, hopped over to some asset management, hedge funds. What’s the time horizon here? Is this around financial crisis or what?</p>
+<p><strong>Rob:</strong> So, Goldman research I went to work on the prop trading desk in London for a little bit. This was 2008, not great timing. This was in London, then went to a macro fund called Caxton.</p>
+<p><strong>Meb:</strong> World-famous shop?</p>
+<p><strong>Rob:</strong> World-famous shop. So, I was there for a little bit, got some exposure to macro and how macro investors trade. Then went to Citi equity trading strategy to be on the trading desk looking at thematic trade ideas and how to express them in options and baskets and ETFs. Pretty interesting job. We had an internal hook that we were running and we were pitching clients’ ideas. So, that was a little bit of best of both worlds. I then went to Lyxor Asset Management, which is stock gen to work in their macro team. And then lastly, worked at Tekne Capital, which is a long-short hedge fund that was spun out of Duquesne, everything from risk to options trading to all those other stuff. So, as you can tell, I can’t hold a job down for very long, not very employable.</p>
+<p><strong>Meb:</strong> What was the origin story for wanting to strike out on your own?</p>
+<p><strong>Rob:</strong> After Tekne, I started looking for my next role and decided to start investing on my own for a little bit and seeing how I do in the market. And with that, I wanted to get some tools to analyze the market, understand what’s going on. And I’d use Bloomberg and FactSet and CapIQ, and everything under the sun in my previous jobs. But now that I was paying for it myself, I wanted to find some other resources. So, I know Interactive Brokers has so much data, I’m sure they have a bunch of tools that would be great for me. And it was just the same very difficult to use interface as I had seen 10 years before.</p>
+<p><strong>Meb:</strong> I don’t know how someone doesn’t buy Interactive Brokers. Maybe you can buy them or LBO them, and just slap like a pretty front end on them and you have the best possible brokerage out there. They have such a confounding customer service front end.</p>
+<p><strong>Rob:</strong> I think they know what they’re good at, and they’re good at price and access. That’s what they compete on. But that’s not a bad way to think about what we’re trying to do is sort of take the access and accessibility and the coverage of Interactive Brokers and think about it more from a research and analytics perspective.</p>
+<p><strong>Meb:</strong> Geez, they’re a $30 billion shop. That’s their market cap? My God.</p>
+<p><strong>Rob:</strong> They’re pretty big.</p>
+<p><strong>Meb:</strong> So much for LBO’ing them.</p>
+<p><strong>Rob:</strong> You can LBO on that.</p>
+<p><strong>Meb:</strong> They should just buy Robinhood. There you go. Perfect. Interactive Brokers buys Robinhood. There’s their pretty front end.</p>
+<p><strong>Rob:</strong> Can you imagine trading all the instruments on Interactive Brokers on your app with no Y scale?</p>
+<p><strong>Meb:</strong> Yeah, exactly. Well, the Interactive Brokers all these memes stop and crypto people start to learn about futures and spot Forex. There you go. That’s the real juice. Okay. So, what was your style at this point? You’d kind of bounced around a number of different places. Were you medium-term equity person? Were you trading currency pairs? Where were you doing it, fundy? Macro? What?</p>
+<p><strong>Rob:</strong> A little bit of a mutt. So a little bit borrowing from all these different styles that I learned. So, liked looking at stocks and just looking at companies. Liked looking at options as well and thinking about what is the vol market saying and can this be expressed in options more efficiently or be better leveraged? I liked looking at macro and thinking about what are the top-down views or top-down themes to think about in terms of either the Fed cycle or thematic trends? And I liked looking at technical analysis and really thinking about, is the market confirming my views? Or is it saying something maybe about the macro that I’m not thinking about? So, just a little bit of everything, and then just trying to think, what is the best way to implement something, to implement an idea? So, I could have a macro idea or thematic idea, and there’s just a number of ways to do it. And sometimes that’s the liquidity, sometimes it just has to be with this is the most direct way or has fewer other factors that are impacting it. So, my trading style at the time, was probably 40% single stock, 40%, ETFs, and 20% futures options currencies. I’d say with currencies, the way I think about currencies is just you get massive leverage. That’s the beauty of it. Typically, when there’s a trade to be had in currencies, there’s probably trade to be had in indices or equities or ETFs. Maybe if you’re playing the Turkish lira and what they’re doing there, that’s probably a direct currency trade and more dirty to play it in equities. But typically, the themes that I’m thinking about in terms of where the Fed is or which themes are working, that’s typically more directly expressed in equities or ETFs or indices.</p>
+<p><strong>Meb:</strong> So, you are saying, “All right, kind of like Meb, open-minded, I’ll use whatever works across whatever discipline.” Also, like Meb, I’m a cheap bastard, I’m not going to go pay for Bloomberg out of my pocket. I joke on this podcast that in the very, very early days of my career, my method for getting access to all these various data sources was through friends who were at graduate school at Stanford. So, they had the logins for all the various databases, which they so generously shared. Thank you, GSB. So, you said, okay, I’m looking around trying to find a good solution. Most people would stop there and just either fork up for one of these or cobble ’em together. What was the next iteration for you?</p>
+<p><strong>Rob:</strong> So, it was the first time that I got a chance to really explore what’s out there, and really trying to use the products for my workflow. And so the products that were meant for individuals just didn’t have the capability to do what I wanted to do. They didn’t have the data or they didn’t have the actual functionality. And then on the professional side, not only was the cost very high, so that’s one variable, but they were just very unpleasant to use. They were all very old. For FactSet and CapIQ, the use case is Excel. You get that data to put it into Excel. You don’t get those platforms to use the platform on the front end. You get the platform for the data. And typically, you’re doing all the analysis in Excel. And when I started to put together my resources and thinking about what I need to use, I was just like, “This is crazy what’s going on in this sector, in this field.” You have this technological revolution, you have these software companies that are creating these beautiful products, companies like Tableau that are really revolutionizing how that is visualized. And then in finance, it just kind of crap. It just looks like it’s still from the 1980s. And just started going down these rabbit holes. Why is that the case? Why is it that this is a field where there’s just nothing innovative happening and everything’s just super old? And the response I got back was, look, the data is super expensive. Nobody new could come in because the data is just really expensive.</p>
+<p>And so I started analyzing and started calling around being like, “How much does that actually cost? Is it hundreds of millions? Is it tens of millions? Is it hundreds of thousands?” And I convinced myself where I was able to find out that the data is expensive. It’s not cheap, but it’s not overwhelmingly expensive. And what I wanted to do is available, and there’s data out there that is available to build a platform that is more intuitive, more functional, easier to use than some of the platforms out there. So, that’s when I started and how I started thinking about this concept of Koyfin and started refining it and decided to bootstrap it. In the beginning, I sort of said, “Hey, this is something I want to build for myself. It’s something that I’ll hire a couple of engineers to help me build.” I felt very strongly that I knew what I wanted the product to look like, having been a user and investor. But I didn’t really know how to build the product or how to build an engineering team. And so I started pretty small with a team in Ukraine. And then once I saw some results, I decided to expand that team. And so slowly, but surely, we were building the product, getting feedback, putting it out there, as some more and more people started to use it. And then at a certain point, it was enough traction, there was enough opportunity that I saw in this company that I raised some venture capital money to start to expand the team and moving a little bit faster.</p>
+<p><strong>Meb:</strong> What year would this be in the timeline?</p>
+<p><strong>Rob:</strong> I decided to launch Koyfin on March 7th, 2016.</p>
+<p><strong>Meb:</strong> Congrats, man. Five years, well done. You survived the gauntlet of the most startups getting to be a toddler. When you looked around, what was the main missing piece? I remember going back 20-plus years and using things like TradeStation, using, I can’t even remember at this point, so many of the various software data programs. What was it that you said, “Look, I want this but this isn’t out there, at least version 1.” And then we can walk forward to what you have today.</p>
+<p><strong>Rob:</strong> So, the first thing is the data coverage, is I wanted something that covers a bunch of different assets and looks across asset classes and not just focused on one thing. So CapIQ, very much focused on equities, doesn’t have a lot of stuff on economics or macro. Morningstar is obviously very mutual-fund-focused. So, the data coverage. I wanted a platform that has a lot of equity, data fundamentals, valuation, but also other asset classes like mutual funds, ETFs, economic data, bonds, currencies. And so the data coverage and professional-grade data coverage was important to me.</p>
+<p>The second thing was really the analytical tools to turn that data into information. So, I didn’t want a platform where I had to suck stuff into Excel and do the workflow in Excel. I wanted a platform where I had the functionality in the platform to do what I wanted it to do. My favorite, personally favorite platform out of all the platforms I’ve used, is Bloomberg. Bloomberg, there’s a lot of bad things about it, including the cost and some UI stuff, but it’s actually really powerful. And it’s really powerful because it has a lot of functionality. Not only does it have just a ton of data but it has 30,000 functions that you can use to analyze that data. Michael Bloomberg was early on in some of these concepts that today are pretty widespread. And he built all the graphing stuff himself and able to really visualize and graph any sort of data. The fact that you can do keyboard shortcuts and access stuff really quickly, Superhuman is a company that popularized this in the email world, and now it’s sort of becoming a trend in software. But Bloomberg, these keyboard shortcuts, they did it because there was no mouse when they started putting their platform together. So this ability to really get through the data through graphing, through dashboards, through snapshots, and having that functionality in the platform, that was super, super important to me.</p>
+<p>And the last thing is just having a modern and intuitive user interface. So, something that was easy to use, somewhere where you could click around and really felt more like a Airbnb than it did like Interactive Brokers or Bloomberg. That was another thing that was important to me. Sort of backing up to my career, one of the things that my first manager, David Kostin, was really good at is presenting data, is basically taking a bunch of data and then saying, “All right. This is how we should organize this, or this is the thing we should call out.” And we’d spent a long time in our reports really thinking about how do you organize? How do you visualize? How do you present data? And that’s not something that was really done on Wall Street. Those people would just draw data on a page and throw a bunch of numbers and say, “Here, read it.” Whereas, he spent a lot of time thinking about, how was the data interpreted? And had me start reading Edward Tufte books and thinking about data visualization and stuff like that. So, that’s something that was ingrained in my mind very early on in my career, and that’s something that I really appreciate, and that’s something that I wanted to show up in the platform as well.</p>
+<p><strong>Meb:</strong> How long did it take you to get version 1 out? I imagine it was not cheap, although you seem to have really been adapted the remote team before it was cool. What was the original rollout? Friends and family, or did you do it where it’s actually public-facing pretty quick?</p>
+<p><strong>Rob:</strong> One of the things that I thought about is what can we innovate on, what can we add, is the business model, is how we sell the product. And when I looked around in the tech world, in the software world, the best companies, the fastest-growing companies were growing because they were a freemium. They were giving away a bunch of the product for free and then charging for more advanced functionality. And that’s something that I thought was brilliant, something that I thought was product plus growth, that if you have the best product out there, you let people use it, and they’ll pay you for it if you’re solving a problem for them. So right from the beginning, what we wanted to do was have a freemium model and have a substantial portion of our product to be available for free, and then charge users for more stuff. So to answer your question, the first version was probably about 18 months after launch and there was iteration. I found a designer on Craigslist that I was working with and we were designing it.</p>
+<p><strong>Meb:</strong> And to be clear, did you have any software chops yourself?</p>
+<p><strong>Rob:</strong> Zero. Zero software chops. And so I just worked with the designer. First iteration was me working with the software engineers, drawing it on pencil and paper and giving it to them. And then when the product came out, I was just like, “What the hell is this? This is the ugliest thing I’ve ever seen.” They were like, “Well, get a designer.” I’m like, “A designer? What do they do?” I found a designer, her name was Mei, she had a full-time job. In the weekend she was helping me design a bunch of the markups and a bunch of the screens. And it just so funny seeing the original designs and what Koyfin originally looked like. The skeleton was there, that it was a single-page application, it focused on charting. There were things that you could do on the side to impact the charts and there was a menu. And the way I thought about it was from a Bloomberg perspective. These are the 50 functions that people use every day, and I want to focus on 10 at first. So, I focused on graphing and movers and financial analyses and mutual fund description and GM, which is the performance graph. I really thought about it from a modular perspective, like we want to create modules. We don’t want anything to depend on anything else. And that’s really important about our product because it’s a very flat structure. It’s a very modular structure, which is really easy to navigate and to think about.</p>
+<p>Released the first version, put it in the wild. First, we didn’t even have a website. You would go to Koyfin and it would be the app. And we had a debate internally whether that was good or not and decided to have a landing page to describe what it is because some people would go to it and be like, “Oh my God, what is this? It feels like you’re about to steal my information. I don’t know what this is.” So, we had a little gateway with a landing page. And then just blast it out to my network, had almost no usage. I was going around investment clubs. I remember when I went to Columbia University and pitched it up the investment club there and we have 18 people sign up. And my co-founder messaged me he’s like, “Oh my God, 18 people signed up.” But 17 of them didn’t use it the following day. It’s very iterative, thinking about what are people using it for? Why are they using it? And I was reading a lot of websites at the time on product management and how to think about product development. It’s a whole science, it’s a whole framework. Why do people use things? The jobs to be done in framework. If you have something, how do you figure out what’s working? Why are people using it? How do you add to that? Do you focus on things people are using, or do you focus on things that people aren’t using? And do you focus on things that people are requesting? And I remember in the beginning, people were just requesting stuff and we were doing everything. And then, at a certain point, we were like, “Wait, what the hell are we even building here?” So having a framework to prioritize features and having a framework to define our users was important. And so we made a lot of mistakes, but have fixed them, figured them out, and have been moving forward, which is important.</p>
+<p><strong>Meb:</strong> So, you become a software founder, you start to figure it out. And software is all about implementation and iterations. Where are we today? What are people mainly using this for?</p>
+<p><strong>Rob:</strong> If I abstract our software away or how we’re thinking about our users, there’s only five things that our users are doing that we want to attack and help them do from a software perspective.</p>
+<p><strong>Meb:</strong> I assume the vast majority are professionals/engaged individuals.</p>
+<p><strong>Rob:</strong> So, the majority of our users are individuals, and then the second largest segment is financial advisors. And it’s individuals who need more advanced tools than Yahoo Finance or their brokerage. So it’s not like Robinhood people who were like, “Hey, I wonder what the EBITDA margin is of Apple and how it compares to Facebook.” So, the majority of individuals don’t know what to do with our software because it is pretty advanced. There is a learning curve. The biggest segment of individuals we have are software engineers. They tend to have more disposable income, they tend to be a little more quantitative. A lot of former Wall Street people are using us as individuals, but it’s definitely for the more advanced individual user. And to answer your question directly, so the free version, which is 90% of our users or 95% of our users is free. Then we have three tiers. We have a basic tier, which is $15 a month paid annually, we have the plus tier, which is $35 a month paid annually. And then we have the pro tier, which is $70 a month paid annually. The difference is you get more data, more functionality, more customization as you go up in the tier structure.</p>
+<p><strong>Meb:</strong> Is one of the biggest levers the ability to export data? Of the tiers, what’s the main levers between those?</p>
+<p><strong>Rob:</strong> Taking all those categories one by one. So, on the data side, for example, the mutual fund that is only in our pro tier, because we have to pay per user for that data. And so we have to put it in the higher tier. We know that financial advisors typically use that data, so they have a little bit more disposable income. So, that’s one example of something that’s just in the pro tier. And we have some very basic functionality in the free tier for mutual fund data, like looking at a chart or just seeing what mutual funds we have. Downloading data is in our middle tier. So, if you wanted to download a dashboard or download the constituents of an ETF, you can do that in the plus or pro tier. So, the financial data for a stock. In the free tier, we only have three years worth of free data. But if you wanted to look at the full 5 years, that’s basic, 20 years is plus, and then full history is pro. So, that’s an example of data availability.</p>
+<p>Another thing is the ability to create your own dashboards. So, one of the benefits of Koyfin is you can create your watch list and dashboards of different securities, of different graphs, mix and match different ways to look at the market. So, if you’ve ever used the Launchpad feature on Bloomberg, which is allowing you to customize how you want to look at the market, that’s what the dashboards are replicating. And you get two free dashboards in the free version and you get eight in the basic version and you get unlimited in the plus and pro version. Another example is transcripts. So, company transcripts or company filings are only in the plus version. We have some premium news sources like Reuters that are only in the basic and up version. So, just thinking about more advanced workflows, customization, more advanced professional data.</p>
+<p><strong>Meb:</strong> I interrupted you, sorry. You were going to walk through the main use cases for why people are interacting with it.</p>
+<p><strong>Rob:</strong> The five buckets, if we think about are analytics, discovery, tracking, collaboration, and execution. If you abstract away what our users are doing, it sort of falls in those five buckets when it comes to investing. So, on the analytic side, the most popular feature by far is our graphic or ability to graph any sort of time series or any sort of financial data, so obviously stock prices or mutual fund prices, or total returns. But then if you think about any financial or any economic data or ETF flows or drawdowns or whatever it is, you can graph that on Koyfin very easily. And so you could just type in a series and add the series and then move the graphs around. That’s really powerful. That’s differentiated. That’s the number one feature.</p>
+<p>The second feature is really the dashboards I just mentioned, which is customizing the different modules to how you want to set up your platform. So, in the dashboards, you can have a watch list and two graphs or three watch lists or four graphs together, mix and match different things. And that customization feature is super powerful, and our second most used function.</p>
+<p>The third most used function are the snapshots. And snapshots are a way for a user to analyze a specific security. So, we have an overview snapshot, a description snapshot, a dividend snapshot, an ETF exposure snapshot for companies. For ETFs, we have a constituents snapshot, we could see the constituents but also see the contribution of each stock and each sector to that ETFs performance. We have mutual fund snapshots. We have different snapshots for the securities for people to really just get a view of that security without having to look up every single item. So, that’s the third most used function.</p>
+<p>The fourth are market dashboards. So we have a bunch of market dashboards that you can browse different parts of the market. So, a factor’s dashboard where you can see how factors are performing sectors, currencies, indices, global yields, yield curves, different ways of slicing and dicing the market, and that’s our fourth most used function.</p>
+<p>And then there’s a bunch of functionality that’s on the tail end. So, we have news that’s pretty popular. We have a scatterplot that’s used by a lot of people. We have a function that’s one of my favorite functions I created for myself called the lots of charts function, where you put in an ETF or a watch list or an index and it shows you all the charts in that index or ETF. And so if anyone is looking at technical analysis or trends, that’s a really fast way of being able to see that.</p>
+<p><strong>Meb:</strong> We got 13F’s in there, or what?</p>
+<p><strong>Rob:</strong> You know, we don’t have 13Fs and that’s because the data is super hard to license. None of the providers will give us the 13F data in the full view. They’ll give us the top 20 or the top 10. I think what we’re going to do is really just use the SEC website and get the data ourselves because the data is actually better organized now than it used to be. There’s, like, a more defined way of how 13Fs have to be filed and how they have to be tagged in each security. And so I think we’re going to be getting that data ourselves, but coming from the person who created the hedge fund trend monitor from 13Fs?</p>
+<p><strong>Meb:</strong> That’s what I mean. Come on, man. Come full circle. The dashboard is great. To me, that is a pretty nice homepage. So many of these apps and websites, you can get stocks and that’s about it. But particularly for the macro people, they want to see a number of different things. It’s really well done. When are you guys going to build an app? Is that in the cards?</p>
+<p><strong>Rob:</strong> Yeah, it’s in the cards. Just expanded that team to get that out fast. It’s sort of been lingering a little bit longer than I wanted. But everything goes right, it should be out by April.</p>
+<p><strong>Meb:</strong> Oh, wow. Soon.</p>
+<p><strong>Rob:</strong> Soon. Yes. So, it’s kind of interesting. Our platform is desktop first, we can’t do the workflows that we’re trying to do on the phone. But the phone is obviously very important in terms of being able to track your portfolio or watch lists or news or just what’s happening in the market. And so we’ve been really thinking about what goes on the app, what’s the feature of the app? How does it connect to the overall application? But it’s looking good, it’s going to be great. It’s going to be hopefully out in April.</p>
+<p><strong>Meb:</strong> Good. Well, looking forward to that because you guys have found a wedge there, I think on what I was saying with the dashboard. As far as roadmap, you’ve built this company, it’s successful, what’s the future look like for you guys as you look out to 2022 and beyond? Is it just endless feature requests from users? Do have some designs on expansion to certain data silos or features? What’s next for you guys?</p>
+<p><strong>Rob:</strong> The future for Koyfin is really to be the financial operating system for different users, for different investors. And what that means is, when I look at our platform, we have everyone from students to hedge fund managers using our platform, which is really strange because they’re not the same user persona. They’re different user personas. But the reason that they’re using our platform is because they have common workflows and they’re able to customize the system for their own use cases. And so when I think about the future, I think about that power and that place that we have of been able to customize the platform for the use case of that particular investor. So, our vision in the future is that we’re going to be connected to any sort of financial data that’s out there. And then having that toolkit that the user can then choose of how they want to look at that financial data, whether it’s through portfolio analytics or model portfolios or portfolio optimizations or just graphing or snapshots and being able to mix and match how they want to look at the market, what asset classes to look at, and how they want to organize.</p>
+<p><strong>Meb:</strong> Tell me some highlights and lowlights of this experience, software, designer, entrepreneur, working with customers. I imagine, we have almost 100, probably over 100,000 investors now, so I can tell stories all day about fun, sad, insightful feedback we get all the time. But what’s it been like on your side? Was it just a year of meme stock requests last year? Anything funny, weird, different that you want to pass along?</p>
+<p><strong>Rob:</strong> So, many different users and people. And we have over 300,000 users now. It’s interesting how people interact over email, just people are polite and some people are nice and some people are engaging, other people are just dicks. I’m sorry, can I say that?</p>
+<p><strong>Meb:</strong> Yeah. That’s my first rule of social media and just being a human in the 2020s is DBAD, don’t be a dick.</p>
+<p><strong>Rob:</strong> That rule is constantly violated. But we’ve gotten our fair share of anti-Semitic responses to my emails, just super strange and always a little weird. We had Barbra Streisand’s assistant reach out to us one time and try and set up a call with Miss Streisand. That didn’t happen because we don’t have options data on our platform yet.</p>
+<p><strong>Meb:</strong> She’s a big trader. I didn’t know she’s still cranking out. Good for her.</p>
+<p><strong>Rob:</strong> That’s my favorite help email to see. I wish we did have options data, so try to convert her.</p>
+<p><strong>Meb:</strong> You can build it out just for her and say, “Hey, you give us whatever is above the pro-fee, and it can be the influencer/celeb fee, we’ll do some custom bespoke work.”</p>
+<p><strong>Rob:</strong> Yeah. I used to watch her in “Yentl,” and that’s going to be a client. I sent out April Fool’s email, the first year, we sent out an email, rolling out a feature that predicts the stock market with AI and ML and it’s 99% accurate, and click here to access it. Click here is Wikipedia page to April Fools. And so people didn’t even click on the link. They’re just, like, replying, “How could you do this? There’s no way this makes sense.” That’s always fun to see.</p>
+<p><strong>Meb:</strong> Probably the highest click-through rate you ever get for a campaign. But it’s even funnier that it didn’t even get clicks throughs, it’s just read the headlines comment.</p>
+<p><strong>Rob:</strong> Two years ago, we did one. This is during COVID, so we’re just like, “Hey, difficult environment out there. Get Koyfin for life for $999. Click here,” and there’s April Fools. A lot of people found that funny but then you also have a lot of people who are pissed off, they were like, “How dare you waste my time?” That’s always interesting to see of who has a sense of humor. And then last year, we had an April Fools of Koyfin is completely pivoting towards crypto. So, we had an email with me and Rich, my co-founder, with laser eyes, the stock thing isn’t working or this traditional stuff isn’t working. We’re pivoting towards crypto, and we had a link. But the sad part is the link, apparently, Wikipedia got hacked. So, the Wikipedia April Fools link directed you to, like, a porn site. And so people were emailing me like, “Have you clicked on the link? Did you…” And I’m just like, “Dude, relax. It’s Wikipedia.” And they were like, “No, click on the link.” So, I was just like, “Oh my God.”</p>
+<p><strong>Meb:</strong> You got to be careful with the Crypto crowd. I had posted a tweet years ago from Switzerland with my friend, Jeremy Schwartz, the head of research at WisdomTree joking that they were putting out a light coin ETF and how quickly that whipped around the world and how angry people were and Jeremy, who’s at a big corporate company, whose PR team wasn’t amused at my joke. But it was funny anyway. It’s good to have a sense of humor, particularly over the last couple of years. What’s the plan? Are you just going to stay independent? Are you going to keep growing? How many folks y’all got now?</p>
+<p><strong>Rob:</strong> 25 employees, looking to do our Series A pretty soon, so still a pretty young company. For us, like the future, build the best product out there, solve our user’s needs. In terms of financially getting acquired or whatever that’s going to take care of itself. We’re in a space that just has so much potential and so much opportunity and so much change. And we have this really interesting positioning of having the best product and analytics out there that people love and rave about. And so we’re just going to be building functionality, solving our user’s needs, and I think the outcome will take care of itself.</p>
+<p><strong>Meb:</strong> Your career spanned both starting a company and being in a number of funds, in big investment shops. Most memorable, good, bad, in between investment?</p>
+<p><strong>Rob:</strong> I think the investment I remember the most is CMGI in the ’90s. I don’t know if you remember.</p>
+<p><strong>Meb:</strong> Oh, God. You just caused me sweaty palms. You just triggered me.</p>
+<p><strong>Rob:</strong> When I was first started learning about stocks and it was called the incubator, it’s an incubator. I went from 20 to 2,000 to, like, 1 to 0. I bought it, at some point, before 2000, and obviously sold it at a huge loss. But that was fun. One of my first experiences trading and investing and…</p>
+<p><strong>Meb:</strong> You aren’t the only person. I mean, everyone owned it, I owned it. There’s so many things about this one. They had named the Patriots field, it was CMGI field. So, as my local Lakers facility is now called crypto.com. There’s a bunch of research that shows if you’re a public company, then name a stadium the stocks or just an absolute dumpster fire, the worst sentiment indicator. It was almost like a VC portfolio roll up all into one. AltaVista was a portfolio company.</p>
+<p><strong>Rob:</strong> There were a couple of legitimate ones in there, but 100 of them and probably 2 got acquired and had a real product. The others were just market cap to clicks, right? That was the valuation measure.</p>
+<p><strong>Meb:</strong> I have to look at the eventual post-mortem. It was like $10 million, $20million, $30 billion company. Where do people go if they want to find out what you’re up to, what’s going on in your world, check out the software, give it a try? What’s the best spot?</p>
+<p><strong>Rob:</strong> Yeah, go to koyfin.com, create a free account takes two seconds, start using the software. And if you like it, and we help you analyze the market, check your investments then upgrade to the paid version.</p>
+<p><strong>Meb:</strong> Awesome. This has been a blast. Thanks so much for joining us today.</p>
+<p><strong>Rob:</strong> Thanks so much, Meb. We’ve had a great time.</p>
+<p><strong>Meb:</strong> Podcast, listeners, we’ll post show notes to today’s conversation at mebfaber.com/podcast. If you love the show, if you hate it, shoot us feedback@themebfaber.com, we love to read the reviews. Please review us on iTunes and subscribe the show anywhere good podcasts are found. Thanks for listening friends and good investing.</p>
+</div>
+
+</article> <!-- /.post -->
+<div class="td_block_wrap td_block_related_posts tdi_2 td_with_ajax_pagination td-pb-border-top td_block_template_2" data-td-block-uid="tdi_2"><h4 class="td-related-title td-block-title"><a class="td-related-left td-cur-simple-item" data-td_block_id="tdi_2" data-td_filter_value="" href="#" id="tdi_3">RELATED ARTICLES</a><a class="td-related-right" data-td_block_id="tdi_2" data-td_filter_value="td_related_more_from_author" href="#" id="tdi_4">MORE FROM AUTHOR</a></h4><div class="td_block_inner" id="tdi_2">
+<div class="td-related-row">
+<div class="td-related-span4">
+<div class="td_module_related_posts td-animation-stack td_module_no_thumb td_mod_related_posts">
+<div class="td-module-image">
+</div>
+<div class="item-details">
+<h3 class="entry-title td-module-title"><a href="https://mebfaber.com/2024/05/31/brendan-ahern/" rel="bookmark" title="Episode #535: KraneShares’ Brendan Ahern on China’s Economic Landscape: Is It Still Investable?">Episode #535: KraneShares’ Brendan Ahern on China’s Economic Landscape: Is It Still Investable?</a></h3> </div>
+</div>
+</div> <!-- ./td-related-span4 -->
+<div class="td-related-span4">
+<div class="td_module_related_posts td-animation-stack td_module_no_thumb td_mod_related_posts">
+<div class="td-module-image">
+</div>
+<div class="item-details">
+<h3 class="entry-title td-module-title"><a href="https://mebfaber.com/2024/05/24/michael-melissinos/" rel="bookmark" title="Episode #534: Michael Melissinos – Mastering the Art of Trend-Following">Episode #534: Michael Melissinos – Mastering the Art of Trend-Following</a></h3> </div>
+</div>
+</div> <!-- ./td-related-span4 -->
+<div class="td-related-span4">
+<div class="td_module_related_posts td-animation-stack td_module_no_thumb td_mod_related_posts">
+<div class="td-module-image">
+</div>
+<div class="item-details">
+<h3 class="entry-title td-module-title"><a href="https://mebfaber.com/2024/05/10/eric-crittenden-jason-buck/" rel="bookmark" title="Episode #533: Eric Crittenden &amp; Jason Buck Explain Why Best Investors Follow the Trends">Episode #533: Eric Crittenden &amp; Jason Buck Explain Why Best Investors Follow the Trends</a></h3> </div>
+</div>
+</div> <!-- ./td-related-span4 --></div><!--./row-fluid--></div><div class="td-next-prev-wrap"><a aria-label="prev-page" class="td-ajax-prev-page ajax-page-disabled" data-td_block_id="tdi_2" href="#" id="prev-page-tdi_2"><i class="td-next-prev-icon td-icon-font td-icon-menu-left"></i></a><a aria-label="next-page" class="td-ajax-next-page" data-td_block_id="tdi_2" href="#" id="next-page-tdi_2"><i class="td-next-prev-icon td-icon-font td-icon-menu-right"></i></a></div></div> <!-- ./block -->
+</div>
+</div>
+<div class="td-pb-span4 td-main-sidebar" role="complementary">
+<div class="td-ss-main-sidebar">
+ </div>
+</div>
+</div> <!-- /.td-pb-row -->
+</div> <!-- /.td-container -->
+</div> <!-- /.td-main-content-wrap -->
+<div class="tdc-footer-wrap">
+<!-- Footer -->
+<div class="td-footer-wrapper td-footer-container td-container-wrap td-footer-template-4">
+<div class="td-container">
+<div class="td-pb-row">
+<div class="td-pb-span12">
+</div>
+</div>
+<div class="td-pb-row">
+<div class="td-pb-span12">
+<div class="td-footer-info"><div class="footer-logo-wrap"><a href="https://mebfaber.com/"><img alt="" height="174" src="https://mebfaber.com/wp-content/uploads/2018/05/meb-featured.png" title="" width="978"/></a></div><div class="footer-text-wrap"></div><div class="footer-social-wrap td-social-style-2">
+<span class="td-social-icon-wrap">
+<a href="https://www.linkedin.com/in/mebanefaber/" target="_blank" title="Linkedin">
+<i class="td-icon-font td-icon-linkedin"></i>
+<span style="display: none">Linkedin</span>
+</a>
+</span>
+<span class="td-social-icon-wrap">
+<a href="https://mebfaber.com/feed/rss/" target="_blank" title="RSS">
+<i class="td-icon-font td-icon-rss"></i>
+<span style="display: none">RSS</span>
+</a>
+</span>
+<span class="td-social-icon-wrap">
+<a href="https://twitter.com/mebfaber" target="_blank" title="X">
+<i class="td-icon-font td-icon-twitter"></i>
+<span style="display: none">X</span>
+</a>
+</span>
+<span class="td-social-icon-wrap">
+<a href="https://www.youtube.com/channel/UCKvWzzrVUA_DSCoKXL6GU2w?sub_confirmation=1" target="_blank" title="Youtube">
+<i class="td-icon-font td-icon-youtube"></i>
+<span style="display: none">Youtube</span>
+</a>
+</span></div></div> </div>
+</div>
+</div>
+</div>
+<!-- Sub Footer -->
+<div class="td-sub-footer-container td-container-wrap">
+<div class="td-container">
+<div class="td-pb-row">
+<div class="td-pb-span td-sub-footer-menu">
+<div class="menu-footer-menu-container"><ul class="td-subfooter-menu" id="menu-footer-menu"><li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-privacy-policy menu-item-first td-menu-item td-normal-menu menu-item-10533" id="menu-item-10533"><a href="https://mebfaber.com/privacy-policy/" rel="privacy-policy">Privacy Policy</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page td-menu-item td-normal-menu menu-item-10534" id="menu-item-10534"><a href="https://mebfaber.com/terms-of-use/">Terms of Use</a></li>
+</ul></div> </div>
+<div class="td-pb-span td-sub-footer-copy">
+                    © 2006- Meb Faber Research – Stock Market and Investing Blog
+<a href="https://romabet.cam/" style="display:none;">romabet</a>
+<a href="https://mahbet.cam/" style="display:none;">mahbet</a>
+<a href="https://pinbahis.com.co/" style="display:none;">پین باهیس</a>
+<a href="https://bettingmagazine.org/" style="display:none;">bettingmagazine.org</a>
+<a href="https://1betcart.com/" style="display:none;">بت کارت</a>
+<a href="https://yasbet.com.co/" style="display:none;">یاس بت</a>
+<a href="https://yekbet.cam/" style="display:none;">yekbet</a>
+<a href="https://megapari.cam/" style="display:none;">megapari</a>
+<a href="https://onjabet.net/" style="display:none;">onjabet</a>
+<a href="https://alvinbet.org/" style="display:none;">alvinbet</a>
+<a href="https://2betboro.com/" style="display:none;">betboro</a>
+<a href="https://betfa.cam/" style="display:none;">betfa</a>
+<a href="https://1win-giris.com.co/" style="display:none;">1win</a>
+<a href="https://betwiner.org/" style="display:none;">betwinner</a>
+<a href="https://4shart.com/" style="display:none;">4shart.com</a>
+<a href="https://1xbetgiris.cam" style="display:none;">1xbetgiris.cam</a>
+<a href="https://1kickbet1.com/" style="display:none;">وان کیک بت</a>
+<a href="https://winbet-bet.com/" style="display:none;">وین بت</a>
+<a href="https://ritzobet.org/" style="display:none;">ریتزوبت</a>
+<a href="https://1xbet-1xir.com/" style="display:none;">1xbet</a>
+<a href="https://betforward.com.co/" style="display:none;">بت فوروارد</a> </div>
+</div>
+</div>
+</div>
+</div><!--close td-footer-wrap-->
+</div><!--close td-outer-wrap-->
+
+ 
+<!--
+
+        Theme: Newspaper by tagDiv.com 2026
+        Version: 12.7.7 (rara)
+        Deploy mode: deploy
+        
+        uid: 6a934c81167b8
+    -->
+<!-- Custom css from theme panel -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Google Tag Manager (noscript) -->
+
+<!-- End Google Tag Manager (noscript) -->
+
+
+
+
+
+<!-- JS generated by theme -->
+
+
+

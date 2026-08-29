@@ -1,0 +1,203 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>More of the Disease, Faster (What happens when you ask an LLM to find you an edge)</title>
+<!-- source: https://robotwealth.com/more-of-the-disease-faster-what-happens-when-you-ask-an-llm-to-find-you-an-edge/ -->
+<h1>More of the Disease, Faster (What happens when you ask an LLM to find you an edge)</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-130943 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai pmpro-has-access" id="post-130943">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">March 19, 2026</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">More of the Disease, Faster (What happens when you ask an LLM to find you an edge)</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="More of the Disease, Faster (What happens when you ask an LLM to find you an edge)" class="ipa-media gb-media-81e19d89" data-media-id="131544" decoding="async" fetchpriority="high" height="848" sizes="(max-width: 1264px) 100vw, 1264px" src="https://media.robotwealth.com/wp-content/uploads/2026/03/19150757/hamsterwheel.png" srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/19150757/hamsterwheel.png 1264w, https://media.robotwealth.com/wp-content/uploads/2026/03/19150757/hamsterwheel-768x515.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/19150757/hamsterwheel-80x54.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/19150757/hamsterwheel-480x322.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/19150757/hamsterwheel-960x644.png 960w" width="1264"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">This week I discovered the “vibe quant” movement (or rather, it discovered me). People using LLMs to find trading strategies, validate them, and put them into production. The pitch is seductive: the LLM reads the literature, implements the ideas, backtests them, and you just supervise.</p>
+<p class="wp-block-paragraph">I think this approach is going to cost people a lot of money. And worse, it’s going to prevent them from ever actually learning to trade.</p>
+<p class="wp-block-paragraph">Fair warning: this article contains some opinions that I suspect will be unpopular. I’m going to argue that most public trading content is rubbish, that the academic literature isn’t much better, and that LLMs are systematically incapable of teaching you the one thing that actually matters.</p>
+<p class="wp-block-paragraph">I know those are big claims. But I’ve been doing this long enough that I’m fairly confident in these positions, and I think it’s worth drawing a line in the sand.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">Before I get into the details, I want to put the punchline up front, because I think it’s the most important idea in this article.</p>
+<p class="wp-block-paragraph">When you do trading research properly (hypothesise, test, learn, iterate), each cycle teaches you something about market structure, about counterparties, about what kinds of constraints create opportunities.</p>
+<p class="wp-block-paragraph">That understanding makes the next cycle better. It’s a flywheel, and it compounds.</p>
+<p class="wp-block-paragraph">The vibe quant approach skips the learning. The LLM does the thinking, so the trader’s understanding is exactly as shallow on day 1,000 as on day 1. You end up permanently dependent on the machine, with no ability to evaluate whether the patterns it finds are real, persistent, or tradeable.</p>
+<p class="wp-block-paragraph">It’s a treadmill, literally going nowhere. The LLM just speeds up the belt.</p>
+<p class="wp-block-paragraph">Most beginners find themselves on this treadmill. In Chapter 2 of my <a href="https://robotwealth.com/case-study/">​case study​</a>, I describe the “backtest cycle of doom”: change a parameter, add a stop loss, optimise a filter, repeat until you’ve designed your perfect equity curve. They think they’re doing research. They aren’t. They’re doing something that <em>feels </em>like research because it’s technical and requires skill, but:</p>
+<p class="wp-block-paragraph"><em><strong>Backtesting is an entirely technical problem, requiring little to no nuanced thinking or decision-making in the face of uncertainty. It doesn’t require wrestling with difficult problems. In that sense, it’s easy. And I was being seduced that I could “solve trading” by doing something easy.</strong></em></p>
+<p class="wp-block-paragraph">The vibe quant movement is exactly this, just turbocharged. The LLM makes the easy part even easier, and even more seductive. But the hard part, the part that actually matters, doesn’t get done at all.</p>
+<p class="wp-block-paragraph">To see why, we need to talk about what the LLM actually can’t do.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">When I look at any potential trade, the first question I ask is: who’s losing money on the other side of this, and why will they keep doing it?</p>
+<p class="wp-block-paragraph">That’s the game. Edge comes from structural constraints, stuff other participants can’t or won’t do because of mandate restrictions, capacity limits, or operational awkwardness. If you can’t answer that question, you don’t have an edge.</p>
+<p class="wp-block-paragraph">The problem is that this question is almost entirely absent from public trading content. The vast majority of what’s out there is rubbish. Absolute rubbish. It’s all patterns, signals, and backtests, passed off as if it actually means something useful.</p>
+<p class="wp-block-paragraph">Even the academic literature is full of papers that exist because the author wanted to demonstrate they could speak the language of mathematics, not because they had anything useful to say about how markets actually work.</p>
+<p class="wp-block-paragraph">“Why would anyone lose money on the other side of this trade?” barely gets asked. And it’s the most important question.</p>
+<p class="wp-block-paragraph">LLMs are trained on this corpus.</p>
+<p class="wp-block-paragraph">So when you ask one to help you find an edge, it does what it knows: it finds patterns, builds strategies, and runs backtests. It skips the most important part, because the most important part is barely represented in its training data.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">I recently wrote about the ​four hats of the solo trader​, and a reader who calls himself “Vibe Quant” fed the article to an LLM. I want to be clear: this bloke is obviously smart, he’s thinking carefully about his process, and he shared his experience generously. I’m not having a go at him. But what happened next is a perfect illustration of the problem, and it’s worth unpacking.</p>
+<p class="wp-block-paragraph">The LLM’s self-diagnosis was genuinely impressive:</p>
+<p class="wp-block-paragraph">“The temptation isn’t to blur Hats 1 and 2. It’s to skip Hat 1 entirely (“Hat 1″ represents the edge-first thinking I’m banging on about). The LLM can read a paper on accrual anomalies at 6am, implement a multi-quarter earnings composite by 6:15, wire it into a screener by 6:30, and cite it in a morning briefing by 7. That’s pure Hat 2 engineering at inhuman speed. But ‘did we verify this edge exists in our universe, at our holding period, net of our constraints’ never happened. We built the bridge without testing the soil.”</p>
+<p class="wp-block-paragraph">Spot on. The machine nailed the diagnosis.</p>
+<p class="wp-block-paragraph">But then look at what happened next.</p>
+<p class="wp-block-paragraph">Having identified that edge research was being skipped, the LLM “set off to develop some new internal guidance systems for itself and some Python code to help validate.”</p>
+<p class="wp-block-paragraph">In short, it identified the disease, and then prescribed more of the disease. Faster.</p>
+<p class="wp-block-paragraph">And that’s not even a bug! It’s the default behaviour!</p>
+<p class="wp-block-paragraph">You tell the LLM to think about mechanism and edge, and it does what it knows: more implementation, more backtesting, more engineering. It gives you a plausible-sounding mechanism, sure. But it’s synthesising from a corpus where genuine edge thinking is drowned out by noise and grift. It can’t know that. It just sounds authoritative, because that’s what it does.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">To have real confidence in any edge, you need two things: a plausible mechanism and evidence in the data.</p>
+<p class="wp-block-paragraph">The mechanism answers: why does this exist? Who’s the counterparty? What are their constraints, and why will they keep being there? Why can I compete for this edge?</p>
+<p class="wp-block-paragraph">The evidence side is more straightforward to explain: does the data actually support this?</p>
+<p class="wp-block-paragraph">You need both.</p>
+<p class="wp-block-paragraph">Without a mechanism you’re just curve-fitting. And a nice story about why something should work isn’t enough either; you need to see it in the data.</p>
+<p class="wp-block-paragraph">An LLM can help you with the evidence side (pull data, design experiments, build visualisations). But it can’t teach you to think about mechanism, because the thinking it draws on doesn’t ask that question.</p>
+<p class="wp-block-paragraph">This matters enormously when things go wrong. When a strategy enters a drawdown (and it will), if you understand the mechanism, you can ask: has the counterparty adapted? Has the structural constraint been removed? You have a framework for deciding whether to sit tight, adapt, or walk away.</p>
+<p class="wp-block-paragraph">If your entire basis for the trade is “the LLM found a pattern and wrote some validation code,” you’ve got nothing. You can’t diagnose or adapt. Your only move is to go back to the LLM and ask it to find another pattern.</p>
+<p class="wp-block-paragraph">You’ll have constant anxiety that your edge isn’t real (you don’t know what it’s based on, and deep down you know that making money trading is harder than asking an LLM to do it for you), and so you’ll tinker and backtest and wonder and fret ad nauseam when you could be doing the productive work that gets you zeroing in on real edges.</p>
+<p class="wp-block-paragraph">But it’s even worse than that.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">Remember what I said up front? This is where it really hits home.</p>
+<p class="wp-block-paragraph">A trader who works through the full hypothesise-test-learn-iterate loop, even slowly, even painfully (and honestly, it is painful sometimes), accumulates genuine understanding.</p>
+<p class="wp-block-paragraph">Each edge you research teaches you something. That understanding compounds. The next piece of research is better because of everything you learned from the last one.</p>
+<p class="wp-block-paragraph">The vibe quant approach has no compounding.</p>
+<p class="wp-block-paragraph">There’s no learning loop, because the LLM did the thinking. You’re just as dependent on day 1,000 as on day 1.</p>
+<p class="wp-block-paragraph">And that’s the bit that I think people aren’t seeing. The problem isn’t just that the LLM might find bad patterns. It’s that even if it finds good ones, you’ll never develop the judgement to know the difference.</p>
+<p class="wp-block-paragraph">You’re running faster, but you’re not going anywhere.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">Look, I’m not anti-LLM. I use them heaps. They’re brilliant for the grunt work: cleaning data, writing code, interpreting research, designing experiments. Hat 2, Hat 3, Hat 4 stuff. They make me faster at things I already know how to do.</p>
+<p class="wp-block-paragraph">But they can’t teach you the thing that actually matters, which is how to think about edge. That comes from working with people who do it for a living, who ask “who’s on the other side?” as a reflex. It comes from developing a good mental model of the market, its players and their constraints. It comes from the hypothesise-test-learn loop, done over and over.</p>
+<p class="wp-block-paragraph">The LLM can hand you a fish. It can even build you a very impressive fishing rod. But it can’t teach you where the fish are, because almost nobody who knows is writing about it on the internet.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>AI</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-133234 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai tag-data-mining tag-llms pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/for-the-love-of-the-game/"><img alt="For The Love of The Game" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="133235" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-80x69.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-480x413.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game.png 893w" decoding="async" height="660" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='660'%20viewBox='0%200%20768%20660'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-132449 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/to-trend-or-not-to-trend-wrong-question/"><img alt="To Trend or Not To Trend? (Wrong question)" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="132450" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-131547 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/brave-new-backtest/"><img alt="Brave New Backtest" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="131550" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-150x150.jpeg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-80x80.jpeg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-480x480.jpeg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-960x960.jpeg 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst.jpeg 1024w" decoding="async" height="768" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='768'%20viewBox='0%200%20768%20768'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/more-of-the-disease-faster-what-happens-when-you-ask-an-llm-to-find-you-an-edge/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

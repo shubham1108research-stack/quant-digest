@@ -1,0 +1,353 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Hurst Exponent for Algorithmic Trading</title>
+<!-- source: https://robotwealth.com/demystifying-the-hurst-exponent-part-1/ -->
+<h1>Hurst Exponent for Algorithmic Trading</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1687 post type-post status-publish format-standard hentry category-quant-trading tag-cointegration tag-hurst-exponent tag-mean-reversion tag-quantitative-trading pmpro-has-access" id="post-1687">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">October 31, 2016</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Hurst Exponent for Algorithmic Trading</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Hurst Exponent for Algorithmic Trading" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">This is the first post in a two-part series about the <strong>Hurst Exponent</strong>. Tom and I worked on this series together. I drew on some of his earlier work as well as other resources, including <a href="https://www.quantstart.com/">Quantstart.com</a>.</p>
+<p class="wp-block-paragraph"><strong>UPDATE 03/01/16:</strong> The Python code below has been updated with a more accurate algorithm for calculating the Hurst Exponent.</p>
+<p class="wp-block-paragraph">Mean-reverting time series have long attracted quantitative traders. Some of the biggest names in quant trading are said to have built their fortunes by exploiting mean reversion in financial data, particularly in constructed spreads used in pairs trading.</p>
+<p class="wp-block-paragraph">Naturally, identifying mean reversion is a key goal in algorithmic trading. However, this is harder than it seems, mainly due to the non-stationary nature of financial time series.</p>
+<p class="wp-block-paragraph">Ernie Chan’s Algorithmic Trading: Winning Strategies and Their Rationale is one of the better introductions to mean reversion. In his book, Ernie discusses several tools that help test whether a time series is mean-reverting. These include the Augmented Dickey-Fuller test and the Johansen test. We’ve explored both on Robot Wealth using simple R code [here] and [here].</p>
+<p class="wp-block-paragraph">Another tool for testing mean reversion is the <strong><a href="https://robotwealth.com/demystifying-the-hurst-exponent-part-1/" rel="noreferrer noopener" target="_blank">Hurst Exponent</a></strong>.</p>
+<h2 class="wp-block-heading">What is the Hurst Exponent?</h2>
+<p class="wp-block-paragraph">The Hurst Exponent, denoted H, helps characterize the behavior of a time series:</p>
+<ul class="wp-block-list">
+<li>H ≈ 0.5 → the series behaves like a random walk.</li>
+<li>H &gt; 0.5 → the series trends, past movements are more likely to continue.</li>
+<li>H &lt; 0.5 → the series is mean-reverting, tending to return to a long-term average.</li>
+</ul>
+<p class="wp-block-paragraph">However, working with Hurst can be tricky. It often yields unexpected results, and outcomes vary across different implementations. We also found that while various methods agree when applied to synthetic data, they diverge when tested on real financial time series.</p>
+<h2 class="wp-block-heading">Why Should Algo Traders Care?</h2>
+<p class="wp-block-paragraph">This post introduces Python code for calculating the Hurst Exponent. In Part 2, we’ll dig deeper into how it works and discuss how to use it in practice.</p>
+<p class="wp-block-paragraph">Our goal is to demystify Hurst and show how to move beyond theory into something that can actually help in building trading strategies.</p>
+<h2 class="wp-block-heading">Hurst Exponent Python Implementation</h2>
+<p class="wp-block-paragraph">Below is a simple Python script. It estimates the Hurst Exponent by plotting the relationship between lag and the standard deviation of lagged differences.</p>
+<pre class="wp-block-code"><code>from numpy import *
+from pylab import plot, show
+
+# Create an arbitrary time series
+ts = [0]
+for i in range(1, 100000):
+    ts.append(ts[i - 1] + random.randn())
+
+# Compute standard deviations of differenced series for several lags
+lags = range(2, 20)
+tau = [sqrt(std(subtract(ts[lag:], ts[:-lag]))) for lag in lags]
+
+# Plot on a log-log scale
+plot(log(lags), log(tau))
+show()
+
+# Estimate Hurst Exponent as slope of the log-log plot
+m = polyfit(log(lags), log(tau), 1)
+hurst = m[0] * 2.0
+print('hurst =', hurst)
+</code></pre>
+<p class="wp-block-paragraph">In this code, we use lags from 2 to 20. These values are somewhat arbitrary but worked best when we tested them on synthetic data. Using larger lags tended to produce inaccurate results. Interestingly, this range matches the defaults in some standard implementations, such as MATLAB’s hurst function.</p>
+<h2 class="wp-block-heading"><strong>Next Steps and Practical Applications</strong></h2>
+<p class="wp-block-paragraph">In Part 2, we’ll explore how the choice of lags affects the Hurst calculation and show how tuning this parameter can lead to practical use in developing trading systems.</p>
+<p class="wp-block-paragraph">If you’ve used the Hurst Exponent, or any of the other mean reversion tests we mentioned, feel free to share your experiences in the comments. Thanks for reading!</p>
+<p class="wp-block-paragraph"></p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>cointegration</span>, <span>Hurst Exponent</span>, <span>mean reversion</span>, <span>quantitative trading</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">17 thoughts on “Hurst Exponent for Algorithmic Trading”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-717">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 10/31/2016 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-718">
+<article class="comment-body" id="div-comment-718" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+I’ve had a brief look at Kaufman’s Efficiency Ratio.  The results weren’t great, but I didn’t dig into it effectively enough to fully rule it out as a filter for the mean reversion systems I’m trading.<br/>
+Happy to write it up with a proper analysis.<br/>
+Nick</p>
+<span class="reply"><a aria-label="Reply to Nick Wienholt" class="comment-reply-link" data-belowelement="div-comment-718" data-commentid="718" data-postid="1687" data-replyto="Reply to Nick Wienholt" data-respondelement="respond" href="#comment-718" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-721">
+<article class="comment-body" id="div-comment-721" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Nick<br/>
+I’d love to see a proper analysis of Kaufman’s Efficiency Ratio! You are welcome to share it here!<br/>
+Cheers</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-721" data-commentid="721" data-postid="1687" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-721" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3" id="comment-724">
+<article class="comment-body" id="div-comment-724" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Kris – will do – I’ll write it up and submit.  Many thanks</p>
+<span class="reply"><a aria-label="Reply to Nick Wienholt" class="comment-reply-link" data-belowelement="div-comment-724" data-commentid="724" data-postid="1687" data-replyto="Reply to Nick Wienholt" data-respondelement="respond" href="#comment-724" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-719">
+<article class="comment-body" id="div-comment-719" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Interesting post thanks… I’m currently investigating applying the Hurst exponent in machine learning to improve my trade selection. Try as I might, I can’t find a default Hurst Matlab function however!</p>
+<span class="reply"><a aria-label="Reply to David" class="comment-reply-link" data-belowelement="div-comment-719" data-commentid="719" data-postid="1687" data-replyto="Reply to David" data-respondelement="respond" href="#comment-719" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-720">
+<article class="comment-body" id="div-comment-720" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi David,<br/>
+I guess its not really a default function, but try this implementation of the generalized Hurst exponent:<br/>
+<a href="https://au.mathworks.com/matlabcentral/fileexchange/30076-generalized-hurst-exponent?requestedDomain=www.mathworks.com" rel="nofollow ugc">https://au.mathworks.com/matlabcentral/fileexchange/30076-generalized-hurst-exponent?requestedDomain=www.mathworks.com</a></p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-720" data-commentid="720" data-postid="1687" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-720" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-722">
+<article class="comment-body" id="div-comment-722" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Kris, I’ll give that a try… I also stumbled across this new Matlab function gives 3 separate (!) estimates of the Hurst exponent too:<br/>
+<a href="https://uk.mathworks.com/help/wavelet/ref/wfbmesti.html" rel="nofollow ugc">https://uk.mathworks.com/help/wavelet/ref/wfbmesti.html</a></p>
+<span class="reply"><a aria-label="Reply to David" class="comment-reply-link" data-belowelement="div-comment-722" data-commentid="722" data-postid="1687" data-replyto="Reply to David" data-respondelement="respond" href="#comment-722" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4" id="comment-723">
+<article class="comment-body" id="div-comment-723" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Yes! This is a problem and one that we are going to attempt to get to the bottom of in the next post. Thanks for sharing that implementation.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-723" data-commentid="723" data-postid="1687" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-723" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-725">
+<div class="comment-body">
+				Pingback: Demystifying the Hurst Exponent – Part 2 – Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-726">
+<article class="comment-body" id="div-comment-726" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+ <br/>
+Thanks for the article, incredibly interesting. I was just wondering if you could shed some light on where the sqrt of std comes from? I’ve been through both articles you linked to and find the RS method of calculating the Hurst exponent (the one originally derived by Hurst for the work on Nile levels) to be intuitively easier to understand. Looking at your update note, my guess would be that you were initially using that algorithm for calculating Hurst, but then moved on to the Generalized Hurst Exponent calculation that Mike from QuantStart uses on his page?<br/>
+I’ve been through Mike’s explanation, but I still can’t seem to rationalize why we are using the square root of the standard deviation in this algorithm. Any light you could shed on that would be much appreciated.<br/>
+Thanks again for the great article.</p>
+<span class="reply"><a aria-label="Reply to Wei" class="comment-reply-link" data-belowelement="div-comment-726" data-commentid="726" data-postid="1687" data-replyto="Reply to Wei" data-respondelement="respond" href="#comment-726" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-727">
+<article class="comment-body" id="div-comment-727" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+ <br/>
+thanks for sharing.<br/>
+<span class="crayon-v">I think we can save the sqrt() step here in : tau</span> <span class="crayon-o">=</span> <span class="crayon-sy">[</span><strong><span class="crayon-e">sqrt</span></strong><span class="crayon-sy">(</span><span class="crayon-e">std</span><span class="crayon-sy">(</span><span class="crayon-e">subtract</span><span class="crayon-sy">(</span><span class="crayon-v">ts</span><span class="crayon-sy">[</span><span class="crayon-v">lag</span><span class="crayon-o">:</span><span class="crayon-sy">]</span><span class="crayon-sy">,</span> <span class="crayon-v">ts</span><span class="crayon-sy">[</span><span class="crayon-o">:</span><span class="crayon-o">–</span><span class="crayon-v">lag</span><span class="crayon-sy">]</span><span class="crayon-sy">)</span><span class="crayon-sy">)</span><span class="crayon-sy">)</span> <span class="crayon-st">for</span> <span class="crayon-e">lag </span><span class="crayon-st">in</span> <span class="crayon-v">lags</span><span class="crayon-sy">], </span><br/>
+and no need to multiply 2 here in : <span class="crayon-v">hurst</span> <span class="crayon-o">=</span> <span class="crayon-v">m</span><span class="crayon-sy">[</span><span class="crayon-cn">0</span><span class="crayon-sy">]</span><strong><span class="crayon-o">*</span><span class="crayon-cn">2.0.</span></strong><br/>
+So we the computation is simplified to:<br/>
+…<br/>
+<strong><span class="crayon-v">tau</span> <span class="crayon-o">=</span> <span class="crayon-sy">[</span><span class="crayon-e">std</span><span class="crayon-sy">(</span><span class="crayon-e">subtract</span><span class="crayon-sy">(</span><span class="crayon-v">ts</span><span class="crayon-sy">[</span><span class="crayon-v">lag</span><span class="crayon-o">:</span><span class="crayon-sy">]</span><span class="crayon-sy">,</span> <span class="crayon-v">ts</span><span class="crayon-sy">[</span><span class="crayon-o">:</span><span class="crayon-o">–</span><span class="crayon-v">lag</span><span class="crayon-sy">]</span><span class="crayon-sy">)</span><span class="crayon-sy">)</span> <span class="crayon-st">for</span> <span class="crayon-e">lag </span><span class="crayon-st">in</span> <span class="crayon-v">lags</span><span class="crayon-sy">], </span></strong><br/>
+…<br/>
+<strong><span class="crayon-v">hurst</span> <span class="crayon-o">=</span> <span class="crayon-v">m</span><span class="crayon-sy">[</span><span class="crayon-cn">0</span><span class="crayon-sy">]</span></strong><br/>
+which saves computation and easier to be understood from the Hurst exponent definition.<br/>
+ <br/>
+But still thanks a lot for sharing this, learned a lot. 🙂<br/>
+ <br/>
+Regards<br/>
+Andy<br/>
+ <br/>
+ <br/>
+ <br/>
+ </p>
+<span class="reply"><a aria-label="Reply to andy" class="comment-reply-link" data-belowelement="div-comment-727" data-commentid="727" data-postid="1687" data-replyto="Reply to andy" data-respondelement="respond" href="#comment-727" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-728">
+<article class="comment-body" id="div-comment-728" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Nice one! Thanks Andy, that makes a lot of sense.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-728" data-commentid="728" data-postid="1687" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-728" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-9473">
+<article class="comment-body" id="div-comment-9473" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello,</p>
+<p>Noob here, why are you taking the square root of the standard deviation of the differenced lags? Thought we were just trying to find the standard deviation?</p>
+<p>Is it just so they are on a more condensed scale?</p>
+<span class="reply"><a aria-label="Reply to rando" class="comment-reply-link" data-belowelement="div-comment-9473" data-commentid="9473" data-postid="1687" data-replyto="Reply to rando" data-respondelement="respond" href="#comment-9473" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-9478">
+<article class="comment-body" id="div-comment-9478" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello,</p>
+<p>Why do I get a low Hurst exponent with an only upward moving time series?</p>
+<p>I get a hurst exponent of almost 0 when using the below generated time series (trends up by about 1).</p>
+<p>for i in range(1,100000):<br/>
+    ts.append(i+1+random.uniform(0,1))</p>
+<span class="reply"><a aria-label="Reply to Curious dude" class="comment-reply-link" data-belowelement="div-comment-9478" data-commentid="9478" data-postid="1687" data-replyto="Reply to Curious dude" data-respondelement="respond" href="#comment-9478" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-10174">
+<div class="comment-body">
+				Pingback: Time Series Analysis: Fitting ARIMA/GARCH Predictions Profitable for FX? 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/demystifying-the-hurst-exponent-part-1/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

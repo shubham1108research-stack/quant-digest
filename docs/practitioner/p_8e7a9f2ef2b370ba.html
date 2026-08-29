@@ -1,0 +1,631 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Deep Learning for Trading Part 3: Feed Forward Networks</title>
+<!-- source: https://robotwealth.com/deep-learning-trading-feed-forward-networks/ -->
+<h1>Deep Learning for Trading Part 3: Feed Forward Networks</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-3982 post type-post status-publish format-standard hentry category-backtesting category-deep-learning category-fx category-keras category-neural-networks category-quant-trading category-r category-zorro tag-activation-function tag-algorithmic-trading tag-deep-learning tag-feed-forward-networks tag-forex tag-gpu tag-keras tag-quantitative-trading tag-r tag-tensorflow tag-time-series tag-zorro pmpro-has-access" id="post-3982">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">January 23, 2018</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Deep Learning for Trading Part 3: Feed Forward Networks</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Deep Learning for Trading Part 3: Feed Forward Networks" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><blockquote>This is the third in a multi-part series in which we<strong> </strong><strong>explore and compare various deep learning tools and techniques for market forecasting using Keras and TensorFlow</strong>.
+In <a href="https://robotwealth.com/deep-learning-trading-part-1/" rel="noopener noreferrer" target="_blank">Part 1</a>, we introduced Keras and discussed some of the major obstacles to using deep learning techniques in trading systems, including a warning about attempting to extract meaningful signals from historical market data. If you haven’t read that article, it is highly recommended that you do so before proceeding, as the context it provides is important. <a href="https://robotwealth.com/deep-learning-trading-part-1/" rel="noopener noreferrer" target="_blank">Read Part 1 here</a>.
+<a href="https://robotwealth.com/deep-learning-trading-tensorflow-keras-gpu/" rel="noopener noreferrer" target="_blank">Part 2</a> provides a walk-through of setting up <strong>Keras and Tensorflow for R</strong> using either the default <strong>CPU-based configuration</strong>, or the more complex and involved (but well worth it) <strong>GPU-based configuration </strong>under the Windows environment<strong>. </strong><a href="https://robotwealth.com/deep-learning-trading-tensorflow-keras-gpu/" rel="noopener noreferrer" target="_blank">Read Part 2 here.</a>
+Part 3 is an <strong>introduction to the model building, training and evaluation process in Keras</strong>. We train a simple feed forward network to predict the direction of a foreign exchange market over a time horizon of hour and assess its performance.</blockquote>
+<span style="color: #ffffff;">.</span>
+Now that you can <a href="https://robotwealth.com/deep-learning-trading-tensorflow-keras-gpu/" rel="noopener noreferrer" target="_blank">train your deep learning models on a GPU</a>, the fun can really start. By the end of this series, we’ll be building interesting and complex models that predict multiple outputs, handle the sequential and temporal aspects of time series data, and even use custom cost functions that are particularly relevant to financial data. But before we get there, we’ll start with the basics.
+In this post, we’ll build our first neural network in Keras, train it, and evaluate it. This will enable us to understand the basic building blocks of Keras, which is a prerequisite for building more advanced models.
+
+<h2>Problem Formulation</h2>
+
+There are numerous possible ways to formulate a market forecasting problem. For the sake of this example, we will forecast the direction of the EUR/USD exchange rate over a time horizon of one hour. That is, our model will attempt to classify the next hour’s market direction as either up or down.
+
+<h3>Data</h3>
+
+Our data will consist of hourly EUR/USD exchange rate history obtained from FXCM (<strong>IMPORTANT</strong>: read the caveats and limitations associated with using past market data to predict the future <a href="https://robotwealth.com/deep-learning-trading-part-1/" rel="noopener noreferrer" target="_blank">here</a>). Our data covers the period 2010 to 2017.
+
+<h3>Features</h3>
+
+Our features will simply consist of a number of variables related to price action:
+
+<ul>
+<li>Change in hourly closing price</li>
+<li>Change in hourly highest price</li>
+<li>Change in hourly lowest price</li>
+<li>Distance between the hourly high and close</li>
+<li>Distance between the hourly low and close</li>
+<li>Distance between the hourly high and low (the hourly range)</li>
+</ul>
+
+We will use several past values of these variables, as well as the current values, to predict the target. We’ll also include the hour of day as a feature in the hope of capturing intraday seasonality effects.<strong> </strong>
+<h3>Feature scaling</h3>
+
+Training of neural networks normally proceeds more efficiently if we scale our input features to force them into a similar range. There are various scaling strategies throughout the deep learning literature (see for example Geoffrey Hinton’s <a href="https://www.coursera.org/learn/neural-networks-deep-learning" rel="noopener noreferrer" target="_blank">Neural Networks for Machine Learning</a> course), but scaling remains something of an art rather than a one-size-fits all type problem.
+The standard approach to scaling involves normalizing the <em>entire</em> data set using the mean and standard deviation of each feature in the <em>training</em> set. This prevents data leakage from the test and validation sets into the training set, which can produce overly optimistic results. The problem with this approach for financial data is that it often results in scaled test or validation data that winds up being way outside the range of the training set. This is related to the problem of non-stationarity of financial data and is a significant issue. After all, if a model is asked to predict on data that is very different to its training data, it is unlikely to produce good results.
+One way around this is to scale data relative to the recent past. This ensures that the test and validation data is always on the intended scale. But the downside is that we introduce an additional parameter to our model: the amount of data from the recent past that we use in our scaling function. So we end up introducing another problem to solve an existing one.
+Like I said, feature scaling is something of an art form, particularly when dealing with data as poorly behaved as financial data!
+We’ll do our model building and experimentation in R, but first we need to generate our data. There is a <a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro</a> script named ‘keras_data_gen.c’ for creating our targets and scaled features, and for exporting that data to a CSV file in this <a href="https://media.robotwealth.com/wp-content/uploads/2018/01/21170353/Keras_FFN-1.zip">download link</a>. The script will allow you to code your own features and targets, use different scaling strategies, and generate data for different instruments. Just make the changes, then click ‘Train’ on the Zorro GUI to export the data to file. If you’d prefer to just get your hands on the data used in this post, it’s also available in that same link, as is all the R code used in this post.
+Our target is the direction of the market over a period of one hour, which implies a classification problem. The target exported in the script is the actual dollar amount made or lost by going long the market at 0.01 lots, exclusive of trading costs. We need to convert this to a factor reflecting the market’s movement either up or down. More on this below.
+Let’s import our data into R and take a closer look. First, here’s a time series plot of the first ten days of our scaled features:
+<a href="https://robotwealth.com/wp-content/uploads/2018/01/scaled_features.png"><img alt="" class="aligncenter size-full wp-image-4008 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/01/scaled_features.png" decoding="async" height="700" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='700'%20viewBox='0%200%20700%20700'%3E%3C/svg%3E" width="700"/></a>
+You can see that our features are roughly on the same scale. Notice the first feature, V1, which corresponds to the hour of the day. It has been scaled using a slightly different approach to the other variables to ensure that the cyclical nature of that variable is maintained. See the code in the download link above for details.
+Next, here’s a scatterplot matrix of our variables and target (the first ten days of data only):
+<a href="https://robotwealth.com/wp-content/uploads/2018/01/scatterplot.png"><img alt="" class="aligncenter size-full wp-image-4009 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/01/scatterplot.png" decoding="async" height="700" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='700'%20viewBox='0%200%20700%20700'%3E%3C/svg%3E" width="700"/></a>Now that we’ve got our data, we’ll see if we can extract any predictive information using deep learning techniques. In this post, we’ll look at fully connected feed-forward networks, which are kind of the like the ‘Hello World’ example of deep learning. In later posts, we’ll explore some more interesting networks.
+
+<h2>Fully Connected Feed Forward Networks</h2>
+
+A fully connected feed forward network is one in which every neuron in a particular layer is connected to every neuron in the subsequent layer, and in which information flows in one direction only, from input to output.
+Here’s a schematic of such a network with an input layer, two hidden layers and an output layer consisting of a single neuron (source: datasciencecentral.com):
+
+<h2><a href="https://robotwealth.com/wp-content/uploads/2017/12/simple_neural_network.jpg"><img alt="" class="aligncenter size-full wp-image-3764 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/12/simple_neural_network.jpg" decoding="async" height="388" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='791'%20height='388'%20viewBox='0%200%20791%20388'%3E%3C/svg%3E" width="791"/></a></h2>
+<h3>Input data processing</h3>
+
+It makes sense that our network would likely benefit from using not only the features for the current time step, but also a number of prior values as well, in order to predict the target. That means that we need to create features out of lagged values of our raw feature variables.
+Thankfully, that’s easily accomplished using base R’s <span class="lang:r decode:true crayon-inline">embed()</span>  function, which also automatically drops the NA values which arise in the first (n) observations, where (n) is the number of lags to use as features. Here’s a function which returns an expanded data set consisting of the current features as well as their <span class="lang:r decode:true crayon-inline">lags</span>  lagged values. It assumes that the target is in the final column (and doesn’t embed lagged values of the target) and drops the relevant NA values from the target column.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Create features from lagged variables"># function for creating features from lagged variables
+lag_variables_to_features &lt;- function(data, num_lags=1) {
+  d &lt;- embed(data[, -ncol(data)], num_lags+1) # this automatically drops NA, assumes target in last column
+  d &lt;- cbind(d, data[(num_lags+1):nrow(data), ncol(data)]) # add column for target, dropping num_lags
+  return(d)
+}
+</pre>
+
+Let’s test the function and take a look at its output:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Test lagging function"># test lagging function
+set.seed(503)
+dat &lt;- replicate(3, rnorm(10, 0, 1))
+dat
+#              [,1]        [,2]       [,3]
+# [1,]  0.355125070 -0.42202083  2.2040012
+# [2,] -0.778893409 -0.03744167  0.4128119
+# [3,] -0.757356957 -0.20609016  1.0322519
+# [4,]  2.329800607  2.01835389  0.7804746
+# [5,]  0.283974926 -0.60559854  2.5843431
+# [6,]  1.281025216 -0.28414168  0.2339200
+# [7,] -0.002363249  0.96044445  1.3501947
+# [8,]  1.033770690  0.74774752 -0.4097266
+# [9,] -0.431933268 -0.01286499 -0.3662180
+# [10,] -0.342867464 -0.71862991 -1.0912861
+dat &lt;- lag_variables_to_features(dat, 2)
+dat
+#             [,1]        [,2]         [,3]        [,4]         [,5]        [,6]       [,7]
+# [1,] -0.757356957 -0.20609016 -0.778893409 -0.03744167  0.355125070 -0.42202083  1.0322519
+# [2,]  2.329800607  2.01835389 -0.757356957 -0.20609016 -0.778893409 -0.03744167  0.7804746
+# [3,]  0.283974926 -0.60559854  2.329800607  2.01835389 -0.757356957 -0.20609016  2.5843431
+# [4,]  1.281025216 -0.28414168  0.283974926 -0.60559854  2.329800607  2.01835389  0.2339200
+# [5,] -0.002363249  0.96044445  1.281025216 -0.28414168  0.283974926 -0.60559854  1.3501947
+# [6,]  1.033770690  0.74774752 -0.002363249  0.96044445  1.281025216 -0.28414168 -0.4097266
+# [7,] -0.431933268 -0.01286499  1.033770690  0.74774752 -0.002363249  0.96044445 -0.3662180
+# [8,] -0.342867464 -0.71862991 -0.431933268 -0.01286499  1.033770690  0.74774752 -1.0912861
+</pre>
+
+You can see that the function returns a new dataset with the current features and their last two lagged values, while the target remains unchanged in the final column. Note that the two rows that wind up with NA values are automatically dropped.
+Essentially, this approach makes new features out of lagged values of each feature. But here’s the thing about feed forward networks: they don’t distinguish between more recent values of our features and older values. Obviously the network differentiates between the different features that we create out of lagged values, and has the ability to discern relationships between them, but it doesn’t explicitly factor the sequential nature of the data.
+That’s one of the major limitations of fully connected feed forward networks applied to time series forecasting exercises, and one of the motivators of recurrent architectures, which we will get to soon enough.
+
+<h3>Introducing the Keras sequential model</h3>
+
+Now that we can process our input data, we can start experimenting with the model building process. The best place to start is Keras’ sequential model, which is essentially a paradigm for constructing deep neural networks, one layer at a time, under the assumption that the network consists of a linear stack of layers and has only a single set of inputs and outputs. You’ll find that this assumption holds for the majority of networks that you build, and it provides a very modular and efficient method of experimenting with such networks. We’ll use the sequential model quite a lot over the coming posts before getting into some more complex models that don’t fit this paradigm.
+In Keras, the model building and exploration workflow typically consists of the following steps:
+
+<ol>
+<li>Define the input data and the target. Split the data into training, validation and test sets.</li>
+<li>Define a stack of layers that will be used to predict the target from the input. This is the step that defines the network architecture.</li>
+<li>Configure the model training process with an appropriate loss function, optimizer and various metrics to be monitored.</li>
+<li>Train the model by repeatedly exposing it to the training data and updating the network weights according to the loss function and optimizer chosen in the previous step.</li>
+<li>Evaluate the model on the test set.</li>
+</ol>
+
+Let’s go through each step.
+
+<h4><a id="data"></a>Set up our data</h4>
+
+Here’s some code for loading and processing our data. It firstly loads the data set we created with our Zorro script from above and creates a new data set consisting of the current value of each feature, as well as the seven recent lagged variables. That is, we have a total of eight timesteps for each feature. And since we started with 7 features, we have a total of 56 input variables.
+We also split the dataset into a training, validation and testing set. Here, I arbitrarily chose to use 50% of the data for training, 25% for validation and 25% for testing. Note that since the time aspect of our data is critical, we should ensure that our training, validation and testing data are not randomly sampled as is standard procedure in many non-sequential applications. Rather, the training, validation and test sets should come from chronological time periods.
+Note that we convert our target into a binary outcome, which enables us to build a classifier.
+Recall that we scaled our features at the same time as we generated them, so no need to do any feature scaling here.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Load and process data">## load, process and split data ##
+# load
+path &lt;- "C:/Users/Kris/Data/"
+XY &lt;- read.csv(paste0(path, 'EURUSD_L_2010_2017.csv'), header = F)
+XY &lt;- as.matrix(XY)
+# create lags
+lags &lt;- 7
+proc &lt;- lag_variables_to_features(XY, lags)
+# split into training, validation and test sets
+train_length &lt;- floor(0.5*nrow(proc))
+val_length &lt;- floor(0.25*nrow(proc))
+X_train &lt;- proc[1:train_length, -ncol(proc)]
+Y_train_raw &lt;- proc[1:train_length, ncol(proc)]
+Y_train &lt;- ifelse(Y_train_raw &gt; 0, 1, 0)
+X_val &lt;- proc[(train_length+1):(train_length+val_length), -ncol(proc)]
+Y_val_raw &lt;- proc[(train_length+1):(train_length+val_length), ncol(proc)]
+Y_val &lt;- ifelse(Y_val_raw &gt; 0, 1, 0)
+X_test &lt;- proc[(train_length+val_length+1):nrow(proc), -ncol(proc)]
+Y_test_raw &lt;- proc[(train_length+val_length+1):nrow(proc), ncol(proc)]
+Y_test &lt;- ifelse(Y_test_raw &gt; 0, 1, 0)</pre>
+<h4>Define network architecture</h4>
+
+Next we define the stack of layers that will become our model. The syntax might seem quirky at first, but once you’re used to it, you’ll find that you can build and experiment with different architectures very quickly.
+The syntax of the sequential model uses the pipeline operator <span class="lang:r decode:true crayon-inline">%&gt;%</span>  which you might be familiar with if you use the <span class="lang:c highlight:0 decode:true crayon-inline">dplyr</span>  package. In essence, we define a model using the sequential paradigm, and then use the pipeline operator to define the order in which layers are stacked. Here’s an example:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Keras sequential model">model &lt;- keras_model_sequential()
+model %&gt;%
+  layer_dense(units = 150, activation = 'relu', input_shape = ncol(X_train)) %&gt;%
+  layer_dense(units = 150, activation = 'relu') %&gt;%
+  layer_dense(units = 150, activation = 'relu') %&gt;%
+  layer_dense(units = 1, activation = 'sigmoid')</pre>
+
+This defines a fully connected feed forward network with three hidden layers, each of which consists of 150 neurons with the rectified linear (<span class="lang:r decode:true crayon-inline">‘relu’</span> ) activation function. If you need a refresher on activation functions, check out <a href="https://robotwealth.com/getting-started-neural-networks-algorithmic-trading/" rel="noopener noreferrer" target="_blank">this post</a> on neural network basics.
+<span class="lang:r decode:true crayon-inline">layer_dense()</span>  defines a fully connected layer – that is, one in which each input is connected to every neuron in the layer. Note that for the first layer, we need to define the input shape, which is simply the number of features in our data set. We only need to do this on the first layer; each subsequent layer gets its input shape from the output of the prior layer. <span class="lang:r decode:true crayon-inline">layer_dense()</span>  has many arguments in addition to the activation function that we specified here, including the weight initialization scheme and various regularization settings. We use the defaults in this example.
+Keras implements many other layers, some of which we’ll explore in subsequent posts.
+In this example, our network terminates with an output layer consisting of a single neuron with the sigmoid activation function. This activation function converts the output to a value between 0 and 1, which we interpret as the probability associated with the positive class in a binary classification problem (in this case, the value 1, corresponding to an up move).
+To get an overview of the model, call <span class="lang:r decode:true crayon-inline">summary(model)</span>  and observe the output:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="summary(model)">___________________________________________________________________________________________________
+Layer (type)                                Output Shape                            Param #
+===================================================================================================
+dense_1 (Dense)                           (None, 150)                             8550
+___________________________________________________________________________________________________
+dense_2 (Dense)                           (None, 150)                             22650
+___________________________________________________________________________________________________
+dense_3 (Dense)                           (None, 150)                             22650
+___________________________________________________________________________________________________
+dense_4 (Dense)                           (None, 1)                               151
+===================================================================================================
+Total params: 54,001
+Trainable params: 54,001
+Non-trainable params: 0
+___________________________________________________________________________________________________
+&gt;</pre>
+
+This model architecture could be better described as ‘wide’ as opposed to ‘deep’ and it consists of around 54,000 trainable parameters. This is more than the number of observations in our data set, and has implications for the ability of our network to overfit.
+
+<h4>Configure the training process</h4>
+
+Configuration of the training process is accomplished via the <span class="lang:r decode:true crayon-inline">keras::compile()</span>  function, in which we specify a loss function, an optimizer, and a set of metrics to monitor during training. Keras implements a suite of loss functions, optimizers and metrics out of the box, and in this example we’ll choose some sensible defaults:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Compile">model %&gt;% compile(
+  loss = 'binary_crossentropy',
+  optimizer = optimizer_rmsprop(lr=0.0001),
+  metrics = c('accuracy')
+)</pre>
+
+The <span class="lang:r decode:true crayon-inline">‘binary_crossentropy’</span>  loss function is standard for binary classifiers and the <span class="lang:r decode:true crayon-inline">rmsprop()</span>  optimizer is nearly always a good choice. Here we specify a learning rate of 0.0001, but finding a sensible value typically requires some experimentation. Finally, we tell Keras to keep track of our model’s accuracy, as well as the loss during the training process.
+An important consideration regarding loss functions for financial prediction is that the standard loss functions rarely capture the realities of trading. For example, consider a regression model that predicts a price change over some time horizon trained using the mean absolute error of the predictions. Say the model predicted a price change of 20 ticks, but the actual outcome was 10 ticks. In practical trading terms, such an outcome would result in a profit of 10 ticks – not a terrible outcome at all. But that result is treated the same as a prediction of 5 ticks that resulted in an actual outcome of -5 ticks, which would result in a loss of 5 ticks in a trading model. That’s because the loss function is only concerned with the magnitude of the difference between the predicted and actual outcomes – but that doesn’t tell the full story. Clearly, we’d likely to penalize the latter error more than the former. To do that, we need to implement our own custom loss functions. I’ll show you how to do that in a later post, but for now it’s important to be cognizant of the limitations of our model training process.
+
+<h4>Train the model</h4>
+
+We can train our model using <span class="lang:r decode:true crayon-inline">keras::fit()</span> , which exposes our model to subsequent batches of training data, updating the network’s weights after each batch. Training progresses for a specified number of epochs and performance is monitored on both the training and validation sets.
+We would normally like to stop training at the number of epochs that maximize the model’s performance on the validation set. That is, at the point just before the network starts to overfit. The problem is we can’t know <em>a priori</em> how many training epochs this requires.
+<a id="callback"></a>To combat this, <span class="lang:r decode:true crayon-inline">keras::fit()</span>  implements the concept of a callback, which is simply a function that performs some task at various points throughout the training process. There are a number of callbacks available in Keras out of the box, and it is also possible to implement your own.
+In this example we’ll use the <span class="lang:r decode:true crayon-inline">model_checkpoint()</span>  callback, which we configure to save the network and it’s weights at the end of any epoch whose weight update results in improved validation performance. After training is complete, we can then load our best model for evaluation on the test set.
+First, here’s how to configure the checkpoint callback (just set up the relevant filepath for your setup):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Configure checkpoint callback">filepath &lt;- "C:/Users/Kris/Research/DeepLearningForTrading/model.hdf5"
+checkpoint &lt;- callback_model_checkpoint(filepath = filepath, monitor = "val_acc", verbose = 1,
+                                        save_best_only = TRUE,
+                                        save_weights_only = FALSE, mode = "auto")
+</pre>
+
+And here’s how to configure <span class="lang:r decode:true crayon-inline">keras:fit()</span>  for a short training run of 75 epochs, with the model checkpoint callback:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="keras::fit()">history &lt;- model %&gt;% fit(
+  X_train, Y_train,
+  epochs = 75, batch_size = nrow(X_train),
+  validation_data = list(X_val, Y_val), shuffle = TRUE,
+  callbacks = list(checkpoint)
+)
+</pre>
+<a id="learning_plot"></a>After training is complete, we can plot the loss and accuracy of the training and validation sets at each epoch by simply calling <span class="lang:r decode:true crayon-inline">plot(history)</span> , which results in the following plot:
+<a href="https://robotwealth.com/wp-content/uploads/2018/01/ffn_training.png"><img alt="" class="aligncenter size-full wp-image-4010 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/01/ffn_training.png" decoding="async" height="700" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='700'%20viewBox='0%200%20700%20700'%3E%3C/svg%3E" width="700"/></a>We can see that loss on the training set continuously decreases while accuracy almost continuously increases as training progresses. That is expected given the power of our network to overfit. But note the small decrease in validation loss and the bump in validation accuracy that we also get out to about 40 epochs before stalling.
+A validation accuracy of a little under 53% is certainly not the sort of result that would turn heads in the classic applications of deep learning, like image classification. But trading is an interesting application, because we don’t necessarily need the same sort of performance to make money. But is a validation accuracy of 53% enough to give us some out of sample profits? Let’s find out by evaluating our model on the test set.
+
+<h4>Evaluate the model out of sample</h4>
+
+Here’s how to remove the fully trained model, load the model with the highest validation accuracy and evaluate it on the test set, with the output shown below the code:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Evaluate best model">rm(model)
+model &lt;- keras:::keras$models$load_model(filepath)
+model %&gt;% evaluate(X_test, Y_test)
+# output:
+# 12004/12004 [==============================] - 2s 197us/step
+# $loss
+# [1] 0.691
+# $acc
+# [1] 0.523</pre>
+
+We end up with a test set accuracy that is only slightly worse than our validation accuracy.
+But accuracy is one thing, profitability is another. To assess the profitability of our model on the test set, we need the actual predictions on the test set. We can get the predicted classes via <span class="lang:r decode:true crayon-inline">predict_classes()</span> , but I prefer to look at the actual output of the sigmoid function in the final layer of the model. That enables you to use a prediction threshold in your decision making, for example only entering a long trade when the output is greater than 0.6, say.
+Here’s how to get the test set predictions and implement some simple, frictionless trading logic that assigns the target as an individual trade’s profit or loss when the prediction is greater than some threshold (equivalent to a buy) and the negative of the target when the prediction is less than 1 minus the threshold (equivalent to a sell) :
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Test set profitability">preds &lt;- model %&gt;% predict_proba(X_test)
+threshold &lt;- 0.5
+trades &lt;- ifelse(preds &gt;= threshold, Y_test_raw, ifelse(preds &lt;= 1-threshold, -Y_test_raw, 0))
+plot(cumsum(trades), type='l')</pre>
+
+This results in the following equity curve (the y-axis is measured in dollars of profit from buying and selling the minimum position size of 0.01 lots):
+
+<div>
+<a href="https://robotwealth.com/wp-content/uploads/2018/01/ffn_eq.png"><img alt="" class="aligncenter size-full wp-image-4011 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2018/01/ffn_eq.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/></a>I think that’s quite an amazing equity curve that demonstrates the potential of even a very small edge. However, note that adding typical retail transaction costs would destroy this small edge, which suggests that longer holding periods are more sensible targets, or that higher accuracies are required in practice.
+Also note that you might get different results depending on the initial weights used in your network, as the weights aren’t guaranteed to converge to the same values when initialized to different values. If you repeat the training and evaluation process a number of times, you’ll find that validation accuracies in the range of 52-53% occur most of the time, but while most produce profitable out of sample equity curves, the range of performance is actually quite significant. This implies that there might be benefit in combining the predictions of multiple models using ensemble methods.
+<h2>What’s next?</h2>
+Before we get into advanced model architectures, in the next unit I’ll show you:
+<ol>
+<li>How to fight overfitting and push your models to generalize better.</li>
+<li>One of the more cutting edge architectures to get the most out of a densely connected feed forward network.</li>
+<li>How to interrogate and visualize the training process in real time.</li>
+</ol>
+</div>
+<h2>Conclusions</h2>
+
+This post demonstrated how to process multivariate time series data for use in a feed forward neural network, as well as how to construct, train and evaluate such a network using Keras’ sequential model paradigm. While we uncovered a slim edge in predicting the EUR/USD exchange rate, in practical terms, traders with access to retail spreads and commission will want to consider longer holding times to generate more profit per trade, or will need a more performant model to make money with this approach.
+
+<hr/>
+<em><strong>Where to from here?</strong></em>
+<ul>
+<li><em>To find out <strong>why AI is taking off in finance</strong>, check out <a href="https://robotwealth.com/potential-proven-ai-taking-off-finance-world/" rel="noopener noreferrer" target="_blank">these insights</a> from my days as an AI consultant to the finance industry </em></li>
+<li><em>If this <strong>walk-through</strong> was useful for you, you might like to check out another how-to article on <a href="https://robotwealth.com/run-trading-algorithms-google-cloud-platform-6-easy-steps/" rel="noopener noreferrer" target="_blank">running trading algorithms on Google Cloud Platform</a></em></li>
+<li><em>If the <strong>technical details of neural networks</strong> are interesting for you, you might like our <a href="https://robotwealth.com/getting-started-neural-networks-algorithmic-trading/" rel="noopener noreferrer" target="_blank">introductory article</a> </em></li>
+<li><em>Be sure to check out <a href="https://robotwealth.com/deep-learning-trading-part-1/" rel="noopener noreferrer" target="_blank">Part 1</a> and <a href="https://robotwealth.com/deep-learning-trading-tensorflow-keras-gpu/" rel="noopener noreferrer" target="_blank">Part 2</a> of this series on deep learning applications for trading. </em></li>
+</ul>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>activation function</span>, <span>algorithmic trading</span>, <span>Deep learning</span>, <span>feed forward networks</span>, <span>forex</span>, <span>GPU</span>, <span>Keras</span>, <span>quantitative trading</span>, <span>R</span>, <span>TensorFlow</span>, <span>time series</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">21 thoughts on “Deep Learning for Trading Part 3: Feed Forward Networks”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-809">
+<article class="comment-body" id="div-comment-809" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Kris,<br/>
+<a>Download links are missing/broken…</a><br/>
+Regards,<br/>
+Tom<br/>
+ </p>
+<span class="reply"><a aria-label="Reply to Tom Bourgh" class="comment-reply-link" data-belowelement="div-comment-809" data-commentid="809" data-postid="3982" data-replyto="Reply to Tom Bourgh" data-respondelement="respond" href="#comment-809" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-810">
+<article class="comment-body" id="div-comment-810" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Tom, thanks for the heads up. That’s really weird – they are working fine for me (tested on Windows + Chrome, Edge and Firefox). What OS/browser are you using? I can email you the content if you like.<br/>
+Anyone else having trouble with the download links?</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-810" data-commentid="810" data-postid="3982" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-810" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-813">
+<article class="comment-body" id="div-comment-813" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Doesn’t work for me both in Chrome and Edge on Windows and Android. Links look like this: <a>Download the code and data used in this post here.</a></p>
+<span class="reply"><a aria-label="Reply to Tom Bourgh" class="comment-reply-link" data-belowelement="div-comment-813" data-commentid="813" data-postid="3982" data-replyto="Reply to Tom Bourgh" data-respondelement="respond" href="#comment-813" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4 parent" id="comment-814">
+<article class="comment-body" id="div-comment-814" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I mean like this &gt;a data-sumome-listbuilder-id=”a9e77072-02f8-45f4-b0d7-0137643863ec”&gt;Download the code and data used in this post here.a&lt;</p>
+<span class="reply"><a aria-label="Reply to Tom Bourgh" class="comment-reply-link" data-belowelement="div-comment-814" data-commentid="814" data-postid="3982" data-replyto="Reply to Tom Bourgh" data-respondelement="respond" href="#comment-814" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-5" id="comment-815">
+<article class="comment-body" id="div-comment-815" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>So strange! I can’t reproduce the error and so far you’re the only one. Thanks for letting me know, and I will email you the material instead.<br/>
+If anyone else has a similar issue, just post in the comments!</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-811">
+<article class="comment-body" id="div-comment-811" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello Kris,<br/>
+Amazing Post! really insightful and inspirational.<br/>
+May I bother you with a couple of questions?<br/>
+ 	When you scale the first feature, V1, which corresponds to the hour of the day, what scaling kind do you refer to?<br/>
+ 	I am playing with a similar problem and I found the overfitting a major problem. Could you give me some tips to try to overcome the problem?<br/>
+Thanks in advance for your help, and I will be tuned for the next post 🙂<br/>
+Jonathan Moreno Narváez</p>
+<span class="reply"><a aria-label="Reply to Jonathan Moreno Narváez" class="comment-reply-link" data-belowelement="div-comment-811" data-commentid="811" data-postid="3982" data-replyto="Reply to Jonathan Moreno Narváez" data-respondelement="respond" href="#comment-811" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-816">
+<article class="comment-body" id="div-comment-816" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Jonathon,<br/>
+Thanks for the feedback! Glad to hear you liked the post.<br/>
+You can see exactly how I scaled V1 in the Zorro script in the download link, but here’s the formula:<br/>
+V1_scaled &lt;- 2*(V1-min(V1))/(max(V1)-min(V1)) - 1
+Since raw V1 is on the interval [0, 23], this reduces to:
+V1_scaled = 2*V1/23 - 1
+Overfitting is a huge problem! That's the subject of the next post, but if you want to get a head start, look into dropout, <a href="https://arxiv.org/abs/1502.03167" rel="noopener nofollow" target="_blank">batch normalization</a>, <a href="https://arxiv.org/abs/1702.03275." rel="noopener nofollow" target="_blank">batch renormalization</a>, and (for feed-forward nets) the concept of <a href="https://arxiv.org/abs/1706.02515" rel="noopener nofollow" target="_blank">self-normalizing architectures</a>.<br/>
+Thanks for reading!</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-816" data-commentid="816" data-postid="3982" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-816" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-812">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 01/23/2018 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-817">
+<article class="comment-body" id="div-comment-817" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+again, the quality and depth of your blog makes it one of the most useful and inspriring resources to be found on the internet. It’s filling the void between scientific articles which can be very laborious to implement and all the naïve examples trying to popularize machine learning, but which at the end of the day add very little of substance. At least not if you’re indeed trying to build something that works in practice. So – hat’s off.<br/>
+Now – I’ve been working on a reinforcement learning agent for the last couple of months and I’m just about to abandon the discrete universe of the Q-table for a deep model with a continuous state space. Is this something you have looked into at any point? It would be very interesting to hear your thoughts on such models in general.<br/>
+Kind Regards,<br/>
+Per</p>
+<span class="reply"><a aria-label="Reply to Per Ravn" class="comment-reply-link" data-belowelement="div-comment-817" data-commentid="817" data-postid="3982" data-replyto="Reply to Per Ravn" data-respondelement="respond" href="#comment-817" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-818">
+<article class="comment-body" id="div-comment-818" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Per,<br/>
+Thank you for the kind words! It really means a lot to hear that my work is resonating with people and provides value. So thank you greatly for the feedback.<br/>
+Q-learning (and reinforcement learning generally) actually represents a bit of a gap in my experience. However, it is on my list of projects to explore this year and would make a sensible topic after the current Keras series is finished. It would be great to share experiences when that time comes, so I hope you keep visiting the blog!<br/>
+Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-818" data-commentid="818" data-postid="3982" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-818" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-819">
+<article class="comment-body" id="div-comment-819" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris<br/>
+excellent articles! great to see practical applications of DNN<br/>
+to avoid overfitting it is also possible to use earlystopping, I guess you are probably aware of that<br/>
+<a href="https://keras.io/callbacks/#earlystopping" rel="nofollow ugc">https://keras.io/callbacks/#earlystopping</a><br/>
+do you have guidelines for the hyperparams of of the network:<br/>
+-why 150 nodes? and not 300? or any other…and why equally distributed between the layers?<br/>
+– why 2 hidden layers and not just 1? ou 3 ? or 10? do you have any guidelines to decide how many layers to use?<br/>
+have you used LSTMs ? it is suppose to be better suited for time series there is a dropout component that allows do give different weightings to the timesteps/lags in the time series<br/>
+I think the biggest problem with machine learning or any other statistical method when applied to finance time series it that they are not stationary, even if a trade system looks good out of sample (OOS) there are no guarantees it will work in the future<br/>
+ <br/>
+ <br/>
+ <br/>
+ <br/>
+ </p>
+<span class="reply"><a aria-label="Reply to Ricardo" class="comment-reply-link" data-belowelement="div-comment-819" data-commentid="819" data-postid="3982" data-replyto="Reply to Ricardo" data-respondelement="respond" href="#comment-819" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-820">
+<article class="comment-body" id="div-comment-820" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Ricardo,<br/>
+Many thanks for the kind words! I’m really glad you found the article useful.<br/>
+We have plans to address pretty much all of the points you raise throughout the series, but at the risk of spoiling the surprise, I’ll address them all briefly here.<br/>
+Early stopping: Yeah that’s generally a good idea! I prefer to use Keras’ checkpoint callback so that I can assess the entire training process of my network (beyond the point of overfitting) while being able to retrieve the optimal model. I’ll go into more detail about callbacks in the next couple of posts.<br/>
+Number of layers, nodes and other hyperparameters: this is something of an art and there are no hard and fast rules. Bengio et. al. published some rules of thumb in a paper a while back, which is worth reading if you haven’t done so already. Search “Practical Recommendations for Gradient-Based Training of Deep Architectures” and you should be able to find it. The architecture I chose here was rather arbitrary and mainly for the purposes of demonstration. I didn’t want an overly deep network, but some very quick experimentation revealed that wider networks tended to provide a bump to validation accuracy. I didn’t explore the space of possibilities in any detail though, so don’t read too much into my choices.<br/>
+LSTM: yes, I have used LSTM and other recurrent architectures, like GRU. We’ll get to those shortly. Dropout doesn’t actually give different weightings to timesteps/lags (maybe you’re thinking of L1/L2 regularization?), rather it zeroes the output of the activation function of random nodes during training. One needs to take care when using dropout on recurrent architectures – specifically, the same pattern of dropout needs to be applied at every timestep.<br/>
+<strong>I think the biggest problem with machine learning or any other statistical method when applied to finance time series it that they are not stationary, even if a trade system looks good out of sample (OOS) there are no guarantees it will work in the future</strong>: I agree wholeheartedly with both these points!</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-820" data-commentid="820" data-postid="3982" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-820" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-821">
+<article class="comment-body" id="div-comment-821" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris!<br/>
+many thanks for your comments , I am looking forward to your updates on this series.<br/>
+regarding the last point, to handle non-stationarity: there are many possible ways to tackle this: like some sort of regime change identification or maybe to use some non-linear position sizing function: in periods of good performance we should scale up capital allocation aggressively and in bad periods scale down aggressively.<br/>
+What is your recommendation ?</p>
+<span class="reply"><a aria-label="Reply to Ricardo" class="comment-reply-link" data-belowelement="div-comment-821" data-commentid="821" data-postid="3982" data-replyto="Reply to Ricardo" data-respondelement="respond" href="#comment-821" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-822">
+<article class="comment-body" id="div-comment-822" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Regime prediction change is something of a holy grail in the world of trading. If you nail that, then the rest would be pretty easy! In reality though it’s quite difficult (some would say impossible), except in hindsight of course. That’s not to see it isn’t worthy of effort though. If I were tackling that particular problem, I’d probably start by using unsupervised learning (like k-means clustering) to try to find a set of features that clustered your market data nicely and then seeing if those clusters correspond to the next time period’s ‘regime’. You could also try supervised learning, but then you need a target (that is, you need to define what constitutes a particular ‘regime’). Finally, it could be worth exploring the mixture of experts approach, having divided your data into appropriate regimes.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-822" data-commentid="822" data-postid="3982" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-822" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-824">
+<article class="comment-body" id="div-comment-824" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>All worked flawlessly with Cuda 9.0/cuDNN 7.1 (had error with 8.0)! Although my 1080ti only got to 1% utilization with CPU at 25% during training (took about a minute). The card’s core clock did jump to max, so all looks fine )</p>
+<span class="reply"><a aria-label="Reply to Vlad" class="comment-reply-link" data-belowelement="div-comment-824" data-commentid="824" data-postid="3982" data-replyto="Reply to Vlad" data-respondelement="respond" href="#comment-824" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-825">
+<article class="comment-body" id="div-comment-825" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+The most important moment in machine learning you have little attention. Selection, transformation, evaluation of predictors. This is the main and most time consuming part. But the result depends on it by 80%.<br/>
+Vlad</p>
+<span class="reply"><a aria-label="Reply to Vlad" class="comment-reply-link" data-belowelement="div-comment-825" data-commentid="825" data-postid="3982" data-replyto="Reply to Vlad" data-respondelement="respond" href="#comment-825" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor even depth-2" id="comment-969">
+<article class="comment-body" id="div-comment-969" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Good call Vlad! Couldn’t agree more that feature engineering is the most time consuming aspect of machine learning research. For those interested, we cover that in some detail here:<br/>
+<a href="https://robotwealth.com/machine-learning-financial-prediction-david-aronson/" rel="ugc">https://robotwealth.com/machine-learning-financial-prediction-david-aronson/</a></p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-969" data-commentid="969" data-postid="3982" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-969" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-1712">
+<article class="comment-body" id="div-comment-1712" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello,</p>
+<p>I think the keras_data_gen.c download link is not working, both on Chrome and Edge on Windows.  Can you email me the script, please?</p>
+<p>Thanks,<br/>
+Andrew</p>
+<span class="reply"><a aria-label="Reply to AndrewAMD" class="comment-reply-link" data-belowelement="div-comment-1712" data-commentid="1712" data-postid="3982" data-replyto="Reply to AndrewAMD" data-respondelement="respond" href="#comment-1712" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-10133">
+<div class="comment-body">
+				Pingback: Fighting Overfitting - Deep Learning for Trading Part 4 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/deep-learning-trading-feed-forward-networks/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

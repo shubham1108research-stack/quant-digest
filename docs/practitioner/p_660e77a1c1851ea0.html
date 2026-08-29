@@ -1,0 +1,189 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Benchmarking backtest results against random trading part 2</title>
+<!-- source: https://robotwealth.com/benchmarkingpart-2/ -->
+<h1>Benchmarking backtest results against random trading part 2</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-848 post type-post status-publish format-standard hentry category-backtesting category-fx category-zorro tag-algorithmic-trading tag-backtesting tag-forex tag-quantitative-analysis tag-r tag-zorro pmpro-has-access" id="post-848">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">October 27, 2015</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Benchmarking backtest results against random trading part 2</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Benchmarking backtest results against random trading part 2" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In the <a href="https://robotwealth.com/benchmarking-backtest-results-against-random-strategies/" rel="noopener noreferrer" target="_blank">first part of this article</a>, I described a procedure for empirically testing whether a trading strategy has predictive power by comparing its performance to the distribution of the performance of a large number of random strategies with similar trade distributions. In this post, I will present the results of the simple example described by the code in the previous post in order to illustrate how susceptible trading strategies are to the vagaries of randomness. I will also illustrate by way of example my thought process when it comes to deciding whether to include a particular component in my live portfolio or discard it.
+I tested one particular trading system on a number of markets separately in both directions. I picked out three instances where the out of sample performance was good as candidates for live trading. The markets, trade directions and profit factors obtained from the out of sample backtest are as follows:
+USD/CAD – Short – Profit Factor = 1.79
+GBP/USD – Long – Profit Factor = 1.20
+GBP/JPY – Long – Profit Factor = 1.31
+Next, I estimated the performance of a random trader with the same trade frequencies, average duration and direction of trades by simulating 5,000 random backtests using the Zorro Lite-C code in the previous post and plotted a histogram and cumulative frequency distribution of the profit factor. In a neutral market, I would expect the distribution of profit factors to resemble a normal distribution with mean of slightly less than 1 as a result of transaction costs. Any skew present in the distribution would reflect the presence of a trend in the price series. For example, for a simulation of long trades, a left-skewed distribution would indicate an overall downwards trend in the price series, while a right skew would indicate an overall upwards trend. The reverse would be true for a random simulation of short trades.
+Below are the histograms and cumulative frequency distributions for each candidate portfolio component. The red lines indicate the actual profit factors obtained in the non-random system’s out of sample backtest.
+<a href="https://robotwealth.com/wp-content/uploads/2015/10/histogram_USDCAD.png"><img alt="histogram_USDCAD" class="wp-image-862 aligncenter perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/10/histogram_USDCAD.png" decoding="async" height="415" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='551'%20height='415'%20viewBox='0%200%20551%20415'%3E%3C/svg%3E" width="551"/></a>
+<img alt="cumFreq_USDCAD" class="wp-image-859 aligncenter perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/10/cumFreq_USDCAD.png" decoding="async" height="359" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='613'%20height='359'%20viewBox='0%200%20613%20359'%3E%3C/svg%3E" width="613"/>
+As expected, the profit factors are generally normally distributed with some skewness. Our USD/CAD portfolio component did well in the out of sample backtest, with a profit factor of 1.79. The profit factor distribution obtained by simulating random trades of the dame direction and average frequency and duration is right skewed, indicating a trend in the same direction as our strategy – short in this case. This may indicate that some of the non-random strategy’s performance is due to the market’s trend, or put another way, due to simply being lucky enough to be in the right market at the right time. Examination of the cumulative frequency distribution reveals that our non-random strategy out-performed 96% of random strategies. So we can conclude with 96% certainty that our strategy has predictive power, even though it trades with the dominant trend in the market. Put another way, we are 96% certain that the strategy’s performance was not just due to being in the right market at the right time. I am comfortable trading this component in my live portfolio.
+<a href="https://robotwealth.com/wp-content/uploads/2015/10/histogram_GBPUSD.png"><img alt="histogram_GBPUSD" class="wp-image-861 aligncenter perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/10/histogram_GBPUSD.png" decoding="async" height="404" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='536'%20height='404'%20viewBox='0%200%20536%20404'%3E%3C/svg%3E" width="536"/></a><a href="https://robotwealth.com/wp-content/uploads/2015/10/cumFreq_GBPUSD.png"><img alt="cumFreq_GBPUSD" class="wp-image-858 aligncenter perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/10/cumFreq_GBPUSD.png" decoding="async" height="462" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='614'%20height='462'%20viewBox='0%200%20614%20462'%3E%3C/svg%3E" width="614"/></a>
+Similar examination of the GBP/USD portfolio component reveals a slight right skew in the random profit factor distribution, indicating a slight trend in the same direction as the candidate strategy trades. In this case, the candidate strategy out performed 92.5% of random strategies. This candidate lies in a tricky position on the distribution: an oft-cited minimum confidence limit in the scientific literature is the 95th percentile, of which this strategy is just shy. In addition, its out of sample profit factor was only 1.20, which is on the low side. All things considered, I’ll leave this component out of my active portfolio.
+<a href="https://robotwealth.com/wp-content/uploads/2015/10/histogram_GBPJPY.png"><img alt="histogram_GBPJPY" class="wp-image-860 aligncenter perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/10/histogram_GBPJPY.png" decoding="async" height="396" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='526'%20height='396'%20viewBox='0%200%20526%20396'%3E%3C/svg%3E" width="526"/></a><a href="https://robotwealth.com/wp-content/uploads/2015/10/cumFreq_GBPJPY.png"><img alt="cumFreq_GBPJPY" class="wp-image-857 aligncenter perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/10/cumFreq_GBPJPY.png" decoding="async" height="459" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='609'%20height='459'%20viewBox='0%200%20609%20459'%3E%3C/svg%3E" width="609"/></a>
+Finally, examination of the GBP/JPY data reveals a left skew in the distribution of the random trader’s profit factor, indicating a slight trend in the opposite direction to the candidate strategy. In this case, our non-random strategy’s profit factor of 1.31 beats 89% of random traders. Again, I’m not overly comfortable adding this strategy to my live portfolio, however the fact that it does reasonably well even while trading against the underlying bias in the price data is enough to pique my interest. I’m going to add this component to my live forward test account, which is only minimally capitalised, but is a much more accurate indicator of performance than a demo account. I’ll monitor this component on that account for some time, perhaps two or three months, gathering further statistics about its performance. Depending on the results, I may add it to my live portfolio, or I may discard it altogether. I don’t know enough at present to make a decision one way or another.
+Would you make the same decisions I made in assessing these candidate strategies? If not, why not?
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>algorithmic trading</span>, <span>backtesting</span>, <span>forex</span>, <span>quantitative analysis</span>, <span>R</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-89281 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-factors category-quant-trading category-r category-trading-strategies tag-crypto tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-simple-effective-way-to-manage-turnover-and-not-get-killed-by-costs/"><img alt="A Simple, Effective Way to Manage Turnover and Not Get Killed by Costs" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="89282" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/02/21154908/burning_money.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-33396 post type-post status-publish format-standard has-post-thumbnail hentry category-r category-zorro pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/exporting-zorro-data-to-csv/"><img alt="Exporting Zorro Data to CSV" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="35919" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-300x157.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-300x157.png 300w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-600x314.png 600w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-1024x536.png 1024w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-768x402.png 768w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7-1000x523.png 1000w, https://media.robotwealth.com/wp-content/uploads/2021/01/21160703/BLOG-POST-Featured-Images-7.png 1200w" decoding="async" height="157" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='157'%20viewBox='0%200%20300%20157'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-32069 post type-post status-publish format-standard has-post-thumbnail hentry category-backtesting category-fx category-r category-time-series-modelling category-trading-strategies category-zorro tag-acr tag-arima tag-autoregressive-model tag-fx tag-mean-reversion tag-pacf tag-time-series pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/trading-fx-using-autoregressive-models/"><img alt="Trading FX using Autoregressive Models" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="32151" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-300x157.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-300x157.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-600x314.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-1024x536.png 1024w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-768x402.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models-1000x523.png 1000w, https://media.robotwealth.com/wp-content/uploads/2020/11/21160838/Trading-FX-Using-Autoregressive-Models.png 1200w" decoding="async" height="157" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='157'%20viewBox='0%200%20300%20157'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">3 thoughts on “Benchmarking backtest results against random trading part 2”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-429">
+<div class="comment-body">
+				Pingback: Exploring mean reversion and cointegration with Zorro and R: part 1 | Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-430">
+<article class="comment-body" id="div-comment-430" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Why are you only using profit factor to evaluate whether or not your strategy has predictive power over random strategies? Would you not want to look at other variables too?</p>
+<span class="reply"><a aria-label="Reply to Dom" class="comment-reply-link" data-belowelement="div-comment-430" data-commentid="430" data-postid="848" data-replyto="Reply to Dom" data-respondelement="respond" href="#comment-430" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-431">
+<article class="comment-body" id="div-comment-431" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Possibly – although I’m struggling to think of such a case. Depending on the circumstances, there may be a number of performance metrics that may be of interest. But the purpose here is simply to show whether a strategy is better than random, not to evaluate the strategy from multiple perspectives (that comes later). In order to do that, I don’t need a raft of other performance metrics – I only need one, and something simple will do the trick. Profit factor is easy to implement and is directly comparable between markets and systems.  It is useful for the intended purpose, but if you prefer a different metric, go ahead and use it. Just be aware that the purpose here is not a thorough evaluation of the strategy, its simply to decide whether it is significantly better than random.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-431" data-commentid="431" data-postid="848" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-431" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/benchmarkingpart-2/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

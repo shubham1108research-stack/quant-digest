@@ -1,0 +1,565 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Practical Pairs Trading</title>
+<!-- source: https://robotwealth.com/practical-pairs-trading/ -->
+<h1>Practical Pairs Trading</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-7030 post type-post status-publish format-standard hentry category-cointegration category-quant-trading category-r category-time-series-modelling category-tools-of-the-trade category-trading-strategies tag-adf-test tag-cointegration tag-johansen-test tag-pairs-trading tag-trading-strategies pmpro-has-access" id="post-7030">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">July 10, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Practical Pairs Trading</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Practical Pairs Trading" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Some price series are mean reverting some of the time, but it is also possible to create portfolios which are specifically constructed to have mean-reverting properties. Series that can be combined to create stationary portfolios are called <strong>cointegrating</strong>, and there are a bunch of statistical tests for this property. We’ll return to these shortly.
+
+While you can, in theory, create mean reverting portfolios from as many instruments as you like, this post will largely focus on the simplest case: pairs trading.
+
+<h2>What is Pairs Trading?</h2>
+
+Pairs trading involves buying and selling a portfolio consisting of two instruments. The instruments are linked in some way, for example they might be stocks from the same business sector, currencies exposed to similar laws of supply and demand, or other instruments exposed to the same or similar risk factors. We are typically long one instrument and short the other, making a bet that the value of this long-short portfolio (the spread) has deviated from its equilibrium value and will revert back towards that value.
+
+One of the major attractions of pairs trading is that we can achieve market neutrality, or something close to it. Because the long and short positions offset each other, pairs trading can be somewhat immune to movements of the overall market, thus eliminating or reducing market risk – theoretically at least.
+
+<h2>Risks and Drawbacks</h2>
+
+The fact that we can construct artificial spreads with mean-reverting properties is one of the major attractions of this style of trading. But there are some drawbacks too.
+
+For starters, if a series was mean reverting in the past, it may not be mean reverting in the future. Constructed spreads typically mean revert when random, non-structural events affect the value of the components. A good spread combined with a good trading strategy will capture these small opportunities for profit consistently. On the other hand, when a <em>structural</em> <em>shift</em> occurs – such as a major revaluation of one asset but not the other – such a strategy will usually get burned quite badly.
+
+How can we mitigate that risk? Predicting the breakdown of a spread is very difficult, but a sensible way to reduce the risk of this approach is to trade a diverse range of spreads. As with other types of trading, diversity tends to be your friend. I like to have an economic reason for the relationship that links the components, but to be totally honest, I’ve seen pairs trading work quite well between instruments that I couldn’t figure a relationship for. If you understand the relationship, you may be in a better position to judge when and why the spread might break down. Then again, you might not either. Breakdowns tend to happen suddenly and without a lot of warning.
+
+Probably the best example of what not to do with a pairs trading strategy is the Long Term Capital Management meltdown. I won’t go into the details here, but there is plenty written about this incident and it makes a fascinating and informative case study.
+
+<h2>Cointegration</h2>
+
+When two or more non-stationary series can be combined to make a stationary series, the component series are said to be <strong>cointegrated</strong>. One of the challenges of pairs trading is to determine the coefficients that define this stationary combination. In pairs trading, that coefficient is called the hedge ratio, and it describes the amount of instrument B to purchase or sell for every unit of instrument A. The hedge ratio can refer to a dollar value of instrument B, or the number of units of instrument B, depending on the approach taken. Here, we will largely focus on the latter approach.
+
+The Cointegrated Augmented Dickey Fuller (CADF) test finds a hedge ratio by running a linear regression between two series, forms a spread using that hedge ratio, then tests the stationarity of that spread. In the following examples, we use some R code that runs a linear regression between the price series of Exxon Mobil and Chevron to find a hedge ratio and then tests the resulting spread for stationarity.
+
+First, download some data, and plot the resulting price series (here we use the Robot Wealth data pipeline, which is a tool we wrote for members for efficiently getting prices and other data from a variety of sources):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Load and plot data"># Preliminaries
+library(urca)
+source("data_pipeline.R")
+
+prices &lt;- load_data(c('XOM', 'CVX'), start='2014-01-01', end = '2017-01-01', source='av', 
+                    return_data = 'Adjusted', save_indiv = TRUE)
+plot(prices, col=c('blue', 'red'), main = 'XOM and CVX')
+legend('bottomright', col=c('blue', 'red'), legend=c('XOM', 'CVX'), lty=1, bty='n')
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2017/12/XOM_CVX.png"><img alt="" class="aligncenter size-full wp-image-3689 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/12/XOM_CVX.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/></a>
+
+Next, we create a scatter plot of our price series, which will indicate whether there is an underlying relationship between them, and fit a linear regression model using ordinary least squares:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Linear regression between price series"># scatter plot of prices
+plot(coredata(prices[, 'XOM.Adjusted']), coredata(prices[, 'CVX.Adjusted']), col='blue',
+     xlab='XOM', ylab='CVX')
+
+# linear regression of prices
+fit &lt;- lm(coredata(prices[, 'CVX.Adjusted']) ~ coredata(prices[, 'XOM.Adjusted']))
+summary(fit)
+
+'''
+# output:
+
+# Call:
+#   lm(formula = coredata(prices[, "CVX.Adjusted"]) ~ coredata(prices[, 
+#                                                                     "XOM.Adjusted"]))
+# 
+# Residuals:
+#   Min      1Q  Median      3Q     Max 
+# -9.6122 -2.2196 -0.3546  2.4747  9.3366 
+# 
+# Coefficients:
+#   Estimate Std. Error t value Pr(&gt;|t|)    
+# (Intercept)                        -41.39747    1.88181  -22.00   &lt;2e-16 ***
+#   coredata(prices[, "XOM.Adjusted"])   1.67875    0.02309   72.71   &lt;2e-16 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Residual standard error: 3.865 on 754 degrees of freedom
+# Multiple R-squared:  0.8752,  Adjusted R-squared:  0.875 
+# F-statistic:  5287 on 1 and 754 DF,  p-value: &lt; 2.2e-16
+'''
+
+clip(min(coredata(prices[, 'XOM.Adjusted'])), max(coredata(prices[, 'XOM.Adjusted'])),
+     min(coredata(prices[, 'CVX.Adjusted'])), max(coredata(prices[, 'CVX.Adjusted'])))
+abline(fit$coefficients, col='red')</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2017/12/XOM_CVX-Scatter.png"><img alt="" class="aligncenter size-full wp-image-3690 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/12/XOM_CVX-Scatter.png" decoding="async" height="600" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='600'%20viewBox='0%200%20600%20600'%3E%3C/svg%3E" width="600"/></a>
+
+The line of best fit over the whole data set has a slope of 1.68, which we’ll use as our hedge ratio. Notice however while that line is the <em>global</em> line of best fit, there are clusters where this line isn’t the <em>locally</em> best fit. We’ll likely find that points in those clusters occur close to each other in time, which implies that a dynamic hedge ratio may be useful. We’ll return to this idea later, but for now, we’ll use the slope of the global line of best fit.
+
+Next, we construct and plot a spread using the hedge ratio we found above:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Constrct and plot spread"># construct and plot spread
+hedge &lt;- fit$coefficients[2]
+spread &lt;- prices[, 'CVX.Adjusted'] - hedge*coredata(prices[, 'XOM.Adjusted'])
+plot(spread, main='CVX-XOM Spread', col='black')
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2017/12/CVX_XOM_Spread.png"><img alt="" class="aligncenter size-full wp-image-3691 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/12/CVX_XOM_Spread.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/></a>
+
+The resulting spread is clearly much more mean-reverting than either of the underlying price series, but let’s test that observation using the ADF test:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Test spread for stationarity using ADF test"># ADF TEST 
+adf &lt;- ur.df(spread, type = "drift", selectlags = 'AIC')
+summary(adf)
+'''
+############################################### 
+# Augmented Dickey-Fuller Test Unit Root Test # 
+############################################### 
+# 
+# Test regression drift 
+# 
+# 
+# Call:
+#   lm(formula = z.diff ~ z.lag.1 + 1 + z.diff.lag)
+# 
+# Residuals:
+#   Min      1Q  Median      3Q     Max 
+# -3.8638 -0.5122  0.0037  0.5102  7.0391 
+# 
+# Coefficients:
+#   Estimate Std. Error t value Pr(&gt;|t|)   
+# (Intercept) -1.081908   0.375640  -2.880  0.00409 **
+#   z.lag.1     -0.026377   0.009032  -2.920  0.00360 **
+#   z.diff.lag  -0.023002   0.036596  -0.629  0.52984   
+# ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Residual standard error: 0.9464 on 751 degrees of freedom
+# Multiple R-squared:  0.01263, Adjusted R-squared:   0.01 
+# F-statistic: 4.803 on 2 and 751 DF,  p-value: 0.008459
+# 
+# 
+# Value of test-statistic is: -2.9204 4.3109 
+# 
+# Critical values for test statistics: 
+#   1pct  5pct 10pct
+# tau2 -3.43 -2.86 -2.57
+# phi1  6.43  4.59  3.78
+'''
+</pre>
+
+Observe that the value of the test statistic is -2.92, which is significant at the 95% level. Thus we reject the null of a random walk and assume our series is stationary.
+
+<h2>Implications of using ordinary least squares</h2>
+
+You might have noticed that since we used ordinary least squares (OLS) to find our hedge ratio, we will get a different result depending on which price series we use for the dependent (y) variable, and which one we choose for the independent (x) variable. The different hedge ratios are <em>not</em> simply the inverse of one another, as one might reasonably and intuitively expect. When using this approach, it is a good idea to test both spreads using the ADF test and choosing the one with the most negative test statistic, as it will be the more strongly mean reverting option (at least in the past).
+
+<h2>Another approach: total least squares</h2>
+
+As an alternative OLS, we can use total least squares (TLS), which accounts for the variance in both series, while OLS accounts for the variance in only one (this is why we get different hedge ratios depending on our choice of dependent variable). TLS is symmetrical, and will give the same result regardless of our choice of dependent variable. In practical terms, the hedge ratios obtained by OLS and TLS usually won’t differ greatly, but when they <em>do</em> differ, that difference is likely to be significant. So it is worth including the TLS approach in your analysis.
+
+Implementing TLS in R is straightforward using principal components analysis (PCA). Here’s the syntax:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="TLS spread"># TLS for computing hedge ratio
+pca &lt;- princomp(~ coredata(prices[, 'CVX.Adjusted']) + coredata(prices[, 'XOM.Adjusted']))
+tls_hedge &lt;- pca$loadings[1, 1]/pca$loadings[2, 1]
+tls_spread &lt;- prices[, 'CVX.Adjusted'] - tls_hedge*coredata(prices[, 'XOM.Adjusted'])
+plot(tls_spread, main='CVX-XOM Spread', col='black')
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2017/12/CVX_XOM_TLS_Spread.png"><img alt="" class="aligncenter size-full wp-image-3692 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/12/CVX_XOM_TLS_Spread.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/></a>
+
+The TLS approach results in a hedge ratio of 1.86 and a spread that is not all that different from our OLS hedge ratio. If we flipped the dependent and independent variables, our hedge ratio would simply the inverse of the one we just calculated.
+
+Let’s see if it results in a more significant ADF test result:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="ADF test using TLS spread"># ADF TEST 
+adf &lt;- ur.df(tls_spread, type = "drift", selectlags = 'AIC')
+summary(adf)
+
+'''
+# output
+############################################### 
+# Augmented Dickey-Fuller Test Unit Root Test # 
+############################################### 
+# 
+# Test regression drift 
+# 
+# 
+# Call:
+#   lm(formula = z.diff ~ z.lag.1 + 1 + z.diff.lag)
+# 
+# Residuals:
+#   Min      1Q  Median      3Q     Max 
+# -4.0533 -0.5579  0.0100  0.5905  7.3852 
+# 
+# Coefficients:
+#   Estimate Std. Error t value Pr(&gt;|t|)   
+# (Intercept) -1.779796   0.545639  -3.262  0.00116 **
+#   z.lag.1     -0.031884   0.009693  -3.289  0.00105 **
+#   z.diff.lag  -0.022874   0.036562  -0.626  0.53176   
+# ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Residual standard error: 1.057 on 751 degrees of freedom
+# Multiple R-squared:  0.01577, Adjusted R-squared:  0.01315 
+# F-statistic: 6.017 on 2 and 751 DF,  p-value: 0.002556
+# 
+# 
+# Value of test-statistic is: -3.2894 5.4476 
+# 
+# Critical values for test statistics: 
+#   1pct  5pct 10pct
+# tau2 -3.43 -2.86 -2.57
+# phi1  6.43  4.59  3.78
+'''</pre>
+
+Our test statistic is slightly more negative than that resulting from the spread constructed using OLS.
+
+<h2>The speed of mean reversion</h2>
+
+The speed at which our spread mean reverts has implications for its efficacy in a trading strategy. Faster mean reversion implies more excursions away from, and subsequent reversion back to the mean. One estimate of this quantity is the <strong>half-life of mean reversion</strong>, which is defined for a continuous mean reverting process as the average time it takes the process to revert half-way to the mean.
+
+We can calculate the half-life of mean reversion of our spread using the following <span class="lang:r decode:true crayon-inline">half_life()</span> function:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Half life of mean reverting spread">half_life &lt;- function(series) {
+  
+  delta_P &lt;- diff(series)
+  mu &lt;- mean(series)
+  lag_P &lt;- Lag(series) - mu
+  model &lt;- lm(delta_P ~ lag_P)
+  lambda &lt;- model$coefficients[2]
+  H &lt;- -log(2)/lambda
+  
+  return(H)
+}
+
+H &lt;- half_life(tls_spread)</pre>
+
+In this example, our half life of mean reversion is 21 days.
+
+<h2>The Johansen Test</h2>
+
+The Johansen test is another test for cointegration that generalizes to more than two variables. It is worth being familiar with in order to build mean reverting portfolios consisting of three or more instruments. Such a tool has the potential to greatly increase the universe of portfolios available and by extension the diversification we could potentially achieve. It’s also a data-miner’s paradise, with all the attendant pitfalls.
+
+The <span class="lang:c highlight:0 decode:true crayon-inline">urca</span> package implements the Johansen test via the <span class="lang:r highlight:0 decode:true crayon-inline">ca.jo()</span> function. The test can be specified in several different ways, but here’s a sensible specification and the resulting output (it results in a model with a constant offset, but no drift) using just the CVX and XOM price series:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Johansen test">jt &lt;- ca.jo(prices, type="trace", K=2, ecdet="const", spec="longrun")
+summary(jt)
+
+'''
+output
+###################### 
+# Johansen-Procedure # 
+###################### 
+
+Test type: trace statistic , without linear trend and constant in cointegration 
+
+Eigenvalues (lambda):
+  [1]  1.580429e-02  2.304504e-03 -3.139249e-20
+ 
+Values of teststatistic and critical values of test:
+  
+          test 10pct  5pct  1pct
+r &lt;= 1 |  1.74  7.52  9.24 12.97
+r = 0  | 13.75 17.85 19.96 24.60
+
+Eigenvectors, normalised to first column:
+  (These are the cointegration relations)
+
+XOM.Adjusted.l2 CVX.Adjusted.l2    constant
+XOM.Adjusted.l2       1.0000000        1.000000   1.0000000
+CVX.Adjusted.l2      -0.4730001       -1.350994  -0.7941696
+constant            -36.1562621       48.872924 -23.2604096
+
+Weights W:
+  (This is the loading matrix)
+
+XOM.Adjusted.l2 CVX.Adjusted.l2      constant
+XOM.Adjusted.d     -0.03890275     0.003422549 -1.424199e-16
+CVX.Adjusted.d     -0.01169526     0.006491211  2.416743e-17
+'''</pre>
+<strong>Here’s how to interpret the output of the Johansen test:</strong>
+
+Firstly, the test actually has more than one null hypothesis. The first null hypothesis is that there are no cointegrating relationships between the series, and is given by the <span class="lang:r highlight:0 decode:true crayon-inline">r = 0</span>  test statistic above.
+
+The second null hypothesis is that there is one or less cointegrating relationships between the series. This hypothesis is given by the <span class="lang:c highlight:0 decode:true crayon-inline">r &lt;= 1</span>  test statistic. If we had more price series, there would be further null hypotheses testing for less than 2, 3, 4, etc cointegrating relationships between the series.
+
+If we can reject all these hypotheses, then we are left with the number of cointegrating relationships being equal to the number of price series.
+
+In this case, we can’t reject <em>either</em> null hypothesis at even the 10% level! This would seem to indicate that our series don’t combine to produce a stationary spread, despite what we found earlier. <em><strong>What’s going on here?</strong></em>
+
+This raises an important issue, so let’s spend some time exploring this before continuing.
+
+First, the tests for finding statistically significant cointegrating relationships should not be applied mechanically without at least some understanding of the underlying process. It turns out that in the <span class="lang:r highlight:0 decode:true crayon-inline">ca.jo()</span> implementation of Johansen, the critical values reported may be arbitrarily high thanks to both the minimum number of lags required (2) and statistical uncertainty associated with the test itself. This can result in unjustified acceptance of the null hypothesis. For this reason, we might prefer to use the CADF test, but that’s not an option with more than two variables.
+
+In practice, I would be a little slow to reject a portfolio on the basis of a failed Johansen test, so long as there was a good reason for there to be a link between the component series, and we could create a promising backtest. In practice, you’ll find that dealing with a changing hedge ratio is more an issue than the statistical significance of the Johansen test. More on this in another post.
+
+Returning to the output of the Johansen test, the reported eignevectors are our hedge ratios. In this case, for every unit of XOM, we hold an opposite position in CVX at a ratio of 0.47. To be consistent with our previously constructed spreads, taking the inverse gives us the hedge ratio in terms of units of XOM for every unit of CVX, which works out to be 2.13 in this case. Here’s how we extract that value and construct and plot the resulting spread:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Johansen spread"># Johansen spread
+jo_hedge &lt;- 1/jt@V[2, 1]
+jo_spread &lt;- prices[, 'CVX.Adjusted'] + jo_hedge*coredata(prices[, 'XOM.Adjusted'])
+plot(jo_spread, main='CVX-XOM Spread', col='black')
+</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2017/12/Jo_spread.png"><img alt="" class="aligncenter size-full wp-image-3693 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/12/Jo_spread.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/></a>
+
+For completeness, here’s an example of using the Johansen test on a portfolio of three instruments, adding Conoco-Philips (COP, another energy company) to our existing pair:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="3-instrument spread"># 3-series johansen example
+
+portfolio &lt;- load_data(c('XOM', 'CVX', 'COP'), start='2014-01-01', end='2017-01-01', source='yahoo', 
+                       return_data = 'Adjusted', save_indiv = TRUE)
+
+plot(portfolio, col=c('blue', 'red', 'black'), main = 'XOM and CVX')
+legend('bottomright', col=c('blue', 'red', 'black'), 
+       legend=c('XOM', 'CVX', 'COP'), lty=1, bty='n')
+
+jt &lt;- ca.jo(portfolio, type="eigen", K=2, ecdet="const", spec="longrun")
+summary(jt)
+
+'''
+output:
+###################### 
+# Johansen-Procedure # 
+###################### 
+
+Test type: maximal eigenvalue statistic (lambda max) , without linear trend and constant in cointegration 
+
+Eigenvalues (lambda):
+  [1]  1.696099e-02  6.538698e-03  2.249865e-03 -3.753129e-18
+
+Values of teststatistic and critical values of test:
+  
+          test 10pct  5pct  1pct
+r &lt;= 2 |  1.70  7.52  9.24 12.97
+r &lt;= 1 |  4.95 13.75 15.67 20.20
+r = 0  | 12.90 19.77 22.00 26.81
+ 
+Eigenvectors, normalised to first column:
+  (These are the cointegration relations)
+
+XOM.Adjusted.l2 COP.Adjusted.l2 CVX.Adjusted.l2   constant
+XOM.Adjusted.l2      1.00000000       1.0000000        1.000000  1.0000000
+COP.Adjusted.l2      0.05672729      -0.5610875        1.169714  0.3599442
+CVX.Adjusted.l2     -0.49143408      -0.7078675       -1.764155 -1.2310314
+constant           -37.60449105      19.0946477       31.146100  9.2824197
+
+Weights W:
+  (This is the loading matrix)
+
+XOM.Adjusted.l2 COP.Adjusted.l2 CVX.Adjusted.l2      constant
+XOM.Adjusted.d     -0.04560861     0.003903014    -0.001297751 -1.251443e-15
+COP.Adjusted.d     -0.01296028     0.003347451    -0.003035065 -5.016783e-16
+CVX.Adjusted.d     -0.02437064     0.009714253    -0.001897541 -5.504833e-16
+'''
+
+# Johansen spread
+jo_hedge &lt;- jt@V[, 1]
+jo_spread &lt;- portfolio%*%jo_hedge[1:3]
+jo_spread &lt;- xts(jo_spread, order.by = index(portfolio))
+plot(jo_spread, main='CVX-XOM-COP Spread', col='black')</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2017/12/jo_3_spread.png"><img alt="" class="aligncenter size-full wp-image-3694 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/12/jo_3_spread.png" decoding="async" height="500" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='500'%20viewBox='0%200%20700%20500'%3E%3C/svg%3E" width="700"/></a>
+<h2>Take care!</h2>
+
+While it may seem tempting to check thousands of instrument combinations for cointegrating relationships, be aware of these two significant issues:
+
+<ol>
+<li>Doing this indiscriminately will incur significant amounts of data mining bias. Remember that if you run 100 statistical significance tests, 5 will pass at the 95% confidence level through chance alone.</li>
+<li>The Johansen test creates portfolios using all components. This can result in significant transaction costs, as for every instrument added, further brokerage and spread crossing costs are incurred. One alternative is to explore the use of sparse portfolios – see for example <a href="https://arxiv.org/abs/0708.3048" rel="noopener noreferrer" target="_blank">this paper</a>.</li>
+</ol>
+<h2>Practical advice</h2>
+
+In practice, I use statistical tests such as CADF and Johansen to help find potential hedge ratios for price series that I think have a good chance of generating a profit in a pairs trading strategy. Specifically, <strong>I don’t pay a great deal of attention to the statistical significance of the results.</strong> The markets are noisy, chaotic and dynamic, and something as precise as a test for statistical signficance proves to be a subotpimal basis for making trading decisions.
+
+In practice, I’ve seen this play out over and over again, when spreads that failed a test of statistical signifiance generated positive returns out of sample, while spreads that passed with flying colours lost money hand over fist. Intuitively this makes a lot of sense – if trading was as easy as running tests for statistical significance, anyone with undergraduate-level math (or the ability to copy and paste code from the internet) would be raking money from the markets. Clearly, other skills and insights are needed.
+
+In future posts, I’ll show you some backtesting tools for running experiments on pairs trading. Thanks for reading!
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>ADF test</span>, <span>cointegration</span>, <span>Johansen test</span>, <span>pairs trading</span>, <span>trading strategies</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">8 thoughts on “Practical Pairs Trading”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-5588">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 07/10/2019 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-vitali-ltggmail-com odd alt thread-odd thread-alt depth-1 parent" id="comment-5617">
+<article class="comment-body" id="div-comment-5617" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Here is the implementation in Python using Google Colab: <a href="https://colab.research.google.com/drive/1TegqUbk2Hpy3nO7VMCda2u3DXUq7XvjN" rel="nofollow ugc">https://colab.research.google.com/drive/1TegqUbk2Hpy3nO7VMCda2u3DXUq7XvjN</a></p>
+<span class="reply"><a aria-label="Reply to vitali.ltg@gmail.com" class="comment-reply-link" data-belowelement="div-comment-5617" data-commentid="5617" data-postid="7030" data-replyto="Reply to vitali.ltg@gmail.com" data-respondelement="respond" href="#comment-5617" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-13337">
+<article class="comment-body" id="div-comment-13337" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>very good, thanks!</p>
+<span class="reply"><a aria-label="Reply to Giovanni" class="comment-reply-link" data-belowelement="div-comment-13337" data-commentid="13337" data-postid="7030" data-replyto="Reply to Giovanni" data-respondelement="respond" href="#comment-13337" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-minshengw odd alt thread-even depth-1" id="comment-7436">
+<article class="comment-body" id="div-comment-7436" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thank you for the post. It is a very good introduction to me. I think the first step of identifying what are the pairs for the CADF tests will be difficult. Or where should we start looking for pairs.  I am looking forward to future posts.</p>
+<span class="reply"><a aria-label="Reply to Minsheng Wu" class="comment-reply-link" data-belowelement="div-comment-7436" data-commentid="7436" data-postid="7030" data-replyto="Reply to Minsheng Wu" data-respondelement="respond" href="#comment-7436" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1" id="comment-13341">
+<article class="comment-body" id="div-comment-13341" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very good post, specially the OTS/PCA for testing residuals, is a good way to identify and exclude pairs that are not consistent (pass OLS fail OTS and vice versa). I´ve implemented your code and I already noted some pairs with this divergence in my script output. For who is not familiar with eigenvalues eigeinvectors, remember always to check the eigenvector with the higher eigenvalue (that capture most of the variance), not always is the first column (at least in Python).</p>
+<p>As the validity of such tests I do them only as a pre-selection filter, to narrow the choices, than I go to the ratio candle chart and look at bollinger bands wtih 2, 3 and 4 standard deviations, when the ratio is touching these bollinger bands, I manage to place my entry.</p>
+<span class="reply"><a aria-label="Reply to Giovanni" class="comment-reply-link" data-belowelement="div-comment-13341" data-commentid="13341" data-postid="7030" data-replyto="Reply to Giovanni" data-respondelement="respond" href="#comment-13341" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-13346">
+<article class="comment-body" id="div-comment-13346" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris, I have a question about half-life formula shouldn´t denominator be abs( log(lambda)) ?</p>
+<p>All the equations (even stackexchange community) I see it like yours, but according this math blog the formula is  missing log in numerator</p>
+<p><a href="https://mathtopics.wordpress.com/2013/01/10/half-life-of-the-ar1-process/" rel="nofollow ugc">https://mathtopics.wordpress.com/2013/01/10/half-life-of-the-ar1-process/</a></p>
+<p>here you can see the same equation as well (with log in denominator)</p>
+<p><a href="https://quant.stackexchange.com/questions/30213/how-to-find-the-formula-for-the-half-life-of-an-ar1-process-using-the-ornstei" rel="nofollow ugc">https://quant.stackexchange.com/questions/30213/how-to-find-the-formula-for-the-half-life-of-an-ar1-process-using-the-ornstei</a></p>
+<p>Best wishes</p>
+<p>Giovanni</p>
+<span class="reply"><a aria-label="Reply to Giovanni" class="comment-reply-link" data-belowelement="div-comment-13346" data-commentid="13346" data-postid="7030" data-replyto="Reply to Giovanni" data-respondelement="respond" href="#comment-13346" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-14211">
+<div class="comment-body">
+				Pingback: Pairs Trading Literature Review - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/practical-pairs-trading/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

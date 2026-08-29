@@ -1,0 +1,648 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Exploring mean reversion and cointegration with Zorro and R: part 1</title>
+<!-- source: https://robotwealth.com/exploring-mean-reversion-and-cointegration-with-zorro-and-r-part-1/ -->
+<h1>Exploring mean reversion and cointegration with Zorro and R: part 1</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1016 post type-post status-publish format-standard hentry category-cointegration category-fx category-quant-trading category-r category-trading-books category-zorro tag-aud-nzd tag-augemnted-dickey-fuller-test tag-cointegration tag-hurst-exponent tag-mean-reversion tag-r tag-stationarity tag-zorro pmpro-has-access" id="post-1016">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">December 3, 2015</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Exploring mean reversion and cointegration with Zorro and R: part 1</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Exploring mean reversion and cointegration with Zorro and R: part 1" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">This series of posts is inspired by several chapters from Ernie Chan’s highly recommended book <em>Algorithmic Trading</em>. The book follows Ernie’s first contribution, <em>Quantitative Trading</em>, and focuses on testing and implementing a number of strategies that exploit measurable market inefficiencies. I’m a big fan of Ernie’s work and have used his material as inspiration for a great deal of my own research. My earlier posts about accounting for randomness (<a href="https://robotwealth.com/benchmarking-backtest-results-against-random-strategies/" rel="noopener" target="_blank">here</a> and <a href="https://robotwealth.com/benchmarkingpart-2/" rel="noopener" target="_blank">here</a>) were inspired by the first chapter of <em>Algorithmic Trading.</em> Ernie works in MATLAB, but I’ll be using R and Zorro.
+Ernie cites Daniel Kahneman’s interesting example of mean reversion in the world around us: the <em>Sports Illustrated </em>jinx, namely that “an athlete whose picture appears on the cover of the magazine is doomed to perform poorly the following season” (Kahneman, 2011). Performance can be thought of as being randomly distributed around a mean, so exceptionally good performance one year (resulting in the appearance on the cover of <em>Sports Illustrated</em>) is likely to be followed by performances that are closer to the average.
+Mean reversion also exists in, or can be constructed from, financial time series data. In this context, I will refer to data that tends to mean revert as <em>stationary. </em>Note that stationarity does not imply a range-bound price series with variance independent of time, rather that the variance simply increases more slowly than that of a normal diffusion process (yes, I know there are more formal and robust definitions of stationarity, but since we are only interested in the practical application of the concept to trading, this will do for now and you can stop cringing).  In this post, I’ll explore mean reversion of individual time series and in the next post will investigate constructing artificial mean reverting time series. Of course, I’ll propose trading strategies based on the findings.
+
+<h2>Augmented Dickey-Fuller Test</h2>
+
+If the time series is not a random walk, the current value tells us something about the next value in the series. If the series is mean reverting, a value above the mean will more likely be followed by a down move and vice versa. The Augmented Dickey-Fuller (ADF) test is a test for the tendency of the series to mean revert based on this observation.
+Using a linear model of price changes:
+
+<p class="" style="text-align: center;"><strong>Δy(t) = λy(t − 1) <span class="mo" id="MathJax-Span-9">+</span><span class="mi" id="MathJax-Span-10">β</span><span class="mi" id="MathJax-Span-11">t </span>+ μ + α1Δy(t − 1) + … + αkΔy(t − k) + εt</strong></p>
+<p style="text-align: center;"><strong>where Δy(t) ≡ y(t) − y(t − 1),  Δy(t − 1) ≡ y(t − 1) − y(t − 2), etc.</strong></p>
+
+we can see that if<em> λ ≠ 0</em>, then <em>Δy(t)</em> depends on the current level <em>y(t − 1)</em> and therefore is not a random walk. The ADF test examines whether the hypothesis <em>λ = 0</em> can be rejected at a given confidence level.
+The following R code (truncated here, full code linked below) examines mean reversion of daily price data for the AUD/NZD exchange rate for the period 2008 to mid-2015. The code uses the <span class="lang:default decode:true crayon-inline">ur.df </span> function from the <span class="lang:default decode:true crayon-inline">urca</span>  package, which contains a number of econometric functions. There is also the <span class="lang:default decode:true crayon-inline">adf.test</span>  function from the <span class="lang:default decode:true crayon-inline">tseries </span> package, but this implementation includes only one of the three variations of the ADF test, and the particular implementation in that package is not suitable for this case. In this application, we should set the drift term to zero because the constant drift in price tends to be of a much smaller magnitude than the daily fluctuations in price (Chan, 2013).  The intercept however should be non-zero. This combination is achieved by using the <span class="lang:default decode:true crayon-inline">drift </span> argument of the <span class="lang:default decode:true crayon-inline">ur.df</span>  function. In addition, Chan suggests starting with a lag of 0, but that better results are usually obtained with a lag of 1, which may indicate serial correlation of price changes.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="ADF test using package urca">library(zoo)
+library(urca)
+##########
+#Import data
+...
+...
+##########
+# ADF test
+summary(ur.df(audnzd, type = "drift", lags = 1))</pre>
+
+We may expect a degree of mean reversion in this time series given that each currency in the pair is a so-called commodity currency and the two countries inhabit the same corner of the globe. Therefore, they may share a number of market factors. However, the time series doesn’t look overly stationary:
+<a href="https://robotwealth.com/wp-content/uploads/2015/12/AUDNZD.png"><img alt="AUDNZD" class="aligncenter size-full wp-image-1019 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/12/AUDNZD.png" decoding="async" height="562" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='562'%20viewBox='0%200%20600%20562'%3E%3C/svg%3E" width="600"/></a>
+The results of the ADF test are as follows:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="ur.df results for AUD/NZD">###############################################
+# Augmented Dickey-Fuller Test Unit Root Test #
+###############################################
+Test regression drift
+Call:
+lm(formula = z.diff ~ z.lag.1 + 1 + z.diff.lag)
+Residuals:
+      Min        1Q    Median        3Q       Max
+-0.026807 -0.003564 -0.000072  0.003334  0.035011
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept)  0.0026755  0.0019258   1.389    0.165
+z.lag.1     -0.0022207  0.0015837  -1.402    0.161
+z.diff.lag  -0.0009535  0.0226825  -0.042    0.966
+Residual standard error: 0.006004 on 1945 degrees of freedom
+Multiple R-squared:  0.001015,  Adjusted R-squared:  -1.27e-05
+F-statistic: 0.9876 on 2 and 1945 DF,  p-value: 0.3726
+Value of test-statistic is: -1.4023 0.9922
+Critical values for test statistics:
+      1pct  5pct 10pct
+tau2 -3.43 -2.86 -2.57
+phi1  6.43  4.59  3.78</pre>
+
+In the <span class="lang:default decode:true crayon-inline">urca</span>  implementation, the <em>λ</em> term in our linear model above is the estimate of  <span class="lang:default decode:true crayon-inline">z.lag.1</span> divided by its standard error, and our critical values corresponds to <span class="lang:default decode:true crayon-inline">tau2</span>. In this case, the test statistic is -1.402. This is greater than the the 10% critical value, so we can’t reject the null hypothesis that <em>λ=0</em> with even 90% certainty and should conclude that the time series is therefore not mean reverting. Interestingly, the negative value for lambda indicates that the time series is at least not trending.
+
+<h2>Hurst exponent</h2>
+
+Another way of looking at stationarity and mean reversion is from the perspective of the speed of diffusion from an initial state. A stationary series would diffuse at a slower rate than a geometric random walk. We can measure the speed of diffusion as the variance of the series:
+
+<p style="text-align: center;"><strong>Var(τ) = 〈|z(t + τ) − z(t)|^2〉</strong></p>
+<p style="text-align: left;">where</p>
+<ul>
+<li style="text-align: left;"><strong>z = log(price)</strong></li>
+<li style="text-align: left;"><strong>τ</strong> is an arbitrary time lag</li>
+<li style="text-align: left;"><strong>〈…〉</strong> is an average over all <strong>t’s</strong></li>
+</ul>
+<p style="text-align: left;">For a geometric random walk:</p>
+<p style="text-align: center;"><strong>〈|z(t + τ) − z(t)|^2〉 ∼ τ</strong></p>
+
+But if the series is either mean reverting or trending, this relationship will  not hold, and instead we get
+
+<p style="text-align: center;"><strong>〈|z(t + τ) − z(t)|^2〉 ∼ τ^2H</strong></p>
+<p style="text-align: left;">Where H is the Hurst exponent, H serves as an indicator of the degree to which a series trends. For a trending series, H &gt; 0.5, for a mean-reverting series, H &lt; 0.5 and for a geometric random walk, H = 0.5 (Chan, 2013).</p>
+<p style="text-align: left;">The <span class="lang:default decode:true crayon-inline">pracma</span> package in R can be used to to calculate the Hurst exponent. See <a href="https://blog.revolutionanalytics.com/2014/09/intro-to-long-memory-herodotus-hurst-and-h.html" rel="noopener" target="_blank">this</a> for an interesting account of the origins of the Hurst exponent as well as a description of the <span class="lang:default decode:true crayon-inline">pracma</span>  implementation.</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="computing the Hurst exponent">library(pracma)
+# Hurst exponent
+hurst &lt;- hurstexp(log(audnzd)) # returns a list of various Hurst calculations
+</pre>
+
+The <span class="lang:default decode:true crayon-inline">hurstexp </span> function returns a list of variously corrected and modified values for H, whose determination is a problem of estimation more than a problem of calculation.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="modified and corrected Hurst estimates">Simple R/S Hurst estimation: 0.8821693
+Corrected R over S Hurst exponent: 1.00354
+Empirical Hurst exponent: 0.9588154
+Corrected empirical Hurst exponent: 0.9422138
+Theoretical Hurst exponent: 0.5349181</pre>
+
+These results suggest that the time series is not mean-reverting, but instead has a tendency to trend.
+
+<h2>Half life of mean reversion</h2>
+
+At this point, we can step away from the constraints of statistical tests and the demands of 95% confidence limits. One of the interesting aspects of trading is that it is sometimes possible to be profitable despite not achieving the demanding requirements of significance imposed by a statistical test. The challenge is understanding when such a situation may arise and when moving away from statistical significance is likely to lead to disaster. One example of the former case may involve using a time series’ half life of mean reversion as the basis of a mean reversion strategy.
+An alternate interpretation of the lambda coefficient defined above is the  time that a series takes to mean revert (Chan, 2013). To see this interpretation, simply transform the discrete time series model described above to a differential form. Ignoring the drift and lagged difference terms, the differential form is equivalent to the <a href="https://en.wikipedia.org/wiki/Ornstein%E2%80%93Uhlenbeck_process" rel="noopener" target="_blank">Ornstein-Uhlenbeck stochastic process.</a>
+<p style="text-align: center;"><strong>dy(t) = (λy(t − 1) + μ)dt + dε</strong></p>
+<p style="text-align: left;">where <em>ε</em> is Guassian noise. This differential form leads to an analytical solution for the expected value of <em>y(t)</em>:</p>
+<p style="text-align: center;"><strong>E( y(t)) = y<sub>0</sub>exp(λt) − μ/λ(1 − exp(λt))</strong></p>
+<p style="text-align: left;">which, for a mean reverting process with negative <em>λ</em>, tells us that the expected value of the price decays exponentially at a half-life of <em>-log(2)/λ</em></p>
+<p style="text-align: left;">If we determine <em>λ</em> to be positive, we can infer that the price series is trending and therefore should not be traded in a mean-reverting strategy. If <em>λ</em> is close to zero, the half life will be very long and any mean reverting strategy will necessarily require long holding times. If <em>λ</em> is very negative, it is more likely that a profitable and practical mean reversion strategy exists since the price series tends to revert to the mean quickly. In his discussion of this idea, Chan (2013) also asserts that <em>λ</em> should be used in calculating lookback periods of moving averages and standard deviations for a mean reverting strategy, with a small multiple of <em>λ</em> often being optimal.</p>
+<p style="text-align: left;">The following R code calculates the half life of mean reversion of our AUD/NZD exchange rate data. To determine <em>λ</em>, regress <em>y(t) − y(t − 1)</em> against <em>y(t − 1)</em>:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="calculate half life of mean reversion">##########
+# Calculate half life of mean reversion
+y &lt;- audnzd
+y.lag &lt;- lag(y, -1)
+delta.y &lt;- diff(y)
+df &lt;- cbind(y, y.lag, delta.y)
+df &lt;- df[-1 ,] #remove first row with NAs
+regress.results &lt;- lm(delta.y ~ y.lag, data = df)
+lambda &lt;- summary(regress.results)$coefficients[2]
+half.life &lt;- -log(2)/lambda</pre>
+
+In this case, the half life is calculated to be 311 days. At first glance, this feels far too long for this impatient trader! Below I will present a simple trading strategy to test whether this series is exploitable via mean reversion methods.
+
+<h2 style="text-align: left;">A simple linear mean reverting strategy</h2>
+
+A simple linear mean reverting strategy is realised by determining the normalised deviation of price from its moving average (essentially, a moving Z-score of the last closing price) and holding a position negatively proportional to this deviation. The lookback period for the moving average and moving standard deviation is set equal to the half life of mean reversion. Of course, a moving average and moving standard deviation are required because even though we implicitly assume a stationary price series, in reality it is likely to evolve. In addition, the variance of a mean reverting process does change with time, albeit not as quickly as a geometric random walk.
+The Zorro code below implements this linear strategy. The number of lots held is equivalent to the negative of the Z-score to account for the fact that a positive Z-score implies a downwards reversion and a negative Z-score implies a positive reversion. Note that the market value is units of the quote currency (AUD in this case). If this is not the account currency, an allowance would need to be made for converting the profits and losses to the account currency.
+The presentation of this strategy is intended as a proof of concept only and is not practical for live trading. Transaction costs are excluded from the analysis, but would likely be significant given the constant rebalancing of the position. There is also some look ahead bias in that the lookback period for the Z-score calculations was derived from the price history being traded. In the next post, I’ll introduce some examples of more practical methods for exploiting mean reversion.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="linear mean reversion trading on a single asset">int lotsOpen() {
+    string CurrentAsset = Asset;
+    int val = 0;
+    for(open_trades)
+    if(strstr(Asset,CurrentAsset) &amp;&amp; TradeIsOpen)
+    val += TradeLots;
+    return val;
+}
+function run() {
+    set(LOGFILE);
+    BarPeriod = 1440;
+    StartDate = 2008;
+    EndDate = 2015;
+    Spread =    Slippage = RollShort = RollLong = 0; // set transaction costs to zero
+    PlotWidth = 750;
+    int halfLife = 311;
+    LookBack = halfLife+1;
+    vars Close = series(priceClose());
+    vars zScore = series(10*(-(Close[0] - SMA(Close, halfLife))/StdDev(Close, halfLife))); // multiply by 10 as minimum lot size is 1
+    int openLots;
+    if (zScore[0] &gt; 0) { //want to be long the asset
+        exitShort();
+        openLots = lotsOpen();
+        if (openLots &lt; zScore[0]) {//need to buy more
+            Lots = zScore[0] - openLots;
+            enterLong();
+        }
+        else if (openLots &gt; zScore[0]) {
+            exitLong(0,0,(openLots - zScore[0])); //need to close some
+        }
+    }
+    else if (zScore[0] &lt; 0) { //want to be short the asset
+        exitLong();
+        openLots = lotsOpen();
+        if (openLots &lt; abs(zScore[0])) { //need to sell more
+            Lots = abs(zScore[0]) - openLots;
+            enterShort();
+        }
+        else if (openLots &gt; abs(zScore[0])) {
+            exitShort(0,0,(openLots - abs(zScore[0])));
+        }
+    }
+    plot("zScore", zScore, NEW, BLUE);
+    plot("MAve", SMA(Close, halfLife), NEW, GREEN);
+    plot("MSD", StdDev(Close, halfLife), NEW, RED);
+}</pre>
+
+The strategy returns a respectable 22% per annum, albeit with a significant drawdown and a Sharpe ratio of only 0.39:
+<a href="https://robotwealth.com/wp-content/uploads/2015/12/AUDNZD-linear-mean-reversion-strat-D1.png"><img alt="AUDNZD linear mean reversion strat D1" class="aligncenter size-full wp-image-1026 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/12/AUDNZD-linear-mean-reversion-strat-D1.png" decoding="async" height="798" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='829'%20height='798'%20viewBox='0%200%20829%20798'%3E%3C/svg%3E" width="829"/></a>
+Interestingly, note how the strategy suffers its greatest drawdown at the same time as price breaks its multi-year low in early 2013 and then trends strongly to what appears to be a new range. Note the behaviour of the moving average and the moving standard deviation during this period: their rates of change both increase dramatically. This implies a simple filter based on the rate of change of these series, which leads predictably to a tempering of the maximum drawdown:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="default" data-enlighter-title="simple filter based on rate of change of ma">// simple filter based on rate of change of moving average
+vars ma = series(SMA(Close, halfLife));
+vars delta = series(100 *(ma[0] - ma[1]));
+var threshold = 0.045;
+if (abs(delta[0]) &lt; threshold) {
+...
+// trade normally //
+...
+}
+else if (abs(delta[0]) &gt; threshold) { // exit open trades if rate of change exceeds threshold
+    exitLong("*"); exitShort("*");
+}
+plot("delta", delta, NEW, BLUE);</pre>
+<a href="https://robotwealth.com/wp-content/uploads/2015/12/AUDNZD-linear-mean-reversion-strat-D1_filter.png"><img alt="AUDNZD linear mean reversion strat D1_filter" class="aligncenter size-full wp-image-1027 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/12/AUDNZD-linear-mean-reversion-strat-D1_filter.png" decoding="async" height="893" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='829'%20height='893'%20viewBox='0%200%20829%20893'%3E%3C/svg%3E" width="829"/></a>
+The <span class="lang:default decode:true crayon-inline">threshold</span>  parameter, which controls the operation of the filter, is an optimization parameter that may or may not hold up out of sample. There are of course numerous options for detecting so-called ‘regime change’ – in this context, when a price series transitions from having a mean-reverting character to trending – including, for example, a rolling ADF test, the Hurst exponent, even the half life of mean reversion itself, or more generally, the coefficient obtained by regressing the bar-to-bar price change against the lagged price. These, and the many other examples, each have their own pros and cons. Personally, I prefer a filter based on the actual performance of the strategy and which starts and stops the algorithm upon the crossing of the theoretical equity curve with a filtered version of itself (credit to the Zorro team for introducing me to that idea). This approach has the happy side effect of preventing catastrophic losses if the price series being traded fundamentally changes and ceases to mean revert, or at least does so for long enough to wipe out a trading account. This is a very real prospect; it is trivial to see that many price series exhibit varying periods of predominantly trending or mean reverting behaviour, however predicting the change point and using that knowledge in a practical trading strategy is certainly non-trivial. To me, it makes sense to respond to something we can know with certainty (the current performance of the strategy in real time), particularly when that knowledge is a good indicator of the breakdown of the fundamental assumptions underlying the strategy.
+I have also found that, in general, reducing the lookback period of the moving average and standard deviation used in the Z-score calculation to approximately half the calculated half life of mean reversion improves performance. Reducing the lookback period further tends to result in deteriorating performance. Below is the performance for a lookback of 150, as opposed to the calculated half life of mean reversion of 311, with no rate of change filter:
+<a href="https://robotwealth.com/wp-content/uploads/2015/12/AUDNZD-linear-mean-reversion-strat-D1_reducedlookbak.png"><img alt="AUDNZD linear mean reversion strat D1_reducedlookbak" class="aligncenter size-full wp-image-1028 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2015/12/AUDNZD-linear-mean-reversion-strat-D1_reducedlookbak.png" decoding="async" height="798" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='829'%20height='798'%20viewBox='0%200%20829%20798'%3E%3C/svg%3E" width="829"/></a>
+
+The annual return is 32% and the Sharpe ratio is 0.48. If I include transaction costs of 1.7 points per side and simulate slippage by delaying orders by ten seconds, the annual return is 25% and the Sharpe ratio is  0.4.
+
+<h2>Why use statistical tests?</h2>
+
+Chan (2013) poses the question as to why bother with statistical tests for stationarity at all when, as traders, our overriding goal is to simply determine whether a given mean reversion strategy’s performance is good enough to invest money in. Couldn’t we just run a backtest and infer all the information we need? It turns out that the statistical significance of these stationarity tests is usually far higher than that obtained through a simple backtest. The reason is that such tests make use of the data embodied in every single sample (that is, bar) of the price series. In comparison, a backtest has only the number of completed trades, which is usually far less (the linear strategy presented here is something of an exception, although it is not really a strategy that anyone intends to trade as is). In addition, most strategies’ performance is dependent on a set of parameters that are largely external to the price series itself, further confusing the idea of statistical significance (this is one reason to prefer strategies with as few external parameters as possible). On the other hand, given a price series that passed the statistical tests for stationarity, or has a sufficiently short half life of mean reversion, we can be confident that a profitable mean reversion strategy exists – possibly just not the subject of our backtest.
+
+<h2>Next steps</h2>
+
+In the next part of this series, I’ll look into constructing artificial stationary time series and will present a more practical trading strategy for exploiting mean reversion.
+
+<h2>Files used in this post</h2>
+
+Here you can download a zip file containing the data and source code used in this post.
+<a href="https://robotwealth.com/wp-content/uploads/2015/12/MeanReversionPart1.zip">MeanReversionPart1</a>
+<h2>References</h2>
+
+Chan, Ernest, 2013. <em>Algorithmic trading, </em>John Wiley and Sons, New Jersey
+Kahneman, Daniel, 2011. <em>Thinking, Fast and Slow, </em>Farrar, Strauss and Giroux, New York
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>AUD/NZD</span>, <span>augemnted Dickey-Fuller test</span>, <span>cointegration</span>, <span>Hurst Exponent</span>, <span>mean reversion</span>, <span>R</span>, <span>stationarity</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">29 thoughts on “Exploring mean reversion and cointegration with Zorro and R: part 1”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-552">
+<article class="comment-body" id="div-comment-552" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for this very clear explanation of the use of statistical tests for calibrating mean-reversion trading strategies. It’s always nice to find an author who focuses on conveying the intuition of the models rather than the mathematics. Looking forward to part 2.</p>
+<span class="reply"><a aria-label="Reply to Stuart Reid" class="comment-reply-link" data-belowelement="div-comment-552" data-commentid="552" data-postid="1016" data-replyto="Reply to Stuart Reid" data-respondelement="respond" href="#comment-552" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-557">
+<article class="comment-body" id="div-comment-557" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Stuart. Glad you liked the post. Part 2 should be ready in the next couple of days.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-557" data-commentid="557" data-postid="1016" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-557" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-553">
+<div class="comment-body">
+				Pingback: Best Links of the Week | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-554">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 12/02/2015 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-555">
+<article class="comment-body" id="div-comment-555" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>thanks for the excellent content!<br/>
+i’ve traded cointegrated equity pairs for some years here with success and im now starting to work with the zorro platform.<br/>
+have you been successfull when trying to import local (.csv) data to the program ?<br/>
+thanks a lot<br/>
+best regards</p>
+<span class="reply"><a aria-label="Reply to eduardo" class="comment-reply-link" data-belowelement="div-comment-555" data-commentid="555" data-postid="1016" data-replyto="Reply to eduardo" data-respondelement="respond" href="#comment-555" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-556">
+<article class="comment-body" id="div-comment-556" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Eduardo<br/>
+Yes, importing CSV data into Zorro is quite simple. There is a script in the help file included with the software that allows the user to import data in CSV format.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-556" data-commentid="556" data-postid="1016" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-556" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-558">
+<div class="comment-body">
+				Pingback: Exploring mean reversion and cointegration: part 2 | Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-559">
+<article class="comment-body" id="div-comment-559" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I just started building some stat arb strategies and this post has helped a lot, thank you!<br/>
+Especially that you take the concepts from E.P Chan and then translate them to R.</p>
+<span class="reply"><a aria-label="Reply to Jacques Joubert" class="comment-reply-link" data-belowelement="div-comment-559" data-commentid="559" data-postid="1016" data-replyto="Reply to Jacques Joubert" data-respondelement="respond" href="#comment-559" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-560">
+<article class="comment-body" id="div-comment-560" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Glad you found the post helpful Jacques. Thanks for reading.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-560" data-commentid="560" data-postid="1016" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-560" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-561">
+<article class="comment-body" id="div-comment-561" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi,<br/>
+Thanks for your post, it is very clear. I am working in something very similar and I would like to share with you what I am doing.<br/>
+What do you think about transforming the data to make the series stationary using log differentiating operator using the R command:<br/>
+&gt; x -&gt; diff(log(audnzd))<br/>
+This commande will transform your series in a stationary process that you can check using the ADF test.<br/>
+Can we apply your strategy on this new time series?<br/>
+Thanks<br/>
+David</p>
+<span class="reply"><a aria-label="Reply to David Hoareau" class="comment-reply-link" data-belowelement="div-comment-561" data-commentid="561" data-postid="1016" data-replyto="Reply to David Hoareau" data-respondelement="respond" href="#comment-561" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-562">
+<article class="comment-body" id="div-comment-562" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi David, thanks for sharing your idea! If I understood you correctly, you are investigating whether we can trade a mean reversion strategy on the log returns series. Here’s some R code to take a quick look. The code will plot up the log returns series and compute the ADF test statistics, which in this case indicates that we can reject the null that the series is a random walk. The code for the vectorised backtest (just a quick and dirty one, no transaction costs included) holds a position opposite to the preceding day’s return (ie, if the preceding day showed a positive return, hold a short position the next day and vice versa). Interestingly, the plot of the cumulative returns of such a strategy seems to indicate that for a number of years, the log returns series showed a degree of anti-serial-correlation at a lag of 1, followed by a number of years of serial correlation, followed finally by a period of neither one nor the other (I can’t post the plots in the comments, but run the code and you will see what I mean). In the parlance of ‘market regimes’, to me this seems to indicate changes to the dominant regime from mean reversion to momentum to some combination of two.<br/>
+<code>#########<br/>
+# david's idea re log differences:<br/>
+y &lt;- diff(log(audnzd))<br/>
+plot(y, type = 'l', col = 'blue')<br/>
+summary(ur.df(y, type = "drift", lags = 1))<br/>
+# quick and dirty vectorised backtest<br/>
+library(quantmod)<br/>
+strat.returns &lt;- ifelse(y &gt; 0, Lag(y), -Lag(y))<br/>
+strat.returns &lt;- strat.returns[-1,]<br/>
+plot(cumsum(strat.returns), type = "l", col = "blue")</code></p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-562" data-commentid="562" data-postid="1016" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-562" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="trackback odd alt thread-odd thread-alt depth-1" id="comment-563">
+<div class="comment-body">
+				Pingback: Homepage 			</div>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-564">
+<article class="comment-body" id="div-comment-564" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi<br/>
+Excellent post! specially because it shows the right way to develop strategies. I mean the use of statistics instead of crossing to SMA and adjusting parameters in many backtest until it works,  And that it is actually better to spend two hours learning statistics than two hours trying to make that a strategy works. But you just not say it because everyone can say it, you actually prove it<br/>
+Just a couple of questions:<br/>
+Is it possible to calculate the halflife with zorro without R?<br/>
+Instead of using the half life, could it be implemented as a parameter to optimize? Or could it be related to the dominant period or taken from spectral analysis? (Just thinking loud)<br/>
+You mention that z&gt;0 means a downwards reversion however in the code you write that we want to go long. Is it so because you define as: “10*(-(Close[0]” instead of “10*((Close[0]”<br/>
+I also do not understand how you relate the number of open lots to the Z-score</p>
+<span class="reply"><a aria-label="Reply to mariano" class="comment-reply-link" data-belowelement="div-comment-564" data-commentid="564" data-postid="1016" data-replyto="Reply to mariano" data-respondelement="respond" href="#comment-564" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-565">
+<article class="comment-body" id="div-comment-565" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>How the actual audnzd data looks like? I am trying to make the script work by creating a cvs file from zorro. I get the data correctly into R, however I strugle trying to get just the close column for example.<br/>
+I think that with the actual R bridge the half life could be calculate for a many assets in a portpolio. I wonder how the result would look like but I cant get the first step of the process to work 😛</p>
+<span class="reply"><a aria-label="Reply to mariano" class="comment-reply-link" data-belowelement="div-comment-565" data-commentid="565" data-postid="1016" data-replyto="Reply to mariano" data-respondelement="respond" href="#comment-565" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-566">
+<article class="comment-body" id="div-comment-566" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I have extracted the audnzd data using the zorro script from the tutorial and then I have transformed the data using the R lectures into a xts object ( as far as I know ). I get around -7000 days for half life. Obviously there is something wrong.<br/>
+Here is my code:<br/>
+Data &lt;- read.csv('C:/Program Files (x86)/Zorro1.44.1/Data/audnzd.csv')<br/>
+timeI &lt;- Data$Date<br/>
+xtsIndex  &lt;- as.POSIXct(timeI)<br/>
+xtsPrices &lt;- xts(Data[,-1], xtsIndex)<br/>
+y&lt;-xtsPrices[,4]<br/>
+Then I use that y to continue the calculation</p>
+<span class="reply"><a aria-label="Reply to mariano" class="comment-reply-link" data-belowelement="div-comment-566" data-commentid="566" data-postid="1016" data-replyto="Reply to mariano" data-respondelement="respond" href="#comment-566" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3" id="comment-567">
+<article class="comment-body" id="div-comment-567" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Mariano<br/>
+I can’t tell if there is an error in your calculation based on the information you’ve provided. If you email me the data file and the R source code that you are using, I will take a look and get back to you. My email address is <a href="/cdn-cgi/l/email-protection#e89a878a879c85899b9c8d9aa89a878a879c9f8d89849c80c68b8785"><span class="__cf_email__" data-cfemail="2c5e434e4358414d5f58495e6c5e434e43585b494d405844024f4341">[email protected]</span></a></p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-567" data-commentid="567" data-postid="1016" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-567" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-568">
+<article class="comment-body" id="div-comment-568" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Terrific. I’ve read Chan’s first book, now I’m reading the second book and replicating each of his examples in Python. I’m glad I found this post because I’m a complete beginner at this stuff, despite my background in numerical techniques (aerospace engineering). I was wondering… For the simple mean reversion strategy shown above, I’ve written custom functions to open an close my positions (short or long). My code generates a list of positions, and then if it needs to sell only SOME of my positions, it searches for the positions held that will have the highest return at the current price and sells those first, in order of greatest return to smallest return. Is this correct? Otherwise I would just sell positions from the list in order, which would result in lower returns due to selling positions with lower return… Maybe I’m making this too complicated.<br/>
+Additionally, I’m trying to replicate Chan’s results for this strategy… But my results don’t quite look the same. I’ve done as you have and multiplied the Zscore by 10 so that there won’t be any shares less than one. I’ve also rounded these off (so that I can get integer lot sizes). I figured this won’t have a huge impact on the strategy.<br/>
+Chan’s Result:<br/>
+<a href="https://drive.google.com/open?id=0B3sX68VbLqTnY054S19SWmQwSlk" rel="nofollow ugc">https://drive.google.com/open?id=0B3sX68VbLqTnY054S19SWmQwSlk</a><br/>
+My Result:<br/>
+<a href="https://drive.google.com/open?id=0B3sX68VbLqTnUHhFclFkX1F2UE0" rel="nofollow ugc">https://drive.google.com/open?id=0B3sX68VbLqTnUHhFclFkX1F2UE0</a><br/>
+One difference, is that my P&amp;L is measured in dollars. I’m not sure what Chan’s is in. Probably dollars too, but his losses are quite small compared to mine. The graphs are quite similar, and the only thing I think that is different is that my algo finds the lookback period to be 123 days, while his finds it to be 115 days. Not sure if this difference is enough to cause the discrepancy!</p>
+<span class="reply"><a aria-label="Reply to Brandon" class="comment-reply-link" data-belowelement="div-comment-568" data-commentid="568" data-postid="1016" data-replyto="Reply to Brandon" data-respondelement="respond" href="#comment-568" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2 parent" id="comment-569">
+<article class="comment-body" id="div-comment-569" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Ok nevermind. I simply changed my lookback period to be 115 days instead of 123. Huge difference. The shape of the curve is nearly the same, however now the strategy is profitable, like Chan’s, however albeit by much more.<br/>
+<a href="https://drive.google.com/open?id=0B3sX68VbLqTnUkgxdmRyeXN5ODA" rel="nofollow ugc">https://drive.google.com/open?id=0B3sX68VbLqTnUkgxdmRyeXN5ODA</a><br/>
+Interesting how the lookback has such an impact…</p>
+<span class="reply"><a aria-label="Reply to Brandon" class="comment-reply-link" data-belowelement="div-comment-569" data-commentid="569" data-postid="1016" data-replyto="Reply to Brandon" data-respondelement="respond" href="#comment-569" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3" id="comment-571">
+<article class="comment-body" id="div-comment-571" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi there.. Just a question, isn’t lag(x, – 1) == looking into t+1?<br/>
+Best Regards</p>
+<span class="reply"><a aria-label="Reply to Eduardo" class="comment-reply-link" data-belowelement="div-comment-571" data-commentid="571" data-postid="1016" data-replyto="Reply to Eduardo" data-respondelement="respond" href="#comment-571" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-570">
+<article class="comment-body" id="div-comment-570" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thank you very much. I’m just starting to read Chan’s first book, and learning Zorro and R.<br/>
+This is so helpful and the way you explained it make so much sense.<br/>
+Keep it coming.</p>
+<span class="reply"><a aria-label="Reply to Nat" class="comment-reply-link" data-belowelement="div-comment-570" data-commentid="570" data-postid="1016" data-replyto="Reply to Nat" data-respondelement="respond" href="#comment-570" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-573">
+<article class="comment-body" id="div-comment-573" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Nat, really glad you like reading it as much as I love writing about it!</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-573" data-commentid="573" data-postid="1016" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-573" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-572">
+<article class="comment-body" id="div-comment-572" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi there,  I just posted a comment as a reply to another reader, unintentionally.<br/>
+I just wanted to point out that the lag function should have a positive integer as the Number of Lags you would like to input in the series, not a negative one (-1) as, in my opinion, would make a lot more sense, even though I haven’t wrote any R functions or scripts ..<br/>
+Best Regards</p>
+<span class="reply"><a aria-label="Reply to Eduardo" class="comment-reply-link" data-belowelement="div-comment-572" data-commentid="572" data-postid="1016" data-replyto="Reply to Eduardo" data-respondelement="respond" href="#comment-572" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-575">
+<article class="comment-body" id="div-comment-575" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I agree with this comment. Can anyone else confirm please?</p>
+<span class="reply"><a aria-label="Reply to David" class="comment-reply-link" data-belowelement="div-comment-575" data-commentid="575" data-postid="1016" data-replyto="Reply to David" data-respondelement="respond" href="#comment-575" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-576">
+<article class="comment-body" id="div-comment-576" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Eduardo, David – my apologies for not answering this one sooner. Eduardo is correct, lag() requires a positive integer for the intended purpose here. I’ll have to update this post when I find some time!<br/>
+Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-576" data-commentid="576" data-postid="1016" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-576" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4 parent" id="comment-578">
+<article class="comment-body" id="div-comment-578" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris<br/>
+Quantopian today has announced they are not supporting their API brokerage connections any more.<br/>
+I am now studying Zorro Trader. I typically use R for my research and im wondering if you maybe can point me in the direction of a zorro code example that hooks up to IB?<br/>
+My main question is:<br/>
+Can i check for open positions, pattern day trade rules etc etc within zorro and talk to IB if you will?<br/>
+Looking for an example to do that! Let me know! Thanks<br/>
+Andrew</p>
+<span class="reply"><a aria-label="Reply to Andrew Bannerman" class="comment-reply-link" data-belowelement="div-comment-578" data-commentid="578" data-postid="1016" data-replyto="Reply to Andrew Bannerman" data-respondelement="respond" href="#comment-578" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-5" id="comment-579">
+<article class="comment-body" id="div-comment-579" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Well that’s interesting. I hope that news broadens the Zorro user base a little more!<br/>
+It’s super easy to hook up to IB with Zorro. There’s a plugin that enables Zorro to talk to IB – both via TWS and the Gateway (the latter of which is more stable and consumes fewer compute resources). All you need to do is launch either TWS or the Gateway, sign in, then launch Zorro, select ‘IB’ from the account dropdown, and click Trade. There are one or two other tricks to making it work: for instance, if you are connecting via TWS, you need to set the socket port to 7496 (in your TWS, that’s under Configuration-&gt;API-&gt;Settings). For the Gateway, its 4002. There’s also a ‘Read Only API’ option that you need to deselect in order to actually send trades to market.<br/>
+Trading with IB has a few nuances, like subscribing to the correct data feed and ensuring your symbology matches theirs. But if you’re already trading with IB, I assume you’re across those issues already.<br/>
+Maybe a more detailed demonstration could be a blog post? If there’s demand for that, please let me know!</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-574">
+<div class="comment-body">
+				Pingback: Demystifying the Hurst Exponent – Part 1 – Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-577">
+<div class="comment-body">
+				Pingback: Back to Basics: Introduction to Algorithmic Trading – Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-10172">
+<div class="comment-body">
+				Pingback: Fitting Time Series Analysis: ARIMA/GARCH Profitable Predictions for FX? 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/exploring-mean-reversion-and-cointegration-with-zorro-and-r-part-1/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

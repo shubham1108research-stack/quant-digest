@@ -1,0 +1,648 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Optimal Data Windows for Training a Machine Learning Model for Financial Prediction</title>
+<!-- source: https://robotwealth.com/optimal-data-windows-for-training-a-machine-learning-model-for-financial-prediction/ -->
+<h1>Optimal Data Windows for Training a Machine Learning Model for Financial Prediction</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1416 post type-post status-publish format-standard hentry category-fx category-machine-learning category-quant-trading category-r tag-forex tag-machine-learning pmpro-has-access" id="post-1416">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">August 9, 2016</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Optimal Data Windows for Training a Machine Learning Model for Financial Prediction</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Optimal Data Windows for Training a Machine Learning Model for Financial Prediction" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">It would be great if <strong>machine learning</strong> were as simple as just feeding data to an out-of-the box implementation of some learning algorithm, then standing back and admiring the predictive utility of the output. As anyone who has dabbled in this area will confirm, it is never that simple. We have features to engineer and transform (no trivial task – see <a href="https://robotwealth.com/machine-learning-financial-prediction-david-aronson/">here</a> and <a href="https://robotwealth.com/machine-learning-for-financial-prediction-experimentation-with-david-aronsons-latest-work-part-2/">here</a> for an exploration with applications for finance), not to mention the vagaries of dealing with data that is <strong>non-Independent and Identically Distributed</strong> (non-IID). In my experience, landing on a model that fits the data acceptably at the outset of a modelling exercise is unlikely; a little (or a lot!) of effort is usually required to be expended on tuning and debugging the algorithm to achieve acceptable performance.
+In the case of <strong>non-IID time series data</strong>, we also have the dilemma of the amount of data to use in the training of a predictive model. Given the <strong>non-stationarity of asset prices</strong>, if we use too much data, we run the risk of training our  model on data that is no longer relevant. If we use too little data, we run the risk of building an under-fit model. This begs the question: <strong>Is there an ideal amount of data to include in machine learning models for financial prediction?</strong> I don’t know, but I doubt the answer is clear cut since we never know when the underlying process is about to undergo significant change. I hypothesise that it makes sense to use the minimum amount of data that leads to acceptable model performance, and testing this is the subject of this post.
+
+<h2><b>How Much Data?</b></h2>
+
+In classical data science, model performance <i>generally</i> improves as the amount of training data is increased. However, as mentioned above, due to the non-IID nature of the data we use in finance, this happy assumption is not necessarily applicable. My theory is that using too much data (that is, using a training window that extends far into the past) is actually detrimental to model performance.
+In order to explore this idea, I decided to build a model based on previous asset returns and measures of volatility. The volatility measure that I used is the 5-period Average True Range (ATR) minus the 20-period ATR normalized over the last 50 periods. The data used is the EUR/USD daily exchange rate sampled at 9:00am GMT between 2006 and 2016.
+The model used the previous three values of the returns and volatility series as the input features and the next day’s market direction as the target feature. I trained a simple two-class logistic regression model using R’s <i>glm</i> function with a time-series cross validation approach. This approach involves training the model on a window of data and predicting the outcome of the next period, then shifting the training window forward in time by one period. The model is then retrained on the new window and the next period’s outcome predicted. This process is repeated along the length of the time series. The cross-validated performance of the model is simply the performance of the next-day predictions using some suitable performance measure. I recorded the profit factor and sharpe ratio of the model’s predictions. I used class probabilities to determine the positions for the next day as follows:
+if $P_{up} &gt;= 0.55$, go long at open
+if $P_{down} &gt;= 0.55$, go short at open
+if $0.45 &lt; P_{up} &lt; 0.55$ (equivalent to $0.45 &lt; P_{down} &lt; 0.55)$, remain flat
+where $P_{up}$ and $P_{down}$ are the calculated probabilities for the next day’s market direction to be positive and negative respectively.
+Positions were liquidated at the close.
+In order to investigate the effects of the size of the data window, I varied its size between 15 and 1,600 days and recorded the cross-validated performance for each case. I also recorded the average in-sample performance on each of the training windows. Slicing up the data so that the various cross-validation samples were consistent across window lengths took some effort, but this wrangling was made simpler using Max Kuhn (to whom I once again tip my hat) and his <a href="https://topepo.github.io/caret/training.html">caret package</a>.
+The results are presented below.
+<a href="https://robotwealth.com/wp-content/uploads/2016/08/IS-CV-Profit-Factor.png"><img alt="IS-CV Profit Factor" class="aligncenter size-full wp-image-1428 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2016/08/IS-CV-Profit-Factor.png" decoding="async" height="596" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='711'%20height='596'%20viewBox='0%200%20711%20596'%3E%3C/svg%3E" width="711"/></a>
+
+We can see that for the smallest window lengths, the in-sample performance greatly exceeds the cross-validated performance. In other words, when we use very little data, the model fits the training data well, but fails to generalize out of sample. It has a variance problem, which is what we would expect.
+Then things get interesting. As we add slightly more data in the form of a longer training window, the in-sample performance decreases, but the cross-validated performance increases, very quickly rising to meet the in-sample performance. In-sample and cross-validated performance is very similar for a range of window lengths between 25 and 75 days. This is an important result, because when the cross-validated performance approximates the in-sample performance, we can conclude that the model is capturing the underlying signal and is therefore likely to generalise well. Encouragingly, this performance is reasonably robust in the approximate window range 25-75 days. If we had only one data point showing reasonable cross-validated performance, I wouldn’t trust that this wasn’t due to randomness. The existence of a region of reasonable performance implies that we may have a degree of confidence in the results.
+As we add yet more data to our training window, we can see that the in-sample performance continues to deteriorate, eventually reaching a lower limit, and that the cross-validated performance likewise continues to decline, with a notable exception around 500 days. This suggests that as we increase the training window length, the model develops a bias problem and underfits the data.
+These results are perhaps confounded by the fact that the optimal window length may be a characteristic of this particular market and the particular 10-year period used in this experiment. Actually, I feel this is quite likely. I haven’t run this experiment on other markets or time periods yet, but I strongly suspect that each market will exhibit different optimal window lengths, and that these will probably themselves vary with time. Notwithstanding this, it appears that we can at least conclude that in finance, more data is not necessarily better.
+
+<h2><b>Equity Curves</b></h2>
+
+I know how much algorithmic traders like to see an equity curve, so here is the model performance using a variety of selected window lengths, as well as the buy and hold equity curve of the underlying. Transactions costs are not included.
+<a href="https://robotwealth.com/wp-content/uploads/2016/08/EquityCurves0.6.png"><img alt="EquityCurves0.6" class="aligncenter size-full wp-image-1431 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2016/08/EquityCurves0.6.png" decoding="async" height="850" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='711'%20height='850'%20viewBox='0%200%20711%20850'%3E%3C/svg%3E" width="711"/></a>
+In this case, the absolute performance is nothing spectacular*. However, it demonstrates the differences in the quality of the predictions obtained using different window lengths for training the models. We can clearly see that more is not necessarily better, at least for this particular period of time.
+
+<h2>Performance as a Function of Class Probability Threshold</h2>
+
+It is also interesting to investigate how performance varies across the different windows lengths as a function of the class probability threshold used in the trading decisions. Here is a heatmap of the model’s Sharpe ratio for various window lengths and class probability thresholds.
+<a href="https://robotwealth.com/wp-content/uploads/2016/08/SharpeHeatMap.png"><img alt="SharpeHeatMap" class="aligncenter size-full wp-image-1436 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2016/08/SharpeHeatMap.png" decoding="async" height="578" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='711'%20height='578'%20viewBox='0%200%20711%20578'%3E%3C/svg%3E" width="711"/></a>
+We can see a fairly obvious region of higher Sharpe ratios for lower window lengths and generally increasing class probability threshold. The region of the higher Sharpe ratios for longer window lengths and higher class probabilities (the upper right corner) is actually slightly misleading, since the number of trades taken for these model configurations is vanishingly small. However, we can see that when those trades do occur, they tend to be of a higher quality.
+Finally, here are several equity curves for a window length of 30 days and various class probability thresholds.
+<a href="https://robotwealth.com/wp-content/uploads/2016/08/Window30Returns.png"><img alt="Window30Returns" class="aligncenter size-full wp-image-1437 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2016/08/Window30Returns.png" decoding="async" height="850" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='711'%20height='850'%20viewBox='0%200%20711%20850'%3E%3C/svg%3E" width="711"/></a>
+<h2><b>Conclusions</b></h2>
+
+This post investigated the effects of varying the length of the training window on the performance of a simple logistic regression model for predicting the next-day direction of the EUR/USD exchange rate. Results indicated that more data does not necessarily lead to a better predictive model. In fact, there may be a case for using a relatively small window of training data to force the model to continuously re-learn and adapt to the most immediate market conditions. There appears to be a trade-off to contend with, with very small windows exhibiting vast differences between performance on the training set and performance on out of sample data, and very large windows performing poorly both in-sample and out-of-sample.
+While absolute performance of the model was nothing to get excited about, the model used here was a very simple logistic regression classifier and minimal effort was spent on feature engineering. This suggests that the outcomes of this research could potentially be used in conjunction with more sophisticated algorithms and features to build a model with acceptable performance. This will be the subject of future posts.
+The axiom <i>he who has the most data wins</i> is widely applicable in many data science applications. This doesn’t appear to be the case when it comes to building predictive models for the financial markets. Rather, the research presented here suggests that the development and engineering of the model itself may play a far larger role in its out of sample performance. This implies that model performance is more a function of the skill of the developer than on the ability to obtain as much data as possible. I find that to be a very satisfying conclusion.
+
+<h2>Source Code and Data</h2>
+
+Here’s some source code and data if you are interested in reproducing my results. Warning: it is slightly hacky and takes a long time to run if you store all the in-sample performance data! By default I have commented out that part of the code. Download the data in CSV format <a href="https://robotwealth.com/wp-content/uploads/2016/08/EU_Daily.csv">here.</a>
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="How Much Data ???">##############################
+#### HOW MUCH DATA??? ########
+##############################
+library(caret)
+library(deepnet)
+library(foreach)
+library(doParallel)
+library(e1071)
+library(quantmod)
+library(reshape2)
+# import data
+eu &lt;- read.csv("EU_Daily.csv", header = T, stringsAsFactors = F)
+# create directional statistics
+eu$Direction &lt;- factor(ifelse(eu$Returns&gt;0, "up", "down"))
+#Calculate features - lagged return and volatility values
+periods &lt;- c(1:5)
+Returns &lt;- eu$Returns
+Volatility &lt;- eu$atrRegime
+Direction &lt;- eu$Direction
+lagReturns &lt;- data.frame(lapply(periods, function(x) Lag(Returns, x)))
+colnames(lagReturns) &lt;- c('Ret1', 'Ret2', 'Ret3', 'Ret4', 'Ret5')
+lagVolatility &lt;- data.frame(lapply(periods, function(x) Lag(Volatility, x)))
+colnames(lagVolatility) &lt;- c('Vol1', 'Vol2', 'Vol3', 'Vol4', 'Vol5')
+# create data set based on lagged returns and volatility indicators with next day return and direction as targets
+dat &lt;- data.frame(Returns, Direction, lagReturns, lagVolatility)
+dat &lt;- dat[-c(1:14), ] #remove zeros from initial volatility calcs
+dat &lt;- na.omit(dat)
+# preserve out of sample data
+# Train &lt;- dat[1:(nrow(dat)-500), ]
+# Test &lt;- dat[-(1:(nrow(dat)-500)), ]
+Train &lt;- dat # for using all data in training set
+# logistic regression models --------------------------------------------------------------
+direction &lt;- 2 # column number of direction variable
+features &lt;- c(3,4,5,8,9,10) #feature columns
+returns &lt;- 1 # returns column
+windows &lt;- c(15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600)
+modellist.lr &lt;- list()
+PFTrain &lt;- vector()
+SharpeTrain &lt;- vector()
+j &lt;- 1
+for (i in windows) {
+  timecontrol &lt;- trainControl(method = 'timeslice', initialWindow = i, horizon = 1, classProbs = TRUE,
+                              returnResamp = 'final', fixedWindow = TRUE, savePredictions = 'final')
+  cl &lt;- makeCluster(8)
+  registerDoParallel(cl)
+  set.seed(503)
+  modellist.lr[[j]] &lt;- train(Train[, features], Train[, direction],
+                             method = 'glm', family = 'binomial',
+                             trControl = timecontrol)
+  #### comment out lines 63-65 and uncomment lines 67-93 to run in-sample performance module
+  j &lt;- j+1
+  print(i)
+  stopCluster(cl) }
+#   ctrl &lt;- trainControl(method='none', classProbs = TRUE)
+#   tradesCP &lt;- list()
+#   pfCP &lt;- vector()
+#   srCP &lt;- vector()
+#   indexes &lt;- modellist.lr[[j]]$control$index
+#   for(k in c(1:length(modellist.lr[[j]]$control$index)) )
+#       {
+#         model &lt;-  train(Train[indexes[[k]], features], Train[indexes[[k]], direction],
+#                        method = 'glm', family = 'binomial',
+#                        trControl = ctrl)
+#
+#         predsCP &lt;- predict(model, Train[indexes[[k]], features], type = 'prob')
+#         th &lt;- 0.5
+#
+#         tradesCP[[k]] &lt;- ifelse(predsCP$up &gt; th, Train[indexes[[k]], returns], ifelse(predsCP$down &gt; th,  Train[indexes[[k]], returns], 0))
+#         pfCP[k] &lt;- sum(tradesCP[[k]][tradesCP[[k]] &gt; 0])/abs(sum(tradesCP[[k]][tradesCP[[k]] &lt; 0]))
+#         srCP[k] &lt;- sqrt(252)*mean(tradesCP[[k]])/sd(tradesCP[[k]])
+#
+#         cat("\niteration:",k, "PF:",round(pfCP[k], digits = 2), "SR:",round(srCP[k], digits = 2))
+#
+#       }
+#   PFTrain[j] &lt;- mean(pfCP)
+#   SharpeTrain[j] &lt;- mean(srCP)
+#   stopCluster(cl)
+#   j &lt;- j+1
+#   cat("\n",i)
+# }
+# resampled performance - use class probabilities as a trade threshold
+thresholds &lt;- seq(0.50, 0.65, 0.005)
+windowIndex &lt;- c(1:length(windows))
+pf.cv.th &lt;- matrix(nrow = length(windowIndex), ncol = length(thresholds), dimnames = list(c(as.character(windows)), c(as.character(thresholds)))) # adjust matrix dimensions based on loop size
+sr.cv.th &lt;- matrix(nrow = length(windowIndex), ncol = length(thresholds), dimnames = list(c(as.character(windows)), c(as.character(thresholds))))
+Trades.DF &lt;- matrix(nrow = length((max(windows)+1):nrow(Train)), ncol = length(windowIndex) , dimnames = list(c(), c(as.character(windows))))
+for(i in windowIndex)
+{
+  commonData &lt;- c((max(windows)+1):nrow(Train))
+  j &lt;- 1
+  for(th in thresholds)
+  {
+    trades &lt;- ifelse(modellist.lr[[i]]$pred$up[(length(modellist.lr[[i]]$pred$up)-length(commonData)+1):length(modellist.lr[[i]]$pred$up)] &gt; th, Train$Returns[commonData], ifelse(modellist.lr[[i]]$pred$down[(length(modellist.lr[[i]]$pred$down)-length(commonData)+1):length(modellist.lr[[i]]$pred$down)] &gt; th, -Train$Returns[commonData], 0))
+    plot(cumsum(trades), type = 'l', col = 'blue', xlab = 'day', ylab = 'cumP', main = paste0('Window: ',windows[i], ' Cl.Prob Thresh: ',th), ylim = c(-0.5, 1.0))
+    lines(cumsum(Train$Returns[commonData]), col = 'red')
+    pf.cv.th[i, j] &lt;- sum(trades[trades&gt;0])/abs(sum(trades[trades&lt;0]))
+    sr.cv.th[i, j] &lt;- sqrt(252)*mean(trades)/sd(trades)
+    if(th == 0.525) Trades.DF[, i] &lt;- trades
+    j &lt;- j+1
+   }
+}
+#### plot training vs cv performance - class probs
+th &lt;- 11 # threshold index
+plot(PFTrain, pf.cv.th[, th])
+PF.Compare &lt;- data.frame(windows, PFTrain, pf.cv.th[, th])
+colnames(PF.Compare) &lt;- c('window', 'IS', 'CV')
+SR.Compare &lt;- data.frame(windows, SharpeTrain, sr.cv.th[, th])
+colnames(SR.Compare) &lt;- c('window', 'IS', 'CV')
+# base R plots
+plot(windows, SharpeTrain, type = 'l', ylim = c(-0.9, 1.5), col = 'blue')
+lines(windows, sr.cv.th[, th], col = 'red')
+plot(windows, PFTrain, type = 'l', ylim = c(0.8, 1.5), col = 'blue')
+lines(windows, pf.cv.th[, th], col = 'red')
+# nice ggplots
+pfMolten &lt;- melt(PF.Compare, id = c('window'))
+srMolten &lt;- melt(SR.Compare, id = c('window'))
+pfPlot &lt;- ggplot(data=pfMolten,
+            aes(x=window, y=value, colour=variable)) +
+  geom_line(size = 0.75) +
+  scale_colour_manual(values = c("steelblue3","tomato3")) +
+  theme(legend.title=element_blank()) +
+  ylab('Profit Factor') +
+  ggtitle("In-Sample and Cross-Validated Performance")
+sharpePlot &lt;- ggplot(data=srMolten,
+                 aes(x=window, y=value, colour=variable)) +
+  geom_line(size = 1.25) +
+  scale_colour_manual(values = c("steelblue3","tomato3")) +
+  theme(legend.title=element_blank()) +
+  ylab('Sharpe Ratio') +
+  ggtitle("In-Sample and Cross-Validated Performance")
+# heatmap plots of performance and thresholds
+srHeat &lt;- melt(sr.cv.th)
+colnames(srHeat) &lt;- c('window', 'threshold', 'sharpe')
+srHeat$window &lt;- factor(srHeat$window, levels = c(windows))
+pfHeat &lt;- melt(pf.cv.th[-c(15:22), ])
+colnames(pfHeat) &lt;- c('window', 'threshold', 'pf')
+pfHeat$window &lt;- factor(pfHeat$window, levels = c(windows))
+sharpeHeatMap &lt;- ggplot(data=srHeat, aes(x = window, y = threshold)) +
+  geom_tile(aes(fill = sharpe), colour = "white") +
+  scale_fill_gradient(low = "#fff7bc", high = "#e6550d", name = 'Sharpe Ratio') +
+  scale_x_discrete(breaks = windows[seq(2,28,2)]) +
+  xlab('Window Length (not to scale)') +
+  ylab('Class Probability Threshold') +
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank())
+pfHeatMap &lt;- ggplot(data=pfHeat, aes(x = window, y = threshold)) +
+  geom_tile(aes(fill = pf), colour = "white") +
+  scale_fill_gradient(low = "#e5f5f9", high = "#2ca25f", name = 'Profit Factor') +
+  xlab('Window Length (not to scale)') +
+  ylab('Class Probability Threshold') +
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank())
+# Equity curves
+#colnames(Trades.DF) &lt;- as.character(windows)
+Trades.DF &lt;- as.data.frame(Trades.DF)
+Equity &lt;- cumsum((Trades.DF[, as.character(c(15, 30, 500, 1000, 1500))]))
+Equity$Underlying &lt;- cumsum(Train$Returns[commonData])
+Equity$Index &lt;- c(1:nrow(Equity))
+EquityMolten &lt;- melt(Equity, id = 'Index')
+equityPlot &lt;- ggplot(data=EquityMolten, aes(x=Index, y=value, colour=variable)) +
+  geom_line(size = 0.6) +
+  scale_color_manual(name = c('Window\nLength'), values = c('darkorchid3', 'dodgerblue3', 'darkolivegreen4', 'darkred', 'goldenrod', 'grey35')) +
+  ylab('Return') +
+  xlab('Day') +
+  ggtitle("Returns")
+## Equity curves for a single window length
+thresholds &lt;- seq(0.50, 0.95, 0.01)
+Index &lt;- which(windows == 30)
+Trades.win &lt;- matrix(nrow = length((max(windows)+1):nrow(Train)), ncol = length(thresholds) , dimnames = list(c(), c(as.character(thresholds))))
+  commonData &lt;- c((max(windows)+1):nrow(Train))
+  j &lt;- 1
+  for(th in thresholds)
+  {
+    trades &lt;- ifelse(modellist.lr[[Index]]$pred$up[(length(modellist.lr[[Index]]$pred$up)-length(commonData)+1):length(modellist.lr[[Index]]$pred$up)] &gt; th, Train$Returns[commonData], ifelse(modellist.lr[[Index]]$pred$down[(length(modellist.lr[[Index]]$pred$down)-length(commonData)+1):length(modellist.lr[[Index]]$pred$down)] &gt; th, -Train$Returns[commonData], 0))
+    Trades.win[, j] &lt;- trades
+    j &lt;- j+1
+  }
+Trades.win.DF &lt;- as.data.frame(Trades.win)
+Equity.win &lt;- cumsum(Trades.win.DF[, seq(1, 31, 5)])
+Equity.win$Underlying &lt;- cumsum(Train$Returns[commonData])
+Equity.win$Index &lt;- c(1:nrow(Equity))
+Equity.winMolten &lt;- melt(Equity.win, id = 'Index')
+singleWinPlot &lt;- ggplot(data=Equity.winMolten,
+                     aes(x=Index, y=value, colour=variable)) +
+  geom_line(size = 0.6) +
+  scale_colour_brewer(palette = 'Dark2', name = c('Class\nProbability\nThreshold')) +
+  ylab('Return') +
+  xlab('Day') +
+  ggtitle("Returns")
+###################################
+</pre>
+
+*Of course, building a production trading model is not the point of the exercise. Apologies for pointing this out; I know most of you already understand this, but I invariably get emails after every post from people questioning the performance of the ‘trading algorithms’ I post on my blog. Just to be clear, I am not posting trading algorithms!! I am sharing my research. Performance on market data, particularly relative performance, is a quick and easy way to interpret the results of this research. I don’t intend for anyone (myself included) to use the simple logistic regression model presented here in a production environment. However, I do intend to use the concepts presented in this post to improve my existing models or build entirely new ones. There is more than enough information in this post for you to do the same, if you so desired.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>forex</span>, <span>Machine Learning</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">23 thoughts on “Optimal Data Windows for Training a Machine Learning Model for Financial Prediction”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-685">
+<article class="comment-body" id="div-comment-685" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This very much agrees with my own observations. I think that shorter time spans probably capture regime changes more cleanly rather than getting confused by a variety of behaviours. This may be different if more complex models such as deep neural networks are used but they will probably present other problems. Anyway, many thanks for the well-written article.</p>
+<span class="reply"><a aria-label="Reply to Tom" class="comment-reply-link" data-belowelement="div-comment-685" data-commentid="685" data-postid="1416" data-replyto="Reply to Tom" data-respondelement="respond" href="#comment-685" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-686">
+<article class="comment-body" id="div-comment-686" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for the reply, Tom. I agree with both your points. I am still very interested in applying deep neural nets to algo trading, particularly to streamline the feature engineering phase. But they do present their own unique challenges in their practical application. There is certainly a case for using simpler models, particularly if you can ensemble them together in a clever way.</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-686" data-commentid="686" data-postid="1416" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-686" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even depth-2 parent" id="comment-700">
+<article class="comment-body" id="div-comment-700" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I think that too… but in many cases, a short time span does not give enough information to your statistical tools: one can verify this point using Random Matrix Theory, for example.<br/>
+Besides, for statistical estimators/algorithms you should provide them the ‘minimum’ amount of data such that they can work well, i.e. can reach a minimum accuracy (related to the convergence rate of the statistical estimate toward the ‘true’ value). If this minimum amount of data is too much for the financial applications, then it is hopeless…<br/>
+See for example Clustering Financial Time Series: How Long Is Enough? <a href="https://www.ijcai.org/Proceedings/16/Papers/367.pdf" rel="nofollow ugc">https://www.ijcai.org/Proceedings/16/Papers/367.pdf</a></p>
+<span class="reply"><a aria-label="Reply to Mic" class="comment-reply-link" data-belowelement="div-comment-700" data-commentid="700" data-postid="1416" data-replyto="Reply to Mic" data-respondelement="respond" href="#comment-700" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3" id="comment-701">
+<article class="comment-body" id="div-comment-701" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Mic, you raise a good point – it is certainly something of a balancing act between too much data and not enough to reach even a minimum accuracy. My personal experience suggests that it isn’t as black and white as your comment suggests – for example, a particular estimator may be accurate enough given the right amount of data for a certain period in time. Utilising this information in a practical way is quite tricky, but I wouldn’t call it hopeless.<br/>
+Thanks for the link too. Will be sure to check it out.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-701" data-commentid="701" data-postid="1416" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-701" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-687">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 08/09/2016 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-688">
+<article class="comment-body" id="div-comment-688" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>RM, Thanks very much for your detailed article.  I’ve been trying to reproduce on my end but am getting hung up in the structure of your EU_daily.csv file and the definition of your volatility.  You describe it above as “The volatility measure that I used is the 5-period Average True Range (ATR) minus the 20-period ATR normalized over the last 50 periods.”.  I’ve implemented by using the ATR package within ‘TTR’ library for a 5 periods and 20 periods.  I divide this difference by the 50 day running min of the 50 day difference.  I’m not sure if this is how you meant ‘normalized over the last 50 periods’.<br/>
+Any help would be great! Thanks again for your work.</p>
+<span class="reply"><a aria-label="Reply to sven" class="comment-reply-link" data-belowelement="div-comment-688" data-commentid="688" data-postid="1416" data-replyto="Reply to sven" data-respondelement="respond" href="#comment-688" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-689">
+<article class="comment-body" id="div-comment-689" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Correction…<br/>
+ I divide this difference by the 50 day running min of the difference.</p>
+<span class="reply"><a aria-label="Reply to sven" class="comment-reply-link" data-belowelement="div-comment-689" data-commentid="689" data-postid="1416" data-replyto="Reply to sven" data-respondelement="respond" href="#comment-689" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3 parent" id="comment-690">
+<article class="comment-body" id="div-comment-690" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Sven, thanks for reading.<br/>
+I scaled my volatility measure over 50 days using the following formula: <code>$2 * cdf(0.5*(x_i-x_{median})/(x_{P75}-x_{P25}))-1$</code><br/>
+where $x$ is the value of the raw volatility measure, the median and inter-quartile range of $x$ are calculated over the last 50 periods and the subscript $i$ denotes the current value.<br/>
+There is a very useful compression function built into Zorro that performs this calculation which I used and then exported the data for importing into R.<br/>
+This was fairly quick and dirty, so you might get better results using other volatility measures.<br/>
+Cheers<br/>
+[latexpage]</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-690" data-commentid="690" data-postid="1416" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-690" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-4 parent" id="comment-692">
+<article class="comment-body" id="div-comment-692" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>You’re welcome, thanks again for the interesting post.<br/>
+Understood on the function above.  You’re right, there are countless other more complex (and simpler) ways to measure volatility but this is more than sufficient to illustrate the point.<br/>
+In line 114, you reference a threshold of 52.5%, I assume that this was simply the most recent choice at the time you posted the source code, I couldn’t tell from the included charts above whether this was the what you used or you used 55% as referenced in the formulas.<br/>
+I’ve more or less replicated your work (thanks for the help doing so!) and found a similar pattern regarding less data yielding better results although my equity curve does not look quite as stable.  Furthermore, I’m using 5:00PM EST as the snapshot for daily rates… a follow on area for research could be testing for stability when predicting different times of the day.</p>
+<span class="reply"><a aria-label="Reply to sven" class="comment-reply-link" data-belowelement="div-comment-692" data-commentid="692" data-postid="1416" data-replyto="Reply to sven" data-respondelement="respond" href="#comment-692" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-5" id="comment-693">
+<article class="comment-body" id="div-comment-693" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Sven<br/>
+You’ve got a great eye for detail! Well spotted. I used 55% in the charts shown.<br/>
+Glad to hear you found a similar pattern regarding the shorter window lengths. I have found that when sampling foreign exchange data at daily frequency, the sampling time tends to have a significant impact for many currency pairs, so I am not surprised that your equity curves look different to mine. Check out this paper for a possible explanation: <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2613592" rel="nofollow">Currency Returns in Different Time Zones</a>. The results in this paper generally agree with what I’ve experienced in the FX markets.</p>
+</div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1 parent" id="comment-691">
+<article class="comment-body" id="div-comment-691" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for your interesting post.<br/>
+You find that a short training window works better, but you are using relatively few inputs. If you had more predictors, maybe a larger window would work better.<br/>
+Your plot of cross-validation performance vs. window length could be smoothed by something like lowess, since the many relative minima and maxima are likely due to noise.</p>
+<span class="reply"><a aria-label="Reply to Vivek" class="comment-reply-link" data-belowelement="div-comment-691" data-commentid="691" data-postid="1416" data-replyto="Reply to Vivek" data-respondelement="respond" href="#comment-691" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-694">
+<article class="comment-body" id="div-comment-694" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Vivek<br/>
+It is possible that a larger window would work better with more predictors. Having more predictors essentially leads to a more complex model, which may help overcome the bias problem developed by my model for larger window lengths. If you feel like researching this and sharing the results, I’d love to hear from you.<br/>
+Indeed, a lowess smoother would reduce the impact of those noisy minima and maxima in the CV-window plot. Thanks for the tip!</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-694" data-commentid="694" data-postid="1416" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-694" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1 parent" id="comment-695">
+<article class="comment-body" id="div-comment-695" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi and thanks for sharing your research.<br/>
+My own research also came to the conclusion that shorter windows were more suitable. Especially, extreme events (for instance 2007-2008) had huge impact on the outcome. However, throwing away data is rather counter intuitive. As factors are dynamic, it of course makes sense to shorten the estimation window to only capture the most relevant information. Nevertheless, as quant we hypothesize that the future behavior of the market will be somewhat self-similar. So, although old data is outdated, it should contain some (useful) information which could reduce uncertainty about future outcome.<br/>
+Recently, I quickly thought about another option which was to train once on a short window and then shrink the result toward the longer window (or alternatively use an ensemble approche and combine all windows). We could set the shrinkage factor either by minimizing a cost function or simply use an exponential smoothing factor. In any case, the diversification effect should work and we can hope to retain some benefit of old information.<br/>
+Another option would be to model explicitly the dynamic of the feature. In portfolio optimization with factors, the betas are often modeled as simple mean-reverting process. So including a lagged term of the features, in order to capture their dynamic, could help, but I would be more careful about overfitting in this case.<br/>
+Digression: For the threshold choice, sizing position according to the forecast confidence (after some rescaling) generally works fine and could be interesting to investigate further.<br/>
+I’ll try to investigate these options should I have time and share the results if anyone is interested.<br/>
+Best, L</p>
+<span class="reply"><a aria-label="Reply to laurent K" class="comment-reply-link" data-belowelement="div-comment-695" data-commentid="695" data-postid="1416" data-replyto="Reply to laurent K" data-respondelement="respond" href="#comment-695" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-2" id="comment-696">
+<article class="comment-body" id="div-comment-696" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Laurent<br/>
+Thanks so much for your thoughtful comments. I really agree about being cautious about throwing away old data. Intuitively, one would think there would have to be something useful in there, even if it obscured by the passage of time. I really like the idea of ensembling a bunch of different windows and maybe using a majority as the basis for trading decisions. Maybe weighting the more recent data windows would help too.<br/>
+I’m super-interested in hearing about any results you are willing to share. I’ll also investigate the ensembling idea as the subject of a future blog post.<br/>
+Thanks again!<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Robot Master" class="comment-reply-link" data-belowelement="div-comment-696" data-commentid="696" data-postid="1416" data-replyto="Reply to Robot Master" data-respondelement="respond" href="#comment-696" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="trackback even thread-odd thread-alt depth-1" id="comment-697">
+<div class="comment-body">
+				Pingback: URL 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-698">
+<article class="comment-body" id="div-comment-698" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+Just wondering if you could give us your csv file so that we can play around with it as well. I realise I can download the exchange rates myself, but not sure how to calculate  atrRegime metric.<br/>
+Cheers,<br/>
+Sachin</p>
+<span class="reply"><a aria-label="Reply to Sachin" class="comment-reply-link" data-belowelement="div-comment-698" data-commentid="698" data-postid="1416" data-replyto="Reply to Sachin" data-respondelement="respond" href="#comment-698" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-699">
+<article class="comment-body" id="div-comment-699" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Sachin<br/>
+Nice to hear from you mate. Sorry for the slow reply. Yep sure thing, I’ll provide some data sets in csv format that you can play around with. I’ll generate files for various daily exchange rates and close times (which I think is a really interesting feature in itself). The data set I used in my analysis was quite arbitrary – daily EUR/USD sampled at 9:00 GMT. Give me a couple of days and I’ll upload them to the site.<br/>
+Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-699" data-commentid="699" data-postid="1416" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-699" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt depth-2 parent" id="comment-703">
+<article class="comment-body" id="div-comment-703" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hey Sachin,<br/>
+Took me a while, but I’ve uploaded the csv file I used in the analysis, as well as the equivalent file for the EUR/USD exchange rate.<br/>
+Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-703" data-commentid="703" data-postid="1416" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-703" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3 parent" id="comment-704">
+<article class="comment-body" id="div-comment-704" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Yes but Where? I can’t see it? Error?</p>
+<span class="reply"><a aria-label="Reply to KUNYIT" class="comment-reply-link" data-belowelement="div-comment-704" data-commentid="704" data-postid="1416" data-replyto="Reply to KUNYIT" data-respondelement="respond" href="#comment-704" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-4" id="comment-707">
+<article class="comment-body" id="div-comment-707" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>It’s under the heading “Source Code and Data”</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-707" data-commentid="707" data-postid="1416" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-707" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-odd thread-alt depth-1" id="comment-702">
+<article class="comment-body" id="div-comment-702" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi. Could you provide csv file so that we know the way the atr regime calculation is done? I’m struggling to run the R-code given that atr regime produces NA values</p>
+<span class="reply"><a aria-label="Reply to Allan Tanaka" class="comment-reply-link" data-belowelement="div-comment-702" data-commentid="702" data-postid="1416" data-replyto="Reply to Allan Tanaka" data-respondelement="respond" href="#comment-702" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1 parent" id="comment-705">
+<article class="comment-body" id="div-comment-705" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi,<br/>
+According to machine learning principles changing the training size just change the variance of the output i.e. bigger training size decreasing this variance.<br/>
+For my system which runs on 1min charts for 8 symbols i use 20k training size however i tested this in range 2k-100k and it was behaving exactly like principle are saying decreasing/increasing variance of final result. For your test as it is done on daily chart and does not generate a lot of trades I have a feeling that the results obtained can be very much contaminated by output variance. Additionally this type of setting<br/>
+if P_{up} &gt;= 0.55, go long at open<br/>
+if P_{down} &gt;= 0.55, go short at open<br/>
+if 0.45 &lt; P_{up} &lt; 0.55 (equivalent to 0.45 &lt; P_{down} &lt; 0.55), remain flat<br/>
+where P_{up} and P_{down} are the calculated probabilities for the next day’s market direction to be positive and negative respectively.<br/>
+Positions were liquidated at the close.<br/>
+just introduces additional noise. From where those values coming from ??<br/>
+Just my opinion.<br/>
+Krzysztof</p>
+<span class="reply"><a aria-label="Reply to Krzysztof" class="comment-reply-link" data-belowelement="div-comment-705" data-commentid="705" data-postid="1416" data-replyto="Reply to Krzysztof" data-respondelement="respond" href="#comment-705" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-706">
+<article class="comment-body" id="div-comment-706" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello Krysztof<br/>
+Thanks for posting your thoughts and opinions. You raise some good points.<br/>
+The thing with machine learning is that there is only one thing worse than training an algorithm on too little data, and that’s training it on irrelevant data. The output variance you mentioned is a property of any machine learning model, and controlling the training window is one way to control that variance. As any trader will tell you, this is largely a game of trade-offs that allow you to find a sweet spot where you can operate profitably, rather than an exercise in theoretical modelling principles. The advice I keep coming back to is to focus on the practical and try not to get too enamoured with how things “should” work from an academic or theoretical standpoint. I’m not saying forget about theory, but I am saying that there are plenty of textbooks about machine learning that won’t help you pull money out of the markets.<br/>
+Regarding the class probability threshold filter: I agree that we should generally reduce our parameters to the extent possible, but this one is useful from a number of different perspectives. For starters, if your model really is useful, then its higher probability predictions should be more accurate. I use this property to test for the robustness of a machine learning model. Also, when this is true, you can tune your strategy according to your personal preferences for trade frequency, if you have any. But hey, there is no one “right” way to do this, and I can also understand why some people would shy away from additional parameters. Each to their own.<br/>
+One final point – I don’t post trading systems here that I expect anyone to actually trade (I believe in sharing, but I can’t post my systems for the whole world to see). When I do post a system, it is simply as an aid to help explore a particular hypothesis or idea. I’m not sure if you were comparing the strategy in this post to the one you referred to, but I just wanted to clarify in case there was a misunderstanding about the intent of the things I post. </p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-706" data-commentid="706" data-postid="1416" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-706" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/optimal-data-windows-for-training-a-machine-learning-model-for-financial-prediction/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

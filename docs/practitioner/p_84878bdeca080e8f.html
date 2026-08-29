@@ -1,0 +1,593 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Parameter Optimisation for Systematic Trading</title>
+<!-- source: https://robotwealth.com/parameter-optimisation-for-systematic-trading/ -->
+<h1>Parameter Optimisation for Systematic Trading</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-21976 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-zorro tag-brute-force-optimisation tag-genetic-optimisation tag-optimisation tag-walk-forward-analysis pmpro-has-access" id="post-21976">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">April 19, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Parameter Optimisation for Systematic Trading</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Parameter Optimisation for Systematic Trading" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Optimisation tools have a knack for seducing systematic traders.
+
+And what’s not to love?
+
+<blockquote><em>Find me the unique set of parameters that delivered the greatest return in my ten-year backtest. And do it in under five seconds.</em></blockquote>
+
+That’s certainly attractive.
+
+But do you want to hear something controversial?
+
+When it comes to the parameters of a systematic trading strategy, in the majority of cases optimisation is your <em>enemy</em>. A siren, luring you to shipwreck.
+
+On the other hand, there are a few applications of optimisation that are helpful and sensible in a trading context. Usually however, they’re not obvious.
+
+So we decided to write a series of blog posts to give you the no-holds-barred low-down on optimisation for systematic trading. We’ll start with a lightning tour of various optimisation techniques (this article) before moving on to:
+
+<ul>
+<li>The implicit assumptions you make when you optimise strategy parameters</li>
+<li>Best practices related to optimisation of strategy parameters</li>
+<li>Optimisation use cases in the context of systematic trading</li>
+</ul>
+<h2>Optimisation tools and techniques</h2>
+
+Let’s start with a whirlwind tour of a selection of optimisation tools. We’ll explore these by way of the <a href="https://robotwealth.com/tag/zorro/" rel="noopener noreferrer" target="_blank">Zorro trading platform</a>, which has a number of powerful optimisation algorithms built in.
+
+<div class="convertful-36919"></div>
+<h3>Setting up for optimisation</h3>
+
+To make Zorro optimise a strategy’s parameters, you need to set the <code>PARAMETERS</code> flag and assign calls to the <code>optimize</code> function to the parameters you wish to tune.
+
+Here’s what this looks like for a simple long-only moving average system where we optimise the length of the moving average window:
+
+<pre><code>function run()  
+{  
+    LookBack = 200;  // cover the largest possible lookback from the optimize call below
+        set(PARAMETERS);  
+    
+    // strategy parameters
+    var window_length = optimize(100, 20, 200, 20);  // optimise moving average window length
+    vars closes = series(priceClose());  // a time series of closing prices
+    vars ma = series(SMA(closes, window_length));  // a time series of moving average of closing prices
+    
+    // trade logic
+    if(crossOver(closes, ma))
+    {
+        enterLong();
+    }
+    else if(crossUnder(closes, ma))
+    {
+        exitLong();
+    }
+}</code></pre>
+
+The <code>optimize</code> call in line 7 gets four numbers as arguments:
+
+<ul>
+<li>The first (100) is the default window length value</li>
+<li>The second (20) and third (200) define the range of values to optimize over</li>
+<li>The fourth (20) defines the step size</li>
+</ul>
+
+So in this example, Zorro would test the values 20, 40, 60, 80, … etc all the way up to 200.
+
+It would store the “best” value in a text file, and then use that value whenever you run this script with the <code>PARAMETERS</code> flag set.
+
+<h4>How does Zorro define the “best” value?</h4>
+
+That’s a great question.
+
+Whenever a parameter is optimised, it needs to be optimised towards a specific goal. The best value could be the one that maximised return, minimised drawdown, maximised Sharpe ratio, or something else entirely.
+
+Each of these goals would likely have a <em>different</em> optimal parameter value.
+
+By default, Zorro uses the Pessimistic Return Ratio (PRR) as its goal (referred to as an <em>objective function</em>). PRR is a profit factor (ratio of gross wins to gross losses) penalised for lower numbers of trades and with the impact of outlying wins and losses dampened.
+
+We might be more interested in maximising risk adjusted returns, in which case we could implement an objective function based on the Sharpe ratio. That’s simply a matter of writing a custom function named <code>objective</code> that returns the quantity you want maximised, and including it in your script.
+
+Here’s what that looks like for our n-day moving average strategy:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="n-day moving average with custom objective function">// sharpe ratio objective function
+var objective()
+{
+  if(!NumWinTotal &amp;&amp; !NumLossTotal) return 0.;
+  return ReturnMean/ReturnStdDev;
+}
+
+
+function run()  
+{  
+    LookBack = 200;  // cover the largest possible lookback from the optimize call below
+    set(PARAMETERS);  
+    
+    // strategy parameters
+    var window_length = optimize(100, 20, 200, 20);  // optimise moving average window length
+    vars closes = series(priceClose());  // a time series of closing prices
+    vars ma = series(SMA(closes, window_length));  // a time series of moving average of closing prices
+    
+    // trade logic
+    if(crossOver(closes, ma))
+    {
+        enterLong();
+    }
+    else if(crossUnder(closes, ma))
+    {
+        exitLong();
+    }
+}  
+</pre>
+
+Zorro has access to a number of trade- and strategy-level statistics.
+
+Here, we use <code>NumWinTotal</code> and <code>NumLossTotal</code> (the number of winning and losing positions respectively) to return zero if the strategy didn’t enter any positions.
+
+<code>ReturnMean</code> and <code>ReturnStdDev</code> are the mean and standard deviation of return on investment on a bar-by-bar basis. That is, if your strategy was based on daily price bars, then <code>ReturnMean</code> and <code>ReturnStdDev</code> would be based on daily strategy returns.
+
+Some other interesting strategy-level statistics that Zorro makes available include <code>DrawDownMax</code> , <code>DrawDownBars</code> and <code>ReturnR2</code> (the similarity of the strategy’s equity curve with a straight line).
+
+<h4>Is maximising an objective function the smartest approach?</h4>
+
+Here’s a plot of a hypothetical strategy’s performance as a function of the value chosen for one of its parameters:
+
+<img alt="" class="size-full wp-image-21983 aligncenter perfmatters-lazy" data-sizes="(max-width: 500px) 100vw, 500px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162305/param-opt.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162305/param-opt.png 500w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162305/param-opt-300x180.png 300w" decoding="async" height="300" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='300'%20viewBox='0%200%20500%20300'%3E%3C/svg%3E" width="500"/>
+
+If your goal was maximising Sharpe ratio, you’d choose a value of 170. But does that seem like a sensible choice?
+
+Of course, you intuitively get the sense that the outperformance of that value is a little shaky. The values immediately around it don’t do nearly as well, which implies that the market wouldn’t need to look all that different in the future for this thing to fall over badly. And of course the market is going to look different in the future.
+
+On the other hand, the lower but more stable region of performance in the left of the plot implies a degree of robustness. The strategy is rather insensitive to changes in this region. That bodes well for future performance.
+
+This illustrates a key point:
+
+<em>In strategy development, our goal is not to maximise backtest performance; it’s to optimise for future robustness.</em>
+
+Picking outlying points on the parameter space is not optimising for future robustness.
+
+Picking regions of parameter stability can help (although it’s rarely enough – a point to which we’ll return later).
+
+By default, Zorro optimises towards plateaus like we see in the left of the plot. In this case, it would pick a value around 60.
+
+If for some reason we wanted Zorro to pick the highest single peak, we need to set a <code>TrainMode</code> flag like this:
+
+<pre><code>setf(TrainMode, PEAK);</code></pre>
+
+Next, let’s explore some different approaches to parameter optimisation.
+
+<h3>Ascent optimisation</h3>
+
+In this approach (Zorro’s default), we optimise each parameter independently. For a strategy with three parameters to optimise, it works like this:
+
+<ol type="1">
+<li>Optimise the first parameter while holding the other parameters constant at their default values.</li>
+<li>Optimise the second parameter holding the first parameter at its optimised value and the third value to its default.</li>
+<li>Optimise the third parameter holding the first and second parameters at their optimised values.</li>
+</ol>
+
+Ascent optimisation is fast and reduces the scope for overfitting at the cost of not fully exploring the parameter space. The order in which parameters appear in the script matters.
+
+<h3>Brute force optimisation</h3>
+
+This is the kitchen sink approach where we try every possible combination of parameter values and pick the one we like best.
+
+To put Zorro into brute force mode, simply add the line <code>setf(TrainMode, BRUTE)</code> to the script.
+
+In brute force mode, Zorro won’t use the step parameter of the <code>optimize</code> function. Instead, it will divide the range into ten equal steps. You can omit this parameter in brute force mode, but if you supply it, Zorro will ignore it.
+
+<h3>Genetic optimisation</h3>
+
+Genetic optimisation is a heuristic approach based on evolutionary principles. A <em>population</em> of parameter combinations are iteratively selected, recombined and <em>mutated</em> randomly to form successive <em>generations</em>, with the best <em>offspring</em> surviving into the next iteration.
+
+Zorro’s genetic optimisation routine considers every possible parameter combination an individual in the original population, but then evolves those individuals towards an optimal solution.
+
+It can be configured by setting the parameters <code>Population</code> (the number of fittest individuals to retain in each generation), <code>Generations</code> (the maximum number of iterations), and <code>MutationRate</code> (the average number of random mutations in each generation). However, the default settings are normally fine to start with.
+
+Genetic optimisation can be a useful technique when it isn’t feasible to try every combination of values, or when parameters affect one another in non-linear or complex ways. However, it will normally overfit drastically to financial data due to the inherently low signal to noise ratio.
+
+<h2>Splitting data for optimisation</h2>
+
+It’s good practice to test optimised parameters on unseen or out-of-sample data. Zorro provides a number of ways to do this out of the box.
+
+<h3>Horizontal split</h3>
+
+This method creates a single training set and a single test set, but splits them up such that by default every third week is set aside for testing:
+
+<img alt="" class="size-full wp-image-21980 aligncenter perfmatters-lazy" data-sizes="(max-width: 927px) 100vw, 927px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162308/horizontal-split.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162308/horizontal-split.png 927w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162308/horizontal-split-600x93.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162308/horizontal-split-300x46.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162308/horizontal-split-768x118.png 768w" decoding="async" height="143" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='927'%20height='143'%20viewBox='0%200%20927%20143'%3E%3C/svg%3E" width="927"/>
+
+To set it up, skip the relevant weeks using the <code>SKIP</code> flags:
+
+<pre><code>function run() 
+{
+  if(Train) set(PARAMETERS+SKIP3);
+  if(Test) set(PARAMETERS+SKIP1+SKIP2);
+  ...
+}</code></pre>
+
+You can change the default number of bars skipped using Zorro’s <code>DataSkip</code> parameter.
+
+This method is fast and makes reasonably good use of the available data.
+
+<h3>Vertical split</h3>
+
+In this approach, the training and testing sets are continuous and adjacent to one another:
+
+<img alt="" class="size-full wp-image-21981 aligncenter perfmatters-lazy" data-sizes="(max-width: 770px) 100vw, 770px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162307/vertical-split.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162307/vertical-split.png 770w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162307/vertical-split-600x89.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162307/vertical-split-300x44.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162307/vertical-split-768x114.png 768w" decoding="async" height="114" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='770'%20height='114'%20viewBox='0%200%20770%20114'%3E%3C/svg%3E" width="770"/>
+
+Define the amount of data in the training and testing sets using the <code>DataSplit</code> parameter:
+
+<pre><code>function run() // vertical split optimization
+{
+  set(PARAMETERS);
+  DataSplit = 75; // 75% training, 25% test period
+  ...
+}</code></pre>
+
+Again, this approach is fast and makes a reasonable use of the available data.
+
+<h3>Walk-forward</h3>
+
+This method splits data into training and testing sets on a rolling basis:
+
+<img alt="" class="size-full wp-image-21982 aligncenter perfmatters-lazy" data-sizes="(max-width: 999px) 100vw, 999px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162306/walk-forward-split.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162306/walk-forward-split.png 999w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162306/walk-forward-split-600x127.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162306/walk-forward-split-300x64.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162306/walk-forward-split-768x163.png 768w" decoding="async" height="212" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='999'%20height='212'%20viewBox='0%200%20999%20212'%3E%3C/svg%3E" width="999"/>
+
+It takes a little longer than the other approaches but more accurately reflects the trading of a strategy that was re-optimised periodically.
+
+<h3>An example</h3>
+
+Here’s an example of walk-forward optimising a pairs trade on two energy companies, Conoco Philips and Exxon Mobil.
+
+The strategy constructs a spread from the price series of the two stocks and a hedge ratio. It then calculates a z-score of that spread and goes long or short the spread as the z-score crosses various levels. We have a maximum of six potential entries at a time.
+
+The parameters to be optimised are:
+
+<ul>
+<li>hedge ratio</li>
+<li>z-score lookback</li>
+<li>spacing between levels</li>
+</ul>
+
+We split our training-testing data 80-20 by setting <code>DataSplit = 80</code> and we use 300 days total in each walk-forward cycle by setting <code>WFOPeriod = 300</code>.
+
+Here’s the code:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Zorro pairs trade">/* Z-SCORE PAIRS TRADING
+
+*/
+
+#define Asset1 "CVX"
+#define Asset2 "XOM"
+#define MaxTrades 6
+
+int Portfolio_Units = 10; //units of the portfolio to buy/sell (more --&gt; better fidelity to dictates of hedge ratio)
+
+var calculate_spread(var hedge_ratio)
+{
+  var spread = 0;
+  asset(Asset1); spread += priceClose();
+  asset(Asset2); spread -= hedge_ratio*priceClose();
+  return spread;
+}
+
+function run()
+{
+    set(PARAMETERS, PLOTNOW, TESTNOW);
+    setf(TrainMode, GENETIC);
+    StartDate = 2010;
+    EndDate = 2020;
+    BarPeriod = 1440;
+    LookBack = 200;
+    MaxLong = MaxShort = MaxTrades;
+    assetList("AssetsSP50");
+    DataSplit = 80;
+    WFOPeriod = 350;
+    
+    if(is(INITRUN)) 
+    {
+        asset(Asset1);
+        assetHistory(Asset, FROM_AV);
+        asset(Asset2);
+        assetHistory(Asset, FROM_AV);
+    }
+    
+    // optimisation parameters
+    var beta = optimize(1, 0.2, 5, 0.2);
+    var zscore_lookback = optimize(100, 20, 100, 20);
+    var level_spacing = optimize(1, 0.1, 0.5, 0.1);  // number of zscores between trade entries
+    
+    vars spread = series(calculate_spread(beta));
+    vars ZScore = series(zscore(spread[0], zscore_lookback));
+    
+    // set up trade levels
+    var Levels[MaxTrades]; 
+    int i;
+    for(i=0; i&lt;MaxTrades; i++)
+    {
+        Levels[i] = (i+1)*level_spacing;
+    }
+    
+    // trade logic
+    if(crossOver(ZScore, 0)) exitLong("*");
+    if(crossUnder(ZScore, 0)) exitShort("*");
+    
+    for(i=0; i&lt;MaxTrades; i++)
+    {
+        if(crossUnder(ZScore, -Levels[i])) 
+        {
+            asset(Asset1);
+            Lots = Portfolio_Units;
+            enterLong();
+            asset(Asset2);
+            Lots = Portfolio_Units * beta;
+            enterShort();
+        }
+        if(crossOver(ZScore, Levels[i])) 
+        {
+            asset(Asset1);
+            Lots = Portfolio_Units;
+            enterShort();
+            asset(Asset2);
+            Lots = Portfolio_Units * beta;
+            enterLong();
+        }
+    }
+    
+    for(i=1; i&lt;MaxTrades-1; i++)
+    {
+        if(crossOver(ZScore, -Levels[i])) 
+        {
+            asset(Asset1);
+            exitLong(0, 0, Portfolio_Units);
+            asset(Asset2);
+            exitShort(0, 0, Portfolio_Units * beta);
+        }
+        if(crossUnder(ZScore, Levels[1])) 
+        {
+            asset(Asset1);
+            exitShort(0, 0, Portfolio_Units);
+            asset(Asset2);
+            exitLong(0, 0, Portfolio_Units * beta);
+        }
+    }
+
+    // plots
+    plot("zscore", ZScore, NEW, BLUE);
+    int i;
+    for(i=0; i&lt;MaxTrades; i++)
+    {
+        plot(strf("#level_%d", i), Levels[i], 0, BLACK);
+        plot(strf("#neglevel_%d", i), -Levels[i], 0, BLACK);
+    }   
+    plot("spread", spread, NEW, BLUE);
+}</pre>
+<em>This is just a toy example – not a trading script.</em>
+
+And here’s a short recording of Zorro blasting through the ascent-based walk-forward optimisation and simulation. Following that, you’ll see a demonstration of the same walk-forward but using the genetic optimiser.
+
+
+<h2>The reality</h2>
+
+Did you notice in the video that the walk-forward that used the genetic optimiser did much worse?
+
+Sure, this is just a single example, but that’s not an unusual result.
+
+Genetic optimisation is a powerful tool – it will zero in on anything that helps drive the objective function toward its goal, regardless of whether it’s a real effect or just noise.
+
+The ascent optimisation approach doesn’t solve this either. At least, not in the sense of distinguishing between real effects and noise.
+
+Really, it’s attempting to save the user from him or herself by reducing the search space and hence the scope for overfitting. Which is a useful thing, but doesn’t get to the heart of the issue.
+
+The only way to distinguish between real effects and noise is to do deep, detailed research in an effort to understand the effect as best you can. This means gathering evidence that shines light on questions such as:
+
+<ul>
+<li>What do I think is the driver of the effect? Where’s the risk premium or limit to arbitrage?</li>
+<li>How consistent is the effect over time?</li>
+<li>Is it robust to any simple way of capturing it?</li>
+<li>Is it present if I look broadly across other assets?</li>
+</ul>
+
+This requires some hard work, clear thinking and the ability to not give yourself a free pass.
+
+Using an optimiser early in the research process essentially skips these important steps. It hides the detail, limits your understanding, and short-circuits your opportunity to add to your knowledge of the market.
+
+Think about it like this. If strategy development were as simple as clicking an optimise button on some software, then every geek with a modern laptop would be killing it in the markets. Clearly that’s not the case. There’s more to strategy development – much more.
+
+<h2>Conclusions and next steps</h2>
+
+In this post we’ve explored parameter optimisation in Zorro. In particular, you’ve seen how Zorro makes it incredibly easy to use a variety of optimisation tools and data splitting approaches.
+
+I also hit you with something of a reality check in which I essentially told you to avoid parameter optimisation.
+
+I hope that didn’t take the wind out of your sails too much. Instead, I hope that the thought of taking a deep dive into your trading ideas in an effort to understand them on a new level excites you. The best traders I’ve ever met all share this excitement – they tend to approach the market like curious scientists hunting for deep understanding, rather than being content to accept the output of an optimisation algorithm.
+
+Having said all that, there are use cases for optimisation in systematic trading.
+
+In the next post, we’ll explore these use cases in more detail and I’ll also tell you my <em>best practices for optimisation in systematic trading</em>.
+
+<div class="convertful-34610"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>brute force optimisation</span>, <span>genetic optimisation</span>, <span>optimisation</span>, <span>walk forward analysis</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">6 thoughts on “Parameter Optimisation for Systematic Trading”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-13871">
+<article class="comment-body" id="div-comment-13871" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This post is really interesting. It strongly reinforces my intuitive idea that looking for a good strategy can not be done by simply running a program.</p>
+<span class="reply"><a aria-label="Reply to Leon Jaime Bendayan Rios" class="comment-reply-link" data-belowelement="div-comment-13871" data-commentid="13871" data-postid="21976" data-replyto="Reply to Leon Jaime Bendayan Rios" data-respondelement="respond" href="#comment-13871" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2 parent" id="comment-14614">
+<article class="comment-body" id="div-comment-14614" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Your intuition is very much on the money here Leon!</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-14614" data-commentid="14614" data-postid="21976" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-14614" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-3" id="comment-14620">
+<article class="comment-body" id="div-comment-14620" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks!</p>
+<span class="reply"><a aria-label="Reply to Leon Jaime Bendayan Rios" class="comment-reply-link" data-belowelement="div-comment-14620" data-commentid="14620" data-postid="21976" data-replyto="Reply to Leon Jaime Bendayan Rios" data-respondelement="respond" href="#comment-14620" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-14180">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 04/19/2020 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-minshengw even thread-even depth-1" id="comment-14181">
+<article class="comment-body" id="div-comment-14181" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>This article is good. Thank you. Optimization should not be used freely and should not be use with great care.  Gathering evidence like Conoco Philips and Exxon Mobil will work because they are in the same industry and sector are more useful then.</p>
+<span class="reply"><a aria-label="Reply to Minsheng Wu" class="comment-reply-link" data-belowelement="div-comment-14181" data-commentid="14181" data-postid="21976" data-replyto="Reply to Minsheng Wu" data-respondelement="respond" href="#comment-14181" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-17616">
+<article class="comment-body" id="div-comment-17616" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Totally nice, just wondering if with the new objective() functions of Zorro you guys could not create a train / optimization logic that does exactly what is described here, taking into account performance of neighbouring parameters???</p>
+<span class="reply"><a aria-label="Reply to Jan" class="comment-reply-link" data-belowelement="div-comment-17616" data-commentid="17616" data-postid="21976" data-replyto="Reply to Jan" data-respondelement="respond" href="#comment-17616" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/parameter-optimisation-for-systematic-trading/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

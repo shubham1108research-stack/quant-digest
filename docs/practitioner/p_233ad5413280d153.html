@@ -1,0 +1,818 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Using Digital Signal Processing in Quantitative Trading Strategies</title>
+<!-- source: https://robotwealth.com/using-digital-signal-processing-in-quantitative-trading-strategies/ -->
+<h1>Using Digital Signal Processing in Quantitative Trading Strategies</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-23335 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading category-r category-trading-strategies category-zorro tag-digital-signal-processing pmpro-has-access" id="post-23335">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">May 19, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Using Digital Signal Processing in Quantitative Trading Strategies</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Using Digital Signal Processing in Quantitative Trading Strategies" class="ipa-media gb-media-81e19d89" data-media-id="23338" decoding="async" fetchpriority="high" height="627" sizes="(max-width: 940px) 100vw, 940px" src="https://media.robotwealth.com/wp-content/uploads/2020/05/21161939/equation.png" srcset="https://media.robotwealth.com/wp-content/uploads/2020/05/21161939/equation.png 940w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161939/equation-600x400.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161939/equation-300x200.png 300w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161939/equation-768x512.png 768w, https://media.robotwealth.com/wp-content/uploads/2020/05/21161939/equation-900x600.png 900w" width="940"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In this post, we look at tools and functions from the field of digital signal processing. <em>Can these tools be useful to us as quantitative traders?</em>
+<h2>What’s a Digital Signal?</h2>
+
+A digital signal is a representation of physical phenomena created by sampling that phenomena at discrete time intervals.
+
+If you think about the way we typically construct a price chart, there are obvious parallels: we sample a stream of ticks at regular intervals and treat that sample as our measure of price.<em> (Of course, we often aggregate or summarize price data at such intervals too, creating the familiar open-high-low-close bars or candles).</em>
+
+You can, therefore, see the connection between digital signals and analysis of time-based financial data.
+
+And since the techniques used to process and make sense of digital signals have proven their worth in electrical engineering, telecommunications and other fields, it is tempting to assume that they can unravel the mysteries of the financial markets too.
+
+However, the existence of such a connection doesn’t necessarily imply that DSP holds the key to the markets, or indeed that it is of any use at all in financial applications.
+
+Financial data is much, much noisier than the data in those other applications, for example.
+
+<h2>We Need to Talk About Cycles</h2>
+
+The purpose of most of the DSP tools you’ll come across, including the ones implemented in the <a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro Trading Automation Software</a>, is to uncover useful information about some aspect of one or more cycles present in the signal being analyzed.
+
+A cycle is a repeating pattern (although non-repeating cycles can also exist), and it can be described by its:
+
+<ul>
+<li>period (\(T\)) – how much time is taken by one complete cycle.</li>
+<li>frequency (\(f\)) – how many times it repeats in a given time interval. Frequency and period are inversely related: \(f = \frac{1}{T}\)</li>
+<li>amplitude (\(A\)) – the magnitude of the distance between the peak and trough of the cycle. Often \(A\) is given as a distance from the midline to the peak (equivalently, the midline to the trough), but in Zorro’s functions it is the peak-to-trough range.</li>
+<li>phase (\(\theta\)) – the fraction of the cycle that has been completed at any point in time (usually measured in degrees or radians). By definition, one complete cycle occupies \(2\pi\) radians, or 360 degrees.</li>
+</ul>
+
+Here’s one full cycle of a sine wave with an amplitude of 2 (the peak is at one, the trough is at minus one):
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/OneCycle.png"><img alt="" class="aligncenter size-full wp-image-3340 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/OneCycle.png" decoding="async" height="300" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='300'%20viewBox='0%200%20500%20300'%3E%3C/svg%3E" width="500"/></a>
+
+Here’s an example of a time series with a clear cycle and trend component:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/cycle_trend.png"><img alt="" class="aligncenter size-full wp-image-3341 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/cycle_trend.png" decoding="async" height="300" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='300'%20viewBox='0%200%20500%20300'%3E%3C/svg%3E" width="500"/></a>
+
+And here’s one that I constructed by adding various trends and cycles with different amplitudes, phases and frequencies:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/combined_cycles.png"><img alt="" class="aligncenter size-full wp-image-3343 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/combined_cycles.png" decoding="async" height="300" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='500'%20height='300'%20viewBox='0%200%20500%20300'%3E%3C/svg%3E" width="500"/></a>
+
+The last plot above was generated using this R code.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">x &lt;- seq(0, 20, 0.1) 
+signal &lt;- 0.7*sin(2*x) - 0.001*x^3 + 0.05*x^2 - x/3 - 0.9*cos(3*x-4) + 0.3*sin(10*x) 
+plot(x, signal, type='l')</pre>
+
+Note how the <span class="lang:c decode:true crayon-inline">signal</span> variable is constructed by simply summing multiple cycles and trends.
+
+You can see that a seemingly random looking signal can actually be decomposed into constituent cycles. In fact, using enough different cycles, you can create a <strong><em>good representation of any time series</em></strong>. The tools to do so, for example, the Fourier Transform, are well established and accessible in many software packages.
+
+But just because you <em>can</em>, doesn’t necessarily mean that you <em>should</em>.
+
+Consider that in order for our combination of cycles to be an accurate representation of a time series, they should actually be real and present in the time series. Otherwise, we are simply engaging in an exercise of overfitting, where our parameters are the constituent cycles and their properties.
+
+<strong>Since DSP is concerned with extracting information about cycles in a signal, it will be useful to the extent that there are real and present cycles in the signal. </strong>
+<blockquote><em>What do you think? Are financial time series composed of multiple cycles of varying frequency and amplitude?</em></blockquote>
+
+We’ll explore this question throughout this post…
+
+There’s another potential problem in using DSP to analyze the markets, beyond the question of the fundamental existence of cycles in financial time series data. Most of the DSP techniques that you’ll encounter are particularly useful in engineering applications where the signal typically repeats – think for example of the voltage in an AC electrical circuit.
+
+Unfortunately, financial time series tend to be non-stationary and non-repeating.
+
+So, even if we accept that financial data <em>does</em> consist of multiple cycles that we can detect and measure, and then we do manage to detect and measure them, we are still faced with the problem of them changing through time, perhaps even before we manage to detect them!
+
+<h2>Applications of Digital Signal Processing</h2>
+
+Those issues aside, there may still be applications in practical trading where DSP techniques can come in handy. Consider for example some classic technical indicators like the simple moving average (SMA) and the Relative Strength Index (RSI).
+
+Both of these indicators implicitly assume some form of cyclic behaviour in the underlying time series. The SMA looks back a certain time period in its calculation, which can be interpreted as the length of the “trend” the SMA seeks to detect. <em>(In this case, a trend is just a cycle with a long period, or equivalently a low frequency).</em>
+
+Likewise, the RSI is calculated over a certain time period, but, in this case, its time period can be interpreted as the length of a high-frequency cycle that it seeks to detect.
+
+When viewing technical indicators from that perspective, DSP techniques may provide superior performance: they will be more responsive to the underlying data and introduce less lag than their traditional counterparts.
+
+Here’s a plot of the indicators and digital filters mentioned above <em>(with lookback periods of 100 and 14 for the low and high-frequency indicators respectively):</em>
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/Digital_Comparison.png"><img alt="" class="aligncenter size-full wp-image-3345 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/Digital_Comparison.png" decoding="async" height="491" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='491'%20viewBox='0%200%20879%20491'%3E%3C/svg%3E" width="879"/></a>
+
+You can see that the digital filter for detecting low-frequency cycles <em>(called a Low-Pass Filter, since it lets low-frequency cycles pass and attenuates high-frequency cycles)</em> is more responsive and tracks price closer than the SMA.
+
+The digital filter for detecting high-frequency cycles (called a High-Pass Filter) is smoother than the RSI and tends to emphasize turning points a little more clearly. Also notice that its output was relatively small during the period in which the market trended down, but became more pronounced as the trend ended. That’s because during the trend it correctly filtered out the low-frequency trend components of the signal which dominated during that time, hence leaving little in the output of the filter.
+
+If nothing else, it appears that digital filters can replace certain traditional indicators. So let’s talk a little more about them.
+
+<h2>Exploring Digital Filters</h2>
+
+Digital filters work by detecting cycles of various periods (lengths) in a signal, and then either attenuating (filtering) or passing those cycles, depending on their period.
+
+The <em>cutoff period </em>is the period at which the filter begins to attenuate the signal.
+
+<ul>
+<li>Low-Pass filters attenuate periods <em>below </em>their cutoff period</li>
+<li>High-Pass filters attenuate periods <i>above </i>their cutoff period.</li>
+</ul>
+<blockquote><em>The terminology can be a bit confusing, but just remember that Low and High refer to frequency, not period. Low frequency = long period, high frequency = short period.</em></blockquote>
+
+Another type of digital filter is the Band-Pass filter, which passes cycles with a period within a certain range (the bandwidth), and attenuates cycles outside that range.
+
+A useful way to visualize what these different filters do is to apply them to a signal with a known period and observe their output.
+
+Even better, we can supply a signal whose period gradually changes to get an even better understanding. Here’s some Zorro code for generating a sine wave with an increasing period, and plotting the output of various filters applied to this signal:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Digital Filters on Known Cycles">function run()
+{
+    set(PLOTNOW);
+    MaxBars = 1000;
+    asset("");
+    ColorUp = ColorDn = 0;
+    
+    vars Signal = series(genSine(10, 100));
+    vars LowPass50 = series(LowPass(Signal, 50));
+    vars LowPass100 = series(LowPass(Signal, 100));
+    vars HighPass5 = series(HighPass(Signal, 5));
+    vars HighPass20 = series(HighPass(Signal, 20));
+    vars BandPass40 = series(BandPass(Signal, 40, 0.1));
+    vars BP4040 = series(BandPass(BandPass40, 40, 0.1));
+    vars BP404040 = series(BandPass(BP4040, 40, 0.1));
+    
+    PlotHeight1 = PlotHeight2 = 150;
+    PlotWidth = 800;
+    plot("Signal", Signal, MAIN, BLUE);
+    plot("LP50", LowPass50, NEW, RED);
+    plot("LP100", LowPass100, NEW, RED);
+    plot("HP5", HighPass5, NEW, RED);
+    plot("HP20", HighPass20, NEW, RED);
+    plot("BP40", BandPass40, NEW, RED); 
+    plot("BP4040", BP4040, NEW, RED);
+    plot("BP404040", BP404040, NEW, RED);   
+}</pre>
+
+This code outputs the following plot:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/Digital_Filters.png"><img alt="" class="aligncenter size-full wp-image-3346 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/Digital_Filters.png" decoding="async" height="970" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='970'%20viewBox='0%200%20879%20970'%3E%3C/svg%3E" width="879"/></a>
+
+Study the plots above, and experiment with the code yourself. Note that none of the filters perfectly attenuate cycles that lie beyond their cutoff periods, although the stacked Band-Pass filters (the bottom two plots) come closer than the others do. They also introduce some lag.
+
+In the script above, you can see that the <code>BandPass</code> function has an additional argument: as well as a cutoff period, it also takes a <code>Delta</code> value. The delta value is just a number between 0 and 1 that defines the width of the filter’s pass region scaled to and centred on the cutoff period.
+
+For example, a Band-Pass filter with a cutoff period of 40 and  <span class="lang:c decode:true crayon-inline">Delta</span> of 0.1 results in a filter with a bandwidth of 4, running from 38 to 42. It will attempt to filter cycles outside that range.
+
+Digital filters can also be stacked by passing the output of one filter to another filter. This generally has the effect of enabling the filter to more tightly focus on the cutoff period of interest, but comes at the cost of introducing additional lag. In the script above, we demonstrated stacking a Band-Pass filter, but you can stack the other filters too. In some of the later examples, we’ll stack various filters to pre-condition our raw data before analyzing the remaining cycles. Note that doing this unavoidably introduces some amount of lag.
+
+<h2>What CutOff Period Should I Use?</h2>
+
+All this discussion of digital filters and their cutoff periods leads to the obvious question: what cutoff period should we use? It makes sense that if there were a <em>dominant cycle</em> present in the signal, that is, a cycle whose amplitude swamped the smaller cycles, we should target that cycle’s period, because it will present the best trading opportunities.
+
+<h2>The Dominant Cycle</h2>
+
+Zorro implements the <code>DominantPeriod</code> function that calculates the dominant cycle period in a price series using the Hilbert Transformation.
+
+The Hilbert Transformation is one of the fundamental functions of signal processing and enables calculation of, among other things, the instantaneous frequency of a signal.
+
+The documentation of this function is likely to leave you scratching your head though. Testing different values of <span class="lang:c decode:true crayon-inline">Period </span>on a signal with a known period reveals that it has very little impact on the result and that the calculated period is quite accurate, up to a limit of around 60. My recommendation is to simply set this argument to a value of 30, which lies approximately halfway along the argument’s valid range.
+
+Here’s a plot of the output of <code>DominantPeriod</code> under different conditions:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/DominantPeriod.png"><img alt="" class="aligncenter size-full wp-image-3347 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/DominantPeriod.png" decoding="async" height="619" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='845'%20height='619'%20viewBox='0%200%20845%20619'%3E%3C/svg%3E" width="845"/></a>
+<ul>
+<li>The first signal (the top blue plot) is a sine wave of period 50.</li>
+<li>The next two plots are the output of <span class="lang:c decode:true crayon-inline">DominantPeriod()</span>  with Period arguments set to 30 and 50 respectively. You can see that even when Period is set incorrectly, it does a reasonable job of extracting the cycle length.</li>
+<li>The second signal (blue plot, second from the bottom) is a sine wave whose period decreases from 100 to 10.</li>
+<li>The red plot below is the output of <span class="lang:c decode:true crayon-inline">DominantPeriod()</span>  with Period set to 30.</li>
+</ul>
+
+You can see that the function’s maximum output is 60, and that it returns 60 for all cycle lengths of 60 or above. It follows that it makes little sense to use this function to detect cycles of length greater than 60. On the other hand, it does a decent job of detecting the decreasing cycle length.
+
+An important note about using this function is that it carries a significant lag, on the order of ten bars. The important implication of this is that by the time a dominant period is detected, <em>it will already be ten bars old</em>. That means that if we detected a dominant cycle whose period was 11 bars, we’d only have 1 bar left to act on it due to the lag associated with its detection.
+
+Therefore, probably the minimum cycle length we’d be interested in detecting would be around 13 bars. In reality, however, you might not want to cut it quite so fine. A cycle length of 20 detected after 10 bars is detected half-way through its cycle (at its midline).  A cycle of length 40 detected after 10 bars is only a quarter complete and is detected at its peak or trough.
+
+Here’s a plot that demonstrates this. It shows a 13 (blue), 20 (green) and 40 (red) bar cycle with bar 10 marked by the black vertical line.
+
+<em>Look at the phase of each of those cycles at bar 10 – which do think represents the best fake trading opportunities?</em>
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/DomPeriod.png"><img alt="" class="aligncenter size-full wp-image-3362 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/DomPeriod.png" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='600'%20height='400'%20viewBox='0%200%20600%20400'%3E%3C/svg%3E" width="600"/></a>A lot of Zorro’s DSP functionality is based on the work of John Ehlers. In one of his books, Ehlers demonstrates the use of the Hilbert Transform for calculating the dominant cycle period, which is the method used in Zorro’s implementation. However, Ehlers actually warns against that approach, saying that a better method is his autocorrelation periodogram.<span class="inline-footnote" style="" title="Ehlers, John, 2013, Cycle Analytics for Traders, John Wiley &amp; Sons, pp. 186-187">1<span class="footnoteContent" style="display:none;">Ehlers, John, 2013, <em>Cycle Analytics for</em> <em>Traders</em>, John Wiley &amp; Sons, pp. 186-187</span></span>
+<h2>Experiments with Digital Signal Processing</h2>
+
+Let’s summarize what we’ve learned so far and then set up an experiment to look at the validity of the DSP approach in a trading context.
+
+Here’s what we know so far:
+
+<ul>
+<li>DSP tools and techniques outperform traditional indicators in terms of responsiveness and lag when used for analogous purposes.</li>
+<li>Digital filters can attenuate cycles of certain lengths, and pass others. We have Low-Pass filters for targeting long cycles, High-Pass filters for targeting short cycles, and Band-Pass filters for targeting a range of cycle lengths. Filters can be connected, or stacked. This often improves their accuracy but comes at the expense of added lag.</li>
+<li>We can estimate the period of the dominant cycle using Zorro’s <span class="lang:c decode:true crayon-inline">DominantPeriod()</span>  function, which lags by approximately ten bars.</li>
+</ul>
+
+The nice thing about the DSP approach is that is based almost entirely on theory, which means we can test its validity by finding out whether the theory holds up in practice.
+
+Since it’s a theory, it should also hold anywhere the assumptions which underpin it are valid. So we can actually run some experiments to test the theory and then based on the results infer whether its assumptions are valid. In particular, I want to know more about whether decomposing cycles is a sensible approach to the markets.
+
+Here I’ll test one of John Ehlers’ indicators from <em>Cycle Analytics for Traders.</em><span class="inline-footnote" style="" title="Which as I mentioned above is the source for a lot of Zorro’s DSP functionality.">2<span class="footnoteContent" style="display:none;">Which as I mentioned above is the source for a lot of Zorro’s DSP functionality.</span></span>
+<ul>
+<li>At the heart of the indicator is a Band-Pass filter of an arbitrary bandwidth.</li>
+<li>Preceding the Band-Pass filter, the raw price series is passed to a High-Pass filter that is tuned to twice the period of the Band-Pass filter’s upper cutoff. That’s to remove the effects of <em>spectral dilation</em>, which Ehlers says arises due to the phenomenon that market swings tend to be larger in amplitude the longer they are measured over.</li>
+<li>Finally, the output of the Band-Pass filter is fed to another High-Pass filter, this time tuned to the other side of the Band-Pass filter’s bandwidth. The output of this High-Pass filter, according to Ehlers, creates a waveform that leads the Band-Pass filter’s output and will cross that output at its exact peaks and valleys, except when the data are trending.<span class="inline-footnote" style="" title="Ehlers 2013, pp.56-58">3<span class="footnoteContent" style="display:none;">Ehlers 2013, pp.56-58</span></span>We’ll refer to this leading waveform as our trigger.</li>
+</ul>
+
+Let’s look at this idea in the context of a very basic trading strategy. We’ll simply reverse long when the trigger crosses under the output of the Band-Pass filter and reverse short when it crosses over.
+
+Here’s the Zorro code for setting this up for a few different assets and time frames. We set transaction costs to zero so that we can get an undistorted comparison of the raw edge (if any) of this approach across time frames. Here’s the code and the output of the portfolio report:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="DSP Experiments">/* DSP Experiments from Cycle Analytics For Traders
+
+Note Ehlers often speaks in frequency terms, we work in period terms
+High frequency = low cutoff period
+Low frequency = high cutoff period
+
+*/
+
+function run()
+{
+    set(PLOTNOW);
+    StartDate = 2007;
+    EndDate = 2016;
+    BarPeriod = 60;
+    LookBack = 250;
+    MaxLong = MaxShort = 1;
+    
+    while(asset(loop("EUR/USD", "USD/JPY", "SPX500")))
+    while(algo(loop("H1", "H4", "D1")))
+    {
+        if(Algo == "H1") TimeFrame = 60/BarPeriod;
+        else if(Algo == "H4") TimeFrame = 240/BarPeriod;
+        else if(Algo == "D1") TimeFrame = 1440/BarPeriod;
+    
+        Spread = Commission = Slippage = RollLong = RollShort = 0;
+        
+        vars Price = series(price());
+        
+        // Set up filter parameters
+        int BP_Cutoff = 30;
+        var Delta = 0.3;
+        int Bandwidth = ceil(BP_Cutoff*Delta);  
+        int UpperBP_Cutoff = ceil(BP_Cutoff + Bandwidth/2); 
+        int LowerBP_Cutoff = floor(BP_Cutoff - Bandwidth/2); 
+        
+        if(Day == StartBar and Asset == "EUR/USD" and Algo == "H1") 
+            printf("\nFilter Bandwith is %d to %d Periods", LowerBP_Cutoff, UpperBP_Cutoff);
+        
+        // Pre-filter with High-Pass filter
+        vars HP = series(HighPass(Price, UpperBP_Cutoff*2)); 
+        
+        // Band-Pass filter
+        vars BP = series(BandPass(HP, BP_Cutoff, Delta));
+        
+        // Trigger: another High-Pass filter
+        vars Trigger = series(HighPass(BP, LowerBP_Cutoff));
+        
+        // Trade logic
+        if(crossOver(Trigger, BP)) enterLong();
+        if(crossUnder(Trigger, BP)) enterShort();
+        
+        plot("BP", BP, NEW, BLUE);
+        plot("Trigger", Trigger, 0, RED);
+    
+    }
+}
+
+/* OUTPUT:
+Portfolio analysis  OptF  ProF  Win/Loss  Wgt%
+
+EUR/USD avg         .003  0.94  2018/1611   18.9  
+SPX500 avg          .003  0.88  1824/1522   58.0  
+USD/JPY avg         .000  0.88  1946/1637   23.1  
+
+D1 avg              .002  0.90  184/157   12.1  
+H1 avg              .000  0.88  4449/3693   71.9  
+H4 avg              .005  0.95  1155/920   16.0  
+
+EUR/USD:D1          .000  0.79   61/52     9.6  
+EUR/USD:D1:L        .000  0.68   32/24     7.8  
+EUR/USD:D1:S        .000  0.91   29/28     1.8  
+EUR/USD:H1          .000  0.96  1538/1244    8.1  
+EUR/USD:H1:L        .000  0.93  786/605    7.0  
+EUR/USD:H1:S        .000  0.99  752/639    1.1  
+EUR/USD:H4          .000  0.99  419/315    1.2  
+EUR/USD:H4:L        .000  0.93  210/157    3.5  
+EUR/USD:H4:S        .027  1.05  209/158   -2.4  
+SPX500:D1           .000  0.98   54/51     0.8  
+SPX500:D1:L         .016  1.40   32/21    -8.5  
+SPX500:D1:S         .000  0.70   22/30     9.3  
+SPX500:H1           .000  0.84  1427/1173   47.3  
+SPX500:H1:L         .000  0.89  766/534   15.1  
+SPX500:H1:S         .000  0.80  661/639   32.2  
+SPX500:H4           .000  0.93  343/298    9.9  
+SPX500:H4:L         .004  1.05  195/126   -3.6  
+SPX500:H4:S         .000  0.82  148/172   13.5  
+USD/JPY:D1          .000  0.93   69/54     1.7  
+USD/JPY:D1:L        .000  0.89   32/30     1.2  
+USD/JPY:D1:S        .000  0.96   37/24     0.5  
+USD/JPY:H1          .000  0.86  1484/1276   16.5  
+USD/JPY:H1:L        .000  0.85  744/636    8.6  
+USD/JPY:H1:S        .000  0.86  740/640    8.0  
+USD/JPY:H4          .000  0.92  393/307    4.9  
+USD/JPY:H4:L        .000  0.91  196/154    2.8  
+USD/JPY:H4:S        .000  0.93  197/153    2.1 
+*/</pre>
+
+Not much to like about that at all. Just for completeness, here’s the equity curve:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/DSPExperiment1.png"><img alt="" class="aligncenter size-full wp-image-3348 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/DSPExperiment1.png" decoding="async" height="496" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='496'%20viewBox='0%200%20879%20496'%3E%3C/svg%3E" width="879"/></a>
+
+This result feels like we are almost completely out of sync with the cycles we are trying to exploit! Either that or the cycles are just randomness and can’t be exploited anyway. Let’s explore some more.
+
+In this case, the bandwidth of our Band-Pass filter was tuned to periods of length 25 to 35. That’s neither a very wide range, nor are those particularly long cycles.
+
+<em>Perhaps if we increase both our Band-Pass cutoff period and the Delta parameter in order to target longer cycles we can get better results?</em>
+
+Here’s the portfolio report for a Band-Pass cutoff of 50 and a Delta of 0.8, which corresponds to a bandwidth that encompasses cycles of length 30 to 70 bars:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Bandwidth 30-70 Bars">Portfolio analysis  OptF  ProF  Win/Loss  Wgt%
+
+EUR/USD avg         .019  1.01  1156/817    4.2  
+SPX500 avg          .012  1.21  1145/771   79.9  
+USD/JPY avg         .024  1.10  1214/798   15.9  
+
+D1 avg              .024  1.34  117/75    32.2  
+H1 avg              .018  1.06  2683/1848   28.5  
+H4 avg              .019  1.16  715/463   39.3  
+
+EUR/USD:D1          .008  1.04   35/29     1.5  
+EUR/USD:D1:L        .000  0.86   18/14    -3.1  
+EUR/USD:D1:S        .074  1.36   17/15     4.6  
+EUR/USD:H1          .000  0.98  891/628   -2.7  
+EUR/USD:H1:L        .000  0.95  452/307   -4.9  
+EUR/USD:H1:S        .023  1.03  439/321    2.2  
+EUR/USD:H4          .026  1.06  230/160    5.5  
+EUR/USD:H4:L        .000  0.98  119/76    -0.8  
+EUR/USD:H4:S        .055  1.15  111/84     6.3  
+SPX500:D1           .012  1.59   33/25    23.2  
+SPX500:D1:L         .015  2.66   21/8     22.4  
+SPX500:D1:S         .001  1.03   12/17     0.7  
+SPX500:H1           .015  1.11  869/604   25.4  
+SPX500:H1:L         .023  1.21  468/268   22.9  
+SPX500:H1:S         .003  1.02  401/336    2.4  
+SPX500:H4           .020  1.28  243/142   31.4  
+SPX500:H4:L         .027  1.51  131/62    25.9  
+SPX500:H4:S         .007  1.09  112/80     5.4  
+USD/JPY:D1          .028  1.36   49/21     7.6  
+USD/JPY:D1:L        .029  1.38   26/9      3.6  
+USD/JPY:D1:S        .027  1.35   23/12     4.0  
+USD/JPY:H1          .031  1.06  923/616    5.9  
+USD/JPY:H1:L        .027  1.06  464/305    2.5  
+USD/JPY:H1:S        .034  1.07  459/311    3.3  
+USD/JPY:H4          .014  1.05  242/161    2.4  
+USD/JPY:H4:L        .009  1.03  117/85     0.7  
+USD/JPY:H4:S        .018  1.07  125/76     1.7</pre>
+
+Interesting. This appears to be a better result, although long trades on SPX500 contributed the majority of the profit. Still, maybe this deserves a closer look. Here’s the portfolio equity curve:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/DSPExperiment1_wideBW.png"><img alt="" class="aligncenter size-full wp-image-3349 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/DSPExperiment1_wideBW.png" decoding="async" height="496" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='496'%20viewBox='0%200%20879%20496'%3E%3C/svg%3E" width="879"/></a>
+<h3>Incorporating the Period of the Dominant Cycle</h3>
+
+Ehlers says later in his book<span class="inline-footnote" style="" title="Ehlers, 2013, pp. 152-153">4<span class="footnoteContent" style="display:none;">Ehlers, 2013, pp. 152-153</span></span>that it makes sense to tune the Band-Pass filter to the dominant cycle in order to eliminate other cycles that are of little or no interest.
+
+He then goes on to say that even better than tuning it to dominant cycle, tuning it to a slightly shorter period (but with a bandwidth that also captures the dominant cycle) causes the output of the filter to <em>lead</em> the dominant cycle slightly. We test this idea in the code below <em>(the tuning of the Band-Pass filter as described above occurs in line 34).</em>
+
+In this case, Ehlers suggests that we precede the Band-Pass filter with what he calls a Roofing Filter, which is simply a High-Pass and Low-Pass filter connected in series for pre-conditioning the data and removing unwanted cycles. Zorro implements the Roofing Filter as the function <span class="lang:c decode:true crayon-inline">Roof() </span>and we use it here. Our trigger line is calculated as 90% of the amplitude of the 1-bar lagged Band-Pass filter output.
+
+The “strategy” now does the following:
+
+<ol>
+<li>Pre-processes the raw price series using Ehlers’ Roofing Filter</li>
+<li>Calculates the period of the dominant cycle of the pre-processed price series</li>
+<li>Tunes a Band-Pass filter centred on a period slightly lower than the dominant cycle, but with a bandwidth that incorporates the dominant cycle.</li>
+<li>Calculates a trigger line based on 90% of the one-bar lagged Band-Pass filter output.</li>
+<li>We simply reverse long and short when the trigger line crosses under and over the Band-Pass output respectively.</li>
+</ol>
+
+In this script, as well as the Band-Pass output and the trigger line, we also plot the dominant cycle and the bandwidth of the Band-Pass filter. I used a <span class="lang:c decode:true crayon-inline">Delta</span> of 0.3.
+
+Here’s the code and the portfolio analysis (again we look at a few different assets and time frames):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Ehlers Roofing Filter and Adaptive BandPass">/* DSP Experiments from Cycle Analytics For Traders
+
+Note Ehlers often speaks in frequency terms, we work in period terms
+High frequency = low cutoff period
+Low frequency = high cutoff period
+
+*/
+
+function run()
+{
+    set(PLOTNOW);
+    StartDate = 2007;
+    EndDate = 2016;
+    BarPeriod = 60;
+    LookBack = 200*24;
+   MaxLong = MaxShort = 1; 
+    
+    while(asset(loop("EUR/USD", "USD/JPY", "SPX500")))
+    while(algo(loop("H1", "H4", "D1")))
+    {
+        if(Algo == "H1") TimeFrame = 60/BarPeriod;
+        else if(Algo == "H4") TimeFrame = 240/BarPeriod;
+        else if(Algo == "D1") TimeFrame = 1440/BarPeriod;
+    
+        Spread = Commission = Slippage = RollLong = RollShort = 0;
+        
+        vars Price = series(price());
+        
+        // Pre-filter with High-Pass filter
+        vars HP = series(Roof(Price, 10, 70));
+        
+        // Set up filter parameters
+        var DomPeriod = DominantPeriod(HP, 30);
+        var Delta = 0.3;
+        var BP_Cutoff = (1 - 2/3*(0.5 * Delta)) * DomPeriod; //tune to a shorter period
+        int Bandwidth = ceil(BP_Cutoff*Delta);  
+        int UpperBP_Cutoff = ceil(BP_Cutoff + Bandwidth/2); 
+        int LowerBP_Cutoff = floor(BP_Cutoff - Bandwidth/2); 
+                
+        // Band-Pass filter
+        vars BP = series(BandPass(HP, BP_Cutoff, Delta));
+        
+        // Trigger: another High-Pass filter
+        vars Trigger = series(0.9*BP[1]);
+        
+        // Trade logic
+        if(crossOver(Trigger, BP)) enterLong();
+        if(crossUnder(Trigger, BP)) enterShort();
+        
+        plot("BP", BP, NEW, BLUE);
+        plot("Trigger", Trigger, 0, RED);
+        plot("DomCyclePeriod", DomPeriod, NEW, BLACK);
+        plot("UpperCutoff", UpperBP_Cutoff, 0, RED);
+        plot("LowerCutoff", LowerBP_Cutoff, 0, RED);
+    }
+}
+
+/* OUTPUT
+Portfolio analysis  OptF  ProF  Win/Loss  Wgt%
+
+EUR/USD avg         .031  1.04  3325/2678   22.0  
+SPX500 avg          .014  1.11  3079/2753   80.0  
+USD/JPY avg         .006  0.99  3262/2758   -2.0  
+
+D1 avg              .021  1.23  325/268   39.2  
+H1 avg              .020  1.04  7420/6351   36.2  
+H4 avg              .020  1.05  1921/1570   24.6  
+
+EUR/USD:D1          .049  1.18  113/91    11.2  
+EUR/USD:D1:L        .000  1.00   53/49    -0.1  
+EUR/USD:D1:S        .090  1.40   60/42    11.3  
+EUR/USD:H1          .041  1.03  2559/2057    8.8  
+EUR/USD:H1:L        .000  0.99  1282/1026   -1.1  
+EUR/USD:H1:S        .092  1.07  1277/1031    9.9  
+EUR/USD:H4          .009  1.01  653/530    2.0  
+EUR/USD:H4:L        .000  0.95  330/261   -4.5  
+EUR/USD:H4:S        .068  1.09  323/269    6.5  
+SPX500:D1           .023  1.44  114/78    31.4  
+SPX500:D1:L         .027  1.78   68/28    25.5  
+SPX500:D1:S         .010  1.15   46/50     5.9  
+SPX500:H1           .015  1.07  2349/2160   29.5  
+SPX500:H1:L         .022  1.11  1246/1009   23.9  
+SPX500:H1:S         .006  1.02  1103/1151    5.5  
+SPX500:H4           .011  1.09  616/515   19.2  
+SPX500:H4:L         .018  1.17  336/229   18.8  
+SPX500:H4:S         .000  1.00  280/286    0.4  
+USD/JPY:D1          .000  0.91   98/99    -3.4  
+USD/JPY:D1:L        .000  0.91   48/51    -1.7  
+USD/JPY:D1:S        .000  0.92   50/48    -1.7  
+USD/JPY:H1          .000  0.99  2512/2134   -2.1  
+USD/JPY:H1:L        .000  0.99  1266/1057   -1.0  
+USD/JPY:H1:S        .000  0.99  1246/1077   -1.1  
+USD/JPY:H4          .018  1.04  652/525    3.5  
+USD/JPY:H4:L        .020  1.04  321/267    1.8  
+USD/JPY:H4:S        .016  1.04  331/258    1.6 
+*/</pre>
+
+And here’s the equity curve <em>(I also plotted the upper and lower range of the Band-Pass filter’s bandwidth around the dominant cycle):</em>
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/DSPExperiment2.png"><img alt="" class="aligncenter size-full wp-image-3350 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/DSPExperiment2.png" decoding="async" height="591" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='591'%20viewBox='0%200%20879%20591'%3E%3C/svg%3E" width="879"/></a>
+
+It occurred to me that maybe we want to avoid reversing our trades when the dominant cycle turns into a trend. When that happens, wouldn’t we want to hold onto our current trade, rather than reversing?
+
+Now, recall that our <em><span class="lang:c decode:true crayon-inline">DominantPeriod()</span> </em> function topped out at a cycle period of around 60 bars. It couldn’t detect any cycles longer than that period effectively <em>(go back and look at the plots of the sine waves and the output of <span class="lang:c decode:true crayon-inline">DominantPeriod()</span>  above if you’re unsure). </em>
+
+That means that at the upper end of <em><span class="lang:c decode:true crayon-inline">DominantPeriod()</span> ‘</em>s output range, we have a significant amount of uncertainty about the actual dominant cycle period: it could be 60 bars, it could be 160 bars, <em><span class="lang:c decode:true crayon-inline">DominantPeriod()</span> </em> would output roughly the same value in either case.
+
+To test this, we can simply prevent the reversing of our positions when <em><span class="lang:c decode:true crayon-inline">DominantPeriod()</span> </em> approaches the upper boundary of its range. That will mean that any currently open trade will stay open until <em><span class="lang:c decode:true crayon-inline">DominantPeriod()</span> </em> detects a shorter cycle, hopefully exploiting any cycles that turn into trends. Just replace the trade logic (lines 45-47) with this code:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Cycles into Trends">// Trade logic
+if(DomPeriod &lt; 45)
+{
+    if(crossOver(Trigger, BP)) enterLong();
+    if(crossUnder(Trigger, BP)) enterShort();
+}</pre>
+
+Here’s the resulting equity curve; the boost in performance is obvious and not insignificant:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/DSPExperiment2a.png"><img alt="" class="aligncenter size-full wp-image-3351 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/DSPExperiment2a.png" decoding="async" height="591" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='591'%20viewBox='0%200%20879%20591'%3E%3C/svg%3E" width="879"/></a>
+<h2>Spectral Analysis and the Fourier Transform</h2>
+
+The Fourier Transform is another fundamental operation of DSP. It is used to:
+
+<ol>
+<li>Decompose a signal into its component cycles, and</li>
+<li>Determine the contribution of each cycle to the signal</li>
+</ol>
+
+That is, the Fourier transform can tell us the period (or frequency) of the most significant cycles and also tell us something about their amplitude.
+
+For example, if our Fourier Transform identified a strong cycle with a period of 40 days, and assuming we could detect that cycle, we would know the optimum times to buy and sell: at day 10 and 30, corresponding to the peak and trough of the cycle respectively.
+
+<em>If only it were that simple!</em>
+<h2>Plotting the Spectrum of Frequencies</h2>
+
+A plot of the contribution of each cycle to a signal is referred to as the signal’s frequency spectrum. Zorro has a tool for creating such plots.
+
+I mentioned above that one of the confounding factors in the application of DSP to financial time series is that such series are typically non-stationary. That means that the frequency spectrum calculated over one period may be completely different over another.
+
+<blockquote><em>How different?</em></blockquote>
+
+Well, we already saw in our use of the <em><span class="lang:c decode:true crayon-inline">DominantPeriod()</span></em>  function that the strongest cycle tended to wander around quite a bit. Let’s find out what analysis of the frequency spectrum says about that.
+
+To plot the frequency spectrum of a price series, we need to use the <em><span class="lang:c decode:true crayon-inline">Spectrum()</span></em>  function. This function calculates the relative contribution of a single cycle to the overall signal. If we plot the contribution of several different cycles, we’ll see just how unstable the relative contributions are. Here’s some code for plotting the contribution of the 24, 48, 72, 96 and 120 hour cycles to the EUR/USD over a few years:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Shifting Cycle Contributions">/* SPECTRAL ANALYSIS
+
+*/
+
+function run()
+{
+    set(PLOTNOW);
+    StartDate = 20120101;
+    EndDate = 2016;
+    LookBack = 120*5;
+    
+    vars Price = series(price());
+    
+    PlotHeight1 = 200;
+    PlotHeight2 = 100;
+    int i;
+    for(i=24; i&lt;121; i+=24)
+    {
+        plot(strf("Spectrum_%d", i), Spectrum(Price, i, i*5), NEW, color(100*i/120, BLUE, DARKGREEN, RED, BLACK));
+    }
+    
+}</pre>
+
+And here’s the plot:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/Spectra.png"><img alt="" class="aligncenter size-full wp-image-3352 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/Spectra.png" decoding="async" height="536" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='536'%20viewBox='0%200%20879%20536'%3E%3C/svg%3E" width="879"/></a>
+
+You can see that the relative contributions (or amplitude, or strength) of these cycles are anything but constant.
+
+I wanted to show you this plot as a first step in exploring frequency spectra because often you’ll see a histogram or some other plot that shows the relative contributions of <em>all</em> the cycles <em>over some period of time</em>.
+
+If you haven’t seen a plot like the one above, you could be forgiven for assuming that such a histogram describes general characteristics of a market: in fact, <strong>what it really shows is just a snapshot in time.</strong>
+
+Let’s build one such snapshot in time. To do that, we call <span class="lang:c decode:true crayon-inline">Spectrum()</span>  for every cycle period that we are interested in (inside a <span class="lang:c decode:true crayon-inline">for()</span>  loop) and plot its relative contribution as a bar in a histogram. Here’s the code to do just that, where we plot the spectrum for a single 3-month period:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Plot Frequency Spectrum">* SPECTRAL ANALYSIS
+
+*/
+
+function run()
+{
+    set(PLOTNOW);
+    StartDate = 20160101;
+    EndDate = StartDate + 00000300;
+    LookBack = 120*2;
+    
+    vars Price = series(price());
+    vars Rand = series(0);
+    if(is(LOOKBACK))
+        Rand[0] = Price[0];
+    else
+        Rand[0] = Rand[1] + random(0.005)*random();
+    
+//  plot("random", Rand, MAIN, BLUE);
+    
+    PlotWidth = 800;
+    PlotHeight1 = 350;
+    int Period;
+    for(Period = 6; Period &lt; 120; Period += 1)
+    {
+        plotBar("Spectrum",Period,Period,Spectrum(Price,Period,2*Period),BARS+AVG+LBL2,DARKGREEN);
+    }
+}</pre>
+
+Here’s the plot for EUR/USD:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/Spectrum_20161.png"><img alt="" class="aligncenter size-full wp-image-3354 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/Spectrum_20161.png" decoding="async" height="351" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='877'%20height='351'%20viewBox='0%200%20877%20351'%3E%3C/svg%3E" width="877"/></a>
+
+If we advance the script to look at the next three-month period, we get this plot:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/Spectrum_201612png.png"><img alt="" class="aligncenter size-full wp-image-3355 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/Spectrum_201612png.png" decoding="async" height="351" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='877'%20height='351'%20viewBox='0%200%20877%20351'%3E%3C/svg%3E" width="877"/></a>
+
+There are definite peaks in the frequency spectra plots, which suggests that certain cycles do in fact exist in this market.
+
+However, you can see that for the most part, they are not constant, and some peaks shift more than others.
+
+If you repeat the analysis over different periods (months, weeks, or years) you’ll find other shifting, ephemeral, but clearly visible cycles.
+
+<h2>Aren’t we just seeing random patterns here?</h2>
+<em>But couldn’t those peaks just be random fluctuations? What evidence is there that they are real cycles, and not just an artefact of randomness? </em>
+
+Well, we can construct a random price curve that starts at the same level as our real price curve and changes with roughly the same volatility, but does so using a random number generator. Then, we can plot the frequency spectrum of that random price curve and see if we get similar fluctuations.
+
+I already added the code to create the random price series (lines 13-17 in the script above). To test it, just replace <em><span class="lang:c decode:true crayon-inline">Price</span></em> with <em><span class="lang:c decode:true crayon-inline">Rand</span></em> in the <em><span class="lang:c decode:true crayon-inline">Spectrum()</span></em> function. Here’s a plot of one realization of that random price curve (blue), overlaid with the real one (black):
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/Real-and-Random-prices.png"><img alt="" class="aligncenter size-full wp-image-3356 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/Real-and-Random-prices.png" decoding="async" height="351" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='351'%20viewBox='0%200%20879%20351'%3E%3C/svg%3E" width="879"/></a>
+
+Looks pretty believable, doesn’t it? Visual inspection certainly suggests that it could pass for a real price series. Let’s see what sort of frequency spectrum such a random price curve generates:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/RandomSpectrum1.png"><img alt="" class="aligncenter size-full wp-image-3357 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/RandomSpectrum1.png" decoding="async" height="351" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='877'%20height='351'%20viewBox='0%200%20877%20351'%3E%3C/svg%3E" width="877"/></a>
+
+Not really the same as the one generated by our real price curve.
+
+Here’s another one in case the first one was a fluke (every time you run the code above, you’ll get a different random price curve, and I encourage you to test this yourself):
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/RandomSpectrum2.png"><img alt="" class="aligncenter size-full wp-image-3358 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/RandomSpectrum2.png" decoding="async" height="351" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='877'%20height='351'%20viewBox='0%200%20877%20351'%3E%3C/svg%3E" width="877"/></a>
+
+This <em>hints</em> that the cycles evident in the frequency spectrum of our price curve are not just random artefacts.
+
+If we were convinced by this, then the challenge we would face is overcoming their shifting and ephemeral nature in order to take advantage of these cycles.
+
+<h2>Is Digital Signal Processing Useful to the Quant Trader?</h2>
+
+I take a somewhat measured attitude to using DSP as an approach to the markets.
+
+We have seen that some financial time series <em>appear</em> to exhibit cyclical behaviour and are therefore candidates for exploitation using tools and techniques that can identify and quantify those cycles.
+
+The challenge we face is that those cycles – if they even exist – are not constant in time.
+
+Our analysis suggests that – even if they are not just random – these cycles are constantly shifting, evolving, appearing and disappearing, and will show up in different ways depending on the lens through which you view the markets. That’s no small challenge to overcome.
+
+While it is possible that cycle decomposition, done skillfully, may yield good results, DSP is certainly more readily useful for replacing or upgrading traditional technical indicators. This in spite of the fact that non-stationary, and non-repeating financial data is something of a departure from the typical use cases of these techniques – perhaps because traditional indicators are already burdened with that particular shortcoming, in addition to their sub-optimal lag and attenuation characteristics.
+
+If you wanted to take this approach further, you might want to look at the concept of wavelet decomposition. Wavelets are used to decompose a signal, much like the Fourier Transform, but do so in both the frequency <em>and</em> time domains. They may, therefore, be more useful than the frequency (equivalently, period) based decomposition we looked at here.
+
+In addition, there are other time-frequency decompositions which could be explored as well. If you are interested in pursuing wavelets for applications in algorithmic trading, expect to do <em>a lot</em> of research, particularly if you are new to DSP. That’s not meant to scare you off, rather I just want to give you a taste of what’s out there and set some realistic expectations.
+
+<div class="post-text">
+
+Finally, there’s one other method that belongs partially to DSP, but probably more to control theory: the Kalman filter, which finds application in trading strategies like <a href="https://robotwealth.com/kalman-filter-pairs-trading-r/" rel="noopener noreferrer" target="_blank">this one</a>.
+
+</div>
+<div class="convertful-36233"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>digital signal processing</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">5 thoughts on “Using Digital Signal Processing in Quantitative Trading Strategies”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-14525">
+<div class="comment-body">
+				Pingback: Using Digital Signal Processing in Quantitative Trading Strategies - Quant Trading Tips 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-14624">
+<div class="comment-body">
+				Pingback: Rolling and Expanding Windows For Dummies - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-14678">
+<div class="comment-body">
+				Pingback: Weekly Roundup 22 May - Doubling Down in Losing Trades Like a Drunken Hedge Fund Manager - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-robotwealthsoks-fr odd alt thread-odd thread-alt depth-1" id="comment-18355">
+<article class="comment-body" id="div-comment-18355" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>It is very interesting, great article on the topic of DSP that I understand far better now.</p>
+<span class="reply"><a aria-label="Reply to robotwealth@soks.fr" class="comment-reply-link" data-belowelement="div-comment-18355" data-commentid="18355" data-postid="23335" data-replyto="Reply to robotwealth@soks.fr" data-respondelement="respond" href="#comment-18355" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-28800">
+<article class="comment-body" id="div-comment-28800" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thank you so much for writing this! I saw a Pine Script tutorial on DSP a few months ago but it didn’t mention at all how any of it could be applied to trading! Then randomly I was drawing trend lines through the candles, and the way price oscillated around certain prices reminded me of audio wave forms, I googled signal processing and trading and this article came up…I recorded and engineered music for years…NEVER thought in a trillion years you could use a low pass filter to find trading signals. What can’t you use a filter for??? I think that’s the more relevant question now….Will it help me get a better tax deduction? Will a high pass help me lose weight? This article is mind blowing.  I wish more people could see this. You and Ehler are amazing people for sharing this knowledge.</p>
+<span class="reply"><a aria-label="Reply to Cameron" class="comment-reply-link" data-belowelement="div-comment-28800" data-commentid="28800" data-postid="23335" data-replyto="Reply to Cameron" data-respondelement="respond" href="#comment-28800" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/using-digital-signal-processing-in-quantitative-trading-strategies/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

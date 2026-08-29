@@ -1,0 +1,319 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Dual Momentum Investing: A Quant’s Review</title>
+<!-- source: https://robotwealth.com/dual-momentum-review/ -->
+<h1>Dual Momentum Investing: A Quant’s Review</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-2499 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-r category-think-like-a-trader category-trading-books category-trading-strategies tag-backtesting tag-dual-momentum tag-momentum tag-quantitative-trading tag-trading-strategies pmpro-has-access" id="post-2499">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">April 28, 2017</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Dual Momentum Investing: A Quant’s Review</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Dual Momentum Investing: A Quant’s Review" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">I recently read Gary Antonacci’s book <em><a href="https://www.amazon.com/gp/product/0071849440/ref=as_li_tl?ie=UTF8&amp;tag=robotwealth-20&amp;camp=1789&amp;creative=9325&amp;linkCode=as2&amp;creativeASIN=0071849440&amp;linkId=e2eaa0af0291c32e01b6175a11fc0d6d" rel="noopener noreferrer" target="_blank">Dual Momentum Investing: An Innovative Strategy for Higher Returns with Lower Risk</a>, </em>and it was clear to me that this was an important book to share with the Robot Wealth community. It is important not only because it describes a simple approach to exploiting the “premier anomaly” (<a href="https://schwert.ssb.rochester.edu/f532/ff_JF08.pdf" rel="noopener noreferrer" target="_blank">Fama and French</a>, 2008), but because it is ultimately about approaching the markets with a critical, inquisitive mindset, while not taking oneself too seriously. I think we can all do with a dose of that sometimes.
+Gary’s style is unique: this is the work of a free and critical thinker who is not afraid to question the status quo. While articulately drawing from a range of sources, from Shakespeare to Bacon and Einstein to Buffet (even Thomas Conrad’s 1970 book <em>Hedgemanship: How to Make Money in Bear Markets, Bull Markets and Chicken Markets While Confounding Professional Money Managers and Attracting a Better Class of Women,</em> which has got to be the greatest title in the history of trading books), Gary comes across as playful and slightly eccentric (which is wonderfully refreshing in a book about the markets). He derides economists who take themselves and their models too seriously (the line “<em>for followers of CAPM, the real world was an annoying special case</em>” almost made me fall off my chair), and importantly, he does this from the perspective of someone who has won the right to do so through hard-fought and won practical experience.
+In this post I’ll describe some of the highlights from the book, including a description of <strong>Dual Momentum</strong> and Gary’s modular approach for exploiting it. I’ll also describe a variation of this approach and of course illustrate the performance of both approaches with some equity curves. <a href="https://robotwealth.com/tlaq-qlat-aqtt-landing-page/" rel="noopener noreferrer" target="_blank">Robot Wealth members</a> have access to the code for implementing these systems and a research framework for additional experimentation.
+There is a lot more to Gary’s book than the results I’m showing here, including detailed discussions around the existing momentum literature, the basis for momentum (it’s always nice to have a tangible reason for an anomaly to exist before committing capital to it) and suggestions for other Dual Momentum implementations. The book is highly recommended.
+
+<h2>Momentum, Relative and Absolute</h2>
+
+The seminal work of <a href="https://www.e-m-h.org/JeTi93.pdf" rel="noopener noreferrer" target="_blank">Jagadeesh and Titman</a> (1993) showed that <strong>relative momentum</strong> – that is, the returns of an asset in comparison to other assets – provides profitable trading opportunities which are largely robust to the parameters of the trading strategy that might be used to exploit them. They showed that the returns of relative momentum outperformed benchmark returns, however in order to harvest this out-performance, one must typically endure significant volatility, often only marginally better than the benchmark itself. For many active investors and managers, the reward may not justify the risk.
+<a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2042750" rel="noopener noreferrer" target="_blank">Antonacci</a> (2012) published an extremely simple yet highly effective extension to relative momentum. He also looked at the <strong>absolute momentum</strong> of an asset – that is, the momentum of the asset relative to itself – and found that by combining the two types of momentum, he could reap the rewards of relative momentum investing while vastly reducing the volatility of the approach.
+Antonacci’s Dual Momentum is extremely simple to implement and manage, requiring at most a few positional adjustments each month. This combined with its history of low volatility out-performance in my opinion makes it the perfect place to start for people who are new to trading, prior to investigating more complex strategies. It won’t shoot the lights out and make you rich overnight, but it has proven itself over time to be a robust way to outperform the market in the long term.
+So why isn’t everyone doing this? My theory is that it is too simple. Most folks who decide they want to beat the markets like an intellectual challenge. They like to apply advanced quantitative methods or perform in-depth research into the fundamentals. Of course, I <em>really</em> like doing this too, and these methods can be handsomely profitable. But they take a huge amount of effort and usually a lot of frustration to get them right. Dual Momentum is like low hanging fruit. When you’re starting out, it makes sense to work on something that is both simple and robust, even if it doesn’t exactly satisfy that intellectual itch, and at least start getting some results. One learns a lot in the process.
+
+<h2>Dual Momentum Explained</h2>
+
+Before we go any further, I’ll explain what is meant by “Dual Momentum” and how it might be applied.
+Dual Momentum is about selecting assets that have both historically outperformed and also themselves generated a positive return. The first step in applying Dual Momentum is to compare the assets of interest against one another. If an asset has a higher return than another over the time period of interest, then it has positive <em>relative</em> momentum. We select the assets which have positive relative momentum for further analysis. Relative momentum thus acts as the initial filter.
+Next, we look at the <em>absolute</em> momentum of individual assets. That is, we look at the performance of individual assets compared only to themselves. In simple terms, if an asset has a positive return over the time period of interest, its absolute momentum is positive, and if its return is negative, its absolute momentum is negative. Taking our assets with positive relative momentum, we would only consider buying those assets whose absolute momentum is also positive.
+It is possible for an asset to have positive relative momentum and negative absolute momentum. For example, if the whole market was going down, the best performer in such a bear market would have positive relative momentum, but it might have negative absolute momentum. That is, it might have lost less than its peers. The Dual Momentum approach would prevent us buying such assets. Likewise, an asset might be going up and have positive absolute momentum, but if other assets performed better, it would have negative relative momentum. The Dual Momentum approach would force us into the assets that had both gone up and outperformed their peers.
+In the description above, I referred to the long side only, but of course Dual Momentum could be applied to the short side in the same way. In my experience, a long only Dual Momentum strategy seems to perform better when applied to equities (which makes sense given the long-term upward bias in that asset class), but you may be able to apply it in a different way that I haven’t thought of, or apply it to a different asset class, in order to take advantage of the short side too.
+
+<h2>Implementing Dual Momentum</h2>
+
+There are many ways to build a strategy that implements the Dual Momentum approach. Gary’s research shows that momentum works best when applied to geographically diversified equity indices. This research was backed up by <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2607730" rel="noopener noreferrer" target="_blank">Geczy and Samonov</a> (2015), by way of a 215-year backtest!
+We can’t easily invest directly in an index, so in this examination of Dual Momentum, we used Exchange Traded Funds (ETFs) that track the indices of interest. While this analysis is constrained by the formation date of the individual ETFs, we found that the results are generally in line with Gary’s results over the same period. Gary’s backtests using indices date back to 1974 and demonstrate a greater degree of out-performance than is evident across the relatively short (~10 years) backtest used here.
+Below are the results of an ETF-based version of the modular approach described in Antonacci (2012), as well as a sector-rotation approach. Transaction costs and ETF distributions have not been included in these simulations, however would likely not have a significant impact on results given the typical holding period and trade frequency.
+
+<h3>Modular Dual Momentum</h3>
+
+The modular approach to Dual Momentum is the one described in Antonacci (2012). This approach dictates that every month, we compare two related sectors or two parts of a single sector and select the better performer over the formation period (the prior twelve months). If the better performer has positive absolute momentum, we buy that asset. If the better performer has negative absolute momentum, we hold treasury bonds or investment grade bonds.
+Gary provides some examples of “modules” to which one might apply Dual Momentum:
+
+<ul>
+<li>Equities (US equities – international equities)</li>
+<li>Bonds (credit bonds – high yield bonds)</li>
+<li>Economic stress (gold – treasury bonds)</li>
+<li>REITS (mortgage reits – credit reits)</li>
+</ul>
+
+We could also look within other sectors for more ideas for modularizing Dual Momentum.
+
+Here are the results for the equities and bonds modules from 2007 to March 2017. The ETFs used were SPY/CWI and CSJ/HYG respectively. We can see that over this period, Modular Dual Momentum resulted in returns that were comparable with the best performing component but with a fraction of the maximum drawdown. The results are also consistent with Gary’s finding that Dual Momentum tends to underperform during strong bull regimes or when the market rebounds, but thanks to its ability to weather bear markets, has outperformed in the long run. In his paper, <a href="https://ssrn.com/abstract=2042750" rel="noopener noreferrer" target="_blank">Antonacci</a> (2012) provides a backtest that extends back to 1974 and which better captures this long-term outperformance (as stated above, in this ETF implementation, we are constrained by the time that the ETFs have been in existence).
+<a href="https://robotwealth.com/wp-content/uploads/2017/04/EquitiesModule.png"><img alt="Dual Momentum Equities Module" class="aligncenter size-full wp-image-2346 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/04/EquitiesModule.png" decoding="async" height="900" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='900'%20height='900'%20viewBox='0%200%20900%20900'%3E%3C/svg%3E" width="900"/></a>
+<a href="https://robotwealth.com/wp-content/uploads/2017/04/BondsModule.png"><img alt="Duam Momentum Bonds Module" class="aligncenter size-full wp-image-2347 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/04/BondsModule.png" decoding="async" height="900" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='900'%20height='900'%20viewBox='0%200%20900%20900'%3E%3C/svg%3E" width="900"/></a>Finally, here are the performance charts of a Modular Dual Momentum portfolio consisting of a 60-40 split between equities and bonds modules.
+
+<h3><a href="https://robotwealth.com/wp-content/uploads/2017/04/60-40-Equities-Bonds.png"><img alt="60-40 Equities-Bonds Dual Momentum" class="aligncenter size-full wp-image-2348 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/04/60-40-Equities-Bonds.png" decoding="async" height="900" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='900'%20height='900'%20viewBox='0%200%20900%20900'%3E%3C/svg%3E" width="900"/></a></h3>
+<h3>Dual Momentum Sector Rotation</h3>
+
+This is a twist on Antonacci’s modular approach, and is actually the approach I prefer. We choose a universe of ETFs that represent various sectors, regions and asset classes, ranking them based on their return over the formation period and buy up to the best three ETFs whose absolute momentum is also positive. Essentially, this approach results in a sector rotation strategy that leverages the benefits of Dual Momentum. Robot Wealth members have access to the complete research environment for reproducing and experimenting with this Dual Momentum Sector Rotation strategy. <a href="https://robotwealth.com/tlaq-qlat-aqtt-landing-page/" rel="noopener noreferrer" target="_blank">Join up here</a>.
+The results below are for a Dual Momentum Sector Rotation for the following sectors:
+
+<ul>
+<li>Stocks in the Russell 1000</li>
+<li>Stocks in the S&amp;P 500</li>
+<li>Stocks listed on the FTSE</li>
+<li>European equities</li>
+<li>Japanese equities</li>
+<li>Asia-Pacific (ex-Japan) equities</li>
+<li>7-10 Year Treasury Bonds</li>
+<li>1-3 Year Treasury Bonds</li>
+<li>Gold</li>
+</ul>
+
+And the results using a 6-month formation period:
+<a href="https://i1.wp.com/robotwealth.com/wp-content/uploads/2017/04/Sector-Rotation-Dual-Momentum.png"><img alt="Dual Momentum Sector Rotation" class="aligncenter size-full wp-image-2349 perfmatters-lazy" data-attachment-id="2349" data-comments-opened="1" data-image-description="" data-image-meta='{"aperture":"0","credit":"","camera":"","caption":"","created_timestamp":"0","copyright":"","focal_length":"0","iso":"0","shutter_speed":"0","title":"","orientation":"0"}' data-image-title="Sector Rotation Dual Momentum" data-large-file="https://i1.wp.com/robotwealth.com/wp-content/uploads/2017/04/Sector-Rotation-Dual-Momentum.png?fit=748%2C748&amp;ssl=1" data-medium-file="https://i1.wp.com/robotwealth.com/wp-content/uploads/2017/04/Sector-Rotation-Dual-Momentum.png?fit=300%2C300&amp;ssl=1" data-orig-file="https://i1.wp.com/robotwealth.com/wp-content/uploads/2017/04/Sector-Rotation-Dual-Momentum.png?fit=900%2C900&amp;ssl=1" data-orig-size="900,900" data-permalink="https://robotwealth.com/dual-momentum-research-framework/sector-rotation-dual-momentum/" data-sizes="(max-width: 748px) 100vw, 748px" data-src="https://i1.wp.com/robotwealth.com/wp-content/uploads/2017/04/Sector-Rotation-Dual-Momentum.png?resize=748%2C748" data-srcset="https://i1.wp.com/robotwealth.com/wp-content/uploads/2017/04/Sector-Rotation-Dual-Momentum.png?w=900 900w, https://i1.wp.com/robotwealth.com/wp-content/uploads/2017/04/Sector-Rotation-Dual-Momentum.png?resize=150%2C150 150w, https://i1.wp.com/robotwealth.com/wp-content/uploads/2017/04/Sector-Rotation-Dual-Momentum.png?resize=300%2C300 300w, https://i1.wp.com/robotwealth.com/wp-content/uploads/2017/04/Sector-Rotation-Dual-Momentum.png?resize=768%2C768 768w, https://i1.wp.com/robotwealth.com/wp-content/uploads/2017/04/Sector-Rotation-Dual-Momentum.png?resize=80%2C80 80w" decoding="async" height="748" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='748'%20height='748'%20viewBox='0%200%20748%20748'%3E%3C/svg%3E" width="748"/></a>
+<div data-settings=" minimize scroll-mouseover" id="crayon-58feece80a5e7569505456">
+
+No doubt you can see why I prefer this approach over the modular one! Although to be fair, the parameters that I used are among the best parameter sets for this particular universe of ETF sectors. A good question to ask now would be “how robust is the strategy to changes in the parameter space?”. After all, the goal of strategy research is to discover robust strategies that perform well in the future, not to create the best backtests. We will soon be adding our suite of robustness testing tools to the <a href="https://robotwealth.com/rw-pro-dashboard/" rel="noopener noreferrer" target="_blank">members’ area</a> to help answer this question.
+<h2>Important Caveats</h2>
+Readers please note that my implementations have some important differences from the approach that Gary describes <a href="https://www.amazon.com/gp/product/0071849440/ref=as_li_tl?ie=UTF8&amp;tag=robotwealth-20&amp;camp=1789&amp;creative=9325&amp;linkCode=as2&amp;creativeASIN=0071849440&amp;linkId=e2eaa0af0291c32e01b6175a11fc0d6d">in his book</a> and <a href="https://www.optimalmomentum.com/" rel="noopener" target="_blank">on his website</a>. Gary’s equities implementation is called Global Equities Momentum (GEM) and you can see its performance and read the fine print on his website.  One of the key differences is that the trend of the US market determines the trend of all equities indices. In other words, if the return of the S&amp;P500 is less than the return of short-term treasuries, we hold bonds regardless of the performance of foreign stocks. The reasoning for this is research referenced in Gary’s book that shows the US stock market leading global equities markets. In the short backtest posted here, there is only one month when this makes a difference, but it may be more significant in the long term.
+Also, Gary explicitly advises against a sector rotation model. In his backtests back to 1974, he found that sector rotation outperformed the S&amp;P500, but underperformed his GEM model. If you look at Gary’s results <a href="https://www.dualmomentum.net/2015/11/bring-more-data.html" rel="noopener noreferrer" target="_blank">here</a>, you can see that sector rotation outperformed GEM only intermittently (including the last few years of the simulation), with GEM coming out well on top over time. However, the sector rotation Gary describes on his website <a href="https://www.dualmomentum.net/2013/05/sector-rotation-and-dual-momentum.html" rel="noopener noreferrer" target="_blank">here</a> is, I think, very different to my implementation in that it examines the individual sectors of the US market only. My implementation is more of a “global macro sector rotation”.
+Gary is quite explicit that based on his research, the best application of Dual Momentum is the one presented in his book, or a similar one that focuses on equities, which have historically offered the highest risk premium. Readers should certainly familiarize themselves with <a href="https://www.optimalmomentum.com/faq/" rel="noopener noreferrer" target="_blank">Gary’s FAQ page</a> in order to get the full story, or better yet, <a href="https://www.amazon.com/gp/product/0071849440/ref=as_li_tl?ie=UTF8&amp;tag=robotwealth-20&amp;camp=1789&amp;creative=9325&amp;linkCode=as2&amp;creativeASIN=0071849440&amp;linkId=e2eaa0af0291c32e01b6175a11fc0d6d" rel="noopener noreferrer" target="_blank">read the book</a>!
+
+</div>
+<h2>Conclusion</h2>
+
+This article provided a description of Dual Momentum and presented results for two different implementations of Dual Momentum using ETFs. We found that in general, the results of our approximately 10-year ETF-based simulations were in line with Gary’s much longer index-based simulations, although the latter better demonstrate the long-term outperformance of the Dual Momentum approach. It is recommended to read the <a href="https://www.optimalmomentum.com/faq/" rel="noopener noreferrer" target="_blank">FAQ page</a> on Gary’s website,or better yet, <a href="https://www.amazon.com/gp/product/0071849440/ref=as_li_tl?ie=UTF8&amp;tag=robotwealth-20&amp;camp=1789&amp;creative=9325&amp;linkCode=as2&amp;creativeASIN=0071849440&amp;linkId=e2eaa0af0291c32e01b6175a11fc0d6d" rel="noopener noreferrer" target="_blank">the book</a>, to get the full story.
+
+<hr/>
+<em>Robot Wealth members have access to the code that was used to generate the backtests shown above, which forms part of a larger research environment that can be easily modified and extended, for example by varying the instruments used in each module, thinking up other modules, and varying strategy parameters like the formation period and the number of ETFs held in the sector rotation version. There is lots of other useful content in the members’ area too, including a machine learning research framework, educational material for learning algorithmic trading, and an active and exclusive forum of like minded individuals. We would love to have you in the community – <a href="https://robotwealth.com/tlaq-qlat-aqtt-landing-page/" rel="noopener noreferrer" target="_blank">register here</a>.</em>
+<hr/>
+<h2>References</h2>
+
+Antonacci G. 2012, <em><a href="https://ssrn.com/abstract=2042750" rel="noopener noreferrer" target="_blank">Risk Premia Harvesting through Dual Momentum</a></em>
+Antonacci G. 2015, <a href="https://www.amazon.com/gp/product/0071849440/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=9325&amp;creativeASIN=0071849440&amp;linkCode=as2&amp;tag=optimmomen-20&amp;linkId=P6D5JYKIUP7CK5UQ" rel="noopener noreferrer" target="_blank"><em>Dual Momentum Investing: An Innovative Strategy for Higher Returns with Lower</em> <em>Risk </em></a>
+Fama, E. and K. French, 2008, <a href="https://schwert.ssb.rochester.edu/f532/ff_JF08.pdf" rel="noopener noreferrer" target="_blank">Dissecting Anomalies</a>, <em>The Journal of Finance,</em> 63, pg. 1653-1678.
+Geczy, C and Samonov, M. 2015, <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2607730" rel="noopener noreferrer" target="_blank"><em>215 Years of Global Multi-Asset Momentum: 1800-2014 (Equities, Sectors, Currencies, Bonds, Commodities and Stocks)</em></a>
+Jagadeesh N. and Titman S. 1993, <em><a href="https://www.e-m-h.org/JeTi93.pdf" rel="noopener noreferrer" target="_blank">Returns to Buying Winners and Selling Losers</a>, </em>Journal of Finance, Vol 48, Issue 1, pp.65-69
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>backtesting</span>, <span>dual momentum</span>, <span>momentum</span>, <span>quantitative trading</span>, <span>trading strategies</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">17 thoughts on “Dual Momentum Investing: A Quant’s Review”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-748">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 04/28/2017 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-749">
+<article class="comment-body" id="div-comment-749" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>You mentioned that you use it to get some stable income. How do you connect it with the broker?, is there a way to do so from R?</p>
+<span class="reply"><a aria-label="Reply to MarianoA" class="comment-reply-link" data-belowelement="div-comment-749" data-commentid="749" data-postid="2499" data-replyto="Reply to MarianoA" data-respondelement="respond" href="#comment-749" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-750">
+<article class="comment-body" id="div-comment-750" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>You don’t need to connect to a broker to manage this strategy – it only trades at most once a month. Just calculate the portfolio every month and update accordingly. If you want a hands-off approach, probably easiest is to code it in Zorro and connect to IB. There are also libraries you can use to connect to IB from R, eg <a href="https://cran.r-project.org/web/packages/IBrokers/vignettes/IBrokers.pdf" rel="nofollow"></a><a href="https://cran.r-project.org/web/packages/IBrokers/vignettes/IBrokers.pdf" rel="nofollow ugc">https://cran.r-project.org/web/packages/IBrokers/vignettes/IBrokers.pdf</a> .</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-750" data-commentid="750" data-postid="2499" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-750" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-2700">
+<div class="comment-body">
+				Pingback: Harvesting Risk Premia – Robot Wealth – Fate Forex 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-10094">
+<div class="comment-body">
+				Pingback: Harvesting Risk Premia - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-10095">
+<div class="comment-body">
+				Pingback: Harvesting Risk Premia - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-13700">
+<div class="comment-body">
+				Pingback: Errors Downloading Yahoo Finance Stock Price Data SOLVED! - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-15349">
+<div class="comment-body">
+				Pingback: Algo Trading Content - Lemon Markets | Brokerage API 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-15938">
+<div class="comment-body">
+				Pingback: Content about algo trading | lemon.markets | Brokerage API 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-even depth-1" id="comment-17094">
+<article class="comment-body" id="div-comment-17094" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I’ve been thinking of a similar strategy for Australia. One concern that I have is survivorship bias in such a strategy. Have you given much thought to this problem?</p>
+<span class="reply"><a aria-label="Reply to Adam" class="comment-reply-link" data-belowelement="div-comment-17094" data-commentid="17094" data-postid="2499" data-replyto="Reply to Adam" data-respondelement="respond" href="#comment-17094" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment byuser comment-author-jreev42 even thread-odd thread-alt depth-1 parent" id="comment-34602">
+<article class="comment-body" id="div-comment-34602" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Any new thoughts or ideas about this dual momentum strategy (“It’s late September (2023) and I should be off to school. Oh Gary…..”) Is it still viable or has it had its day in the sun or were many of us fooled by randomness? It’s lagged B&amp;H SPY for several years now. Figuring out when an edge no longer is an edge has got to be one of the trickiest and most important questions us traders should ask ourselves. Thank you.</p>
+<span class="reply"><a aria-label="Reply to Joseph Reeves" class="comment-reply-link" data-belowelement="div-comment-34602" data-commentid="34602" data-postid="2499" data-replyto="Reply to Joseph Reeves" data-respondelement="respond" href="#comment-34602" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-34618">
+<article class="comment-body" id="div-comment-34618" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I haven’t looked at it in a while to be honest. I went off the idea a little because of the concentration risk – it has you fully invested in one asset or another. One thing I’ve learned along the journey is that I don’t know enough to make big concentrated bets like this, especially in the risk premia harvesting space. I prefer maintaining exposures to various things that have historically gone up and simply tilting exposures here and there based on various signals that we have evidence for. Using this approach, you could use a dual momentum signal to tilt an exposure as opposed to going all or nothing.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-34618" data-commentid="34618" data-postid="2499" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-34618" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-39975">
+<article class="comment-body" id="div-comment-39975" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Adding energy (eg, XLE) to the asset class mix really helps, as it was about the only thing that did well in 2022. Maybe that’s backfitting, or maybe that’s empirical evidence that it’s an uncorrelated asset class.</p>
+<span class="reply"><a aria-label="Reply to Scott Allen" class="comment-reply-link" data-belowelement="div-comment-39975" data-commentid="39975" data-postid="2499" data-replyto="Reply to Scott Allen" data-respondelement="respond" href="#comment-39975" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/dual-momentum-review/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

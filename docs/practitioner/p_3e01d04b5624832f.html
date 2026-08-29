@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Saving money with combination orders</title>
+<!-- source: https://www.sixfigureinvesting.com/2010/10/saving-money-with-combination-orders/ -->
+<h1>Saving money with combination orders</h1>
+
+<ul>
+<li>Creating a simple covered call position, buying the underlying equity and selling-to-open calls</li>
+<li>Creating a call bear option spread, selling the lower strike call, and buying the higher strike price.</li>
+<li>Closing out a covered call position<span style="color: #ffffff;">.</span></li>
+</ul>
+<div>Combo orders can save you money by:</div>
+<ul>
+<li>Reducing trading costs—typically commissions are reduced compared to executing the trades independently</li>
+<li>Beating the bid/ask spread.</li>
+<li>Eliminating the risk that the market will move against while you are in the middle of creating a two-part position</li>
+<li>Allowing you to explore the best price available on a multiple position sale.</li>
+<li>Circumventing the $0.05 minimum increments on some option prices<span style="color: #ffffff;">.</span></li>
+</ul>
+<div>Combo orders require that you specify whether you want a debit or a credit order.  Debit orders (sometimes abbreviated “Dr”) require you to put up cash to open the position, for example buying stock, or just going long on puts or calls.  Credit orders (sometimes abbreviated “Cr”) on the other hand deliver cash to you as a result of your trade.  Example credit transactions include closing out a covered call, selling stock short, or a bear option spread.</div>
+<div><span style="color: #ffffff;">.</span></div>
+<div>My mnemonic for keeping this straight:</div>
+<div>
+<ul>
+<li>Debit—I go into debt</li>
+<li>Credit—I get the credit<span style="color: #ffffff;">.</span></li>
+</ul>
+</div>
+<p>Figuring out the order price is the next challenge.   Your broker’s software might suggest a value—but you will probably leave at least a little money on the table if you use this number.  It’s like ordering your combo meal à la carte rather than buying the “meal deal”.   My goal is to set a price that doesn’t fill immediately but rather takes several minutes to execute.   When I see a delay I’m pretty sure I’ve gotten close to the best deal available.</p>
+<p>I have found that splitting the bid / asked prices, often called the “mid-price”, is a good starting point for combo orders. If that price doesn’t fill in a reasonable time you can always sweeten the offer.   So for example, if I want to create a covered call position with Apple:<span style="color: #ffffff;">.</span></p>
+<p>Buy Apple stock    bid 516.01, ask 516.03   (split bid/ask price is 516.02)<br/>
+Sell-to-open Apple S510 call   bid 17.30, ask 17.60  (split bid/ask price is 17.45)</p>
+<p>If your broker’s software suggests a value for this order it would be the ask price on the Apple (516.03) minus the bid on the call (17.30) — for a net debit order of 498.73.</p>
+<p>My initial limit price would be 516.02 minus 17.45  which is 498.57</p>
+<p>If you get a fill at this lower offer you have saved $0.16 per share.    If your order doesn’t fill after a reasonable amount of time, either the market has moved against you, or your price isn’t sweet enough. Your broker’s software should allow you to do a cancel and replace to change your price.  If not —you’ll need to cancel and re-submit to change the price.  Remember on a debit order lower is better for you and on a credit order higher is better.</p>
+<p>Partial fills can happen anytime you use a limit style order.   If you are ordering more than unit quantities (e.g., 1 call / 100 shares of stock, or single long/short option pairs) in a combo order you may see only a part get filled.  For example, if I want to buy 300 shares of USO and sell-to-open 3 calls the exchange might execute only one third or two-thirds of your order.</p>
+<p>Generally, partial fills are a good thing because it suggests you are right on the edge of what the market makers are willing to do.  Your commission costs are unchanged regardless of how many chunks your order gets divided into during the course of the day.   However, if the market closes, or the market moves against you before your order completely fills then you will have to pay another commission if you want to complete your order.  You can prevent partial fills by selecting  “All”  in the “All Or None” (AON) order conditions, but you may need to sweeten your offer in order to get a fill.  I generally put my combo orders in during the morning, and I rarely have a problem.  Either the market won’t bite at all, or if I get some partial fills the order generally completes.</p>
+<p>A few other points about combination orders:</p>
+<ul>
+<li>Orders that mix both stocks/ETFs and options are not automatically handled and generally don’t provide fast execution.  Actual humans have to get involved with these trades, so expect execution in minutes, not seconds after you submit your order.</li>
+<li>I have seen combo orders go stale  Even though they should have executed they don’t—maybe the brokers lose their sticky notes…   Canceling and reentering the order will usually trigger execution.</li>
+<li>You may see a “market” option in addition to the limit option with combo orders.  Avoid these.  Execution may be slow and you have no guarantee of what price your order will fill at.</li>
+</ul>
+<div>If spreads are tight and time is of the essence I’ll execute sequential orders rather than take the time to set up a combo order.  I’ll use market orders with very liquid, low spread stocks, ETFs, and options if I’m in a big hurry, but generally, I use limit orders with everything.</div>
+<div><span style="color: #ffffff;">.</span></div>
+<div>If you’re cheap and not in a hurry, or if the market is moving fast and you’re trying to create spread-beating, multi-sided positions (e.g., for dividend capture) then combo orders are the way to go.</div>
+<div></div>
+

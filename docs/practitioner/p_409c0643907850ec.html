@@ -1,0 +1,223 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Resourcing a Triangulated Stat Arb Operation as a Solo Trader</title>
+<!-- source: https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/ -->
+<h1>Resourcing a Triangulated Stat Arb Operation as a Solo Trader</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access" id="post-136178">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">June 8, 2026</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Resourcing a Triangulated Stat Arb Operation as a Solo Trader</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="ipa-media gb-media-81e19d89" data-media-id="136205" decoding="async" fetchpriority="high" height="640" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph"><em>Part 6 of 6: Statistical Arbitrage for Independent Traders</em></p>
+<p class="wp-block-paragraph">Previously:</p>
+<ul class="wp-block-list">
+<li><a href="https://robotwealth.com/a-tale-of-two-prices/" rel="noreferrer noopener" target="_blank">​A Tale of Two Prices </a>(the core idea of stat arb)​</li>
+<li><a href="https://robotwealth.com/moneyball-finding-undervalued-pairs-using-unconventional-metrics/" rel="noreferrer noopener" target="_blank">​Moneyball </a>(finding undervalued pairs using unconventional metrics)​</li>
+<li><a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/" rel="noreferrer noopener" target="_blank">The Winter of our Pairs Trading Discontent</a> (problems, limitations, frustrations)</li>
+<li><a href="https://robotwealth.com/the-metamorphosis/">The Metamorphosis </a>(from pairs to portfolio)</li>
+<li><a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/">When is a Mispricing Not a Mispricing?</a> (something looks mispriced… why?)</li>
+</ul>
+<p class="wp-block-paragraph">At its simplest, stat arb is a bet on convergence: two related stocks drift apart, and you bet on them coming back together.</p>
+<p class="wp-block-paragraph">Pairs trading is the canonical version of that bet, but it’s wasteful for a solo operator. Triangulated Stat Arb builds a clean universe of good pairs, flattens each one into per-ticker views, and aggregates across pairs to find tickers that are mispriced. You trade a portfolio of tickers rather than pairs.</p>
+<p class="wp-block-paragraph">In <a href="https://edgealchemy.robotwealth.com/p/treasure-island"></a><a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/">When is a Mispricing Not a Mispricing?</a> I described the three pieces of that approach: good pairs as the foundation, triangulation and consistency to extract the juice from those pairs while discarding the pulp, and volume, news, and event features to avoid the traps (pairs that don’t converge).</p>
+<p class="wp-block-paragraph">In this article, I want to show you what it looks like when you properly resource all three pieces.</p>
+<p class="wp-block-paragraph">A note before we start. I’m going to walk through the three pieces conceptually rather than hand you the implementation. There are two reasons. First, the broad methodology is the part that generalises regardless of your constraints. So you should come out of this with a clear picture of what each piece does, where the leverage is, and what makes the whole thing work. The exact filters, scoring weights, and cutoffs are operational/implementation choices that depend on your objectives and constraints. Also, the broad methodology is what I’m happy to talk about here. The implementation details don’t belong in public.</p>
+<p class="wp-block-paragraph">Two more things worth mentioning up front. First, I want you to notice a clear hierarchy of what adds the most bang for your buck. I’m going to highlight which pieces do most of the work and which add incremental value at the margin. Not all three pieces pull equal weight! You can get quite far with only one or two of the most important pieces, and for a solo trading operation, it’s not obvious that the marginal performance improvements justify the added operational overhead. That’s very much a personal thing and depends on your constraints. Second, Euan and I have been trading this live for a few months now. The production version is what I’m talking about throughout.</p>
+<p class="wp-block-paragraph">OK. Three pieces, in order of importance.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<h2 class="wp-block-heading">Good Pairs (the foundation)</h2>
+<p class="wp-block-paragraph">Pair selection is the load-bearer. If the universe of pairs is rubbish, nothing downstream saves you. If it’s good, the rest of the work adds value.</p>
+<p class="wp-block-paragraph">In our framework, two metrics define a pair’s quality. The first measures frictionless returns to trading mean-reversion on the spread over the lookback window. Does buying the cheap asset and selling the rich one make money in a frictionless setting? Some spreads diverge and stay diverged. Their reversion-factor score is low or negative, and we want to steer clear of those.</p>
+<p class="wp-block-paragraph">The second measures how consistently the spread tends to converge after it’s diverged. Did the spread drift apart for the entire formation period, and then randomly come together at the end of the period? Or did it reliably converge after diverging?</p>
+<p class="wp-block-paragraph">Put them together and you get a decent filter for the things we care about – a pair of stocks that tends to reliably drift apart and come back together enough that you can trade it profitably.</p>
+<blockquote class="wp-block-quote is-layout-flow wp-block-quote-is-layout-flow">
+<p class="wp-block-paragraph">Notice how we measured the thing we care about directly. Not a cointegration test as far as the eye can see!</p>
+</blockquote>
+<p class="wp-block-paragraph">There’s more information about this approach in <em><a href="https://robotwealth.com/moneyball-finding-undervalued-pairs-using-unconventional-metrics/" rel="noreferrer noopener" target="_blank">Moneyball – Finding Undervalued Pairs Using Unconventional Metrics</a></em>.</p>
+<p class="wp-block-paragraph">We typically export the top 10% of pairs from this ranking system, provided those pairs make economic sense (broadly exposed to similar risk factors). We do this every month, based on the prior 24 months of history.</p>
+<p class="wp-block-paragraph">Within this top 10%, we split into 5 tiers. Here are the before-cost returns to trading a simple pairs strategy on each tier, equal-weighted (you couldn’t trade this; it’s just to illustrate the effectiveness of the ranking system):</p>
+<figure class="wp-block-image size-large"><img alt="" class="wp-image-136202 perfmatters-lazy" data-sizes="(max-width: 1280px) 100vw, 1280px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145602/pair_returns_by_tier-1280x640.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145602/pair_returns_by_tier-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145602/pair_returns_by_tier-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145602/pair_returns_by_tier-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145602/pair_returns_by_tier-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145602/pair_returns_by_tier-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145602/pair_returns_by_tier.webp 1456w" decoding="async" height="640" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1280'%20height='640'%20viewBox='0%200%201280%20640'%3E%3C/svg%3E" width="1280"/></figure>
+<p class="wp-block-paragraph">The ranking system does a good job. Tier 1 sits comfortably at the top; the middle tiers are messier; Tier 5 is meaningfully worse than the rest.</p>
+<p class="wp-block-paragraph">Quantifying risk-adjusted returns to each tier:</p>
+<ul class="wp-block-list">
+<li>Tier 1 (best): Sharpe 1.6</li>
+<li>Tier 2: 1.3</li>
+<li>Tier 3: 1.4</li>
+<li>Tier 4: 1.1</li>
+<li>Tier 5 (worst): 0.42</li>
+</ul>
+<p class="wp-block-paragraph">About a 4x Sharpe spread between top and bottom, with the middle tiers noisy but reasonably high performing (at least in terms of Sharpe… total returns are low… one of the drawbacks to trading pairs… more on the solution to this below).</p>
+<p class="wp-block-paragraph">That isn’t a small effect. It dwarfs anything you can squeeze out of the signal-side work that comes later in the pipeline. Good pairs are the basis for everything.</p>
+<p class="wp-block-paragraph">There’s plenty of subtlety in how the pipeline generates and refreshes the pair universe. Liquidity filters, industry constraints, refresh cadence, handling delistings and acquisitions. All things you need to take some care with.</p>
+<p class="wp-block-paragraph">But the main thing is: the work that pays off here is the slow, careful upstream work of producing a clean, ranked pair universe.</p>
+<p class="wp-block-paragraph">Yes, it’s more painstaking and requires a lot more thought than asking Claude to blast through a million or so cointegration tests, but it actually works. And critically, most of the alpha you’ll capture across the rest of the pipeline is already determined by the time the universe is set.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<h2 class="wp-block-heading">Triangulation and Consistency</h2>
+<p class="wp-block-paragraph">Once you’ve got a universe of good pairs, you want to stop thinking in pairs and start thinking in tickers. This solves the main drawbacks of pairs trading that hamstring the solo trader (capital inefficiency and signal wastage). See <em><a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/" rel="noreferrer noopener" target="_blank">The Winter of our Pairs Trading Discontent</a></em> for details.</p>
+<p class="wp-block-paragraph">For each ticker that appears in the universe, look at every pair it sits in. Each pair gives you a per-ticker view (long the cheap side, short the expensive side) and a z-score that says how far the spread is from its rolling mean. Aggregate those per-ticker views across all the pairs the ticker appears in, and the aggregated view is what you trade. More information about this approach is in <em><a href="https://robotwealth.com/the-metamorphosis/">The Metamorphosis</a></em>.</p>
+<p class="wp-block-paragraph">Done well, the network signal is a meaningful improvement over trading pairs. If multiple pairs all agree that a ticker is mispriced, you’ve got stronger evidence than any one pair could give you on its own.</p>
+<p class="wp-block-paragraph">Done naively, it’s not much better. Two ways to break it:</p>
+<ol class="wp-block-list">
+<li><strong>Naive averaging</strong>. If you take the mean of every pair’s z-score for a given ticker, the bad pairs cancel the good pairs, and you end up with a noisy aggregate. Our production aggregation is quality-weighted: better pairs contribute more, worse pairs contribute less.</li>
+<li><strong>Ignoring depth and consistency</strong>. Tickers that appear in many pairs aren’t automatically more reliable. A ticker in three high-quality pairs may give you a stronger signal than a ticker in twenty mediocre ones. Production aggregation accounts for both depth (how many pairs is the ticker in?) and consistency (do the pairs agree on direction?), as well as source pair quality.</li>
+</ol>
+<p class="wp-block-paragraph">The other operational decision is what to do once you’ve got a ticker-level signal.</p>
+<p class="wp-block-paragraph">The signal is most informative in the tails. The middle of the distribution tends to be noise. Trading the extremes, rather than every name in the universe, materially improves the result. This is analogous to the pairs trade – you wouldn’t enter a pair trade at a z-score of 0.5.</p>
+<p class="wp-block-paragraph">Here’s a plot of cost-free returns to trading a portfolio of the top 50 pairs vs trading them as a triangulated long-short portfolio of mispriced legs vs including depth and consistency:</p>
+<figure class="wp-block-image size-large"><img alt="" class="wp-image-136206 perfmatters-lazy" data-sizes="(max-width: 1280px) 100vw, 1280px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08151015/pairs_portfolio_consistency-1280x640.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08151015/pairs_portfolio_consistency-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08151015/pairs_portfolio_consistency-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08151015/pairs_portfolio_consistency-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08151015/pairs_portfolio_consistency-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08151015/pairs_portfolio_consistency-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08151015/pairs_portfolio_consistency.webp 1456w" decoding="async" height="640" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1280'%20height='640'%20viewBox='0%200%201280%20640'%3E%3C/svg%3E" width="1280"/></figure>
+<p class="wp-block-paragraph">A portfolio of mispriced legs vastly outperforms trading pairs. Considering consistency and depth squeezes out a bit more. And it’s much more capital efficient for the solo operator.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<h2 class="wp-block-heading">Don’t Get Run Over</h2>
+<p class="wp-block-paragraph">Our Triangulated Stat Arb signal tells us that</p>
+<ul class="wp-block-list">
+<li>A spread diverged</li>
+<li>Which ticker caused the divergence</li>
+</ul>
+<p class="wp-block-paragraph">But it can’t tell you <em>why</em> a spread diverged. A spread that says “short the expensive leg” looks the same whether the expensive leg ran up because of forced flow that’ll reverse or because of new information that just repriced the stock. The first situation is a good fade. The second… not so much.</p>
+<p class="wp-block-paragraph">Distinguishing those situations is the third piece of the puzzle.</p>
+<p class="wp-block-paragraph">The natural places to look are volume, news, and event data. Each of these can, in principle, provide clues to whether a divergence is technical (fadable) or fundamental (don’t fade).</p>
+<p class="wp-block-paragraph">The research landed in some places I didn’t expect.</p>
+<p class="wp-block-paragraph">The volume work is parked. We chased a volume-asymmetry signal, based on the intuition that forced selling on the cheap leg looks different from informed buying on the expensive leg. The effect was real at the pair level. But when we plugged it into the production strategy, the effect was tiny. Most of what volume was telling us was already captured by the upstream pair-quality work. </p>
+<p class="wp-block-paragraph">There’s a deeper write-up on why aggregation from pairs to tickers broke the signal, but the punchline is that volume features aren’t currently in the live strategy. If I were just trading pairs, I’d definitely include our volume feature. But it doesn’t add much to our Triangulated Stat Arb portfolio beyond what we’re already getting elsewhere.</p>
+<p class="wp-block-paragraph">The win has come from a different angle: an earnings filter. When there’s an earnings surprise in a spread’s formation period, the spread will look stretched in the direction of the surprise. But the stock that’s moved in such a scenario has repriced on something real, and is therefore not something you want to fade. The mechanism makes a lot of sense, and it’s supported by the data. It gives another small but meaningful bump in the live strategy.</p>
+<p class="wp-block-paragraph">This is a plot of three-day reversion (3-day forward returns signed by the negative of the z-score) when there’s an earnings surprise in the z-score’s formation period. When the z-score is stretched in the direction implied by the surprise (red bars), we see significantly less reversion. For large surprises, the reversion is actually negative on average (that is, we see <em>continuation</em> – a manifestation of the post-earnings drift effect).</p>
+<figure class="wp-block-image size-large"><img alt="" class="wp-image-136204 perfmatters-lazy" data-sizes="(max-width: 1280px) 100vw, 1280px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145916/earnings_effect-1280x640.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145916/earnings_effect-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145916/earnings_effect-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145916/earnings_effect-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145916/earnings_effect-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145916/earnings_effect-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145916/earnings_effect.webp 1456w" decoding="async" height="640" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1280'%20height='640'%20viewBox='0%200%201280%20640'%3E%3C/svg%3E" width="1280"/></figure>
+<p class="wp-block-paragraph">Adding an earnings filter:</p>
+<figure class="wp-block-image size-large"><img alt="" class="wp-image-136205 perfmatters-lazy" data-sizes="(max-width: 1280px) 100vw, 1280px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="640" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1280'%20height='640'%20viewBox='0%200%201280%20640'%3E%3C/svg%3E" width="1280"/></figure>
+<p class="wp-block-paragraph">News features more broadly are the next frontier. The intuition that worked for earnings should generalise. Any surprise event that moves one leg of a spread on genuinely new information probably does damage to the mean-reversion thesis. That’s next.</p>
+<p class="wp-block-paragraph">While the third piece clearly matters, we see smaller improvements than you would expect. That’s because the pair-quality work upstream is doing a lot. It’s 80-90% of the game, and that becomes clearer every time something that “should” work provides incrementally smaller gains.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">That’s the methodology. Here’s what it looks like resourced.</p>
+<p class="wp-block-paragraph">In RW Pro, we have an API serving end-of-day and hourly intraday spreads data to support live trading, as well as historical feeds to support the research effort.</p>
+<p class="wp-block-paragraph">The upstream pipeline that produces all of this is itself worth mentioning. Generating a monthly pair universe from a few thousand candidate stocks requires substantial data ingestion, cleaning, and ranking computation across hundreds of thousands of candidate pairs. The data and compute alone would cost more than a year’s RW Pro subscription, before you count the time to build and maintain the infrastructure. We’ve done that work once and run it for the group.</p>
+<p class="wp-block-paragraph">The data is for exploration as much as for trading. The community works in a research environment that holds the full historical datasets the methodology was built on, and they can poke at any of it however they like. If you want to test your own hypothesis about what makes a pair “good,” or what extra feature might tighten the third piece, or how you might construct your signals differently, the data is there.</p>
+<p class="wp-block-paragraph">The research environment also holds an example implementation notebook, and surprisingly, this is the part of the offering I’m proudest of.</p>
+<p class="wp-block-paragraph">There’s no canonical signal that everyone trades. Different account sizes, different cost structures, different risk tolerances, different operational capacities all need different configurations. Members can try the configuration knobs (universe size, weighting scheme, no-trade buffer, signal threshold, leverage, and others) and see what fits their own situation.</p>
+<p class="wp-block-paragraph">This is more important than it sounds. The underlying framework and research are consistent, but the implementation gets configured to fit each member’s situation. This forces a deeper understanding that builds better traders in the long run.</p>
+<p class="wp-block-paragraph">There’s no “one size fits all” solution; only trade-offs to be understood and navigated. The exited-startup-founder trading a $5M portfolio full-time has different constraints from the working father-of-two who’s trading $100k on a less-than-part-time basis. We have a community of traders not only running solo operations of all sizes and flavours, but understanding exactly what they’re trading, why they’re trading it, and what the trade-offs are. In short, we’re developing people’s independence. Regardless of what happens in the future, they’ll always have the ability to catch a fish because they understand not only how to be successful anglers but also how to captain their own boat.</p>
+<p class="wp-block-paragraph">The work that produced this didn’t happen in a vacuum either. The research unfolded over six months in the membership, with the community watching every step, asking questions that pushed the work forward, and contributing their own research when they spotted something we’d missed. Some of those contributions are in the live strategy now. The work flows both ways, and everyone benefits.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<p class="wp-block-paragraph">So that’s what it looks like when the three pieces are properly resourced.</p>
+<p class="wp-block-paragraph">The hierarchy is one of diminishing returns. Pair selection at the universe level gets you most of the way. Aggregation across pairs adds a meaningful uplift on top. Depth- and consistency-aware filtering refines that with a smaller uplift, and the earnings filter adds something smaller still. Volume sits parked, and news is the next frontier. The pattern is consistent: each successive piece pays a smaller marginal return on the time you spend improving it. Pair selection is where the whole thing either lives or dies.</p>
+<p class="wp-block-paragraph">The Triangulated Stat Arb approach is what makes equity pairs worth trading as a solo operator. The infrastructure (the data API, the research environment, the example implementations notebook, the community pulling on the same questions) is what makes it realistic without becoming a full-time engineering job.</p>
+<p class="wp-block-paragraph">If you’ve followed the series this far, you’ve now got the conceptual map. If you want to see what the resourced version looks like in motion, the door is <a href="https://robotwealth.com/rw-pro/">open</a>.</p>
+<p class="wp-block-paragraph"></p>
+<div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>pair trading</span>, <span>stat-arb</span>, <span>triangulated stat arb</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130666 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/"><img alt="The Winter of our Pairs Trading Discontent: Problems, limitations, frustrations" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130667" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

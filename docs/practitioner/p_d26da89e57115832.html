@@ -1,0 +1,406 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>https://www.aqr.com/insights/perspectives/lies-damned-lies-and-data-mining</title>
+<!-- source: https://www.aqr.com/insights/perspectives/lies-damned-lies-and-data-mining -->
+<h1></h1>
+
+<div class="article-page page-body">
+<div class="article-page__header__container">
+<div class="container">
+
+<!-- icons -->
+<div class="article-page__header__secondary">
+<div>
+</div>
+<div class="article-page__icons__container" data-script="shareIcons" style="">
+<div class="article-page__ellipsis">
+<a class="icon-more"></a>
+</div>
+<div class="article-page__icons">
+<a class="icon-share" data-analytics='{"intCategory":"article","intAction":"share","intLabel":"Lies, Damned Lies, and Data Mining","event":"interaction_event"}' data-script="clickTracker" title="Share"></a>
+<a class="icon-subscribe" data-analytics='{"intCategory":"global","intAction":"subscribe","intLabel":"Subscribe","event":"interaction_event"}' data-script="clickTracker" href="/MyAQR/My-Subscriptions" title="Subscribe"></a>
+</div>
+<div class="article-page__icons__sub">
+<a class="icon-twitter" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"twitter","event":"interaction_event"}' data-script="clickTracker" href="https://twitter.com/share?text=Lies,%20Damned%20Lies,%20and%20Data%20Mining&amp;url=https%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fLies-Damned-Lies-and-Data-Mining&amp;via=AQRCapital" target="blank"></a>
+<a class="icon-linkedin" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"linked in","event":"interaction_event"}' data-script="clickTracker" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fLies-Damned-Lies-and-Data-Mining&amp;title=Lies,%20Damned%20Lies,%20and%20Data%20Mining&amp;summary=Data+mining%2c+finding+in-sample+returns+that+are+not+real%2c+but+random%2c+is+a+real+problem+in+our+field%2c+with+plenty+of+dangers.+Cliff+Asness+discusses+the+issue+and+the+recent+accusation+that+the+industry+has+data+mined+factors" target="blank"></a>
+<a class="icon-email" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"email","event":"interaction_event"}' data-script="clickTracker" href="mailto:?subject=AQR%20%7c%20Lies,%20Damned%20Lies,%20and%20Data%20Mining&amp;body=Lies,%20Damned%20Lies,%20and%20Data%20Mining%0ahttps%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fLies-Damned-Lies-and-Data-Mining"></a>
+</div>
+</div>
+</div>
+<!-- icons -->
+</div>
+</div>
+<div class="article-nav" data-script="articleNav" id="article-nav" v-bind:class="[{ _open: open }, { _fix: scrolled }, { _empty: empty }]">
+<div class="container">
+<div class="article-nav__left">
+<span class="article-nav__current text--default" v-on:click="openClose()">
+<span class="article-nav__section-number" v-bind:class="{ _showing: numberSection }">${ numberSection }</span>
+<span class="article-nav__section-title">${ text }</span>
+<i class="icon-caret"></i>
+</span>
+</div>
+<div class="article-nav__right">
+<div class="article-page__header__secondary">
+<div class="article-page__icons__container" v-bind:class="[{ active: shareOpen }, { open: linksOpen }]">
+<div class="article-page__ellipsis">
+<a class="icon-more" v-on:click="showIcons"></a>
+</div>
+<div class="article-page__icons">
+<a class="icon-share" title="Share" v-on:click="showHideShare"></a>
+<a class="icon-subscribe" data-analytics='{"intCategory":"global","intAction":"subscribe","intLabel":"Subscribe","event":"interaction_event"}' data-script="clickTracker" href="/MyAQR/My-Subscriptions" title="Subscribe"></a>
+</div>
+<div class="article-page__icons__sub">
+<a class="icon-twitter" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"twitter","event":"interaction_event"}' data-script="clickTracker" href="https://twitter.com/share?text=Lies,%20Damned%20Lies,%20and%20Data%20Mining&amp;url=https%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fLies-Damned-Lies-and-Data-Mining&amp;via=AQRCapital" target="blank"></a>
+<a class="icon-linkedin" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"linked in","event":"interaction_event"}' data-script="clickTracker" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fLies-Damned-Lies-and-Data-Mining&amp;title=Lies,%20Damned%20Lies,%20and%20Data%20Mining&amp;summary=Data+mining%2c+finding+in-sample+returns+that+are+not+real%2c+but+random%2c+is+a+real+problem+in+our+field%2c+with+plenty+of+dangers.+Cliff+Asness+discusses+the+issue+and+the+recent+accusation+that+the+industry+has+data+mined+factors" target="blank"></a>
+<a class="icon-email" data-analytics='{"intCategory":"social","intAction":"share","intLabel":"email","event":"interaction_event"}' data-script="clickTracker" href="mailto:?subject=AQR%20%7c%20Lies,%20Damned%20Lies,%20and%20Data%20Mining&amp;body=Lies,%20Damned%20Lies,%20and%20Data%20Mining%0ahttps%3a%2f%2fwww.aqr.com%2fInsights%2fPerspectives%2fLies-Damned-Lies-and-Data-Mining"></a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="container article-nav__toc-wrap">
+<span class="article-nav__inner-title">
+                Lies, Damned Lies, and Data Mining
+            </span>
+</div>
+<div class="article-nav__outside"></div>
+</div>
+<div class="article-page__content">
+<div class="article-page__body">
+<div class="article-page-body">
+<div class="container">
+<div class="article-page-body__wrapper richtext imageMaxWidth">
+<p>We are the whipping boy for<a href="https://www.bloomberg.com/news/articles/2017-04-06/lies-damn-lies-and-financial-statistics"> a recent article</a> on the dangers of data mining in our field. And the whipping is delivered largely based on an unsupported shot taken by my frequent foil and sparring partner, Rob Arnott. Before I take on this attack<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">1</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">1</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;"> I’m repeatedly told that the smart thing to do when you get press you don’t like is to ignore it. Consultants and other “professionals” say things like “you’ll only draw more attention to it.” Well that’s probably the right strategy when that bad press has a good point (not the case here!). It might even be the right strategy when that bad press is utterly false (the case here!). But, for better or worse, silence in the face of an unanswered falsehood, from people who should know better, is just never going to be how I roll… Did that sound cool? The “roll” thing? I was trying for cool.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+ we need to back up a bit.</p>
+<p>Data mining, that is searching the data to find in-sample patterns in returns that are not real but random, and then believing you’ve found truth, is a real problem in our field. Random doesn’t tend to repeat so data mining often fails to produce attractive real life returns going forward. And given the rewards to gathering assets, often made easier with a good “backtest,” the incentive to data mine is great. We’ve talked about it endlessly for years and written on it many times. But we’re not nihilists who believe everything is data mining.<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">2</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">2</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;">For instance, <a href="https://www.aqr.com/cliffs-perspective/it-is-not-data-mining-not-even-close" style="color: #009fdf; background-color: #ffffff; margin: 0px; padding: 0px; border: 0px;"></a><a href="/Insights/Perspectives/It-Is-Not-Data-Mining-Not-Even-Close">we defend</a> the main Fama-French factors and momentum from the data mining charge.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+, <span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">3</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">3</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span>The closest person I ever met to believing nearly <a href="http://www.cfapubs.org/doi/abs/10.2469/faj.v38.n2.29" style="background-color: #ffffff; margin: 0px; padding: 0px; border: 0px;">everything was data mining</a> was Fischer Black. I remember a colleague presenting a model and Fischer kept, puckishly, saying “it’s an interesting DM model.” None of us could figure out what he meant. You see these were the pre-Euro days and we all kept thinking “but this model isn’t about the Deutsche Mark?” But, it was Fischer so we all kept assuming he knew something we didn’t. Eventually he told us what he meant. It was a bit of a let-down.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+ We are more likely to believe in-sample evidence when it’s also accompanied by strong out-of-sample evidence (across time, geography, and asset class<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">4</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">4</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;"> Here’s <a href="https://www.aqr.com/library/journal-articles/value-and-momentum-everywhere" style="color: #009fdf; background-color: #ffffff; margin: 0px; padding: 0px; border: 0px;"></a><a href="/Insights/Research/Journal-Article/Value-and-Momentum-Everywhere">an example</a> of all three.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+) and an economic story that makes sense.<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">5</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">5</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;"> And hopefully even leads to a theoretical model with other testable implications that can back-up or refute the story.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+ In that case, and barring exceptionally convincing evidence something has changed, we not only believe in it but will stick to it like grim death through its inevitable ups and downs. After many years of research and managing portfolios, we believe there are at least<a href="/sitecore/service/notfound.aspx?item=web%3a%7bBCE62DA7-031C-4622-9F69-54FB34C4FB1B%7d%40en"> </a><a href="/Insights/Research/Journal-Article/Understanding-Style-Premia">four widely known types of factors</a> that are real (that is, they don’t just look good because of data mining).<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">6</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">6</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;">Note, AQR does more than just straight factor investing, and I am not implying it’s this simple or limited everywhere. In fact, even in factor investing there are some things we think are still “alpha”, but we don’t write about them, and Rob wouldn’t know about them to critique them! We also think what you believe in is only part of the battle. There is a lot of “craftsmanship,” for want of a better word, in how one implements these beliefs; a discussion for another day.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+,<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">7</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">7</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span>For stocks it’s actually only three: value, momentum, and quality. We lose one for stocks as the fourth, carry, is essentially the same as value for equities (it differs in important ways for bonds, FX, and commodities).</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+,<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">8</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">8</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span>Now, the number of ways we measure these factors is indeed larger than just three. That is, we use many separate measures for each of the three themes of value, momentum, and quality. That is not data mining. It’s about measuring the concept robustly – almost exactly the opposite action in spirit. Data mining is about overfitting randomness or errors. Since every measure of a factor contains error, averaging across a host of similar related measures can reduce those errors. It’s a separate more minor gripe but Robert Novy-Marx’s comments on our work (only touched on in this article which confusingly excerpts a longer back-and-forth) misses this point entirely.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+ People are often shocked that we believe in only a few core investment concepts – somehow they think there are many more. Nope. For instance: No small firm effect. No January effect. No Super Bowl effect – though if you do believe that indicator, you should be shorting stocks this year because of Tom Brady; sorry if that’s deflating.</p>
+<p>But all of this didn’t stop us from being the cannon fodder in this<a href="https://www.bloomberg.com/news/articles/2017-04-06/lies-damn-lies-and-financial-statistics"> new article</a>. Are we data miners? Heck no. We’ve always explicitly stood for the opposite. The list of things with great backtests we don’t believe in is legion, and the ones we do believe in have, again, tended to work through time, in a multitude of asset classes and across geographies, with many of these being out-of-sample tests of the original findings. But, when you are trying your best to come up with a story, you find people who will say what you need them to (a journalistic version of data mining!) about someone vaguely interesting (I guess we’re vaguely so). So the reporter asked a non-objective guy with whom I’ve feuded to opine on me and by extension AQR.<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">9</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">9</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;"> And one other guy who used to work with us, it didn’t work out, and now works with a rival – a more minor issue but definitely a pattern (two for two) for this article. Isn’t there anyone on Earth he could’ve found who thinks I’m ok? Was my mom not taking his calls? There’s a dude I had a playground fight with in 3rd grade. I called him names and he beat the crap out of me. I assume he was next on this reporter’s list.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+, <span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">10</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">10</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span>By the way, it’s ironic that Gross Profitability is one of the major factors Rob thinks is data mining and is also the major academic contribution of Robert Novy-Marx, the other guy cited in the article. Can’t they just argue with each other, cut out the middle-man, and leave me out of it?</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+<span> </span>It’s no secret to readers of this perspectives column, and our work in general, that we have had an intellectual dispute with Rob Arnott on the subject of whether the main factors commonly discussed are something one should time (get in/out based on how expensive they look versus history).<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">11</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">11</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;">This is our second big public dispute. The <a href="/-/media/AQR/Documents/Insights/Perspectives/Non-Cap-Weighted-Indexes.pdf">first came</a><a href="https://www.aqr.com/-/media/files/perspectives/non-cap-weighted-indexes.pdf?la=en&amp;hash=2C3A5F70F7EB2E876AF6EE1B9835C24D79CE2941&amp;hash=2C3A5F70F7EB2E876AF6EE1B9835C24D79CE2941" style="color: #009fdf; background-color: #ffffff; margin: 0px; padding: 0px; border: 0px;"> </a>when Rob renamed other people’s work on value investing as “fundamental indexing” and declared it was barely related to value (he’s since migrated that story somewhat back towards reality without ever acknowledging what he asserted for the first few years). Ironically part of our current dispute over factor timing is him finding value works (weakly) for this timing task and me pointing out, yet again, that yes, that’s just systematic value investing itself, not anything new. Plus ça change…</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+ A secondary debate has indeed been whether some of the main factors in finance<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">12</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">12</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;"> Sadly this is far from unique to AQR – I wish they were just ours!</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+ are the result of long-term data mining. Well, perhaps because he lost the first point, Arnott upped the secondary topic to primary and unleashed on me in the Businessweek piece, leading with a tiny bit of honey about my “<a href="https://www.youtube.com/watch?v=rl_NpdAy3WY">outstanding</a>” prior work but then bringing on a big bowl of vinegar flavored whoop-ass.<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">13</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">13</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;">That was a mixed metaphor including honey, vinegar flavored whoop-ass whatever that is… Ok, it really doesn’t hold together, sorry.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+ Rob says,</p>
+<p style="margin-right: 100px; margin-left: 100px;"> <em>“I think Cliff has done some outstanding work over the years,” but adds that he’s “insufficiently skeptical about the pervasiveness of data-mining and its impact even in the factors he uses.”</em></p>
+<p>That is, he says I’m a data-miner. That may seem like an innocuous little comment actually prefaced with a kind of compliment. It’s not. It’s a damning accusation that’s provably false, backwards in fact. Worse, it’s a falsehood meant to deflect and confuse as it kind of rhymes with a separate dispute we’ve been having, the “secondary debate” mentioned above – a dispute Rob’s been ducking. So, if you just read Rob’s comment on its own by most peoples’ standards I’m overreacting here. Admittedly that’s kind of my go-to move. But, in the broader context, the ongoing debate and what a serious and backwards “shot” he really took, I think I’m reacting appropriately. Of course, I usually think that…</p>
+<p>After Rob’s quote the article provides a response from me. They actually ran a somewhat truncated version of what I said. Here is the verbatim response I sent the reporter to Rob’s above comment,</p>
+<p style="margin-right: 100px; margin-left: 100px;"><em>"Rob and AQR largely believe in a very similar set of factors like value, low risk, and momentum, to which we think we've both applied a lot of a priori skepticism.  Protestations otherwise are marketing tactics and reflect an ongoing confusion between factor timing, which he believes in more than we do, and long term factor efficacy."</em></p>
+<p>That kind of says it all but way too briefly and calmly for my taste; hence, this longer version you’re reading now.</p>
+<p> In the first part of the above quote I was making a very simple point. Rob and Research Affiliates publicly claim to believe in, and run investment products based on, factors that largely overlap with AQR. Now, for competitive reasons I wish they’d stop, but it’s a free country. Value, low risk, and momentum are all things to various degrees we both believe in, and when it comes to investing in equities, it covers a large part of what each of us do.<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">14</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">14</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;"> It’s likely that we do it in different proportions with different specific implementations, but this is still about basically shared beliefs.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+<span style="line-height: 0; vertical-align: super;">  </span>Check out how <a href="https://www.researchaffiliates.com/en_us/strategies/rafi/rafi-multi-factor.html">his firm describes </a>one of its products. What exactly does he claim we believe in because of data mining that isn’t in his list here? I mean, if I and AQR are data miners, then <a href="https://www.youtube.com/watch?v=OcC1f1jqCPI">double data-mining on you</a> Rob!<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">15</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">15</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;">In fact, despite our several major disputes and his off-hand accusation here, “data miner” is not something I’d call Rob (nor would I say what Captain Kirk says in the link!)</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+ That he’d accuse us of being “insufficiently skeptical” about the dangers of data mining isn’t just at odds with our long history of the exact opposite, but bat**** crazy when it’s mostly the stuff he believes in too. I guess he’s hoping nobody noticed. I noticed. I notice things, particularly when they are about me and they are so very noticeable.<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">16</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">16</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;"> Now, if you want to accuse me of something that has more bite, may I suggest “Cliff gets way too emotional and, even if he’s usually right, his temper tantrums really sometimes hurt him”? Yeah, you got me. I snuck in the “even if he’s usually right” part. That’s optional, but I recommend it.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+</p>
+<p> Let me be clear. Rob doesn’t actually think the factors we at AQR believe in are data mined any more than he believes his own are data mined. That’s a smokescreen. What Rob is doing here is the time honored strategy of the best defense is a good offense combined with the old adage about pounding the table when you’ve got nothing. Separate from this kerfuffle Rob has actually accused most of the field of applied finance of data mining in a very specific way and we’ve shown he’s wrong (at least massively exaggerating). Apparently he doesn’t like that so we have this deflection. Please note, he’s not wrong that data mining is a big problem, everybody reasonable thinks that certainly including me. Whoever shouts it louder at others doesn’t necessarily believe it more. But his very specific accusation against the field about a very specific type of data mining has no teeth. Unfortunately to understand this we have to get much more into the geeky weeds, sorry…</p>
+<p>Rob has made claims in various papers that some of the major factors that much of the academic/practitioner world (not just AQR, and oddly again including him) has found to work historically are not just due to generic data mining but to a highly specific form of data mining he has uncovered. This is important. He’s not just crying that people data mine, which is always a dangerous possibility. He thinks he’s uncovered precisely the error they’re making. The highly specific type of data mining that he alleges is that some of these factors have richened over the long haul leading to a one-time long term windfall to an investor in that factor (or, more likely, to the backtest of that factor). He claims researchers have mistaken this windfall for repeatable return. It’s a good story that can indeed apply at relatively short horizons and at the peaks or troughs of major factor bubbles/depressions. But as I <a href="/sitecore/service/notfound.aspx?item=web%3a%7b7986E3BB-2DE7-41FB-A301-802097F0074A%7d%40en"></a><a href="/Insights/Perspectives/My-Factor-Philippic">exhaustively show</a>, based on a technique from Rob and his colleagues’ own papers, his very strong assertions are just wrong. The effect he discusses just doesn’t affect the long term results enough to matter for the factors in question. In a nutshell, if a factor richens by 100% over 50 years (let’s ignore compounding), a simplistic, and ultimately wrong, approach says the investor gets an extra 2% a year from this richening (this is indeed the approach Rob and colleagues focus on assuming the investor gets the full 2%). If true, this could indeed bias researchers to find and love factors that have richened. But, as Rob <a href="https://www.researchaffiliates.com/documents/How-Can-Smart-Beta-Go-Horribly-Wrong_pdf.pdf">shows himself </a> <span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">17</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">17</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;">If you’re curious look at the “regression coefficient-adjusted” lines <a href="https://www.researchaffiliates.com/en_us/publications/articles/442_how_can_smart_beta_go_horribly_wrong.html" style="color: #009fdf; background-color: #ffffff; margin: 0px; padding: 0px; border: 0px;">here</a> in the tables that he, for some reason, presents but then promptly ignores as he then repeatedly, and only, refers to the greatly exaggerated results instead.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+(but then promptly ignores) if a factor richens like this you don’t get nearly 2% a year in reality, and that difference is most severe for higher turnover factors (though the difference exists for them all). The factor at the end that is 100% more expensive than the factor at the beginning is composed of very different positions. It’s not a single asset that’s richened but rather turnover has led the factor investor to own a very different portfolio over time. As such, the investor in the richening factor benefits in a much smaller way as some, often a lot, of the richening didn’t happen to the stocks they actually owned but to the stocks the strategy ended up owning at the end.<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">18</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">18</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;">Turnover is perhaps the primary but not the only reason that factor richening does not add or subtract one for one from factor return. <a href="https://www.aqr.com/library/aqr-publications/are-defensive-stocks-expensive-a-closer-look-at-value-spreads" style="color: #009fdf; background-color: #ffffff; margin: 0px; padding: 0px; border: 0px;"></a><a href="/sitecore/service/notfound.aspx?item=web%3a%7bCABE6489-4628-4EF0-B1DE-401202FD9A12%7d%40en">Ilmanen, Nielsen, and Chandra (2015)</a> explore these other effects they call “wedges".</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+ When you adjust for this, over the long haul (like the 50+ years used by most credible researchers) none of the factors Arnott and crew examine are seriously harmed by adjusting for long-term richening. </p>
+<a href="https://www.researchaffiliates.com/documents/How-Can-Smart-Beta-Go-Horribly-Wrong_pdf.pdf">
+</a>
+<p>Essentially, despite them (very briefly) flagging the turnover issue themselves and presenting the outline of a way to deal with it (fleshed out in great detail and utilized in my <a href="/sitecore/service/notfound.aspx?item=web%3a%7b7986E3BB-2DE7-41FB-A301-802097F0074A%7d%40en"></a><a href="/Insights/Perspectives/My-Factor-Philippic">previously referenced</a> work), they then completely ignore all this and still scream “bad researchers have data mined over factor richening and we’re here to save the day!” They are saying that the entire rest of the field has missed something huge and important and has thus misled people. They say this despite their own evidence to the contrary that I expanded upon. I called him out <a href="/sitecore/service/notfound.aspx?item=web%3a%7b7986E3BB-2DE7-41FB-A301-802097F0074A%7d%40en"></a><a href="/Insights/Perspectives/My-Factor-Philippic">here</a> and in the last bullet <a href="/sitecore/service/notfound.aspx?item=web%3a%7b407F2932-C8C1-4541-ACDA-3F0D0B3B5CBC%7d%40en"></a><a href="/Insights/Perspectives/Factor-Timing-is-Hard">here</a> suggesting that they either retract their assertion or prove me wrong.<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">19</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">19</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;">Hey, if that can be done, I promise to acknowledge it and apologize. It’s certainly possible that the answer is somewhere in between his wild claims and the math I show (I’m certainly capable of missing something!).</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+<span style="line-height: 0; vertical-align: super;">  </span>He has ignored this as, in general, he references little relevant research by others and none of our recent work as he’s writing repeated breathless white papers (i.e., watch out for the crash - we’re at the 85th percentile!) rather than participating in give-and-take debate (I promise I’m really ok with both the give and the take as long as we are actually addressing each other’s points not just taking shots in the media). </p>
+<p>Let’s try to be super clear with a flowchart:</p>
+<p style="margin-right: 100px; margin-left: 100px; text-align: center;">Arnott accuses most of the industry (academics and practitioners) of a specific form of data mining based on their mistaking factor richening for true factor return.<span style="font-family: 'Times New Roman';">
+</span></p>
+<p style="margin: 0in 1.1in 10pt; text-align: center;"><span style="font-family: Calibri;">↓</span></p>
+<p><span style="font-family: 'Times New Roman';">
+</span></p>
+<p style="margin-right: 100px; margin-left: 100px; text-align: center;">Asness shows that this specific accusation is simply bad math (though, of course, acknowledging that other forms of data mining are always a concern). Asness repeatedly calls on Arnott to defend this specific broadside he undertook against academics and practitioners everywhere. Arnott, to date, declines.<span style="font-family: 'Times New Roman';">
+</span></p>
+<p style="margin: 0in 1.1in 10pt; text-align: center;"><span style="font-family: Calibri;">↓</span></p>
+<p><span style="font-family: 'Times New Roman';">
+</span></p>
+<p style="margin-right: 100px; margin-left: 100px; text-align: center;">Arnott calls Cliff and AQR data miners in recent Bloomberg/ Businessweek article, presumably as a deflection from the real debate on the very specific accusation he’s made regarding data mining. Or perhaps it was just a revenge shot for past transgressions (i.e., Asness pointing out that both fundamental indexing and value-based factor timing are just systematic value investing and not new findings). Only the shadow knows.<span style="font-family: 'Times New Roman';">
+</span></p>
+<p style="margin: 0in 1.1in 10pt; text-align: center;"><span style="font-family: Calibri;">↓</span></p>
+<p><span style="font-family: 'Times New Roman';">
+</span></p>
+<p style="margin-right: 100px; margin-left: 100px; text-align: center;">Asness, befuddled, points out that Arnott believes in largely the same very limited robust set of factors as AQR/Asness, and thus wonders, in some awe, how Arnott could thus make that particular accusation with a straight face?<span style="font-family: 'Times New Roman';">
+</span></p>
+<p style="margin: 0in 1.1in 10pt; text-align: center;"><span style="font-family: Calibri;">↓</span></p>
+<p><span style="font-family: 'Times New Roman';">
+</span></p>
+<p style="margin-right: 100px; margin-left: 100px; text-align: center;">Arnott keeps face straight.<span style="font-family: 'Times New Roman';">
+</span></p>
+<p style="margin: 0in 1.1in 10pt; text-align: center;"><span style="font-family: Calibri;">↓</span></p>
+<p><span style="font-family: 'Times New Roman';">
+</span></p>
+<p style="margin-right: 100px; margin-left: 100px; text-align: center;">Asness writes this screed.</p>
+<p>Rob wants to debate “Resolved: Data mining is a real problem” with himself in the affirmative and me cast as the doubter. That’s not the debate. We both agree on that, and in fact mostly on what factors pass the “it’s not data mining” test. The actual debate is “Resolved: Researchers massively mistake factor richening for true factor return” with Rob arguing for and me against the proposition. That’s a debate I’ve done my part in but where he’s yet to engage. If he wants to, and I’m wrong, so be it. But this ain’t it, and his comments ain’t right.</p>
+<p>At AQR we pride ourselves on minimizing data mining. Nobody in our field is perfect on this front but we’ve had the discipline to walk away from good-looking factors we don’t trust. We have no desire to find things that have worked in the past that won’t work going forward. In many ways we’ve led this fight against data mining for many years. We believe in a small subset of things<span class="article-page__footnote" data-script="tooltip">
+<a class="cta cta--light article-page__footnote__link" data-analytics='{"intCategory":"article","intAction":"footnote click","intLabel":"footnote","event":"interaction_event"}' data-script="clickTracker">20</a>
+<span class="article-page__footnote__tooltip">
+<a class="cta cta--light bold article-page__footnote__titlelink">20</a>
+<a class="cta cta--light bold article-page__footnote__closelink">Close</a>
+<span class="text--tiny article-page__footnote__content"><span style="background-color: #ffffff; color: #3f2021;">Each, again, implemented with many robust measures if possible.</span></span>
+<i class="arrow"></i>
+</span>
+</span>
+ that have worked out-of-sample through time, out-of-sample across geography, out-of-sample across asset class, and importantly, are explained by an economic story that’s not just “the data says so.” So, finding myself the victim of a drive-by shooting accusation of data mining by someone who believes in largely the same things we do, even if he occasionally renames them and claims them in the name of the Kingdom of Arnott, was pretty jarring. I would put my “respect for data” (<a href="https://www.youtube.com/watch?v=17hnNOFaRH4">and wood</a>) and “sufficient cynicism about data mining” up against Rob’s any day (by the way, I’m not saying he doesn’t have it too). </p>
+<p>Bottom line, his accusation that the industry has data mined over richening is false, his accusation that I’m a data miner is false (and particularly hypocritical), and I think he knows both these things and says them anyway.</p>
+<p>Aside from that, Mrs. Asness and I very much enjoyed the play.</p>
+<div id="ftn9">
+</div>
+<div id="ftn4">
+<p> </p>
+</div>
+</div>
+</div>
+<section class="article-body__breadcrumb">
+<div class="container">
+<ul class="breadcrumb__items__container">
+<li class="breadcrumb__items">
+<a class="cta cta--cyan" data-analytics='{"intCategory":"article","intAction":"cta click","intLabel":"/Insights","event":"interaction_event"}' data-script="clickTracker" href="/Insights">Insights</a>
+</li>
+<li class="breadcrumb__items">
+<a class="cta cta--cyan" data-analytics='{"intCategory":"article","intAction":"cta click","intLabel":"/Insights/Perspectives","event":"interaction_event"}' data-script="clickTracker" href="/Insights/Perspectives">Cliff's Perspective</a>
+</li>
+</ul>
+</div>
+</section>
+<!--Pdf Footnote-->
+</div>
+<div class="article-page__related__content" data-script="articleRelatedContent" style="">
+<section class="article-page__download">
+<div class="container">
+<div class="article-page__download__container">
+<div class="separator"></div>
+<div class="download__content">
+<div class="download-cta">
+<a class="button button--default button--dark button--download" data-analytics="{
+              'intCategory': 'article',
+              'intAction': 'download',
+              'intLabel': 'Download - /-/media/AQR/Documents/Insights/Perspectives/Lies-Damned-Lies-and-Data-Mining.pdf',
+              'event': 'interaction_event'
+     }" data-script="clickTracker" href="/-/media/AQR/Documents/Insights/Perspectives/Lies-Damned-Lies-and-Data-Mining.pdf" rel="noopener noreferrer" target="_blank" title="Lies, Damned Lies, and Data Mining, PDF">Download</a></div>
+</div>
+</div>
+</div>
+</section>
+<section class="article-page__related__insight">
+<div class="container">
+<div class="related-insight__container">
+<div class="separator"></div>
+<div class="related__insight">
+<h5 class="related__insight__title eyebrow--accent">Related Thinking</h5>
+<ul class="related__items">
+<li>
+<div class="related__items__item" data-script="readingList">
+<a class="cta cta--black" href="/Insights/Perspectives/Factor-Timing-is-Hard"><h5 data-analytics='{"intCategory":"article","intAction":"related item click","intLabel":"/Insights/Perspectives/Factor-Timing-is-Hard","event":"interaction_event"}' data-script="clickTracker">Factor Timing is Hard</h5></a>
+</div>
+<div class="related__items__byline">
+<p class="text--small-c">
+<span>Perspective</span>
+<span>-</span>
+<span>March 15, 2017</span>
+</p>
+</div>
+</li>
+<li>
+<div class="related__items__item" data-script="readingList">
+<a class="cta cta--black" href="/Insights/Perspectives/It-Is-Not-Data-Mining-Not-Even-Close"><h5 data-analytics='{"intCategory":"article","intAction":"related item click","intLabel":"/Insights/Perspectives/It-Is-Not-Data-Mining-Not-Even-Close","event":"interaction_event"}' data-script="clickTracker">It’s Not Data Mining — Not Even Close</h5></a>
+</div>
+<div class="related__items__byline">
+<p class="text--small-c">
+<span>Perspective</span>
+<span>-</span>
+<span>June 2, 2015</span>
+</p>
+</div>
+</li>
+<li>
+<div class="related__items__item" data-script="readingList">
+<a class="cta cta--black" href="/Insights/Research/Journal-Article/Understanding-Style-Premia"><h5 data-analytics='{"intCategory":"article","intAction":"related item click","intLabel":"/Insights/Research/Journal-Article/Understanding-Style-Premia","event":"interaction_event"}' data-script="clickTracker">Understanding Style Premia</h5></a>
+</div>
+<div class="related__items__byline">
+<p class="text--small-c">
+<span>Journal Article</span>
+<span>-</span>
+<span>December 1, 2014</span>
+</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</div>
+
+
+<section class="article-page__disclaimer">
+<div class="container">
+<div class="richtext">
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px currentColor; border-image: none;">This document is not intended to, and does not relate specifically to any investment strategy or product that AQR offers. It is being provided merely to provide a framework to assist in the implementation of an investor’s own analysis and an investor’s own view on the topic discussed herein.</p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px currentColor; border-image: none;"> </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px currentColor; border-image: none;">This document has been provided to you solely for information purposes and does not constitute an offer or solicitation of an offer or any advice or recommendation to purchase any securities or other financial instruments and may not be construed as such. The factual information set forth herein has been obtained or derived from sources believed by the author and AQR Capital Management, LLC (“AQR”) to be reliable but it is not necessarily all-inclusive and is not guaranteed as to its accuracy and is not to be regarded as a representation or warranty, express or implied, as to the information’s accuracy or completeness, nor should the attached information serve as the basis of any investment decision. This document is not to be reproduced or redistributed to any other person. The information set forth herein has been provided to you as secondary information and should not be the primary source for any investment or allocation decision. Past performance is not a guarantee of future performance. Diversification does not eliminate the risk of experiencing investment losses. <br/>
+<br/>
+This material is not research and should not be treated as research. This paper does not represent valuation judgments with respect to any financial instrument, issuer, security or sector that may be described or referenced herein and does not represent a formal or official view of AQR. The views expressed reflect the current views as of the date hereof and neither the author nor AQR undertakes to advise you of any changes in the views expressed herein. <br/>
+<br/>
+The information contained herein is only as current as of the date indicated, and may be superseded by subsequent market events or for other reasons. Charts and graphs provided herein are for illustrative purposes only. The information in this presentation has been developed internally and/or obtained from sources believed to be reliable; however, neither AQR nor the author guarantees the accuracy, adequacy or completeness of such information. Nothing contained herein constitutes investment, legal, tax or other advice nor is it to be relied on in making an investment or other decision. There can be no assurance that an investment strategy will be successful. Historic market trends are not reliable indicators of actual future market behavior or future performance of any particular investment which may differ materially, and should not be relied upon as such. Diversification does not eliminate the risk of experiencing investment losses.<br/>
+<br/>
+The information in this paper may contain projections or other forward-looking statements regarding future events, targets, forecasts or expectations regarding the strategies described herein, and is only current as of the date indicated. There is no assurance that such events or targets will be achieved, and may be significantly different from that shown here. The information in this document, including statements concerning financial market trends, is based on current market conditions, which will fluctuate and may be superseded by subsequent market events or for other reasons. </p>
+<p class="txt txt_disclaimer" style="margin: 0px; padding: 0px; border: 0px currentColor; border-image: none;"> </p>
+</div>
+</div>
+</section>
+

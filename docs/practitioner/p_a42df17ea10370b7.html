@@ -1,0 +1,432 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>A Vector Autoregression Trading Model</title>
+<!-- source: https://robotwealth.com/a-vector-autoregression-trading-model/ -->
+<h1>A Vector Autoregression Trading Model</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-19950 post type-post status-publish format-standard hentry category-quant-trading category-time-series-modelling category-trading-strategies tag-r tag-tidyverse tag-time-series-analysis tag-trading-strategies tag-var tag-vector-autoregression pmpro-has-access" id="post-19950">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">March 12, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">A Vector Autoregression Trading Model</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="A Vector Autoregression Trading Model" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><h2>What is Vector Autoregression</h2>
+
+The <strong>vector autoregression (VAR)</strong> framework is common in econometrics for modelling correlated variables with bi-directional relationships and feedback loops. If you google <em>“vector autoregression”</em> you’ll find all sorts of academic papers related to modelling the effects of monetary and fiscal policy on various aspects of the economy. This is only of passing interest to traders.
+
+However, if we consider that the VAR framework finds application in the modelling of correlated time series, the implication being that correlation implies a level of forecasting utility, then perhaps we could model a group of related financial instruments and make predictions that we can translate into trading decisions?
+
+So we’ll give that a try. But first, a brief overview of VAR models.
+
+<h2>Overview of VAR models</h2>
+
+The univariate autoregression (AR) is a model of a time series as a function of past values of itself:
+
+(Y_t = \alpha + \beta_1 Y_{t-1}+ \beta_2 Y_{t-2} )
+
+That’s an AR(2) model because it uses two previous values in the time series (Y) to estimate the next value. The name of the game is figuring out how many previous values to use, and estimating the coefficients (the (\beta)s) and the intercept ((\alpha)).
+
+A vector autoregression (VAR) is an extension of this idea. It models multiple time series that affect one another together, as a system. It specifically allows for bi-directional relationships such as feedback loops, where say an increase in variable (X) may predict an increase in variable (Y), but equally an increase in variable (Y) may predict an increase in variable (X).
+
+Here’s a VAR(1) model of two time series, (Y_1) and (Y_2):
+
+(Y_{1,t} = \alpha_1 + \beta_{11,1} Y_{1,t-1} + \beta_{12, 1} Y_{2, t-1} + \epsilon_{1, t})
+(Y_{2,t} = \alpha_2 + \beta_{21,1} Y_{1,t-1} + \beta_{22, 1} Y_{2, t-1} + \epsilon_{2, t})
+
+The model uses a single lag of each time series to predict the next values of both time series. It requires the estimation of four coefficients and two intercepts.
+
+Just looking at the single lag case, you get a sense that these models have lots of parameters. Which of course triggers all the usual alarm bells around overfitting. In fact, if we have (N) time series and (p) lags in a VAR model, we must estimate (N + pN^2) parameters!
+
+<h3>Figuring Out the Number of Lags</h3>
+
+Standard practice in econometrics is to use an information criterion. It’s questionable how useful that would be in modelling financial asset returns, and in my view it makes sense to stick with a single lag unless you have a compelling reason to do otherwise.
+
+If you must, lean towards the Bayesian information criterion (BIC), which introduces a penalty term for the number of parameters in the model (the Aikake information criterion does too, but the BIC’s penalty is bigger).
+
+<h2>Problems in Trading When Using VAR Framework</h2>
+
+Say we have a basket of stocks that we believe to be related in some way. Also, suppose that their relationship implies a degree of predictability among basket constituents. If we could forecast the relative returns between basket constituents, we might have the makings of a trading strategy.
+
+<h2>Solving the Trading Problem</h2>
+
+In this post, we’re going to focus on solving the forecasting problem using the VAR framework. In reality, the problem of universe selection (identifying a suitable basket) is a much bigger problem, but we’re going to assume this problem is solved for the sake of the exercise, and that we have a basket of stocks worthy of considering under our VAR framework.
+
+<blockquote>In fact, this <em><strong>is</strong></em> something we’ve solved – in our Machine Learning and Big Data Bootcamp. Go <a href="https://robotwealth.com/closed" rel="noopener noreferrer" target="_blank">here</a> to find out more and sign up to the wait list for the next edition of Bootcamp.</blockquote>
+<h2>Creating a VAR Model</h2>
+
+In this example, our group of stocks appeared in the <a href="https://robotwealth.com/the-graphical-lasso-and-its-financial-applications/" rel="noopener noreferrer" target="_blank">network model of stock relationships</a> that we built using the Graphical Lasso. This is only a single input into the universe selection model that we trade with, but it will do fine for demonstrating this VAR model. We’ll take the stocks in the little purple cluster consisting of residential construction stocks:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># Extract basket prices
+tickers &lt;- c('KBH', 'LEN', 'PHM', 'DHI', 'TOL', 'MTH', 'MDC')</pre>
+
+This group is a fairly arbitrary choice – the basket is small enough that we can explore VAR models efficiently but other than that there’s nothing particularly special about it. Other than the fact that the Graphical Lasso identified relationships among the group’s stocks.
+
+You can get historical prices and volumes for these tickers via <code>tidyquant::tq_get</code>, which wraps <code>quantmod::getSymbols</code>:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">### VAR MODEL STRATEGY ###
+
+library(tidyquant)
+library(tidyverse)
+
+# Load basket prices
+tickers &lt;- c('KBH', 'LEN', 'PHM', 'DHI', 'TOL', 'MTH', 'MDC')
+basket_prices &lt;- tq_get(tickers, get='stock.prices', from='2000-01-01', to = '2020-01-01') %&gt;%
+  rename(ticker = symbol)
+
+basket_prices %&gt;%
+  ggplot(aes(x = date, y = adjusted)) +
+    geom_line(aes(color = ticker))</pre>
+
+Plotting the price series:
+
+<img alt="" class="size-full wp-image-19952 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162734/resi-cons-prices.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162734/resi-cons-prices.png 700w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162734/resi-cons-prices-600x343.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162734/resi-cons-prices-300x171.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='400'%20viewBox='0%200%20700%20400'%3E%3C/svg%3E" width="700"/>
+
+We’re going to work with returns for our VAR model, so let’s make those now:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># Calculate returns
+ret &lt;- basket_prices %&gt;%
+  group_by(ticker) %&gt;%
+  filter(date &gt;= '2000-01-01', date &lt; '2020-01-01') %&gt;%
+  tq_transmute(select=adjusted, mutate_fun=periodReturn, period="daily", type="log")
+
+# make wide dataframe of returns
+ret_wide &lt;- ret %&gt;%
+  spread(key=ticker, value=daily.returns)</pre>
+
+Now we’re ready to build a VAR model. The <code>vars</code> package will do all the heavy lifting for us. So let’s load that, and then construct a VAR(1) model on the first 250 days in our historical data set:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># VAR model
+library(vars)
+
+wdw &lt;- 250
+var &lt;- VAR(ret_wide[1:wdw, -1], p=1, type="const")</pre>
+
+That’s it! Pretty amazing that we can do so much with so little code.
+
+To get a sense for how much work has just been done under the hood, run the command <code>summary(var)</code> and you’ll get a whole lot of output about the model. You’ll see model estimation statistics for each coefficient for each stock in our basket, including insight on what R thought were the significant variables in each equation, as well as information on the residuals of each model.
+
+<h3>Forecasting Prices using the VAR Model</h3>
+
+So now that we’ve got our model, how can we use it to forecast prices? How might we use that information to make trading decisions?
+
+We can get the single step ahead prediction from the model by calling <code>predict</code>, which returns a list with a whole bunch of stuff in addition to the actual forecasts. To extract the forecasts into their own object, we need to do some typically funky R list manipulation:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># step ahead predictions
+p &lt;- predict(var, n.ahead = 1) 
+fcsts &lt;- t(do.call(rbind, lapply(p$fcst, "[", 1)))</pre>
+
+The <code>fcsts</code> object holds a return forecast for each stock in our basket. It looks like this:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">&gt; fcsts
+              DHI        KBH         LEN         MDC       MTH        PHM          TOL
+[1,] -0.007694804 0.01069015 0.008959145 0.008029125 0.0200517 0.01437472 -0.001169301</pre>
+
+That’s cool. But how does it compare to the actual return values for the next period?
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># predictions vs actuals
+ret_wide[wdw+1, -1] - fcsts
+
+# OUTPUT:
+#         DHI        KBH        LEN         MDC         MTH        PHM         TOL
+# 1 0.04469033 0.03376181 0.04917655 0.007311673 -0.02175964 0.01846445 -0.00187468</pre>
+
+Not amazing by the looks of that!
+
+How did we go predicting the correct sign?
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># sign of predictions vs actuals
+sign(ret_wide[wdw+1, -1]/fcsts)
+
+# OUTPUT
+#  DHI KBH LEN MDC MTH PHM TOL
+#  1  -1   1   1   1  -1   1   1</pre>
+
+Here, a positive number indicates that the return sign was predicted correctly; a negative number indicates an incorrect prediction.
+
+We’ve done a little better here. The model predicted six of eight return signs correctly.
+
+Let’s look at whether we were able to correctly predict the rank of the next period’s returns:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># rank of predictions vs actuals
+rank(t(ret_wide[wdw+1, -1]))
+rank(fcsts)
+
+# OUTPUT
+# &gt; rank(t(ret_wide[wdw+1, -1]))
+# 5 6 7 3 2 4 1
+# &gt; rank(fcsts)
+# 1 5 4 3 7 6 2</pre>
+
+Not terrible. In fact, six of eight are accurate enough that if we traded these ranks long-short we’d have done OK on this prediction.
+
+This is all well and good, but so far we’ve only looked at a single prediction. That tells us next to nothing about how useful this approach might be in a trading strategy. Time for some backtesting.
+
+<h2>Backtesting a VAR strategy</h2>
+
+There are plenty of ways we could act on the predictions of our VAR model. The most familiar of what we looked at above would be trading long-short on the basis of the predicted ranks of our forecast returns.
+
+Here we’re going to do something slightly different that I read about in one of Ernie Chan’s books: we’ll dollar weight assets based on the normalised difference of each asset’s forecast return, and the mean return of the basket:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># dollar weight assets based on normalised difference to forecast mean basket return
+dollar_wgts &lt;- (fcsts - mean(fcsts))/sum(abs(fcsts - mean(fcsts)))  # h.t. Ernie Chan
+dollar_wgts
+
+# OUTPUT
+# DHI        KBH        LEN         MDC       MTH       PHM        TOL
+# -0.3177601 0.06405476 0.02810558 0.008791111 0.2584734 0.1405751 -0.1822399</pre>
+
+Then, we can calculate a portfolio return by multiplying the actual returns by the dollar weights and summing:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">port_ret &lt;- sum(dollar_wgts * ret_wide[wdw+1, -1])
+port_ret
+
+# OUTPUT
+# -0.002409894</pre>
+
+To backtest our VAR forecasts, we’ll set up a rolling window of 500 days on which to estimate the model’s parameters, making a single day-ahead prediction before rolling the window forward by a day and repeating the process, and storing the dollar weights of each asset in a list:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># rolling VAR estimation and prediction
+wdw &lt;- 500
+dollar_wgts &lt;- vector('list', nrow(ret_wide)-wdw)
+for(i in (wdw):(nrow(ret_wide)-1)) {  # don't need to get a forecast for the final data point for backtesting purposes
+  
+  var &lt;- ret_wide %&gt;%
+    slice((i-wdw):(i-1)) %&gt;%
+    dplyr::select(-date) %&gt;%
+    VAR(p=1, type="const")
+  
+  p &lt;- var %&gt;% 
+    predict(n.ahead = 1)
+  
+  fcsts &lt;- t(do.call(rbind, lapply(p$fcst, "[", 1)))
+  dollar_wgts[[i]] &lt;- (fcsts - mean(fcsts))/sum(abs(fcsts - mean(fcsts))) 
+}</pre>
+
+Then it’s a matter of extracting the weights from the list, calculating a time series of the cumulative portfolio return and plotting it:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">wgts &lt;- bind_rows(lapply(dollar_wgts, as.data.frame))
+port_ret &lt;- data.frame('date' = ret_wide[(wdw+1):(nrow(ret_wide)), 'date'], 
+                       'ret' = rowSums(wgts * ret_wide[(wdw+1):(nrow(ret_wide)), -1]))  # first wgt is from idx==wdw, assign return from wdw:(wdw+1)
+
+port_ret &lt;- port_ret %&gt;%
+  mutate('cum_ret' = cumsum(ret))
+
+port_ret %&gt;%
+  ggplot(aes(x = date, y = cum_ret)) +
+    geom_line() +
+    labs(
+      title = 'Cumulative Returns to VAR Trading Model',
+      x = 'Date',
+      y = 'Return'
+    )</pre>
+
+Here’s the output:
+
+<img alt="" class="size-full wp-image-19956 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162733/equity-500-1.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162733/equity-500-1.png 700w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162733/equity-500-1-600x343.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162733/equity-500-1-300x171.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='400'%20viewBox='0%200%20700%20400'%3E%3C/svg%3E" width="700"/>
+
+Costs aren’t considered on this equity curve, and they’d add up to plenty as we’re rebalancing a basket of seven assets on a daily basis. Also bear in mind that the in-sample period for discovering the basket via the Graphical Lasso was 2010-2019 inclusive.
+
+Finally, I wanted to get an idea of the stability of performance with respect to the length of the estimation window. I simply looped over that backtest for different window lengths and stored the results in a list:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># check stability of window length parameter
+wdws &lt;- c(250, 500, 750, 1000)
+ports &lt;- vector("list")
+for (wdw in wdws) {
+  dollar_wgts &lt;- vector('list', nrow(ret_wide)-wdw)
+  for(i in (wdw):(nrow(ret_wide)-1)) {  # don't need to get a forecast for the final data point for backtesting purposes
+    
+    var &lt;- ret_wide %&gt;%
+      slice((i-wdw):(i-1)) %&gt;%
+      dplyr::select(-date) %&gt;%
+      VAR(p=1, type="const")
+    
+    p &lt;- var %&gt;% 
+      predict(n.ahead = 1)
+    
+    fcsts &lt;- t(do.call(rbind, lapply(p$fcst, "[", 1)))
+    dollar_wgts[[i]] &lt;- (fcsts - mean(fcsts))/sum(abs(fcsts - mean(fcsts)))  # h.t. Ernie Chan
+    
+  }
+  
+  wgts &lt;- bind_rows(lapply(dollar_wgts, as.data.frame))
+  port_ret &lt;- data.frame('date' = ret_wide[(wdw+1):(nrow(ret_wide)), 'date'], 
+                         'ret' = rowSums(wgts * ret_wide[(wdw+1):(nrow(ret_wide)), -1]))  # first wgt is from idx==wdw, assign return from wdw:(wdw+1)
+  
+  name &lt;- paste0(wdw)
+  port_ret &lt;- port_ret %&gt;%
+    mutate(!!name := cumsum(ret))
+  
+  ports &lt;- c(ports, list(port_ret))
+}</pre>
+
+With a bit of <code>tidy</code> R manipulation, we can plot the equity curves for the different window lengths:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title=""># plot returns by window length
+ports %&gt;%
+  map(~ (.x %&gt;% dplyr::select(-ret))) %&gt;%  # drop ret column from each dataframe in list
+  reduce(left_join, by="date") %&gt;%  
+  pivot_longer(-date, names_to = "window", values_to = "return") %&gt;%
+  ggplot(aes(x = date, y = return)) +
+    geom_line(aes(color = window)) +
+    labs(
+      title = 'Return to VAR models of different data windows',
+      x = "Date",
+      y = "Return"
+    )</pre>
+
+Here’s the output:
+
+<img alt="" class="size-full wp-image-19958 aligncenter perfmatters-lazy" data-sizes="(max-width: 700px) 100vw, 700px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/03/21162731/equity-comparison.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/03/21162731/equity-comparison.png 700w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162731/equity-comparison-600x343.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/03/21162731/equity-comparison-300x171.png 300w" decoding="async" height="400" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='700'%20height='400'%20viewBox='0%200%20700%20400'%3E%3C/svg%3E" width="700"/>
+<h2>Conclusion</h2>
+
+Thus concludes our whirlwind tour of VAR models and their potential use in trading strategies.
+
+In my experience, the problem of <em><strong>finding a basket of related assets</strong></em> that can be exploited in convergence trades like this one is a bigger problem than coming up with the actual trading strategy itself.
+
+And to be fair, there are simpler ways to go about the actual trading than using a VAR model.
+
+However, the VAR model does demonstrate some utility here, and I think it could be used as one of several inputs into a larger ensemble of predictions, rather than a standalone trading strategy.
+
+<em>What do you think? Is the VAR framework attractive to you as a trading tool? Tell me what you think in the comments.</em>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>R</span>, <span>tidyverse</span>, <span>time series analysis</span>, <span>trading strategies</span>, <span>var</span>, <span>vector autoregression</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">2 thoughts on “A Vector Autoregression Trading Model”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-13364">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 03/12/2020 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/a-vector-autoregression-trading-model/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

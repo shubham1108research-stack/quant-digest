@@ -1,0 +1,168 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>A Free Interactive IPO Calendar</title>
+<!-- source: https://robotwealth.com/a-free-interactive-ipo-calendar/ -->
+<h1>A Free Interactive IPO Calendar</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-81655 post type-post status-publish format-standard hentry category-data category-r tag-ipo pmpro-has-access" id="post-81655">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">September 29, 2023</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">A Free Interactive IPO Calendar</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="A Free Interactive IPO Calendar" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">Sometimes it’s nice to step away from the deep technical stuff and just build something simple and useful.</p>
+<h2 class="wp-block-heading">What Is an IPO Calendar and Why Use One?</h2>
+<p class="wp-block-paragraph">I’ve linked the free IPO calendar below if you just want to jump in and explore.</p>
+<p class="wp-block-paragraph">But if you’re not familiar, an IPO calendar is a tool that tracks companies going public, showing both upcoming and recent IPOs. It’s handy for staying on top of new listings, spotting patterns, or just satisfying your curiosity about what’s hitting the market.</p>
+<p class="wp-block-paragraph">This one pulls data from the free <a href="https://finnhub.io/docs/api/ipo-calendar" rel="noreferrer noopener" target="_blank">finnhub.io API</a> and wraps it in a simple R Shiny interface. Nothing fancy, just a quick way to scan what’s new without digging through press releases or exchange websites.</p>
+<h2 class="wp-block-heading">Why I Built This IPO Calendar</h2>
+<p class="wp-block-paragraph">I’d been buried in options data for a few weeks, building out pipelines for a straddle-over-earnings strategy we’re working on. It was getting a bit heavy.</p>
+<figure class="wp-block-table aligncenter"><table><tbody><tr><td class="has-text-align-center" data-align="center"><img class="perfmatters-lazy" data-src="https://embed.filekitcdn.com/e/kqR53EvfBumjWEoesVeZAh/hENGFgdDLhVXHu3Lz8Ba5r/email" decoding="async" height="auto" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='auto'%20viewBox='0%200%20800%20auto'%3E%3C/svg%3E" width="800"/></td></tr></tbody></table></figure>
+<p class="wp-block-paragraph">So I decided to take a breather and build something lighter, still useful, but a bit more fun. The idea for the IPO calendar came up while thinking about ways to keep track of new market entrants without scraping sites or digging through finance portals.</p>
+<div class="wp-block-image">
+<figure class="aligncenter size-large"><img alt="" class="wp-image-81656 perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2023/09/21155046/image-6-1024x466.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2023/09/21155046/image-6-1024x466.png 1024w, https://media.robotwealth.com/wp-content/uploads/2023/09/21155046/image-6-300x137.png 300w, https://media.robotwealth.com/wp-content/uploads/2023/09/21155046/image-6-768x350.png 768w, https://media.robotwealth.com/wp-content/uploads/2023/09/21155046/image-6-1536x700.png 1536w, https://media.robotwealth.com/wp-content/uploads/2023/09/21155046/image-6.png 1879w" decoding="async" height="466" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='466'%20viewBox='0%200%201024%20466'%3E%3C/svg%3E" width="1024"/></figure>
+</div>
+<p class="wp-block-paragraph">It also gave me a chance to mess around with R Shiny again, which I hadn’t used in a while. Simple project, quick feedback loop, and something others might find helpful too.</p>
+<h2 class="wp-block-heading">Try It Out</h2>
+<p class="wp-block-paragraph">The calendar is live and ready to use. Just pick a date and it’ll show you IPOs from around that time. Click a ticker to get all the details.<br/><br/>Check out the <a href="https://robotwealth.shinyapps.io/ipo_calendar/" rel="noreferrer noopener" target="_blank">Free IPO calendar</a><a href="https://robotwealth.shinyapps.io/ipo_calendar/"> here</a>.<br/><br/>It’s free, no sign-up, no catch, just a quick tool you can bookmark and come back to whenever you’re curious.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>IPO</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-98042 post type-post status-publish format-standard hentry category-options category-quant-trading category-r category-think-like-a-trader tag-options tag-simulation pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225"></div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-95276 post type-post status-publish format-standard has-post-thumbnail hentry category-data-analysis category-r tag-seasonality pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/revisiting-overnight-vs-intraday-equity-returns/"><img alt="Revisiting Overnight vs Intraday Equity Returns" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="95278" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-300x171.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-300x171.webp 300w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-1024x585.webp 1024w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-768x439.webp 768w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight-1536x878.webp 1536w, https://media.robotwealth.com/wp-content/uploads/2024/05/31201110/overnight.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-92479 post type-post status-publish format-standard has-post-thumbnail hentry category-data category-r category-time-series-modelling tag-quantitative-analysis tag-r tag-tidyverse pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-simple-trick-for-dealing-with-overlapping-data/"><img alt="A Simple Trick for Dealing with Overlapping Data" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="92480" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-300x171.webp" data-srcset="https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-300x171.webp 300w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-1024x585.webp 1024w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-768x439.webp 768w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image-1536x878.webp 1536w, https://robotwealth.com/wp-content/uploads/2024/04/rolling_wdws_featured_image.webp 1792w" decoding="async" height="171" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='171'%20viewBox='0%200%20300%20171'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">1 thought on “A Free Interactive IPO Calendar”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-34782">
+<div class="comment-body">
+				Pingback: A Free Interactive IPO Calendar - QuantInfo - Empowering Algorithmic Trading Insights 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/a-free-interactive-ipo-calendar/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

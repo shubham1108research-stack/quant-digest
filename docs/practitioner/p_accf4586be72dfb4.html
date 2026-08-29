@@ -1,0 +1,380 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Pattern Recognition with the Frechet Distance</title>
+<!-- source: https://robotwealth.com/pattern-recognition-with-the-frechet-distance/ -->
+<h1>Pattern Recognition with the Frechet Distance</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-11114 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-trading-strategies category-zorro tag-backtesting tag-frechet tag-pattern-recognition tag-zorro pmpro-has-access" id="post-11114">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">September 13, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Pattern Recognition with the Frechet Distance</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Pattern Recognition with the Frechet Distance" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">Chart patterns have long been a favourite of the technical analysis community. Triangles, flags, pennants, cups, heads and shoulders…. Name a shape, someone somewhere is using it to predict market behaviour. But, we need to find out if there is a grain of truth or reliability in these patterns. Can attempts to objectively measure these patterns, such as with the Frechet distance, really give you a hint as to the future direction of the market? Or should you stick to <a href="https://robotwealth.com/run-trading-like-a-business-not-a-board-game/" rel="noopener noreferrer" target="_blank">an approach we know makes money?</a>
+<img alt="trading frechet distance" class="aligncenter wp-image-11120 perfmatters-lazy" data-sizes="(max-width: 401px) 100vw, 401px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/09/21164811/shape.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/09/21164811/shape.jpg 500w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164811/shape-300x300.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164811/shape-100x100.jpg 100w, https://media.robotwealth.com/wp-content/uploads/2019/09/21164811/shape-150x150.jpg 150w" decoding="async" height="401" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='401'%20height='401'%20viewBox='0%200%20401%20401'%3E%3C/svg%3E" width="401"/>
+<p style="text-align: center;"><em>ah, I see a blue star pattern on my chart… a good omen.</em></p>
+
+The problem is that such an approach is <em>inherently subjective</em> since price action almost never matches perfectly with the idealized version of price patterns you see in every beginner’s guide to trading. It is up to you, the individual, to determine whether a particular chart formation matches closely enough with a particular pattern for it to be considered valid.
+
+This is quite tricky! It’s <em>very difficult</em> to codify a trading system based on their use. By extension, it is difficult to test the efficacy of these patterns in an objective, evidence-based manner.
+
+That won’t stop smart people from trying, though. An attempt to do just this was made by MIT’s Andrew Lo, Harry Mamaysky and Jian Wang back in 2000<span class="inline-footnote" style="" title="Lo, Mamaysky and Wang, 2000, Foundations of Technical Analysis: Computational Algorithms, Statistical Inference and Empirical Implementation, download a copy of the paper here.">1<span class="footnoteContent" style="display:none;">Lo, Mamaysky and Wang, 2000, <em>Foundations of Technical Analysis: Computational Algorithms, Statistical Inference and Empirical Implementation</em>, download a copy of the paper <a href="https://robotwealth.com/wp-content/uploads/2017/08/Lo_TA_paper.pdf">here</a>.</span></span>and, perhaps surprisingly, they found statistically significant evidence that <em>some</em> patterns provide useful incremental information in <em>some </em>markets.
+
+Lo, Mamaysky and Wang were also generally enthusiastic about using automated detection methods. There are many possible approaches to pattern detection algorithms, of which Zorro implements one: a function that calculates the Frechet distance.
+
+<em>So, l</em><em>et’s dive in and explore it!</em>
+<h2>Frechet Distance</h2>
+<strong>The Frechet distance between two curves is a measure of their similarity —</strong> it’s often described like so:
+
+Suppose a man is walking his dog and that he is forced to walk on a particular path and his dog on another path. Both the man and the dog are allowed to control their speed independently but are not allowed to go backwards. Then, the Fréchet distance of the two paths is the minimal length of a leash that is necessary to keep man and dog joined throughout their walk.
+
+<img alt="an illustration of this distiance - trading frechet distance" class="aligncenter wp-image-11116 size-full perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2018/07/21164813/ezgif.com-optimize-7.gif" decoding="async" height="301" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='408'%20height='301'%20viewBox='0%200%20408%20301'%3E%3C/svg%3E" width="408"/>
+<p style="text-align: center;"><em>there are a lot more variables in the real world….</em></p>
+
+If the Frechet distance between two curves is small, it follows that the curves are similar. Conversely, a large Frechet distance implies that the curves are not similar.
+
+So, we can leverage the Frechet distance as a pattern detection algorithm by comparing sections of the price curve to a curve corresponding to a pattern of interest, for example, a triangle. A small Frechet distance implies that the section of the price curve that was analyzed is similar to the pre-defined pattern.
+
+There have been a whole bunch of algorithms proposed over the years for calculating Frechet distance (it was first described in 1906), and Zorro implements a simple variant that enables the comparison of some part of a price curve with a known and previously described pattern.  Zorro’s <span class="lang:c decode:true crayon-inline">frechet()</span>  function returns a number between approximately 0 and 80 that measures the similarity of the part of the price curve being analyzed and the pattern.
+
+<strong>Note that this is proportional to the inverse of the Frechet distance, in that a larger similarity measure implies a smaller Frechet distance. </strong>
+<span class="lang:c decode:true crayon-inline">frechet()</span>  takes the following arguments:
+
+<ol>
+<li>A series (usually asset prices) to be compared with a predefined pattern</li>
+<li>An integer <span class="lang:c decode:true crayon-inline">TimeFrame</span>  which sets the number of price bars to use in the comparison, that is, the horizontal length of the pattern in the price curve (setting this to zero tells Zorro to simply use the same length as the predefined pattern).</li>
+<li>A var, <span class="lang:c decode:true crayon-inline">Scale</span> , specifying the vertical size of the pattern in the price chart. Setting this to a negative number inverts the pattern.</li>
+<li>An array of positive numbers specifying the shape of the pattern to be detected. The final value of the array must be zero, which is used by the algorithm to signal the termination of the pattern.</li>
+</ol>
+
+There are several complications and considerations to be aware of in setting these arguments, so let’s go through each of them in more detail, starting with the array specifying the shape of the pattern.
+
+<h3>Describing Chart Patterns as Arrays</h3>
+
+If we want to detect chart patterns, the first thing we need to define is the shape of that pattern. Note that in describing our pattern in an array, we only need to be concerned with its <em>shape. </em>We can deal with its <em>size</em> (both horizontally and vertically) using other <span class="lang:c decode:true crayon-inline">frechet()</span>  arguments. Therefore don’t focus too much on the absolute values of the numbers that describe the pattern – their relative values are much more important here.
+
+To define a pattern in an array, think of an (x, y) coordinate plane. The array indexes are the (x) values; the numbers stored in each index are the corresponding (y) values. We then map our pattern as a series of (x,y) pairs.
+
+Here’s an example for a triangle pattern:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/Triangle1.png"><img alt="example of a triangle pattern" class="aligncenter wp-image-3213 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/Triangle1.png" decoding="async" height="290" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='362'%20height='290'%20viewBox='0%200%20362%20290'%3E%3C/svg%3E" width="362"/></a>
+
+Remembering that zero terminates the pattern, the corresponding array would consist of the numbers 1, 8, 2, 7, 3, 6, 4, 5, 0. We would define such an array as
+
+<span class="lang:c decode:true crayon-inline">var Triangle[9] = {1, 8, 2, 7, 3, 6, 4, 5, 0};</span>
+
+The obvious question that arises from this approach is how well does the algorithm detect patterns that we would consider a triangle, but which deviate from the idealized triangle shown above?
+
+For example, what about asymmetry in the legs of the triangle? That is, what if the early legs take longer to complete than later legs? In the example above, all the legs take the same amount of time. What about triangles that don’t terminate at the apex?
+
+By way of example, the following would probably fit the definition of a triangle:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/Triangle3.png"><img alt="the results within our triangle" class="aligncenter wp-image-3217 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/Triangle3.png" decoding="async" height="290" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='422'%20height='290'%20viewBox='0%200%20422%20290'%3E%3C/svg%3E" width="422"/></a>
+
+But now our array would be given by 1, 3, 5, 8, 6, 4, 2, 5, 7, 6, 4, 3, 6, 0. That is,
+
+<span class="lang:c decode:true crayon-inline">var Triangle[14] = {1,3,5,8,6,4,2,5,7,6,4,3,6,0};</span>
+
+Would these two patterns return different Frechet similarities when applied to the same price curve?
+
+The answer is yes. But, bear in mind that a pattern corresponding to the first triangle will still be <em>somewhat</em> similar to the second triangle. In practice, this means that in order to use this approach effectively, we would need to cover our bases and check for multiple variants of the intended pattern, perhaps using some sort of confirmation between different variations of the pattern. We’ll see in the example below how much variation we see in our similarity measure for different variants of the same intended pattern.
+
+<h3>Setting the Pattern’s Vertical Height</h3>
+
+The <span class="lang:c decode:true crayon-inline">Scale</span>  parameter controls the vertical height of the pattern being searched in the price curve. This is the same as stretching the predefined pattern in the direction of price in a price chart. In most cases, it will make sense to set the height of the pattern to the range of the price action over the period of interest. We do this automatically by setting the <span class="lang:c decode:true crayon-inline">Scale</span>  parameter based on the maximum and minimum values of the price series over the time period of interest via Zorro’s <span class="lang:c decode:true crayon-inline">MaxVal()</span>  and <span class="lang:c decode:true crayon-inline">MinVal()</span>  functions:
+
+<span class="lang:c decode:true crayon-inline"> Scale = MaxVal(Data, TimeFrame) – MinVal(Data, TimeFrame);</span>
+<h3>Setting the Pattern’s Horizontal Length</h3>
+
+The <span class="lang:c decode:true crayon-inline">TimeFrame</span> parameter controls the pattern’s horizontal length and corresponds to the number of bars over which to apply the pattern. This is the same as stretching the predefined pattern in the direction of time on a price chart. This parameter requires a little more thought because there are no hard and fast rules regarding how long these patterns should take to form. Again, we must deal with the inherent subjectivity of the method.
+
+Rather than constraining our pattern detection algorithm to a single time period, why not simply look over multiple time periods?
+
+We could do this by calling <span class="lang:c decode:true crayon-inline">frechet()</span>  within a <span class="lang:c decode:true crayon-inline">for()</span>  loop that increments the <span class="lang:c decode:true crayon-inline">TimeFrame</span>  parameter on every iteration, like so:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Search multiple time periods">for(i=5;i&lt;100;i+=5)
+{
+    frechet(Price, i, 100*PIP, Triangle);
+}</pre>
+
+This will search for a pattern called “Triangle” that is 100 pips high over multiple time ranges, from 5 bars to 100 bars. In practice, we don’t really need to cover every incremental number of bars (1,2,3,4 etc) because patterns evolving over similar time horizons will tend to return similar <span class="lang:c decode:true crayon-inline">frechet()</span> values. For example, a pattern evolving over 10 bars will be similar to the same pattern evolving over 11 bars. In the example above, we increment our search length by 5 bars.
+
+
+<h3>Putting it All Together</h3>
+
+We are now in a position to start detecting patterns and analyzing their usefulness as trading signals.
+
+The code below plots the Frechet similarity metric for our symmetric and asymmetric triangles, and their inverses, over a number of time horizons. We use the <span class="lang:c decode:true crayon-inline">strf()</span>  function to enable us to pass a variable (in this case, the integer <span class="lang:c decode:true crayon-inline">i</span> ) into a string (in this case, the name of the plot) so that we can plot the different Frechet similarities from within the <span class="lang:c decode:true crayon-inline">for()</span>  loop:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Frechet Triangle Detection">/* PLOT FRECHET SIMILARITY
+
+*/
+
+function run()
+{
+    set(PLOTNOW);
+    StartDate = 20150712;
+    EndDate = 20150826;
+    BarPeriod = 1440;
+    LookBack = 100;
+    asset("SPX");
+   
+   vars Price = series(priceClose());
+   static var Tri_Sym[9] = {1,8,2,7,3,6,5,4,0};
+   static var Tri_Asym[14] = {1,3,5,8,6,4,2,5,7,6,4,3,6,0};
+
+   int i;
+   for(i=10;i&lt;=30;i+=10)
+   {
+    plot(strf("Tri_Sym_%d", i),frechet(Price, i, MaxVal(Price,i) - MinVal(Price,i), Tri_Sym),NEW,RED);
+    plot(strf("Tri_Asym_%d", i),frechet(Price, i, MaxVal(Price,i) - MinVal(Price,i), Tri_Asym),0,BLUE);
+    plot(strf("Tri_Sym_Inv_%d", i),frechet(Price, i, -(MaxVal(Price,i) - MinVal(Price,i)), Tri_Sym),NEW,BLACK);
+    plot(strf("Tri_Asym_Inv_%d", i),frechet(Price, i, -(MaxVal(Price,i) - MinVal(Price,i)), Tri_Asym),0,GREEN);
+   }
+   
+   PlotWidth = 800;
+   PlotScale = 15;
+   PlotHeight1 = 500;
+   PlotHeight2 = 125;
+}
+</pre>
+
+Here we zoom into an area of the S&amp;P500 index that saw a fairly obvious triangle develop from early July through to mid-August 2015:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/Triangle_Detection.png"><img alt="a zoomed-in section of the S&amp;P500 Index" class="aligncenter wp-image-3218 size-large perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/Triangle_Detection-689x1024.png" decoding="async" height="1024" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='689'%20height='1024'%20viewBox='0%200%20689%201024'%3E%3C/svg%3E" width="689"/></a>
+
+You can see that most variants of our Frechet algorithm detected the triangle at some point during its evolution. In particular, the asymmetric inversive triangle measured over 20 days did a particularly good job of recognizing the triangle, reaching a similarity score of approximately 50 as the triangle approached its apex.
+
+Looking more closely at other regions will reveal that the algorithm is far from perfect, sometimes scoring patterns that we would rather exclude relatively highly. This makes it difficult to differentiate the “true” patterns on the basis of some threshold similarity score. To overcome that, we could perhaps continue to refine our pattern definitions or implement a series of confirmations from different variations, but that would get tedious fairly quickly.
+
+Here’s an example of a simple trading strategy that looks for our asymmetric triangle pattern across several time horizons. Again using the <span class="lang:c decode:true crayon-inline">strf()</span>  function, we switch to a new <span class="lang:c decode:true crayon-inline">Algo</span>  for each time horizon. I read somewhere that gold is particularly prone to triangle formations, so we’ll use the GLD Exchange Traded Fund. I also read that triangles are allegedly indicators of a strong breakout in any direction.
+
+<em>I don’t know whether this has any basis in fact, but let’s go with it for the purpose of the exercise.</em>
+
+On the basis of the alleged triangle behavior, when one is detected we bracket the market at a quarter of the 20-day ATR. We leave our pending orders for a maximum of 10 days, but no longer than the time horizon used to detect the pattern. Likewise, we close our trades after a maximum of 20 days, but no longer than the time horizon.
+
+There’s much more you could do here, for example cancelling the remaining pending order when the opposite one is executed.<span class="inline-footnote" style="" title="Again, the purpose of the code below is to demonstrate how you might use a particular tool in a trading application, not to suggest that the code below should be traded.">2<span class="footnoteContent" style="display:none;">Again, the purpose of the code below is to demonstrate how you might use a particular tool in a trading application, not to suggest that the code below should be traded.</span></span>The code uses Alpha Vantage’s API for getting the required GLD historical data, so you’ll need to set this up in your Zorro.ini file if you don’t already have this data.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Frechet Trading">/* FRECHET TRADING
+
+*/
+
+var threshold = 30;
+
+function run()
+{
+    set(PLOTNOW);
+    StartDate = 2007;
+    EndDate = 2017;
+    BarPeriod = 1440;
+    AssetList = "AssetsIB";
+    if(is(INITRUN)) assetHistory("GLD", FROM_AV);
+    asset("GLD");
+   
+   vars Price = series(priceClose());
+   var Tri_Asym[14] = {1,3,5,8,6,4,2,5,7,6,4,3,6,0};
+
+   int i;
+   for(i=10;i&lt;=50;i+=10)
+   {
+    algo(strf("_%d_Asym", i));
+    if(frechet(Price, i, MaxVal(Price,i)-MinVal(Price,i), Tri_Asym) &gt; threshold)
+        {
+            Entry = 0.25*ATR(20);
+            EntryTime = min(i, 10);
+            LifeTime = min(i, 20);
+            if(NumOpenLong == 0) enterLong();
+            if(NumOpenShort == 0) enterShort();
+        }
+   }
+   
+   PlotWidth = 800;
+   PlotHeight1 = 500;
+   PlotHeight2 = 125;
+}
+</pre>
+
+Here’s the equity curve:
+
+<a href="https://robotwealth.com/wp-content/uploads/2017/08/GLD_Triangle_Trading.png"><img alt="the equity curve of our trade - frechet distance" class="aligncenter wp-image-3219 size-full perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/08/GLD_Triangle_Trading.png" decoding="async" height="501" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='879'%20height='501'%20viewBox='0%200%20879%20501'%3E%3C/svg%3E" width="879"/></a>
+
+You’ll find that such a trading strategy is difficult to apply directly to a universe of potential assets.
+
+The effect of randomness, combined with the difficulty in refining pattern definitions sufficiently, invites overfitting to the parameters of the <span class="lang:c decode:true crayon-inline">frechet()</span>  function, not to mention selection bias. You’ll also be faced with the decision to trade a pattern detected at multiple time horizons.
+
+Maybe a system of confirmations from numerous pattern variations would help, but perhaps a more practical application for the trader interested in patterns is to use <span class="lang:c decode:true crayon-inline">frechet()</span> to scan a universe of assets and issue email or SMS alerts, or display a message listing assets where a pattern was detected for further manual analysis. Maybe we’ll cover this in a future blog post if you’re interested, let me know in the comments below.
+
+<h2>Some Patterns to Get You Started</h2>
+
+Here are some rather idealized patterns to get you started. I leave it up to you to experiment with various departures from their idealized forms.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Idealized Patterns">var rectangle[5] = {1,2,1,2,0};
+var cup[10] = {6,3,2,1,1,1,2,3,6,0};
+var zigzag[5] = {1,7,2,8,0};
+var headShldrs[17] = {1,2,3,3,3,4,5,6,6,5,4,3,3,3,2,1,0};
+var cup[10] = { 6,3,2,1,1,1,2,3,6,0 };
+var triangle_symmetric[9] = {1,8,2,7,3,6,5,4,0};
+var triangle_assymetric[14] = {1,3,5,8,6,4,2,5,7,6,4,3,6,0};</pre>
+
+ 
+
+<strong>Want a more robust and profitable approach to trading? Gain a broader understanding of how we use algorithms to trade systematically and make our capital grow by downloading the free Algo Basics PDF below.</strong>
+
+
+After that, check out our other blog post where we outline <a href="https://robotwealth.com/humility-and-the-pain-trade/" rel="noopener noreferrer" target="_blank">how we approach the markets</a> in a way that allows us to trade for a living.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>backtesting</span>, <span>frechet</span>, <span>pattern recognition</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">6 thoughts on “Pattern Recognition with the Frechet Distance”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1" id="comment-8594">
+<article class="comment-body" id="div-comment-8594" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks for sharing, VERY informative!</p>
+<span class="reply"><a aria-label="Reply to Marc Vanhees" class="comment-reply-link" data-belowelement="div-comment-8594" data-commentid="8594" data-postid="11114" data-replyto="Reply to Marc Vanhees" data-respondelement="respond" href="#comment-8594" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-9202">
+<article class="comment-body" id="div-comment-9202" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Interesting approach.</p>
+<span class="reply"><a aria-label="Reply to Kurt P Starck" class="comment-reply-link" data-belowelement="div-comment-9202" data-commentid="9202" data-postid="11114" data-replyto="Reply to Kurt P Starck" data-respondelement="respond" href="#comment-9202" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/pattern-recognition-with-the-frechet-distance/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

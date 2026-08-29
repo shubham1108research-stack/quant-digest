@@ -1,0 +1,685 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Optimising the rsims package for fast backtesting in R</title>
+<!-- source: https://robotwealth.com/optimising-the-rsims-package-for-fast-backtesting-in-r/ -->
+<h1>Optimising the rsims package for fast backtesting in R</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-42031 post type-post status-publish format-standard hentry category-quant-trading pmpro-has-access" id="post-42031">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">August 20, 2021</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Optimising the rsims package for fast backtesting in R</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Optimising the rsims package for fast backtesting in R" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><code>rsims</code> is a new package for fast, quasi event-driven backtesting in R. You can find the source on <a href="https://github.com/Robot-Wealth/rsims">GitHub</a>, docs <a href="https://robot-wealth.github.io/rsims/">here</a>, and an introductory blog post <a href="https://robotwealth.com/exploring-the-rsims-package-for-fast-backtesting-in-r/">here</a>.
+
+Our use case for <code>rsims</code> was accurate but fast simulation of trading strategies. I’ve had a few questions about how I made the backtester as fast as it is – after all, it uses a giant <code>for</code> loop, and R is notoriously slow for such operations – so here’s a post about how I optimised <code>rsims</code> for speed.
+
+<h2>Approach</h2>
+
+I firstly wrote the backtester with a focus on ease of understanding. I wanted something that worked as expected, and that I could think about without too much effort. At this stage, I wasn’t thinking much about speed or efficiency.
+
+Once I had that working, I focused on finding bottlenecks with <code>profvis</code>. It’s a good idea to resist the urge to optimise before you know where you’ll get the most bang for your buck (speaking from experience here).
+
+Then I simply tackled those bottlenecks one at a time until I reached a point of diminishing returns (which is a little subjective and dependent on one’s use case).
+
+There’s one thing I’d do differently if I were starting over: write the tests first, rather than after the fact. In hindsight, this would have saved a ton of time. To be honest, it’s something that I say after every little development effort, but this time I’ve <em>really</em> learned my lesson.
+
+<h2>Profiling with profvis</h2>
+
+The original code looked a lot different from the current version. It had lots of data frames and <code>dplyr</code> pipelines for operating on data:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">positions_from_no_trade_buffer &lt;- function(current_positions, current_prices, current_theo_weights, cap_equity, num_assets, trade_buffer) {
+  current_weights &lt;- current_positions*current_prices/cap_equity
+  target_positions &lt;- current_positions
+  for(j in 1:num_assets) {
+    if(is.na(current_theo_weights[j]) || current_theo_weights[j] == 0) {
+      target_positions[j] &lt;- 0
+      next
+    }
+    # note: we haven't truncated to nearest whole coin, as coins are divisible (unlike shares)
+    if(current_weights[j] &lt; current_theo_weights[j] - trade_buffer) {
+      target_positions[j] &lt;- (current_theo_weights[j] - trade_buffer)*cap_equity/current_prices[j]
+    } else if(current_weights[j] &gt; current_theo_weights[j] + trade_buffer) {
+      target_positions[j] &lt;- (current_theo_weights[j] + trade_buffer)*cap_equity/current_prices[j]
+    }
+  }
+
+  unlist(target_positions)
+}
+
+cash_backtest_original &lt;- function(backtest_df_long, trade_buffer = 0., initial_cash = 10000, commission_pct = 0, capitalise_profits = FALSE) {
+
+  # Create wide data frames 
+  wide_prices &lt;- backtest_df_long %&gt;%
+    pivot_wider(date, names_from = 'ticker', values_from = 'price')
+
+  wide_theo_weights &lt;- backtest_df_long %&gt;%
+    pivot_wider(date, names_from = 'ticker', values_from = 'theo_weight')
+
+  # get tickers for later
+  tickers &lt;- colnames(wide_prices)[-1]
+
+  # initial state
+  num_assets &lt;- ncol(wide_prices) - 1  # -1 for date column
+  current_positions &lt;- rep(0, num_assets)
+  previous_theo_weights &lt;- rep(0, num_assets)
+  row_list &lt;- list() 
+  cash &lt;- initial_cash
+
+  # backtest loop
+  for(i in 1:nrow(wide_prices)) {
+    current_date &lt;- wide_prices[i, 1] %&gt;% pull() %&gt;% as.Date()
+    current_prices &lt;- wide_prices[i, -1] %&gt;% as.numeric()
+    current_theo_weights &lt;- wide_theo_weights[i, -1] %&gt;% as.numeric()
+
+    # update equity
+    equity &lt;- sum(current_positions * current_prices, na.rm = TRUE) + cash
+    cap_equity &lt;- ifelse(capitalise_profits, equity, min(initial_cash, equity))  # min reflects assumption that we don't top up strategy equity if in drawdown
+
+    # update positions based on no-trade buffer
+    target_positions &lt;- positions_from_no_trade_buffer(current_positions, current_prices, current_theo_weights, cap_equity, num_assets, trade_buffer)
+
+    # calculate position deltas, trade values and commissions
+    trades &lt;- target_positions - current_positions
+    trade_value &lt;- trades * current_prices
+    commissions &lt;- abs(trade_value) * commission_pct
+
+    # adjust cash by value of trades
+    cash &lt;- cash - sum(trade_value, na.rm = TRUE) - sum(commissions, na.rm = TRUE)
+    current_positions &lt;- target_positions
+    position_value &lt;- current_positions * current_prices
+    equity &lt;- sum(position_value, na.rm = TRUE) + cash
+
+    # Create data frame and add to list
+    row_df &lt;- data.frame(
+       Ticker = c('Cash', tickers),
+       Date = rep(current_date, num_assets + 1),
+       Close = c(0, current_prices),
+       Position = c(0, current_positions),
+       Value = c(cash, position_value),
+       Trades = c(-sum(trade_value), trades),
+       TradeValue = c(-sum(trade_value), trade_value),
+       Commission = c(0, commissions)
+    )
+
+    row_list[[i]] &lt;- row_df
+
+    previous_theo_weights &lt;- current_theo_weights
+  }
+
+  # Combine list into dataframe
+  bind_rows(row_list)
+}
+</pre>
+
+This version of <code>cash_backtest</code> takes a long data frame of prices and weights by date, which is a very convenient format for data analysis. We can make such a data frame of randomly generated prices and weights:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(tidyverse)
+
+# function for generating prices from GBM process
+gbm_sim &lt;- function(nsim = 100, t = 25, mu = 0, sigma = 0.1, S0 = 100, dt = 1./365) {
+  # matrix of random draws - one for each day for each simulation
+  epsilon &lt;- matrix(rnorm(t*nsim), ncol = nsim, nrow = t)
+
+  # get GBM paths
+  gbm &lt;- exp((mu - sigma * sigma / 2) * dt + sigma * epsilon * sqrt(dt)) - 1
+
+  # convert to price paths
+  gbm &lt;- apply(rbind(rep(S0, nsim), gbm + 1), 2, cumprod)
+
+  gbm
+}
+
+# generate prices and weights
+years &lt;- 20
+universe &lt;- 100
+x &lt;- 1
+tickers &lt;- vector() 
+repeat{
+  tickers[[x]] &lt;- paste0(sample(LETTERS, 5, replace = TRUE), collapse = "")
+  x &lt;- x + 1
+  if(x == universe + 1) 
+    break
+}
+stopifnot(n_distinct(tickers) == universe)
+date &lt;- seq(as.numeric(as.Date("1980-01-01")), as.numeric(as.Date("1980-01-01"))+(years*365))
+prices &lt;- cbind(date, gbm_sim(nsim = universe, t = years*365, mu = 0.1, sigma = 0.1))
+colnames(prices) &lt;- c("date", tickers)
+weights &lt;- cbind(date, rbind(rep(0, universe), matrix(rnorm(years*365*universe), nrow = years*365)))
+colnames(weights) &lt;- c("date", tickers)
+
+backtest_df_long &lt;- prices %&gt;% 
+  as.data.frame() %&gt;% 
+  mutate(date = as.Date(date, origin ="1970-01-01")) %&gt;% 
+  pivot_longer(-date, names_to = "ticker", values_to = "price") %&gt;% 
+  left_join(
+    weights %&gt;% 
+      as.data.frame() %&gt;% 
+      mutate(date = as.Date(date, origin ="1970-01-01")) %&gt;% 
+      pivot_longer(-date, names_to = "ticker", values_to = "theo_weight"),
+    by = c("date", "ticker")
+  )
+
+head(backtest_df_long)
+#&gt; # A tibble: 6 x 4
+#&gt;   date       ticker price theo_weight
+#&gt;   &lt;date&gt;     &lt;chr&gt;  &lt;dbl&gt;       &lt;dbl&gt;
+#&gt; 1 1980-01-01 TVEZI    100           0
+#&gt; 2 1980-01-01 XIERO    100           0
+#&gt; 3 1980-01-01 XGYMU    100           0
+#&gt; 4 1980-01-01 PMVPF    100           0
+#&gt; 5 1980-01-01 KNCIP    100           0
+#&gt; 6 1980-01-01 JEBOY    100           0
+</pre>
+<code>backtest_df_long</code> has prices and weights for 100 tickers over 7301 days:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">backtest_df_long %&gt;% 
+  summarise(
+    num_days = n_distinct(date),
+    num_tickers = n_distinct(ticker)
+  )
+#&gt; # A tibble: 1 x 2
+#&gt;   num_days num_tickers
+#&gt;      &lt;int&gt;       &lt;int&gt;
+#&gt; 1     7301         100
+</pre>
+
+To get some insight into how quickly the backtest runs and where the bottlenecks are, <code>profvis</code> is your friend:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(profvis)
+
+profvis({cash_backtest_original(backtest_df_long)}, interval = 0.01)
+</pre>
+
+(To get deeper insight, you can extract the function logic as a series of expressions and pass these directly to <code>profvis</code> – but this shortcut is fine for our purposes)
+
+<code>profvis</code> tells us that <code>cash_backtest_original</code> took about 7.5 seconds to run and that most of the time was spent messing around with data frames:
+
+<img alt="" class="size-full wp-image-42032 aligncenter perfmatters-lazy" data-sizes="(max-width: 556px) 100vw, 556px" data-src="https://media.robotwealth.com/wp-content/uploads/2021/08/21160059/profiling_initial.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2021/08/21160059/profiling_initial.png 556w, https://media.robotwealth.com/wp-content/uploads/2021/08/21160059/profiling_initial-294x300.png 294w" decoding="async" height="567" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='556'%20height='567'%20viewBox='0%200%20556%20567'%3E%3C/svg%3E" width="556"/>
+
+In R, data frames are very convenient for doing data analysis, but they can be slow, particularly when you repeatedly index or subset them. Matrixes tend to be much faster, which suggests that we can get a big win from switching our data frames to matrixes.
+
+There are some considerations. For example, a matrix can only store data of the same type, so we need to convert our convenient, human-readable date column to a Unix timestamp. Later, we’ll also rely on upstream data alignment and we’ll index by row number rather than date, which requires more work by the user, including checking that data alignment is in fact correct. Everything is a trade-off, no free lunches and all that.
+
+Here’s how the code would look with the data frame to matrix conversions – the main changes are around storing each day’s trade information in a list of matrixes, then converting that back to a data frame at the end (this time I’ll pass the function contents directly to <code>profvis</code> as a series of expressions):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">profvis({
+  # Create matrixes (data.matrix automatically coerces dates to numeric Unix timestamps) 
+  wide_prices &lt;- backtest_df_long %&gt;%
+    pivot_wider(date, names_from = 'ticker', values_from = 'price') %&gt;% 
+    data.matrix()
+
+  wide_theo_weights &lt;- backtest_df_long %&gt;%
+    pivot_wider(date, names_from = 'ticker', values_from = 'theo_weight') %&gt;% 
+    data.matrix()
+
+  # get tickers for later
+  tickers &lt;- colnames(wide_prices)[-1]
+
+  # initial state
+  num_assets &lt;- ncol(wide_prices) - 1  # -1 for date column
+  current_positions &lt;- rep(0, num_assets)
+  previous_theo_weights &lt;- rep(0, num_assets)
+  row_list &lt;- list() 
+  cash &lt;- initial_cash
+
+  # backtest loop
+  for(i in 1:nrow(wide_prices)) {
+    current_date &lt;- wide_prices[i, 1]
+    current_prices &lt;- wide_prices[i, -1]
+    current_theo_weights &lt;- wide_theo_weights[i, -1]
+
+    # update equity
+    equity &lt;- sum(current_positions * current_prices, na.rm = TRUE) + cash
+    cap_equity &lt;- ifelse(capitalise_profits, equity, min(initial_cash, equity))  # min reflects assumption that we don't top up strategy equity if in drawdown
+
+    # update positions based on no-trade buffer
+    target_positions &lt;- positions_from_no_trade_buffer(current_positions, current_prices, current_theo_weights, cap_equity, num_assets, trade_buffer)
+
+    # calculate position deltas, trade values and commissions
+    trades &lt;- target_positions - current_positions
+    trade_value &lt;- trades * current_prices
+    commissions &lt;- abs(trade_value) * commission_pct
+
+    # adjust cash by value of trades
+    cash &lt;- cash - sum(trade_value, na.rm = TRUE) - sum(commissions, na.rm = TRUE)
+    current_positions &lt;- target_positions
+    position_value &lt;- current_positions * current_prices
+    equity &lt;- sum(position_value, na.rm = TRUE) + cash
+
+    # store date in matrix as numeric (then convert date back to date format later)
+    row_mat &lt;- matrix(
+      data = c(
+        rep(as.numeric(current_date), num_assets + 1),
+        c(1, current_prices),
+        c(cash, current_positions),
+        c(cash, position_value),
+        c(-sum(trade_value), trades),
+        c(-sum(trade_value), trade_value),
+        c(0, commissions)
+      ),
+      nrow = num_assets + 1,
+      ncol = 7,
+      byrow = FALSE,
+      dimnames = list(
+        # tickers are row names
+        c("Cash", tickers),
+        # column names
+        c("Date", "Close", "Position", "Value", "Trades", "TradeValue", "Commission")
+      )
+    )
+
+    row_list[[i]] &lt;- row_mat
+
+    previous_theo_weights &lt;- current_theo_weights
+  } 
+  # Combine list of matrixes into dataframe
+  do.call(rbind, row_list) %&gt;%
+    tibble::as_tibble(rownames = "ticker") %&gt;%
+    dplyr::mutate(
+      Date = as.Date(Date, origin ="1970-01-01")
+    )
+}, interval = 0.01)
+</pre>
+
+On my machine, this took about 500 milliseconds, a 15x speedup.
+
+According to <code>profvis</code>, there are a couple of minor bottlenecks. One is the storing of each day’s trade details in a list: <code>row_list[[i]] &lt;- row_mat</code>.
+
+A simple trick for speeding up this operation is to preallocate <code>row_list</code> by replacing <code>row_list &lt;- list()</code> with <code>row_list &lt;- vector(mode = "list", length = nrow(wide_prices))</code>.
+
+This gave me a slight speedup overall (450 vs 500ms) and removed this as a bottleneck.
+
+We all know that R plays really nicely with vectorisation. If we can make use of vectorised functions where possible, we can usually speed things up considerably. One place we can do this is the <code>positions_from_no_trade_buffer</code> function, which in its original form is a series of if-else statements.
+
+A vectorised version, making use of R’s vectorised <code>ifelse</code> function would look like this:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">positions_from_no_trade_buffer_vec &lt;- function(current_positions, current_prices, current_theo_weights,cap_equity, num_assets, trade_buffer) {
+  current_weights &lt;- current_positions*current_prices/cap_equity
+  target_positions &lt;- ifelse(
+    is.na(current_theo_weights) | current_theo_weights == 0,
+    0,
+    ifelse(
+      current_weights &lt; current_theo_weights - trade_buffer,
+      (current_theo_weights - trade_buffer)*cap_equity/current_prices,
+      ifelse(
+        current_weights &gt; current_theo_weights + trade_buffer,
+        (current_theo_weights + trade_buffer)*cap_equity/current_prices,
+        current_positions
+      )
+    )
+  )
+
+  as.numeric(target_positions)  # convert to unamed vector
+}
+</pre>
+
+When I use the vectorised version, I get another small speedup (370ms total), and the time spent in this function reduces by more than a factor of two.
+
+It’s worth thinking about this function a little more. The time it requires will scale by both the number of time periods in the backtest, as well as (to a lesser extent) by the number of assets in the universe. For that reason, it made sense to try to squeeze out a little more performance and rewrite it in C++ via the <code>Rcpp</code> package:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">#include &lt;Rcpp.h&gt;
+using namespace Rcpp;
+
+// [[Rcpp::export]]
+NumericVector positions_from_no_trade_buffer_cpp(NumericVector current_positions, NumericVector current_prices, NumericVector current_theo_weights, double cap_equity, int num_assets, double trade_buffer) {
+  NumericVector current_weights(num_assets);
+  NumericVector target_positions(num_assets);
+  std::copy( current_positions.begin(), current_positions.end(), target_positions.begin() ) ;
+
+  int j = 0;
+  for(j = 0; j &lt; num_assets; j++)
+  {
+    current_weights[j] = current_positions[j]*current_prices[j]/cap_equity;
+  }
+
+  j = 0;
+  for(j = 0; j &lt; num_assets; j++)
+  {
+    //Rprintf(\"%i %f %f \\n\", j, current_theo_weights[j], current_weights[j]);
+    if(R_IsNA(current_theo_weights[j]) | current_theo_weights[j] == 0)
+      target_positions[j] = 0;
+    else if(current_weights[j] &lt; current_theo_weights[j] - trade_buffer)
+      target_positions[j] = (current_theo_weights[j] - trade_buffer)*cap_equity/current_prices[j];
+    else if(current_weights[j] &gt; current_theo_weights[j] + trade_buffer)
+      target_positions[j] = (current_theo_weights[j] + trade_buffer)*cap_equity/current_prices[j];
+  }
+
+  return target_positions;
+}
+</pre>
+
+Benchmarking the three versions of these functions is illustrative:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(microbenchmark)
+
+# make wide matrixes
+wide_prices &lt;- backtest_df_long %&gt;%
+  pivot_wider(date, names_from = 'ticker', values_from = 'price') %&gt;% 
+  data.matrix()
+wide_theo_weights &lt;- backtest_df_long %&gt;%
+  pivot_wider(date, names_from = 'ticker', values_from = 'theo_weight') %&gt;% 
+  data.matrix()
+
+# pick a day's prices and weights
+current_prices &lt;- wide_prices[100, -1]
+current_theo_weights &lt;- wide_theo_weights[100, -1]
+num_assets &lt;- ncol(wide_prices) - 1  # -1 for date column
+current_positions &lt;- rep(0, num_assets)
+cap_equity &lt;- 10000
+trade_buffer = 0.04
+
+
+# check versions match 
+all.equal(
+  positions_from_no_trade_buffer_cpp(current_positions, current_prices, current_theo_weights, cap_equity, num_assets, trade_buffer),
+  positions_from_no_trade_buffer_vec(current_positions, current_prices, current_theo_weights, cap_equity, num_assets, trade_buffer)
+)
+#&gt; [1] TRUE
+all.equal(
+  positions_from_no_trade_buffer_cpp(current_positions, current_prices, current_theo_weights, cap_equity, num_assets, trade_buffer),
+  positions_from_no_trade_buffer(current_positions, current_prices, current_theo_weights, cap_equity, num_assets, trade_buffer)
+)
+#&gt; [1] TRUE
+
+# make more concise expressions for microbenchmark
+for_loop_version &lt;- function() {
+  positions_from_no_trade_buffer(current_positions, current_prices, current_theo_weights, cap_equity, num_assets, trade_buffer)
+}
+
+vectorised_version &lt;- function() {
+  positions_from_no_trade_buffer_vec(current_positions, current_prices, current_theo_weights, cap_equity, num_assets, trade_buffer)
+}
+
+cpp_version &lt;- function() {
+  positions_from_no_trade_buffer_cpp(current_positions, current_prices, current_theo_weights, cap_equity, num_assets, trade_buffer)
+}
+
+# benchmark
+microbenchmark(
+  for_loop_version(),
+  vectorised_version(),
+  cpp_version(),
+  times = 1000
+) %&gt;% 
+  summary()
+#&gt;                   expr     min       lq       mean   median      uq      max neval
+#&gt; 1   for_loop_version() 239.801 268.5515 364.200015 315.2005 394.101 8460.800  1000
+#&gt; 2 vectorised_version()  25.701  29.4010  51.636307  31.5510  43.751 9537.701  1000
+#&gt; 3        cpp_version()   2.501   3.3010   7.439904   3.9010   5.001 2211.001  1000
+</pre>
+
+The C++ version is roughly 7x faster than the vectorised version and 10x faster than the original version if we use the median execution time. The units here are microseconds, and admittedly, when we’re in this realm, such a speedup makes little practical difference, but it conceivably could if we were backtesting a large enough universe over enough time periods.
+
+Because we use the function so much, using the C++ version gets our <code>profvis</code> output down to about 200ms, from 370ms previously.
+
+Another efficiency can be gained by pushing data transformations that only need to happen once outside of the function whose speed matters. In this case, we could, for example, make the wide price and weight matrixes upstream of the backtesting function, pushing that responsibility back to the user. This is, in fact, what we’ve done in the current implementation of <code>rsims</code>. Profiling the current version results in the following output:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(rsims)
+
+profvis({
+  cash_backtest(
+    prices,
+    weights,
+    trade_buffer = 0.,
+    initial_cash = 1000,
+    commission_pct = 0.001,
+    capitalise_profits = FALSE
+  )
+}, interval = 0.01)
+</pre>
+<img alt="" class="size-full wp-image-42033 aligncenter perfmatters-lazy" data-sizes="(max-width: 720px) 100vw, 720px" data-src="https://media.robotwealth.com/wp-content/uploads/2021/08/21160058/profiling_final.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2021/08/21160058/profiling_final.png 720w, https://media.robotwealth.com/wp-content/uploads/2021/08/21160058/profiling_final-300x105.png 300w, https://media.robotwealth.com/wp-content/uploads/2021/08/21160058/profiling_final-600x209.png 600w" decoding="async" height="251" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='720'%20height='251'%20viewBox='0%200%20720%20251'%3E%3C/svg%3E" width="720"/>
+
+The total time taken was 160ms, a 47x speedup over the original version.
+
+<h2>How does <code>rsims</code> scale?</h2>
+
+Finally, let’s see how <code>rsims</code> performs as we increase the number of time steps and the size of the universe. We’ll benchmark the performance with universe sizes from 100 to 1,000, and time periods from 2,500 to 10,000 days (approximately 10 to 40 trading years):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">library(rsims)
+
+get_mean_time &lt;- function(days, universe, times = 5) {
+  dates &lt;- seq(as.numeric(as.Date("1980-01-01")), as.numeric(as.Date("1980-01-01"))+(days))
+  prices &lt;- cbind(dates, gbm_sim(nsim = universe, t = days, mu = 0.1, sigma = 0.1))
+  weights &lt;- cbind(dates, rbind(rep(0, universe), matrix(rnorm(days*universe), nrow = days)))
+
+  res &lt;- microbenchmark(
+    cash_backtest(
+      prices,
+      weights,
+      trade_buffer = 0.,
+      initial_cash = 1000,
+      commission_pct = 0.001,
+      capitalise_profits = FALSE
+    ),
+    times = times
+  )
+  mean(res$time)/1e9
+}
+
+num_assets &lt;- seq(100, 1000, 100)
+num_days &lt;- c(10, 20, 30, 40)*252
+
+means &lt;- list()
+for(universe in num_assets) {
+  print(glue::glue("Doing universe size {universe}"))
+  for(days in num_days) {
+    print(glue::glue("Doing {days} days"))
+    means &lt;- c(means, get_mean_time(days, universe, times = 10))
+  }
+}</pre>
+
+Plotting the results:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="generic">df &lt;- as.data.frame(matrix(unlist(means), ncol = length(num_assets))) %&gt;%
+  mutate(days = num_days)
+
+colnames(df) &lt;- c(num_assets, "days")
+
+df %&gt;%
+  pivot_longer(cols = -days, names_to = "universe_size", values_to = "mean_sim_time") %&gt;%
+  mutate(universe_size = as.numeric(universe_size)) %&gt;%
+  ggplot(aes(x = universe_size, y = mean_sim_time, colour = factor(days))) +
+    geom_line() +
+    geom_point() +
+    labs(
+      x = "Universe size",
+      y = "Mean simulation time, seconds",
+      title = "Mean simulation time from 10 iterations",
+      colour = "Time Steps"
+    ) +
+    theme_bw()</pre>
+<img alt="" class="size-full wp-image-42034 aligncenter perfmatters-lazy" data-sizes="(max-width: 849px) 100vw, 849px" data-src="https://media.robotwealth.com/wp-content/uploads/2021/08/21160057/mean_sim_time.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2021/08/21160057/mean_sim_time.png 849w, https://media.robotwealth.com/wp-content/uploads/2021/08/21160057/mean_sim_time-300x142.png 300w, https://media.robotwealth.com/wp-content/uploads/2021/08/21160057/mean_sim_time-768x365.png 768w, https://media.robotwealth.com/wp-content/uploads/2021/08/21160057/mean_sim_time-600x285.png 600w" decoding="async" height="403" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='849'%20height='403'%20viewBox='0%200%20849%20403'%3E%3C/svg%3E" width="849"/>
+
+We can see that <code>rsims</code> scales well in general. I suspect that there was a blow out for the universe sizes of 900 and 1,000 for the 40-year backtest due to memory constraints of my local setup (100 Chrome tabs anyone?).
+
+<h2>Other ideas not implemented</h2>
+
+There are some other tricks for speeding up R code that weren’t applicable here, but that are worth knowing about.
+
+<h3>Parallel processing</h3>
+
+Parallel processing is a well-trodden path for doing computations in parallel on more than one processor. In R, the <code>parallel</code> package is the original parallel processing toolkit and is included in base R. It parallelises some standard R functions out of the box, such as the <code>apply</code> functions. There’s also the <code>foreach</code> and <code>doParallel</code> packages.
+
+In our application, parallelisation won’t work for the event loop because of path dependency – tomorrow’s trades depend on yesterday’s positions, so we can’t do yesterday’s and today’s trades in parallel.
+
+We could potentially parallelise the position delta calculations for each asset <em>within</em> each loop iteration, as these aren’t dependent on one another. This operation is already fast – on the order of microseconds – so we have little to gain in absolute terms, and I think the overhead of setting up and managing parallel processes would probably negate any speed gains anyway.
+
+<h3>Intelligent application of logical operators</h3>
+
+A common inefficiency is using vectorised <code>AND</code> and <code>OR</code> operators (<code>&amp;</code>, <code>|</code>) in comparisons involving scalars. The vectorised versions always evaluate both sides of the logical operator, whereas the non-vectorised versions (<code>&amp;&amp;</code>, <code>||</code>) only execute the right-hand side (and subsequent comparisons) if necessary.
+
+For example, the expression <code>(1 &gt; 4) &amp; (3 &lt; 5)</code> evaluates both sides of the <code>&amp;</code>, while <code>(1 &gt; 4) &amp;&amp; (3 &lt; 5)</code> only evaluates the first, because the expression is falsified by the first comparison.
+
+Granted, this is a very minor inefficiency but can make a difference if you’re doing a lot of such operations. Just be careful not to use scalar <code>&amp;&amp;</code> and <code>||</code> on vectors, as they will only evaluate the first element!
+
+<h2>Conclusion</h2>
+
+By far the biggest efficiency gains came with converting data frames to matrixes. This is worth considering when speed is important, so long as the trade-offs around data consistency and convenience make sense for the application.
+
+Smaller but useful efficiency gains came from:
+
+<ul>
+<li>Preallocating data containers rather than growing them on the fly</li>
+<li>Pushing data transformations that only need to happen once outside the function whose speed matters (for example, make the wide price and weights matrixes once, then run many fast backtests with different parameters)</li>
+<li>Vectorising where possible</li>
+<li>Using C++ via <code>Rcpp</code></li>
+</ul>
+
+You might also want to consider parallel processing and careful usage of logical operators.
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8"></div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">3 thoughts on “Optimising the rsims package for fast backtesting in R”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-22248">
+<article class="comment-body" id="div-comment-22248" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Have you considered using xts instead of a matrix? That would get you some free lunch. It’s still faster to index xts objects by a number, instead of a timestamp. But you can get the row of the timestamp once, then use the row number for all later subset operations. You also get xts’ ISO8601 range-based subsetting.</p>
+<span class="reply"><a aria-label="Reply to Joshua Ulrich" class="comment-reply-link" data-belowelement="div-comment-22248" data-commentid="22248" data-postid="42031" data-replyto="Reply to Joshua Ulrich" data-respondelement="respond" href="#comment-22248" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-22276">
+<article class="comment-body" id="div-comment-22276" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I hate to admit that I didn’t think of using <code>xts</code> – what an oversight considering how much I’ve benefited from using it in the past! Thanks for bringing it up. I’m going to work on replacing matrixes with <code>xts</code> objects in the next release.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-22276" data-commentid="22276" data-postid="42031" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-22276" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/optimising-the-rsims-package-for-fast-backtesting-in-r/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

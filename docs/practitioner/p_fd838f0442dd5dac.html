@@ -1,0 +1,204 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Why You Can’t Tell if Your Strategy “Stopped Working” (Statistically Speaking)</title>
+<!-- source: https://robotwealth.com/why-you-cant-tell-if-your-strategy-stopped-working-statistically-speaking/ -->
+<h1>Why You Can’t Tell if Your Strategy “Stopped Working” (Statistically Speaking)</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-121877 post type-post status-publish format-standard hentry category-think-like-a-trader tag-statistics pmpro-has-access" id="post-121877">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/e96cd9f2fa9bcbb939e75f7da0ca7bcc819e4b4460bdb22a761f6ce58095a857?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/e96cd9f2fa9bcbb939e75f7da0ca7bcc819e4b4460bdb22a761f6ce58095a857?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/es/">Euan Sinclair</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">October 10, 2025</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Why You Can’t Tell if Your Strategy “Stopped Working” (Statistically Speaking)</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Why You Can’t Tell if Your Strategy “Stopped Working” (Statistically Speaking)" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">
+<p class="wp-block-paragraph">Traders love the illusion of precision. A few bad weeks go by, and you think, “Let’s run a t-test and see if the strategy stopped working.” It sounds rigorous. It isn’t.</p>
+<p class="wp-block-paragraph">Imagine a strategy that, in truth, earns 10% per year with 20% volatility – roughly the S&amp;P’s long-term profile. We’ll simulate five years of daily returns, about 1,260 observations, from a geometric Brownian motion with those parameters.</p>
+<p class="wp-block-paragraph">Now the world changes. For the next month, 21 trading days, the strategy’s expected return drops to zero, but volatility stays at 20%.</p>
+<p class="wp-block-paragraph">We’d like to detect that change. The question: <em>Can you statistically prove the edge is gone?</em></p>
+<p class="wp-block-paragraph">A t-test compares these two samples (before and after) and asks if their means differ significantly.</p>
+<p class="wp-block-paragraph">Five years of data vs. one month. </p>
+<p class="wp-block-paragraph">That’s n₁ ≈ 1260 vs. n₂ ≈ 21.</p>
+<p class="wp-block-paragraph">Noise ≈ 20% / √252 ≈ 1.26% daily.</p>
+<p class="wp-block-paragraph">The expected daily drift for 10% annual return is just 0.10 / 252 ≈ 0.04% per day. That’s our signal. The noise is thirty times larger. In other words, your daily Sharpe ratio is 0.04 / 1.26 ≈ 0.03, <strong><em>an astronomically low signal-to-noise ratio</em></strong>.</p>
+<p class="wp-block-paragraph">So even if the edge disappeared entirely, you’d barely notice in a month.</p>
+<p class="wp-block-paragraph">From the simulation:</p>
+<figure class="wp-block-table"><table class="has-fixed-layout"><thead><tr><td><strong>Test</strong></td><td><strong>p-value</strong></td><td><strong>Interpretation</strong></td></tr></thead><tbody><tr><td>Welch t-test</td><td>0.12</td><td>Not significant</td></tr><tr><td>Kolmogorov Smirnov test</td><td>0.37</td><td>Not significant (even worse)</td></tr></tbody></table></figure>
+<p class="wp-block-paragraph">The t-test finds nothing. The KS test, which looks at the whole distribution, not just the mean, finds <em>even less</em>. The supposed “collapse in performance” doesn’t even register as a blip in the statistics.</p>
+<p class="wp-block-paragraph">That’s the problem: volatility dominates everything. The mean shift you’re trying to detect (0.04%/day) is microscopic relative to the daily noise (±1%). Twenty-one days is simply not enough data to estimate a mean that small with any precision.</p>
+<p class="wp-block-paragraph">The t-stat came out around <strong>–1.6</strong>, roughly a 12% chance under the null of equal means. Even if you doubled the sample size – two months of underperformance – the p-value would still hover around 0.06. You’d need a <strong>multi-month drought</strong> before statistics would admit the obvious.</p>
+<p class="wp-block-paragraph">The funny part: in that same run, the “dead” strategy’s one-month realised return was +7.5%.</p>
+<p class="wp-block-paragraph">That’s right. A zero-drift month beat 93% of all months during the prior five years of positive-drift data.</p>
+<p class="wp-block-paragraph">Why?</p>
+<p class="wp-block-paragraph">A 20% annual volatility means roughly 5.8% standard deviation per month.</p>
+<p class="wp-block-paragraph">Even with zero drift, one standard deviation up is +5.8%, and 1.3σ is +7.5%. That happens 10% of the time purely by chance.</p>
+<p class="wp-block-paragraph">Meanwhile, in the “good” regime (10% annual drift), the expected monthly gain is only +0.8%. A +7.5% outlier month easily beats the vast majority of historical months.</p>
+<p class="wp-block-paragraph">So, you end up with a bizarre headline:</p>
+<p class="wp-block-paragraph"><strong><em>“Our strategy just lost its edge, but had its second-best month ever.”</em></strong></p>
+<p class="wp-block-paragraph">Noise does that.</p>
+<p class="wp-block-paragraph">To see if the phenomenon was a fluke, I ran 3,000 simulations of the same setup.</p>
+<p class="wp-block-paragraph">Across runs:</p>
+<ul class="wp-block-list">
+<li>The median one-month return (true zero drift) was roughly –0.06%, but the 90th percentile was +7.4%.</li>
+<li>In half of all runs, the zero-drift month beat 45% of all historical months.</li>
+<li>In 16% of runs, it beat more than 80% of the prior months.</li>
+<li>In 7.5% of runs, it beat more than 90%.</li>
+</ul>
+<p class="wp-block-paragraph">So, one in every thirteen “dead” months looks like a top-decile success. Statistically, that’s unremarkable. Psychologically, it’s devastating – because you’ll tell yourself the system recovered, tweak nothing, and (probably) then spend the next quarter losing money.</p>
+<p class="wp-block-paragraph">Some traders, knowing the t-test’s weakness, pivot to “non-parametric” tests like the Kolmogorov-Smirnov. It compares the cumulative distributions directly, not the means. Surely that’s more robust?</p>
+<p class="wp-block-paragraph">No.</p>
+<p class="wp-block-paragraph">When two normal distributions differ only slightly in mean but have the same variance, the KS test has <em>less</em> power than the t-test. It’s designed to catch shape differences – fat tails, variance shifts, asymmetry – not small mean drifts. With n₂ = 21, it’s practically blind.</p>
+<p class="wp-block-paragraph">In our case, the KS p-value was 0.37. The test confidently says “nothing to see here.” It’s technically correct.</p>
+<p class="wp-block-paragraph">Here’s the deeper problem. The tools we use, t-tests, p-values, Sharpe ratios, were designed for large-sample, low-noise situations. Financial returns are the opposite: small signals, fat tails, short samples.</p>
+<p class="wp-block-paragraph">When you apply a test that needs thousands of points to reject the null at 95% confidence, you’ll never detect regime shifts in real time. The market will move on long before the statistic does.</p>
+<p class="wp-block-paragraph">A five-year window may <em>contain</em> your “true” performance, but it’s useless for diagnosing the present. A one-month drought tells you nothing. A three-month one tells you almost nothing.</p>
+<p class="wp-block-paragraph">The conclusion isn’t that tests are bad—it’s that the <em>problem</em> is mis-specified. The null hypothesis “mean return hasn’t changed” is almost never the right one. Markets evolve, but slowly and noisily. No binary test will save you.</p>
+<p class="wp-block-paragraph"><strong>Practical Interpretation</strong></p>
+<p class="wp-block-paragraph">When a strategy underperforms for a few weeks, you face two equally dangerous errors:</p>
+<ol class="wp-block-list" start="1">
+<li><strong>Type I error</strong> – You think it’s dead when it’s just noise. You abandon a still-valid edge.</li>
+<li><strong>Type II error</strong> – You think it’s noise when it’s actually dead. You keep bleeding capital.</li>
+</ol>
+<p class="wp-block-paragraph">Classical statistics tries to balance those. Trading doesn’t care. You’re asymmetric: Type II errors cost you more because capital decays geometrically, not linearly.</p>
+<p class="wp-block-paragraph">So, the sensible response isn’t to chase significance but to <strong>control exposure</strong>. Cut risk when the environment looks hostile, but don’t fool yourself that a p-value will tell you when to quit.</p>
+<p class="wp-block-paragraph">If you want to formalise this intuition, think Bayesian: update your belief about the strategy’s drift each day. The posterior distribution will drift toward zero if recent returns are weak, but uncertainty will remain large. The proper decision rule is <em>probabilistic</em>, not binary.</p>
+<p class="wp-block-paragraph">Even better, you can encode prior scepticism – say, most strategies decay over time – and let data modify that belief. The output isn’t “dead or alive,” but “probability the drift &gt; 0.” You can then size down continuously rather than panic after a failed t-test.</p>
+<p class="wp-block-paragraph">But that’s another post.</p>
+<p class="wp-block-paragraph">Every quantitative trader eventually learns this the hard way: statistics are lagging indicators. They confirm what you already know, long after it’s actionable.</p>
+<p class="wp-block-paragraph">A strategy doesn’t announce its death with a p-value. It fades, subtly, while your t-statistic wobbles somewhere between 0.5 and 1.2. By the time a 5-year backtest fails a significance test, you’ve lost more in opportunity cost than you saved by being “rigorous.”</p>
+<p class="wp-block-paragraph">Markets are too noisy for clean statistical detection. The right question isn’t <em>“Has my edge stopped working?”</em> but <em>“Given recent evidence, how much do I trust it now?”</em></p>
+<p class="wp-block-paragraph">The answer is always probabilistic, never definitive, which is precisely why trading is hard – and why so many seek comfort in meaningless tests.</p>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>statistics</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-133234 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai tag-data-mining tag-llms pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/for-the-love-of-the-game/"><img alt="For The Love of The Game" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="133235" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-768x660.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-80x69.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game-480x413.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/29224153/for_the_love_of_the_game.png 893w" decoding="async" height="660" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='660'%20viewBox='0%200%20768%20660'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-132449 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/to-trend-or-not-to-trend-wrong-question/"><img alt="To Trend or Not To Trend? (Wrong question)" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="132450" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/04/11012122/elevator.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-131547 post type-post status-publish format-standard has-post-thumbnail hentry category-think-like-a-trader tag-ai pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/brave-new-backtest/"><img alt="Brave New Backtest" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="131550" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-768x768.jpeg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-150x150.jpeg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-80x80.jpeg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-480x480.jpeg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst-960x960.jpeg 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/19154151/brave_new_backtst.jpeg 1024w" decoding="async" height="768" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='768'%20viewBox='0%200%20768%20768'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/why-you-cant-tell-if-your-strategy-stopped-working-statistically-speaking/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

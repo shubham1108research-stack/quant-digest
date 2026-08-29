@@ -1,0 +1,335 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Back to Basics Part 3: Backtesting in Algorithmic Trading</title>
+<!-- source: https://robotwealth.com/back-basics-part-3-backtesting-algorithmic-trading/ -->
+<h1>Back to Basics Part 3: Backtesting in Algorithmic Trading</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-2299 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-think-like-a-trader category-tools-of-the-trade tag-algorithmic-trading tag-backtesting pmpro-has-access" id="post-2299">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">April 12, 2017</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Back to Basics Part 3: Backtesting in Algorithmic Trading</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Back to Basics Part 3: Backtesting in Algorithmic Trading" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content"><blockquote>
+<div class="gmail_default">This is the final post in our 3-part <strong><em>Back to Basics</em></strong> series. You may be interested in checking out the other posts in this series:</div>
+<ul>
+<li class="gmail_default"><a href="https://robotwealth.com/back-to-basics-introduction-to-algorithmic-trading/">Part 1: An Introduction to Algorithmic Trading</a></li>
+<li class="gmail_default"><a href="https://robotwealth.com/back-to-basics-part-2-how-to-succeed-at-algorithmic-trading/">Part 2: How to Succeed at Algorithmic Trading</a></li>
+</ul>
+<div class="gmail_default"></div>
+<div class="gmail_default">We’ve also compiled this series into an eBook which you can download for free <a data-sumome-listbuilder-id="94f9827c-5665-4ed0-a7d7-230e009751e7">here</a>.</div></blockquote>
+<span style="font-weight: 400;">Nearly all research in algorithmic trading is empirical. It’s based on observation and experience, unlike theory, which rests on assumptions, logic, and mathematics.</span>
+<span style="font-weight: 400;">We often begin with a theoretical model, say, a time-series framework that we think describes the data, and then use empirical methods to test those assumptions. But no one would risk money on a model without first checking it against real observations. Every model is built on assumptions, and to my knowledge, no one has ever devised a complete model of markets from first principles.</span>
+<span style="font-weight: 400;">Empirical research, then, is always central to developing trading systems. The challenge is that experiments often require thousands of observations. Market data arrives in real time, so collecting enough can take ages. Make a mistake in setup, or come up with a new idea, and you’re back to the beginning. It’s a painfully slow way to learn.</span>
+<span style="font-weight: 400;">The alternative is simulation. By running experiments on historical data, we can compress time and test countless variations. In trading, this process is called backtesting. It gives immediate feedback on how an idea might have worked in the past. Of course, backtesting is hardly perfect, it comes with its own set of traps. That’s what this article sets out to explore.</span>
+<h2>Why Backtesting Matters in Algorithmic Trading?</h2>
+<span style="font-weight: 400;">Before I get too deep into backtesting theory and practice, I want to step back and ask why we’d backtest at all. I’ve already said it lets us do empirical research quickly and efficiently. But do we really need that? I mean, everyone knows you just buy when the RSI drops below 30, right?</span>
+<span style="font-weight: 400;">Obviously, that was rhetorical. My point is to call out a subtle but dangerous way of thinking that sneaks in if we’re not careful. I know most Robot Wealth readers already get this, but over the last couple of years I’ve worked with plenty of people from non-mathematical or non-scientific backgrounds who struggle with it, sometimes without even realising. This feels like the right place to address it.</span>
+<h3>The Illusion of Simple Trading Rules</h3>
+<span style="font-weight: 400;">In a deterministic world, well-defined cause and effect, natural phenomena can be captured by neat mathematical equations. Engineers and scientists will think immediately of Newton’s laws: clear rules that predict outcomes from initial conditions, solvable with high school maths.</span>
+<span style="font-weight: 400;">Markets, though, aren’t deterministic. The information we digest doesn’t map cleanly to future states. The RSI dropping below 30 doesn’t </span><i><span style="font-weight: 400;">cause</span></i><span style="font-weight: 400;"> prices to rise. Sometimes prices rise, sometimes they fall, sometimes nothing happens at all. At best, we can say more buyers than sellers pushed things around.</span>
+<span style="font-weight: 400;">Most people accept this. Yet I’ve seen the same people who admit markets aren’t deterministic follow trading rules simply because they read them in a book or online.</span>
+<span style="font-weight: 400;">Why? I have a few theories, but the strongest is that it’s easy to believe what we want to believe. And nothing is more appealing than the idea that repeating a simple action will make you rich. It’s a seductive trap, even if your rational mind knows better and you haven’t questioned the assumptions behind that system you adopted.</span>
+<span style="font-weight: 400;">I’m not suggesting all DIY traders fall for it, but I’ve noticed it often enough. If you’re new to trading, or struggling for consistency, it’s worth reflecting on.</span>
+<h3>Backtesting as a Reality Check</h3>
+<span style="font-weight: 400;">I hope it’s clear now why backtesting matters. Some trading rules will make money, most won’t. And the ones that do don’t work because they describe natural laws, they work because they capture some market trait that, over time, tilts the odds in your favour. You can never know how any single trade will turn out, but you can sometimes show that, in the long run, your chances look pretty good. Backtesting on past data gives us the framework to test those ideas and see whether the evidence supports them or not.</span>
+<h2>Simulation vs Reality in Backtesting</h2>
+<span style="font-weight: 400;">You might have noticed that in the descriptions of backtesting above I used the words simulation of reality and how our model might have performed in the past. These are very important points! No simulation of reality is ever exactly the same as reality itself. </span>
+<h3>All Models Are Wrong, Some Are Useful</h3>
+<span style="font-weight: 400;">Statistician George Box said it best: “All models are wrong, but some are useful” (Box, 1976). The key is making our simulations useful, or fit for purpose. A monthly ETF rotation strategy doesn’t need the same detail as a high-frequency stat-arb model. What matters is that the simulation is accurate enough to support real decisions about allocating to a strategy.</span>
+<span style="font-weight: 400;">So how do we build a backtesting environment we can trust as a decision-support tool? It’s not trivial. Biases and pitfalls lurk everywhere, and they can throw results completely off. But that’s part of the appeal. In my experience, the people drawn to algorithmic trading rarely shy away from a challenge.</span>
+<h3>Fit for Purpose, Not Perfect</h3>
+<span style="font-weight: 400;">At its simplest, backtesting means running your trading algorithm on historical data and tallying the profit and loss. Sounds straightforward, but in practice it’s alarmingly easy to produce inaccurate results or introduce bias that makes the whole exercise useless for decision-making.</span>
+<span style="font-weight: 400;">To avoid that, we need to think about two things:</span>
+<ol>
+<li aria-level="1" style="font-weight: 400;"><span style="font-weight: 400;">The accuracy of the simulation, and</span></li>
+<li aria-level="1" style="font-weight: 400;"><span style="font-weight: 400;">The experimental framework we use to draw conclusions.</span></li>
+</ol>
+<span style="font-weight: 400;">Both matter if you want any confidence in your results. I can’t stress enough how critical this is, get it wrong and all your effort is wasted. Most algorithmic traders pour countless hours into research and testing, and it’s tragic when poor methodology renders it meaningless. The next sections dig into these issues.</span>
+<h2>Ensuring Simulation Accuracy</h2>
+<span style="font-weight: 400;">If a simulation isn’t a close reflection of reality, what use is it? Backtests need to mimic real trading closely enough to serve their purpose. In theory, they should produce the same trades and results you’d get running the system live over the same period.</span>
+<span style="font-weight: 400;">To judge accuracy, you need to understand how the backtest generates results, and where its limits lie. No model can perfectly capture the market, but a well-built one can still be useful if it’s fit for purpose. The goal is to get as close to reality as possible while staying conscious of the gaps. Even the best backtesting setups have them.</span>
+<span style="font-weight: 400;">Backtesting accuracy can be influenced by:</span>
+<h3>Broker and Market Conditions</h3>
+<span style="font-weight: 400;">Trading conditions, spread, slippage, commission, swap, vary across brokers and setups, and they’re rarely static. The spread shifts constantly as orders enter and leave the book. Slippage, the gap between target and actual execution, depends on volatility, liquidity, order type, and execution latency. How you account for these moving parts can heavily influence simulation accuracy.</span>
+<span style="font-weight: 400;">The right approach depends on the strategy. A high-frequency system pushed to capacity might require modelling the order book to capture liquidity. For a monthly ETF rotation strategy managing retirement savings, that level of detail would be unnecessary.</span>
+<h3>Data Granularity and Its Limits</h3>
+<span style="font-weight: 400;">The granularity of data, or sampling frequency, can make or break a simulation. Take hourly OHLC data: each bar provides only four points, so trades are evaluated once an hour. But what if both a stop loss and a take profit occur within the same bar? Without finer data, you cannot know which triggered first. Whether this matters depends on the strategy and how its entries and exits are defined.</span>
+<h3>Data Quality Issues</h3>
+<span style="font-weight: 400;">The accuracy of the data driving a simulation is critical. As the saying goes, “garbage in, garbage out.” Poor data leads to poor results. Market data is messy: outliers, bad ticks, missing records, misaligned time stamps, wrong time zones, duplicates. Stock data may need adjusting for splits and dividends. Survivorship bias can skew results by excluding bankrupt companies. OTC products like forex or CFDs may even trade at different prices depending on the broker, so one data set might not reflect another. How serious these issues are depends on the strategy and its use case.</span>
+<span style="font-weight: 400;">The point is that many factors affect simulation accuracy, and they need to be understood in context so you can design the simulation sensibly. As with any scientific experiment, design is everything.</span>
+<span style="font-weight: 400;">In practice, it helps to check accuracy before moving to production. One way is to run the strategy live on a small account, then simulate it on the same market data. Even with a good simulator, you will see small deviations. Ideally, they stay within a tolerance that does not change your allocation decision. If they do, your simulator probably is not accurate enough for the job.</span>
+<h2>Development Methodology and Common Biases</h2>
+<span style="font-weight: 400;">Beyond simulation accuracy, the experimental methodology itself can undermine results. Biases are often subtle but powerful, and they slip into research and development more easily than most people realise. Left unchecked, they can devastate live performance. That is why accounting for bias is critical at every stage of the process.</span>
+<span style="font-weight: 400;">In </span><em><a href="https://www.robotwealth.net/courses" rel="noopener" target="_blank">Fundamentals of Algorithmic Trading, </a></em><span style="font-weight: 400;">I outline a workflow to reduce these risks and a record-keeping method that helps spot bias in its many forms. Here, I will walk through the main biases that tend to creep in and how they affect a trading strategy. For a deeper dive, including the psychological traps that make bias so hard to avoid, see David Aronson’s </span><i><span style="font-weight: 400;">Evidence-Based Technical Analysis</span></i><span style="font-weight: 400;"> (2006).</span>
+<h3>Understanding Look-Ahead Bias (Peeking Bias)</h3>
+<span style="font-weight: 400;">This bias appears when future knowledge influences trade decisions, using information that wasn’t available at the time. A simple example is taking an intraday trade based on the day’s closing price, which of course isn’t known until the session ends. Good simulators are designed to prevent this, but it is surprisingly easy to let it creep in when building your own tools.</span>
+<span style="font-weight: 400;">When I use R or Python for modelling and testing, I often need to pay extra attention to this issue. The giveaway is usually obvious: an equity curve that looks unrealistically smooth, because predicting outcomes is easy when you already know the future.</span>
+<a href="https://robotwealth.com/wp-content/uploads/2017/04/MyAwesomeEquityCurve.png"><img alt="Equity Curve" class="aligncenter size-full wp-image-2301 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/04/MyAwesomeEquityCurve.png" decoding="async" height="551" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='996'%20height='551'%20viewBox='0%200%20996%20551'%3E%3C/svg%3E" width="996"/></a><span style="font-weight: 400;">A subtler version occurs when parameters are calculated across the full simulation and then retroactively applied at the start of the next run. Portfolio optimisation settings are especially vulnerable to this form of look-ahead bias.</span>
+<h3>Understanding Curve-Fitting Bias (Over-Optimization)</h3>
+<span style="font-weight: 400;">This bias gives rise to “magical” backtests showing hundreds of percent annual returns. Needless to say, they’re useless in practice.</span>
+<span style="font-weight: 400;">The plots below show curve-fitting at work. The blue dots are a simple linear function with noise added: </span><i><span style="font-weight: 400;">y = mx + b + ϵ</span></i><span style="font-weight: 400;">, where ϵ is random noise. We fit regression models of increasing complexity to the first 10 points (in-sample) and then tested them on the remaining 10 (out-of-sample). As model complexity increased, in-sample fit improved, but out-of-sample performance collapsed. The more complex the model, the worse the deterioration.</span>
+<a href="https://robotwealth.com/wp-content/uploads/2017/04/OverFitting.png"><img alt="overfitting" class="aligncenter size-full wp-image-2300 perfmatters-lazy" data-src="https://robotwealth.com/wp-content/uploads/2017/04/OverFitting.png" decoding="async" height="900" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='900'%20height='900'%20viewBox='0%200%20900%20900'%3E%3C/svg%3E" width="900"/></a>
+<span style="font-weight: 400;">What’s happening is that complex models start fitting noise rather than signal. Since noise is random, predictions collapse once the model leaves the training set. Financial data is extremely noisy, so the danger is obvious: fit your strategy to the noise and you end up with a random trading model. That’s of little value to anyone, except your broker.</span>
+<h3>Understanding Data-Mining Bias (Selection Bias)</h3>
+<span style="font-weight: 400;">Data-mining bias is another major source of inflated model performance. It comes in many forms and is impossible to eliminate entirely, so the goal is to recognise it and account for it. The most common case is when you pick the best performer from a pool of algorithms, variants, variables, or markets. If you try enough combinations, you will eventually find one that looks good by chance.</span>
+<span style="font-weight: 400;">For example, say you build a trend-following strategy for forex. It backtests well on EUR/USD but fails on USD/JPY. Choosing EUR/USD introduces selection bias, and your estimate of its performance on that pair is now upwardly skewed. The fix is to temper expectations or test it on new, unseen EUR/USD data for a more realistic performance estimate.</span>
+<span style="font-weight: 400;">In my experience, beginners struggle more with curve-fitting bias at first, since it is easier to spot. Selection bias, however, can be just as damaging, yet far less obvious. A common mistake is to test multiple strategy variants on an out-of-sample set and then pick the best one. The error is not in the selection itself, but in treating that out-of-sample performance as an unbiased predictor of the future. The risk multiplies when testing hundreds or thousands of variants, as is common in machine learning. At that scale, at least one strategy will shine purely by luck, leaving little reason for confidence.</span>
+<span style="font-weight: 400;">So how do we address it? Testing on fresh data at every decision point quickly becomes impractical since data is finite. Other approaches include benchmarking against random performance distributions, White’s Reality Check and its variations, and Monte Carlo permutation tests.</span>
+<h2>Conclusion</h2>
+<span style="font-weight: 400;">In this final Back to Basics article, I explained why algorithmic trading research must be experimental and outlined the main barriers to producing accurate, meaningful results. A robust strategy exploits real market anomalies or inefficiencies, yet it is all too easy to build something that only looks robust in a simulator. Often the performance is just noise, poor modelling, or bias.</span>
+<span style="font-weight: 400;">The solution is a systematic workflow, one with tools, checks, and balances to deal with these pitfalls. In fact, I would argue that serious algorithmic research is impossible without such a framework. That is the focus of </span><a href="https://robotwealth.com/fundamentals-of-algorithmic-trading-curriculum/" rel="noopener noreferrer" target="_blank"><em>Fundamentals of Algorithmic Trading</em></a>, <span style="font-weight: 400;">teaching new and aspiring traders not just the tools, but how to use them effectively within a workflow designed for robust strategy development. If you want to learn that approach, head over to the</span> <a href="https://www.robotwealth.com" rel="noopener noreferrer" target="_blank">Courses</a> page to find out more.
+
+<h2>References</h2>
+
+Aronson, D. 2006, Evidence Based Technical Analysis, Wiley, New York
+Box, G. E. P. 1976, <em>Science and Statistics</em>, “Journal of the American Statistical Association” 71: 791-799
+
+
+<h2>Appendix – R Code for Demonstrating Overfitting</h2>
+
+If the concept of overfitting is new to you, you might like to download the R code below that I used to generate the data and the plots from the overfitting demonstration above. It can be very useful for one’s understanding to play around with this code, perhaps generating larger in-sample/out-of-sample data sets, using a different model of the underlying generative process (in particular applying more or less noise), and experimenting with model fits of varying complexity. Enjoy!
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Overfitting demonstration">## Demonstration of Overfitting
+# create and plot data set
+set.seed(53)
+a.is &lt;- c(1:10)
+b.is &lt;- 0.8*a.is + 1 + rnorm(length(a.is), 0, 1.5) # y = mx + b + noise
+plot(a.is,b.is)
+# build models on IS data
+linear.mod &lt;- lm(b.is~a.is)
+deg2.mod &lt;- lm(b.is~ poly(a.is, degree=2))
+deg3.mod &lt;- lm(b.is~ poly(a.is, degree=3))
+deg9.mod &lt;- lm(b.is~ poly(a.is, degree=9))
+# is/oos predictions
+aa &lt;- c(1:20)
+set.seed(53)
+bb &lt;- 0.8*aa + 1 + rnorm(length(aa), 0, 1.5)
+# plots
+plot(aa,bb)
+par(mfrow=c(2,2))
+plot(aa, bb, col='blue', main="Degree 1 Fit", xlab="x", ylab="y")
+abline(linear.mod, col='red')
+abline(v=length(a.is), col='black')
+text(5, 15, "IN-SAMPLE")
+text(15, 5, "OUT-OF-SAMPLE")
+plot(aa, bb, col='blue', main="Degree 2 Fit", xlab="x", ylab="y")
+preds &lt;- predict(deg2.mod, newdata=data.frame(a.is=aa))
+lines(aa, preds, col='red')
+abline(v=length(a.is), col='black')
+text(5, 15, "IN-SAMPLE")
+text(15, 5, "OUT-OF-SAMPLE")
+plot(aa, bb, col='blue', main="Degree 3 Fit", xlab="x", ylab="y")
+lines(aa, predict(deg3.mod, data.frame(a.is=aa)), col='red')
+abline(v=length(a.is), col='black')
+text(5, 15, "IN-SAMPLE")
+text(15, 5, "OUT-OF-SAMPLE")
+plot(aa, bb, col='blue', main="Degree 9 Fit", xlab="x", ylab="y")
+lines(aa, predict(deg9.mod, data.frame(a.is=aa)), col='red')
+abline(v=length(a.is), col='black')
+text(5, 15, "IN-SAMPLE")
+text(15, 5, "OUT-OF-SAMPLE")</pre>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>algorithmic trading</span>, <span>backtesting</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">9 thoughts on “Back to Basics Part 3: Backtesting in Algorithmic Trading”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-741">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 04/12/2017 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-742">
+<article class="comment-body" id="div-comment-742" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Another detailed and informative blog post. Great work Kris. Love the ‘Awesome equity curve’.<br/>
+One thing I’m really interested in is to see how GAN’s might be applied towards generating synthetic market data. Not sure how practical it would be to create the data or if it would be useful even if it were practical. Are you aware of any research currently going into this field?</p>
+<span class="reply"><a aria-label="Reply to Jordan" class="comment-reply-link" data-belowelement="div-comment-742" data-commentid="742" data-postid="2299" data-replyto="Reply to Jordan" data-respondelement="respond" href="#comment-742" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2 parent" id="comment-743">
+<article class="comment-body" id="div-comment-743" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Thanks Jordan, really glad you liked it!<br/>
+While I haven’t actually used a GAN to generate synthetic market data, it does seem a sensible approach. I don’t see why you couldn’t mimic the generating process for a particular stock or a particular asset over a particular time period. This would also provide a (very good) starting point for modelling that data in a trading system since you understand the underlying process. The difficulty will be that the generating process itself is unlikely to be stationary. Still, on the surface of it, it seems an interesting and potentially useful research project.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-743" data-commentid="743" data-postid="2299" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-743" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment odd alt depth-3" id="comment-744">
+<article class="comment-body" id="div-comment-744" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Yes, totally agree with the issue of non-stationarity. Definitely looks like an interesting area of research. I think they could be particularly useful for generating more data within specific market regimes for the purpose of feeding data hungry models where perhaps there isn’t a large amount of historical data. Still pretty new to this stuff though so really I have no idea. Look forward to finding out though!</p>
+<span class="reply"><a aria-label="Reply to Jordan" class="comment-reply-link" data-belowelement="div-comment-744" data-commentid="744" data-postid="2299" data-replyto="Reply to Jordan" data-respondelement="respond" href="#comment-744" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-745">
+<div class="comment-body">
+				Pingback: Back to Basics Part 3: Backtesting in Algorithmic Trading - System Trader Success 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-746">
+<article class="comment-body" id="div-comment-746" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>I just finished reading the 3 parts of this blogpost (took me one and a half hour). It’s quite a mind boggling learning challenge if I would really want to make this work so I’m going to let your words sink in for now..<br/>
+By the way, your link to the courses does not work:<br/>
+<a href="https://www.robotwealth.net/courses" rel="nofollow ugc">https://www.robotwealth.net/courses</a><br/>
+ </p>
+<span class="reply"><a aria-label="Reply to Jaap" class="comment-reply-link" data-belowelement="div-comment-746" data-commentid="746" data-postid="2299" data-replyto="Reply to Jaap" data-respondelement="respond" href="#comment-746" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-747">
+<article class="comment-body" id="div-comment-747" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hello Jaap, yes it certainly is a big challenge. There’s a few reasons for that, one of them being its multi-disciplinary nature. Nearly everyone has to learn something new when they come to the markets. It’s also something that can be approached from many different perspectives and using many different techniques, which results in this web of information about trading and how to trade. Sifting through that information is a big task in itself. But, as they say, if it were easy….<br/>
+Thanks for the heads up re the broken links too.<br/>
+Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-747" data-commentid="747" data-postid="2299" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-747" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-10092">
+<div class="comment-body">
+				Pingback: An Introduction to Algorithmic Trading - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/back-basics-part-3-backtesting-algorithmic-trading/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

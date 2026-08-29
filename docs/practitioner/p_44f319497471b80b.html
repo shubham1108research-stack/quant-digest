@@ -1,0 +1,377 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Back to Basics Part 2 – Succesful Algorithmic Trading</title>
+<!-- source: https://robotwealth.com/back-to-basics-part-2-how-to-succeed-at-algorithmic-trading/ -->
+<h1>Back to Basics Part 2 – Succesful Algorithmic Trading</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-1800 post type-post status-publish format-standard hentry category-quant-trading category-think-like-a-trader tag-algorithmic-trading pmpro-has-access" id="post-1800">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">March 20, 2017</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Back to Basics Part 2 – Succesful Algorithmic Trading</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Back to Basics Part 2 – Succesful Algorithmic Trading" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">This is the second post in our 3-part <strong><em>Back to Basics</em></strong> series on successful algorithmic trading. You may be interested in checking out the other posts in this series:
+
+<ul>
+<li class="gmail_default"><a href="https://robotwealth.com/back-to-basics-introduction-to-algorithmic-trading/">Part 1: An Introduction to Algorithmic Trading</a></li>
+<li class="gmail_default"><a href="https://robotwealth.com/back-basics-part-3-backtesting-algorithmic-trading/">Part 3: Backtesting in Algorithmic Trading</a></li>
+</ul>
+
+There is a lot of information about algorithmic and quantitative trading in the public domain today. The type of person who is attracted to the field naturally wants to synthesize as much of this information as possible when they are starting out. As a result, newcomers can easily be overwhelmed with “<a href="https://en.wikipedia.org/wiki/Analysis_paralysis">analysis paralysis</a>” and wind up spending a lot of their valuable spare time working on algorithmic trading without making much meaningful progress. This article aims to address that by sharing the way in which I would approach algorithmic trading as a beginner if I were just starting out now, but with the benefit of many years of hindsight.
+This article is somewhat tinged with personal experience, so please read it with the understanding that I am describing what works for me. I don’t claim to be a guru on personal or professional development, but I did manage to independently develop my algorithmic trading skills to the point where I was able to leave my day job for a career in the markets – so maybe I have some personal experiences and insight that might be beneficial.
+<a href="https://robotwealth.com/back-to-basics-introduction-to-algorithmic-trading/">Part 1 of this Back to Basics series</a> provided some insight into two of the most fundamental questions around algorithmic trading:
+
+<ul>
+<li>What is it?</li>
+<li>Why should I care?</li>
+</ul>
+
+If you’re new to algorithmic trading, I hope <a href="https://robotwealth.com/back-to-basics-introduction-to-algorithmic-trading/">Part 1</a> whet your appetite for finding out more and maybe even convinced you that algorithmic trading is a sensible approach to the markets. In this post, we will go a little further and investigate the things that people who are just starting out should think about. In particular, I aim to provide you with something of a roadmap for getting started and making progress as efficiently as possible, whatever your goals might be, by sharing some of the practical things that I’ve learned along the way.  The article will cover:
+
+<ul>
+<li>What to learn in order to succeed</li>
+<li>How to learn it</li>
+<li>Important practical considerations</li>
+</ul>
+<h2>Note on terminology</h2>
+
+The term “algorithmic trading” is sometimes used in professional settings to refer to execution algorithms, for example algorithms that split up a large order to optimize the total cost of the transaction. In this post, I generally use the terms <em>systematic</em>, <em>algorithmic</em> and <em>quantitative trading</em> interchangeably to refer to strategic trading algorithms that look to profit from market anomalies, deviation from fair value, or some other statistically verifiable opportunity.
+
+<h2>A How-to on Successful Algorithmic Trading</h2>
+<em>Active doing</em> is so much more important than <em>passive</em> <em>learning</em>.
+Learning the theoretical underpinnings is important – so start reading – but it is only the first step. To become proficient at algorithmic trading, you absolutely must put the theory into practice. This is a theme that you will see repeated throughout this article; <strong>emphasizing the practical</strong> is my strongest message when it comes to succeeding in this field.
+Having said that, in order to succeed in algorithmic trading, one typically needs to have knowledge and skills that span a number of disciplines. This includes both technical and soft skills. Individuals looking to set up their own algorithmic trading business will need to be across many if not all of the topics described below; while if you are looking to build or be a part of a team, you may not need to be personally across all of these, so long as they are covered by other team members. These skills are discussed in some detail below.
+
+<h2>Technical skills</h2>
+
+The technical skills that are needed for long-term successful algorithmic trading include, as a minimum:
+
+<ol>
+<li>Programming</li>
+<li>Statistics</li>
+<li>Risk management</li>
+</ol>
+
+There are other skills I would really like to add to this list, but which go a little beyond what I would call “minimum requirements.” I’ll touch on these later. But first, let’s delve into each of these three core skills.
+
+<h3>1.       Programming</h3>
+
+If you can’t already program, start learning now. To do any serious algorithmic trading, you absolutely must be able to program, as it is this skill that enables efficient research. It pays to become familiar with the syntax of a C-based language like C++ or Java (the latter being much simpler to learn), but to also focus on the fundamentals of data structures and algorithms at the same time. This will give you a very solid foundation, and while it can take a decade or longer to become an expert in C++, I believe that most people can reach a decent level with six months of hard work. This sets you up for what follows.
+It also pays to know at least one of the higher-level languages, like Python, R or MATLAB, as you will likely wind up doing the vast majority of your research and development in one of these languages. My personal preferences are R and Python.
+
+<ul>
+<li><strong>Python</strong> is fairly easy to learn and is fantastic for efficiently getting, processing and managing data from various sources. There are some very useful libraries written by generous and intelligent folks that make data analysis relatively painless, and I find myself using Python more and more as a research tool.</li>
+<li>I also really like using <strong>R</strong> for research and analytics as it is underpinned by a huge repository of useful libraries and functions. It was written with statistical analysis in mind, so it is a natural fit for the sort of work that algorithmic traders will need to do. The syntax of R can be a little strange though, and to this day I find myself almost constantly on Stack Overflow when developing in R!</li>
+<li>Finally, I have also used <strong>MATLAB</strong> and its open source counterpart Octave, but I would almost never choose to use these languages for serious algo research. That’s more of a personal preference, and some folks will prefer MATLAB, particularly those who come from an engineering background as they may have been exposed to it during their work and studies.</li>
+</ul>
+
+When you’re starting out, I don’t believe it matters greatly which of these high-level languages you choose. As time goes on, you will start to learn which tool is the most applicable for the task at hand, but there is a lot of cross-over in the capabilities of these languages so don’t get too hung up on your initial choice – just make a choice and get started!
+
+<h4>Simulation environments</h4>
+
+Of course, the point of being able to program in this context is to enable the testing and implementation of algorithmic trading systems. It can therefore be of tremendous benefit to have a quality simulation environment at your disposal. As with any modelling task, accuracy, speed and flexibility are significant considerations. You can always write your own simulation environment, and sometimes that will be the most sensible thing to do, but often you can leverage the tools that others have built for the task. This has the distinct advantage that it enables you to focus on doing actual research and development that relates directly to a trading strategy, rather than spending a lot of time building the simulation environment itself. The downside is that sometimes you don’t quite know exactly what is going on under the hood, and there are times when using someone else’s tool will prevent you from pursuing a certain idea, depending on the limitations of the tool.
+A good simulation tool should have the following characteristics:
+
+<ul>
+<li>Accuracy – the simulation of any real-world phenomenon inevitably suffers from a deficiency in accuracy. The trick is to ensure that the model is accurate enough for the task at hand. As statistician George Box once said, “all models are wrong, but some are useful.” Playing with useless models is a waste of time.</li>
+<li>Flexibility – ideally your simulation tool would not limit you or lock you in to certain approaches.</li>
+<li>Speed – at times, speed can become a real issue, for example when performing tick-based simulations or running optimization routines.</li>
+<li>Active development – if unexpected issues arise, you need access to the source code or to people who are responsible for it. If the tool is being actively developed, you can be reasonably sure that help will be available if you need it.</li>
+</ul>
+
+There are a number of options, but for the beginner there is probably none better than the <a href="https://www.zorro-trader.com/">Zorro platform</a>, which combines accuracy, flexibility and speed with an extremely simple C-based scripting language that makes an ideal introduction to programming. The platform is being constantly refined and updated, with improvements being released roughly quarterly. Zorro may not look like much, but it packs a lot of power into its austere interface and is an excellent choice for beginners. I’ve also personally seen Zorro used as a research and execution tool in more than one professional trading setting. <a href="https://robot-wealth-algorithmic-trading.teachable.com/?preview=logged_out"><em>Fundamentals of Algorithmic Trading </em></a>makes heavy use of the Zorro platform and includes detailed tutorials on getting started, aimed at the beginner.
+
+<h3>2.       Statistics</h3>
+
+It would be extremely difficult to be a successful algorithmic trader without a good working knowledge of statistics. Statistics underpins almost everything we do, from managing risk to measuring performance and making decisions about allocating to particular strategies. Importantly, you will also find that statistics will be the inspiration for many of your ideas for trading algorithms. Here are some specific examples of using statistics in algorithmic trading to illustrate just how vital this skill is:
+
+<ul>
+<li>Statistical tests can provide insight into what sort of underlying process describes a market at a particular time. This can then generate ideas for how best to trade that market.</li>
+<li>Correlation of portfolio components can be used to manage risk (see important notes about this in the Risk Management section below).</li>
+<li>Regression analysis can help you test ideas relating to the various factors that may influence a market.</li>
+<li>Statistics can provide insight into whether a particular approach is outperforming due to taking on higher risk, or if it exploits a genuine source of alpha.</li>
+</ul>
+
+Aside from these, the most important application of statistics in algorithmic trading relates to the interpretation of backtest and simulation results. There are some significant pitfalls – like data dredging or “p-hacking” (Head <em>et.al. (</em>2015)) – that arise naturally as a result of the strategy development process and which aren’t obvious unless you understand the statistics of hypothesis testing and sequential comparison. Improperly accounting for these biases can be disastrous in a trading context. While this issue is incredibly important, it is far from obvious and it represents the most significant and common barrier to success that I have encountered since I started working with individual traders. Please, spend some time understanding this fundamentally important issue; I can’t emphasize enough how essential it is.
+It also turns out that the human brain is woefully inadequate when it comes to performing sound statistical reasoning on the fly. Daniel Kahneman’s <em>Thinking, Fast and Slow</em> (2013) summarises several decades of research into the cognitive biases with which humans are saddled. Kahneman finds that we tend to place far too much confidence in our own skills and judgements, that human reason systematically engages in fallacy and errors in judgement, and that we overwhelmingly tend to attribute too much meaning to chance. A significant implication of Kahneman’s work is that when it comes to drawing conclusions about a complex system with significant amounts of randomness, we are almost guaranteed to make poor decisions without a sound statistical framework. We simply can’t rely on our own interpretation.
+As an aside, Kahneman’s <em>Thinking, Fast and Slow </em>is not a book about trading, but it probably assisted me with my trading more than any other book I’ve read. I highly recommend it. Further, it is no coincidence that Kahneman’s work essentially created the field of behavioural economics.
+
+<h3>3.       Risk Management</h3>
+
+There are numerous risks that need to be managed as part of an algorithmic trading business. For example, there is infrastructure risk (the risk that your server goes down or suffers a power outage, dropped connection or any other interference) and counter-party risk (the risk that the counter-party of a trade can’t make good on a transaction, or the risk that your broker goes bankrupt and takes your trading account with them). While these risks are certainly very real and must be considered, in this section I more concerned with risk management at the trade and portfolio level. This sort of risk management attempts to quantify the risk of loss and determine the optimal allocation approach for a strategy or portfolio of strategies. This is a complex area and there are several approaches and issues of which the practitioner should be aware.
+Two (related) allocation strategies that are worth learning about are <strong>Kelly allocation</strong> and <strong>Mean-Variance Optimization (MVO)</strong>. These have been used in practice, but they carry some questionable assumptions and practical implementation issues. It is these assumptions that the newcomer to algorithmic trading should concern themselves with.
+Probably the best place to learn about Kelly allocation is in Ralph Vince’s <em>The Handbook of Portfolio Mathematics</em>, although there are countless blog posts and online articles about Kelly allocation that will be easier to digest. One of the tricky things about implementing Kelly is that it requires regular rebalancing of a portfolio that leads to buying into wins and selling into losses – something that is easier said than done.
+MVO, for which Harry Markowitz won a Nobel prize, involves forming a portfolio that lies on the so-called “efficient frontier” and hence minimizes the variance (risk) for a given return, or conversely maximizes the return for a given risk. MVO suffers from the classic problem that new algorithmic traders will continually encounter in their journey: the optimal portfolio is formed with the benefit of hindsight, and there is no guarantee that the past optimal portfolio will continue to be optimal into the future. The underlying returns, correlations and covariance of portfolio components are not stationary and constantly change in often unpredictable ways. MVO therefore does have its detractors, and it is definitely worth understanding the positions of these detractors (see for example Michaud (1989), DeMiguel (2007) and Ang (2014)). A more positive exposition of MVO, governed by the momentum phenomenon and applied to long-only equities portfolios, is given in the interesting paper by <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2606884">Keller <em>et.al</em>. (2015)</a>.
+Another way to estimate the risk associated with a strategy is to use <strong>Value-at-Risk (VaR)</strong>, which provides an analytical estimate of the maximum size of a loss from a trading strategy or a portfolio over a given time horizon and under a given confidence level. For example, a VaR of $100,000 at the 95% confidence level for a time horizon of one week means that there is a 95% chance of losing no more than $100,000 over the following week. Alternatively, this VaR could be interpreted as there being a 5% chance of losing at least $100,000 over the following week.
+As with the other risk management tools mentioned here, it is important to understand the assumptions that VaR relies upon. Firstly, VaR does not consider the risk associated with the occurrence of extreme events. However, it is often precisely these events that we wish to understand. It also relies on point estimates of correlations and volatilities of strategy components, which of course constantly change. Finally, it assumes returns are normally distributed, which is usually not the case.
+Finally, I want to mention an empirical approach to measuring the risk associated with a trading strategy: <strong>System Parameter Permutation</strong>, or <strong>SPP</strong> (<a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2423187">Walton (2014)</a>). This approach attempts to provide an unbiased estimate of strategy performance at any confidence level at any time horizon of interest. By “unbiased” I mean that the estimate is not subject to data mining biases or “p-hacking” mentioned above. I personally think that this approach has great practical value, but it can be computationally expensive to implement and may not be suitable for all trading strategies.
+So now you know about a few different tools to help you manage risk. I won’t recommend one approach over another, but I will recommend learning about each, particularly their advantages, disadvantages and assumptions. You will then be in a good position to choose an approach that fits your goals and that you understand deeply enough to set realistic expectations around. Bear in mind also that there may be many different constraints under which portfolios and strategies need to be managed, particularly in an institutional setting.
+One final word on risk management: when measuring any metric related to a trading system, consider that it is not static – rather, it nearly always evolves dynamically with time. Therefore, a point measurement tells only a tiny fraction of the true story. An example of why this is important can be seen in a portfolio of equities whose risk is managed by measuring the correlations and covariance of the different components. Such a portfolio aims to reduce risk through diversification. However, such a portfolio runs into problems when markets tank: under these conditions, previously uncorrelated assets tend to become much more correlated, nullifying the diversification effect precisely when it is needed most!
+
+<h3>Taking it Further</h3>
+
+To the three core skills I described above, I would also like to add <strong>numerical optimization</strong>, <strong>machine learning</strong> and <strong>big data analysis</strong> as I think they are incredibly important, however they go a little beyond what I would call “minimum requirements”. These skills are nice to have in your toolkit and will make your life as an algorithmic trader easier, but unlike the other skills I described, they are not absolutely critical.
+For the adventurous and truly dedicated, I can also recommend learning about <strong>behavioural finance</strong>, <strong>market microstructure</strong> and <strong>macroeconomics</strong>. Again, these are not minimum requirements, but will provide insights that can augment one’s ability to navigate the markets.
+Finance and economics helps with generating trading ideas, but you don’t need formal education in these areas. In fact, I know several folks who are responsible for the hiring and firing that goes on in the professional trading space, and some of these people actually shy away from finance and economics graduates. If you hold such a degree, don’t despair though – just recognise that there is more to the practicalities of trading successfully than what you learned in your formal education.
+Finally, it would be remiss of me not to mention the soft (that is, non-technical) skills that come in handy. Singularly most important of these is a <strong>critical mindset</strong>. You will read mountains of information about the markets through your algorithmic trading journey, and every page should be read with a critical eye. Get into the habit of testing ideas yourself and gathering your own evidence rather than relying on other people’s claims.
+Other soft skills that are worth cultivating include perseverance in the face of rejection (you will unfortunately be forced to reject the majority of your trading ideas) and the ability to conduct high-quality, reproducible and objective research.
+
+<h2>Your shortest path to proficiency</h2>
+<h3>Overview on Algorithmic Trading Systems</h3>
+
+This section describes what I think is the best approach to acquiring as efficiently as possible the skills I listed above. You will notice that I repeatedly emphasize the <strong>practical application</strong> of the theory that underpins the skills. I very much advocate reading widely and voluminously, but it is critical that you practice implementing the things you read in order to really internalize the skills.
+Learning these skills is a process. No one wakes up one day and finds that they are an excellent programmer or an expert in statistics. Like the acquisition of any skill, it takes time and of course effort. My advice is to accept that your skills will gradually improve with time, and that the best way to learn is by <em>doing</em>. While it is a good idea to study these topics through formal or structured channels, it is critical that you put them into practice as you go along. Try to tackle problems that are just slightly out of your comfort zone and practice applying what you learn to the markets. Such an approach will see the pace of your learning go exponential.
+Further, set realistic expectations around the pace of your learning. There is no point down-playing it: the journey is indeed a long one. If you are a beginner, expect to spend at least a couple of years working hard before you see much success.
+
+<h3>The personal algorithmic trading approach I’d take if I were starting again</h3>
+
+When I was starting out with algorithmic trading, I read everything I could get my hands on that related to the markets. I literally read nothing but books and articles that related in some way to the markets for the first three years of my journey. I think this is important – if you want to become proficient at this, you really need to live and breathe it, at least until you gain enough skills to start making some money.
+This immersive approach is imperative, but I did make some mistakes. For starters, I didn’t start implementing the things I was reading about or doing my own investigations and verifications for some time. I was content to just read. In hindsight, I now realize that this was a well-intentioned, but somewhat lazy approach that didn’t really push me too far outside of my comfort zone. If there was something I didn’t understand deeply enough to internalize, I could just keep reading. No harm done, right?
+I now realize that had I insisted on taking the hard path and putting the things I read about into practice, I would have literally shaved years off the journey to proficiency and ultimately the success I was craving. <strong>By implementing the ideas you read about, you will not only gain the technical skills you need to succeed much more quickly, but you will also develop the mindset of critical thinking and creativity that drives success in this field.</strong> If you can find a mentor or a community to give you feedback on your work or to guide you when you are stuck, your progress will go even faster.
+I can’t emphasize enough just how crucial this idea of <em>doing</em> is. No one ever found success without doing the hard things and being willing to fail. Failure is not a bad thing: it does not mean defeat until you make the decision to stop trying. <em>Doing</em> and risking failure is what brings proficiency and eventually mastery.
+I also learned that the time you spend practicing needs to be high quality; it is about so much more than just putting in the time. You can ensure your practice is of a high quality by engaging in what others have referred to as <strong><em>deliberate practice</em></strong><em>.</em> This sort of practice is hard, uncomfortable and tiring. On the other end of the spectrum, reading is passive and not overly draining, but you generally don’t get the rewards if you leave it at that. Deliberate practice requires an attitude that demands that you constantly challenge yourself. You need to continually set yourself problems that are just slightly out of your reach or beyond your current level of skill.
+When you decide to learn a particular skill, divide it into sub-tasks and then master each one individually and systematically. For example, say you want to learn Python programming. You might divide this into smaller learning tasks that consist of, say, syntax familiarity, data types, variables/expressions/statements, loops, functions, conditionals, input/output, debugging and object oriented programming. Each one of these sub-tasks would be divided into smaller tasks. Such an approach forces you to incrementally improve by ticking off one sub-task after another. It has the nice by-product of being quite motivating to be able to measure your progress in terms of the sub-tasks you’ve completed.
+Deliberate practice forces you to avoid relying on crutches or limiting yourself to researching ideas that are within your current skillset. However, as I mentioned previously, it is uncomfortable, and we have an unfortunate natural tendency to gravitate towards things that we find easy. This can be incredibly limiting and you must think bigger if you want to succeed. If you find yourself shying away from something, chances are it’s because it is difficult for you. This is a strong indication that you should tackle it head on! A personal example:
+Several years ago, I was learning to use a C-based language for trading research, and I shied away from anything that required significant amounts of string manipulation, like text parsing and web scraping (I now know that C isn’t the best tool for these tasks, but that’s another story). This limited my trading research to data that I was able to obtain in a relatively clean format. However, after a while I just bit the bullet and forced myself to learn. Now, having become quite accomplished at those skills in more than one programming language, I have access to exponentially more and varied data to use in my research than I had before, which has in turn provided significant inspiration for new strategies.
+The lesson is that if something is challenging or uncomfortable, tackle it head-on! While easy to say, this is hard to do because it is very difficult to force ourselves to do things we find uncomfortable, especially when there are more comfortable alternatives (maybe I’ll just test another variation of that futures breakout model). So how do we deal with being uncomfortable? It’s easy to say “just tackle it head on”, but how does one do this in real life, on a consistent, day-to-day basis?
+The best and only advice I can give in this regard is to forget about motivation altogether. Yes, you read that correctly. Motivation doesn’t work. Think about it: motivation is an incredibly fickle beast, waxing and waning on a daily or even hourly basis. Motivation can be sapped by things as common as being tired or hungry! How then can it be relied upon to deliver something as important as your life goals? My experience tells me that if you rely on your motivation, you are almost guaranteeing your own failure.
+So if motivation isn’t the answer, what is? The answer is simple: discipline. You must develop the discipline to put in the hours doing the difficult things.
+OK, this sounds like another one of those “easy to say, hard to do” things, right? How do you actually put that into practice? Well, it can be difficult to develop a strong internal discipline that you can consistently rely upon, but there are things you can do to set yourself up for success. Some mechanisms and systems that have worked for me over the years include:
+
+<ul>
+<li>Seeking accountability. For example, tell the people who are close to you what you are going to achieve and by when. Making your objectives public and giving them a deadline makes you that much more likely to follow through.</li>
+<li>Taking a systematic approach. As mentioned above, break down a goal into sub-tasks and tick them off one by one. Keep a record of your progress and review it at least weekly. Documenting what you’re learning and researching also helps with this systematic approach. Keep track of the research you do, but also make notes of things you’ve learned or things you don’t understand.</li>
+<li>Forming habits. Try to build habits that are easy to make part of your routine. For example, when I was learning to write code, I would code every morning for one hour before having breakfast. I simply wouldn’t eat until I’d spent an hour writing and debugging code. By tying the habit to something that was already part of my day (breakfast), it was so much easier for the habit to stick. You don’t need to do exactly what I did, but find something that works with your lifestyle.</li>
+<li>Being brutally honest with oneself. For example, don’t surf the internet for 45 minutes, then code for 15 minutes and tell yourself you did an hour of work.</li>
+<li>Surrounding oneself with the right people. Joining and participating in a community of likeminded people certainly helps keep one focused. Telling these people your goals will also help keep you accountable. Having a community (and ideally a mentor) essentially creates a positive feedback loop that helps you identify exactly where your areas of weakness lie, which can drastically reduce the amount of time it takes to get really good at something. Watch what others who are more proficient or successful do and emulate them. Once you can do what they do, put your own twist on things and make them your own.</li>
+<li>Reward yourself. Celebrate little wins and value the progress you make.</li>
+</ul>
+
+If constantly pushing yourself into uncomfortable places sounds daunting or even awful, remember that if you can do this, you will put yourself at a distinct advantage over 99% of people, regardless of how intelligent or otherwise you may be. The consistent application of a disciplined approach trumps intelligence and natural talent every single day of the week. I don’t know about you, but I find that incredibly comforting and empowering! I can tell you that the essential reason that I was able to leave my day job for a career in finance, the one thing that it all boils down to, is that I was and am willing to do the things that most people aren’t. For example, I would get up early and put in a couple of hours before going to work. I would forego events that I would really have liked to attend in order to work evenings and nights. I’ve lost count of the number of weekends I’ve given up over the last decade. If you want to achieve something extraordinary, you simply can’t do what everyone else does. That is reality.
+
+<h2>Important Practical Matters</h2>
+
+Finally, I want to cover some of the practical considerations that I think are important to be aware of when starting out.
+
+<h3>Expectations</h3>
+
+When you are learning algorithmic trading, you will find that it can be an emotional experience. This will pass as your experience and proficiency develops, but during the early years, your emotional state may become somewhat tied to your success or otherwise in the markets. This can obstruct progress, so it is worth understanding and addressing this issue.
+In life, our happiness is often tied up with our expectations. Therefore, it makes sense to set ambitious yet realistic expectations for your algorithmic trading journey right at the outset. Your mental state will thank you for it.
+First of all, this is a cliché, but one that rings true: <em>trading is the hardest way to make easy money</em>. Don’t expect an easy ride or fast riches. Rather, expect at least a couple of years of unrewarded effort and slow riches, if any riches at all.
+Related to this, don’t expect to make multiples of your money in short periods of time. However, once proficient, you should expect to outperform the market over the long term (potentially significantly). Otherwise, what’s the point of doing this at all? If you look through the Barron’s list of top 100 hedge funds from last year, you’ll see that the best performing funds have a 3-year compounded annual return of just under 30%. Do you think it is reasonable that you could out-perform these top-performing funds, with their quant teams and enormous financial resources? That was kind of a loaded question, because perhaps surprisingly, the answer is yes! Funds with billions under management face completely different constraints than a do-it-yourself trader, the most interesting of these being related to capacity. For example, an individual trading say a half-million-dollar futures account can take a completely different approach to a fund that aims to generate returns on billions. There may exist market phenomena that can generate returns that are significant compared to the position sizing of a retail account, but which are not capable of carrying the trades of a larger fund. Therefore, while on the surface, it may appear that a retailer is at a significant disadvantage, there are also opportunities.
+One last comment about expectations: avoid becoming fixated on how much you can make. The amount of reward you can gain is inextricably tangled up with the amount of risk you are willing to take. <strong>Thinking about reward in terms of risk</strong> rather than in isolation will lead you to much more sensible expectations.
+
+<h3>We need to talk about frequency</h3>
+
+The frequency at which a strategy trades is another significant consideration. Lower frequency systems might hold trades for days to months. Intra-day systems might hold trades for minutes to hours. High frequency trading generally refers to systems with holding periods on the order of milliseconds to seconds.
+Trade frequency (or holding period) is an important consideration due to the effect of <strong>transaction costs</strong>. As the average holding period decreases, the average price change between the trade entry and exit also decreases. That is, the average profit potential of individual trades decreases. However, transaction costs don’t decrease, in fact they remain constant. A trade that was held for ten seconds has the same cost as a trade that was held for ten hours (assuming no swap), but their profit potentials are likely to be quite different.
+The costs of trading are dependent on your broker, and to an extent your infrastructure, and will vary depending on individual set ups. Therefore, I can’t prescribe a cut-off holding period, but I will recommend that you understand the impact of trading costs across various time horizons in order to make sensible decisions. I have certainly noticed an obsession with “trading off the five-minute chart” amongst a number of retail traders that I’ve worked with, and while I do understand the lure and the excitement of such a trading style, one should really <strong>understand its viability before spending a lot of time on it</strong>.
+Trading at high frequencies typically requires low-latency execution systems, server co-location and detailed knowledge of order book dynamics. This is not impossible for independent traders, but there is other lower hanging fruit that is much more accessible.
+My advice for beginners with regards to trade frequency: start slow! Investigate systems with holding periods on the order of days, weeks or even months. The odds are not quite as severely stacked against you. You are much more likely to find a decent strategy if you take this approach, even as a relative beginner. By the time you’ve got one or two systems in your portfolio, you will have learned a lot and be in a much stronger position to consider higher frequency trading. Again, this is what I would do if I were starting over.
+
+<h3>What to read and when</h3>
+
+Hopefully you got some of your maths, statistics, and/or programming knowledge via your formal education. In my experience with graduates from various fields, Computer Science, Physics, Mathematics, Engineering, and Econometrics degrees are quite useful in terms of the background knowledge they afford. Finance and economics degrees are (maybe surprisingly) less so. Regardless of your formal education, there will almost certainly be gaps in your knowledge, so even if you don’t have formal education in one of the fields I mentioned, don’t despair, simply start learning now.
+What to read and in what order really depends on what your background is. Therefore, I can’t prescribe a recommendation that would suit everyone. Instead, I’ll suggest you start with the three pillars of algorithmic trading I described above (statistics, programming and risk management) and refer you to Robot Wealth’s <a href="https://robotwealth.com/recommended-reading/" rel="noopener noreferrer" target="_blank">recommended reading list</a>. What you should read also depends on the direction in which you want to go. For example, if you are interested in options trading, you’ll want to study volatility and pricing models, which I’ve barely mentioned in the blog so far. Likewise, if you are interested in high frequency trading, you’ll need a solid grounding in market microstructure and order book dynamics. Other directions include derivatives pricing and portfolio management and you could spend a lifetime learning about any one of these topics. Having said that, relationships exist between these topics and there is benefit in holistic understanding, so try not to limit yourself to one particular field.
+Personally, when I was starting out I read voraciously anything to do with trading, and I know that even with such an appetite one can’t possibly get through all the texts in the reading list in great detail. But happily, you don’t need to. Far more important than details is understanding the practical application and where to find the detailed information when you need it. For example, take Tsay’s <em>Analysis of Financial</em> <em>Time Series </em>– this weighty tome is a classic econometric text that you could easily pore over for months, if not years. However, it is far more useful from a practical perspective to understand it to the point that you could, for example, describe the inputs to, and the uses and limitations of an ARMA or GARCH model. Knowing where to find more detailed information around the implementation and diagnostics when you actually need them is enough.
+Finally, understand that when you read the work of others, whether that be in an academic paper, a blog post or a book, that the author is likely not giving away the keys to the successful implementation of any trading idea that may be described (Robot Wealth included…sorry folks). Often the way a strategy is tuned, optimized and applied is the key to making it work. Therefore, if you use the work of others, you absolutely must apply your own unique twist to it. Read everything with an evidence-based and critical mindset, and don’t believe anything until you prove it to yourself.
+
+<h3>Infrastructure</h3>
+
+We’ve discussed the technical and non-technical skills that are required for algorithmic trading, but have barely mentioned another key ingredient: infrastructure. Without good infrastructure and execution – that is, a system that can read market and other data, perform computations and send instructions to a broker or exchange – you can’t trade. It therefore pays to understand how a trading interface receives and sends information over a network. For this, you’ll need to know how to use Application Programming Interfaces (APIs), which is just a fancy way of describing how to communicate with a particular software application. Most brokers offer trading via an API, but the quality of the API documentation varies greatly. Poor quality API documentation can make developing trading infrastructure quite painful, so it pays to look into this when shopping for brokers.
+While most brokers offer their own API for electronic trading, there is an industry standard protocol, namely FIX, or Financial Information Exchange. While broker APIs vary, the FIX protocol is an industry standard and can be used across a range of brokers and financial institutions. At its core, FIX is a simple messaging protocol, but in practice it can be tricky to get started with, particularly if you’re not a software developer (at least that’s what I found). A good place to start is QuickFIX, which is an open source implementation of the FIX protocol. It is a C++ library, but comes with bindings for a number of languages. Expect some pain getting to know QuickFIX (the documentation isn’t amazing), but I strongly believe it is worth your time. In the future, I’ll share some trading applications built on FIX in both Python and .Net frameworks.
+The actual hardware required for an algorithmic trading business is less of an issue than it was in years gone by thanks to the rise of cloud computing and commercial hosting services. For example, it makes sense for many traders to outsource their hardware requirements to an external provider rather than maintaining dedicated trading machines with backup power and network connectivity in their own homes. The exceptions are low-latency systems, over which the trader will probably want to retain ultimate control.
+Another piece of the puzzle is data: where to get it, how much to pay for it, and how to clean, process and manage it. These are all important questions. Remember that when you build trading models, they are only as good as the data that was used. Obtaining end-of-day data for some markets is relatively simple these days via sources like Yahoo! and Google. It is hard to find good, free, intra-day data and usually you will wind up paying for it or collecting it yourself or both. It is also worth remembering that the data relevant to financial markets extends far beyond price and trade history data. Data aggregation services like Quandl provide a large and growing repository of information that you may be able to use in a trading strategy, and you can also gather your own alternative data sets like social media sentiment, machine readable earnings announcements, economic data releases and the like. Creativity in this space is a good thing!
+
+<h2>The Last Word</h2>
+
+Seasoned algo traders will notice that so far I have barely touched on simulation, curve fitting and robust optimisation in this ‘Back to Basics’ series. I know this seems like a glaring omission, but these topics justify their own exclusive post. That’s the subject of the next and final post in this series.
+This post was based on my own experiences of learning algorithmic trading initially as a hobby, then a passion, then a career. The post wound up being longer than I anticipated since it turns out that the topic of what to learn and how to learn it is actually quite a broad one. If you have read it all the way to end, thank you. I hope it was useful. I would love to hear about your own journey with algorithmic trading in the comments.
+————————-
+<em>If you are interested in learning the fundamental aspects of algorithmic trading – the stuff I personally wish I’d known during my early years of playing at this game – please check out our course</em><em> </em><a href="https://robot-wealth-algorithmic-trading.teachable.com/p/algorithmic-trading-fundamentals-package"><em>The Fundamentals of Algorithmic Trading</em></a><em>. It has been getting some</em><em> </em><a href="https://www.stevehopwoodforex.com/phpBB3/viewtopic.php?f=17&amp;t=5041"><em>good reviews</em></a><em> </em><em>and our community of students is steadily growing.</em>
+————————-
+
+<h2>References</h2>
+
+Ang, A. 2014, <em>Asset Management: A systematic approach to factor investing</em>, Oxford University Press.
+DeMiguel, V., Garlappi L., and Uppal R. 2007, <em>Optimal Versus Naïve Diversification: How inefficient is the 1/N portfolio strategy?</em> Oxford University Press.
+Head, M. L., Holman, L., Lanfear, R., Kahn, A. T., and Jennions, M. D. 2015, <a href="https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1002106"><em>The extent and consequences of p-hacking in science</em></a>. <em>PLoS Biol</em>, <em>13</em>(3), e1002106.
+Kahneman, D. 2013, <em>Thinking, Fast and Slow</em>, Farrar, Strauss and Giroux, New York.
+Keller, W., Bulter, A., and Kipnis., I. 2015, <em>Momentum and Markowitz: A golden combination</em>, via SSRN: <a href="https://ssrn.com/abstract=2606884">https://ssrn.com/abstract=2606884</a> or <a href="https://dx.doi.org/10.2139/ssrn.2606884">https://dx.doi.org/10.2139/ssrn.2606884</a>
+Markowitz, H. 1959, <em>Portfolio Selection: Efficient diversification of investments. </em>Wiley, New York.
+Micahud, R. 1989, <em>The Markotwitz Optimization Enigma: Is ‘optimized’ optimal</em>? SSRN Electronic Journal 45(1):31-42
+Walton, D. 2014, <em>Know Your System: Turning data mining from bias to benefit through system parameter</em> <em>permutation</em> via SSRN: <a href="https://ssrn.com/abstract=2423187">https://ssrn.com/abstract=2423187</a> or <a href="https://dx.doi.org/10.2139/ssrn.2423187">https://dx.doi.org/10.2139/ssrn.2423187</a>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>algorithmic trading</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">7 thoughts on “Back to Basics Part 2 – Succesful Algorithmic Trading”</h2>
+<ol class="comment-list">
+<li class="pingback even thread-even depth-1" id="comment-737">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 03/19/2017 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1 parent" id="comment-738">
+<article class="comment-body" id="div-comment-738" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Kris,<br/>
+Don’t know if you remember but we met at Quantcon Singapore last year.<br/>
+Really enjoyed this article. Best piece of advice – implement what you learn, especially when programming, but I can vouch for doing this less than I need to in practice. Also listened to your recent podcast on ‘Better System Trader’, would recommend to anyone getting started in machine learning for trading.<br/>
+Thanks for looking after the junior quant.</p>
+<span class="reply"><a aria-label="Reply to Jordan" class="comment-reply-link" data-belowelement="div-comment-738" data-commentid="738" data-postid="1800" data-replyto="Reply to Jordan" data-respondelement="respond" href="#comment-738" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment even depth-2" id="comment-739">
+<article class="comment-body" id="div-comment-739" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Jordan,<br/>
+Thanks for dropping me a line, of course I remember you from QuantCon! Glad to hear you liked the article and the recent interview.<br/>
+Cheers<br/>
+Kris</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-739" data-commentid="739" data-postid="1800" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-739" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-even depth-1" id="comment-740">
+<div class="comment-body">
+				Pingback: 083 - How to get better at anything, faster - Better System Trader 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-10089">
+<div class="comment-body">
+				Pingback: An Introduction to Algorithmic Trading - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/back-to-basics-part-2-how-to-succeed-at-algorithmic-trading/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

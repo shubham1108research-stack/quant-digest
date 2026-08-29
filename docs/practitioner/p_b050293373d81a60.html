@@ -1,0 +1,543 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Integrating R with the Zorro Backtesting and Execution Platform</title>
+<!-- source: https://robotwealth.com/integrating-r-with-the-zorro-backtesting-and-execution-platform/ -->
+<h1>Integrating R with the Zorro Backtesting and Execution Platform</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-11302 post type-post status-publish format-standard hentry category-backtesting category-quant-trading category-r category-zorro tag-r tag-r-bridge tag-zorro pmpro-has-access" id="post-11302">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/3ec8649614fc36643870396dd597298544a94e9324044c830df0d4ee54a1e36b?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/robot-master/">Kris Longmore</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">October 3, 2019</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">Integrating R with the Zorro Backtesting and Execution Platform</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="Integrating R with the Zorro Backtesting and Execution Platform" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In the last two posts, we implemented a <a href="https://robotwealth.com/kalman-filter-pairs-trading-r/" rel="noopener noreferrer" target="_blank">Kalman filter in R</a> for calculating a <em>dynamic</em> hedge ratio, and presented a <a href="https://www.zorro-trader.com/" rel="noopener noreferrer" target="_blank">Zorro</a> script for backtesting and trading <a href="https://robotwealth.com/kalman-filter-pairs-trading-r/" rel="noopener noreferrer" target="_blank">price-based spreads</a> using a <em>static</em> hedge ratio.
+
+The goal is to get the best of both worlds and use our dynamic hedge ratio within the Zorro script.
+
+Rather than implement the Kalman filter in Lite-C, it’s much easier to make use of Zorro’s R bridge, which facilitates easy communication between the two applications. In this post, we’ll provide a walk-through of configuring Zorro and R to exchange data with one another.
+
+<h2>Why integrate Zorro and R?</h2>
+
+While Zorro and R are useful as standalone tools, they have different strengths and weaknesses.
+
+Zorro was built to simulate trading strategies, and it does this very well. It’s fast and accurate. It lets you focus on your strategies by handling the nuts and bolts of simulation behind the scenes. It implements various tools of interest to traders, such as portfolio optimization and walk-forward analysis, and was designed to prevent common bugs, like lookahead bias.
+
+Zorro does a lot, <em><strong>but it can’t do everything.</strong></em>
+
+An overlooked aspect of the software is its ability to integrate R and its thousands of add-on libraries. From machine learning and artificial intelligence to financial modeling, optimization, and graphics, R packages have been developed to cover all these fields and more. And since R is widely used in academia, when a researcher develops a new algorithm or tool it is often implemented as an open source R package long before it appears in commercial or other open-source software.
+
+<blockquote>Zorro’s R bridge unlocks these tools for your trading applications and combines them with Zorro’s fast and accurate market simulation features.</blockquote>
+
+In this post, I’ll show you how to set up and use Zorro’s R bridge. Once that’s out of the way, we’ll be in a position to put all the pieces together and run a simulation of our pairs trade that uses the Kalman filter we wrote for R.
+
+<h2>Some notes on usage</h2>
+
+Zorro’s R bridge is designed to enable a Zorro script to control and communicate with an R environment running on the same machine. The assumption is that the user will want to send market data (sometimes lots of it) from Zorro to R for processing, and then return the output of that processing, usually consisting of just one or a small number of results, back to Zorro.
+
+Lite-C is generally much faster than R code, so it’s preferable to perform as much computation on the Zorro side as possible, reserving R for computations that are difficult or inconvenient to implement in Zorro. Certainly, you’ll want to avoid doing any looping in R. Having said that, vector and matrix operations are no problem for R, and might even run quicker than in Lite-c.
+
+Zorro orders time series data differently to most platforms – newest elements <em>first</em>. R’s functions generally expect time series with newest elements <em>last</em>. Fortunately Zorro implements the <code>rev</code> function for reversing the order of a time series, which we’ll need to use prior to sending data across to R. I’ll show you an example of how this works.
+
+Finally, debugging R bridge functions requires a little care. For example, executing an R statement with a syntax error from Zorro will cause the R session to fall over and subsequent commands to also fail – sometimes silently. For basic debugging, you can return R output to Zorro’s GUI or use a debugging tool, as well as use an R bridge function for checking that the R sessions is still “alive” (more on these below). But it always pays to execute R commands in the R console before setting them loose from a Lite-C script.
+
+<h2>How to make Zorro and R talk to each other</h2>
+
+Assuming you have Zorro installed, here’s a walk-through of configuring Zorro and R to talk to one another.
+
+<h3>1. Install R</h3>
+
+Go to http://cran.r-project.org. and install R.
+
+<h3>2. Tell Zorro about the path to R terminal</h3>
+
+Open <em>Zorro/Zorro.ini</em> (or <em>Zorro/ZorroFix.ini</em> if using the persistent version of the <a href="https://zorro-project.com/manual/en/ini.htm" rel="noopener noreferrer" target="_blank">configuration file</a>) and enter the path to <em>RTerm.exe</em> for the <code>RTermPath</code> variable. This tells Zorro how to start an R session.
+
+Here’s an example of the location of <em>RTerm.exe</em>:
+
+<img alt="" class="size-full wp-image-11882 aligncenter perfmatters-lazy" data-sizes="(max-width: 626px) 100vw, 626px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/10/21164546/RTermpath.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/10/21164546/RTermpath.png 626w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164546/RTermpath-600x349.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164546/RTermpath-300x174.png 300w" decoding="async" height="364" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='626'%20height='364'%20viewBox='0%200%20626%20364'%3E%3C/svg%3E" width="626"/>
+
+And how the <code>RTermPath</code>setting in <em>Zorro.ini</em> might look:
+
+<img alt="" class="size-large wp-image-11883 aligncenter perfmatters-lazy" data-sizes="(max-width: 1024px) 100vw, 1024px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/10/21164544/Zorroini-1024x197.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/10/21164544/Zorroini-1024x197.png 1024w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164544/Zorroini-600x115.png 600w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164544/Zorroini-300x58.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164544/Zorroini-768x148.png 768w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164544/Zorroini-1000x192.png 1000w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164544/Zorroini.png 1218w" decoding="async" height="197" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='1024'%20height='197'%20viewBox='0%200%201024%20197'%3E%3C/svg%3E" width="1024"/>
+
+Of course, the path to <em>RTerm.exe</em> will be specific to your machine.
+
+<h3>3. Run the test script</h3>
+
+In <em>Zorro/Strategy</em>, you’ll find a script named <em>RTest.c</em>. Open a Zorro instance, select this script, and press <em>Test</em>. If  R is installed correctly and your <em>Zorro.ini</em> settings are correct, you should get output that looks like this:
+
+<img alt="" class="size-full wp-image-11884 aligncenter perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2019/10/21164544/RTest.png" decoding="async" height="276" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='276'%20viewBox='0%200%20300%20276'%3E%3C/svg%3E" width="300"/>
+
+If that worked as expected, then you’re ready to incorporate R functionality in your Zorro scripts. If the test script failed, most likely the path specified in <em>Zorro.ini</em> is incorrect.
+
+<h2>Using the R bridge</h2>
+<em>Next, we’ll run through a brief tutorial with examples on using the R bridge functions. </em>
+<h3>1. Add <code>r.h</code> header file to a Zorro script</h3>
+
+To use the R bridge in your script, you need to include the r.h header file. Simply add this line at the beginning of your Zorro script:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="r.h header">#include &lt;r.h&gt;</pre>
+<h3>2. Start an R session from your Zorro script</h3>
+
+In order to use the other R bridge functions run <span class="lang:c decode:true crayon-inline">Rstart()</span> in the Zorro script’s <span class="lang:c decode:true crayon-inline">INITRUN</span>. Here’s the function’s general form: <span class="lang:c decode:true crayon-inline">Rstart(string source, int debuglevel)</span>
+
+Both parameters are optional. <span class="lang:r decode:true crayon-inline">source</span> is an R file that is <a href="https://www.rdocumentation.org/packages/base/versions/3.6.1/topics/source" rel="noopener noreferrer" target="_blank">sourced</a> at start up, and loads any predefined functions, variables or data that your R session will use.
+
+We can also specify the optional <span class="lang:r decode:true crayon-inline">debuglevel</span> argument, which takes an integer value of either 0, 1, or 2 (0 by default) defining the verbosity of any R output, such as errors and warnings:
+
+<ul>
+<li><strong>0:</strong> output fatal errors only</li>
+<li><strong>1:</strong> output fatal errors, warnings and notes</li>
+<li><strong>2:</strong> output every R message (this is like the output you see in the R console).</li>
+</ul>
+
+You can use Microsoft’s <a href="https://docs.microsoft.com/en-us/sysinternals/downloads/debugview" rel="noopener noreferrer" target="_blank">Debug View</a> tool to see the output of the R session. There’s a more convenient way to display the output of the R session directly in the Zorro GUI too – more on this shortly.
+
+<span class="lang:c decode:true crayon-inline">Rstart()</span> returns zero if the R session could not be started, and returns non-zero otherwise. Therefore, we can use <span class="lang:c decode:true crayon-inline">Rstart()</span>  to check that the R session started.
+
+This next script attempts to start a new R session via <span class="lang:c decode:true crayon-inline">Rstart()</span> ,  but raises the alarm and quits if unsuccessful.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Rstart - abort on error">#include &lt;r.h&gt;
+
+function run()
+{
+    if(!Rstart("", 2)) 
+    {
+        print("Error - could not start R session!");
+        quit();
+    }
+        
+}</pre>
+<h3>3. Check that the R session is still running</h3>
+<span class="lang:c decode:true crayon-inline">Rrun()</span> checks the status of the R session and returns 0 if the session has been terminated or has failed, 1 if the session is ready for input, and 2 if the session is busy with a computation or operation. Use it regularly!
+
+The R session will terminate upon encountering any fatal error (which can arise from a syntax error, unexpected data, and other issues that can arise in real time). But here’s the thing:<em> if the R session is terminated, the R bridge simply stops sending messages and silently ignores further commands. </em>
+
+That means that your script will only throw an error if some Lite-C computation depends on data that wasn’t received back from the R bridge.
+
+It’s a bad idea to assume that this will be picked up, so use <span class="lang:c decode:true crayon-inline">Rrun()</span> to check the status of your R connection – typically you’ll want to do this at the end of every bar in a backtest, and possibly prior to critical computations, raising an appropriate error when a failure is detected.
+
+The script below builds on the previous example to also include a call to <span class="lang:c decode:true crayon-inline">Rrun()</span>  every bar:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Rrun">#include &lt;r.h&gt;
+
+function run()
+{
+    if(!Rstart("", 2)) 
+    {
+        print("Error - could not start R session!");
+        quit();
+    }
+    
+    
+    if(!Rrun())
+    {
+        print("Error - R session has been terminated!");
+        quit();
+    
+    }
+        
+}</pre>
+<h4>4. Execute R code</h4>
+<span class="lang:c decode:true crayon-inline">Rx(string code, int mode)</span> is a powerful function – it enables the execution of a line of R code directly from a Lite-C script. We simply provide the R code as a string (the <span class="lang:c decode:true crayon-inline">code</span>  argument, which can be up to 1,000 characters in length). Optionally, we can provide <span class="lang:c decode:true crayon-inline">mode</span>  which specifies how <span class="lang:c decode:true crayon-inline">Rx()</span> passes control back to Zorro during execution of <span class="lang:c decode:true crayon-inline">code</span> in R.
+
+Normally, the Zorro GUI is unresponsive while the R bridge is busy; <span class="lang:c decode:true crayon-inline">mode</span> can modify this behaviour. It takes the following values:
+
+<ul>
+<li><strong>0:</strong> Execute code synchronously (that is, freeze Zorro until the computation is finished). This is the default behaviour.</li>
+<li><strong>1:</strong> Execute code asynchronously, returning immediately and continuing to execute the Lite-C script. Since the R bridge can only handle one request at a time, you’ll need to use <span class="lang:c decode:true crayon-inline">Rrun()</span>  to determine when the next command can be sent to the R session. This is useful when you want to run R and Zorro computations in parallel.</li>
+<li><strong>2:</strong> Execute code asynchronously, enabling the user to access the Zorro GUI buttons, and returning 1 when <span class="lang:c decode:true crayon-inline">code</span>  has finished executing and 0 when an error is encountered or the <strong>[Stop]</strong> button on the Zorro GUI is pressed. This is useful when your R computations take a long time, and you think you might want to interrupt them with the <strong>[Stop] </strong>button.</li>
+<li><strong>3:</strong> Execute code asynchronously, like <span class="lang:c decode:true crayon-inline">mode = 2</span>, but also printing R output to Zorro’s message window. The verbosity of this output is controlled by the <span class="lang:c decode:true crayon-inline">debuglevel</span> argument to <span class="lang:c decode:true crayon-inline">Rstart()</span>; in order to output everything (that is, mimic the output of the R console), set <span class="lang:c decode:true crayon-inline">debuglevel</span> to 2. This is a convenient alternative to using the Debug Tool mentioned above.</li>
+</ul>
+
+Here’s a script that runs two lines of R code: one line that generates a vector of random normal numbers and calculates its mean; and another that prints the mean, returning the value to the Zorro GUI.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Rx">#include &lt;r.h&gt;
+
+function run()
+{
+    if(!Rstart("", 2)) //enable verbose output
+    {
+        print("Error - could not start R session!");
+        quit();
+    }
+    
+    Rx("x &lt;- mean(rnorm(100, 0, 1))", 0); //default mode: wait until R code completes
+    Rx("print(x)", 3); //execute asynchronously, print output to debug view and Zorro GUI window 
+        
+    if(!Rrun())
+    {
+        print("Error - R session has been terminated!");
+        quit();
+    }
+}</pre>
+
+Here’s the output in the Zorro GUI:
+
+<img alt="" class="size-full wp-image-11937 aligncenter perfmatters-lazy" data-sizes="(max-width: 301px) 100vw, 301px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/10/21164530/Rscript1_output.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/10/21164530/Rscript1_output.png 301w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164530/Rscript1_output-187x300.png 187w" decoding="async" height="482" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='301'%20height='482'%20viewBox='0%200%20301%20482'%3E%3C/svg%3E" width="301"/>
+
+You can see that with every iteration of the <code>run</code> function, Zorro tells R to generate a new vector of random numbers – hence the changing mean.
+
+<h3>5. Send data from Zorro to R</h3>
+
+To send data from Zorro to R, use <span class="lang:c decode:true crayon-inline">Rset(string name, data_type, data_length)</span>.
+
+On the R side, the data will be stored in a variable named <span class="lang:c decode:true crayon-inline">name</span>.
+
+The actual usage of <span class="lang:c decode:true crayon-inline">Rset()</span> depends on what type of data is being sent from Zorro: a single int, a single float, or an array (or series) of float type variables. The latter can be sent to R as either a vector or a two-dimensional matrix.
+
+When sending a single int or float to R, we simply specify the name of that variable.
+
+For sending arrays, we need to specify a pointer to the array and either the number of elements (for sending the array to R as a vector) or the number of rows and columns (for sending the array to R as a matrix).
+
+Specifying a pointer is not as scary as it sounds; in Lite-C we can simply use the name of the array or series, as these are by definition pointers to the actual variables.
+
+Here are some examples of sending the different data types from Zorro to R:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Send data to R">#include &lt;r.h&gt;
+
+function run()
+{
+    if(!Rstart("", 2)) //enable verbose output
+    {
+        print("Error - could not start R session!");
+        quit();
+    }
+    
+    // make some variables
+    int today = dow();
+    var last_return = 0.003;
+    var my_params[5] = {2.5, 3.0, 3.5, 4.0, 4.5};
+    
+    // send those variables to R
+    Rset("my_day", today);
+    Rset("last_ret", last_return);
+    Rset("params", my_params, 5); //specify number of elements
+    
+    // operate on those variables in the R session
+    Rx("if(my_day == 1) x &lt;- last_ret * params[1] else x &lt;- 0", 0); //note params[1] is my_params[0] due to R's 1-based indexing and C's 0-based
+    Rx("print(x)", 3);
+    
+    if(!Rrun())
+    {
+        print("Error - R session has been terminated!");
+        quit();
+    }   
+}</pre>
+
+In lines 11-14, we create some arbitrary variables named <span class="lang:c decode:true crayon-inline">today</span> (an int), <span class="lang:c decode:true crayon-inline">last_return</span> (a float) and <span class="lang:c decode:true crayon-inline">my_params</span> (an array of float). In lines 16-19, we send those variables to the R session, assigning them to R objects named <span class="lang:c decode:true crayon-inline">my_day</span>, <span class="lang:c decode:true crayon-inline">last_ret</span>, and <span class="lang:c decode:true crayon-inline">params</span> respectively. When we send the array <span class="lang:c decode:true crayon-inline">my_params</span> to the R session, we have to specify the number of elements in the array.
+
+In line 22, we perform an operation on the variables in our R session. Note that R’s indexing is one-based, while C’s is zero-based, so if we want to access the value associated with <span class="lang:c decode:true crayon-inline">my_params[0]</span> in the R session, we need to use <span class="lang:c decode:true crayon-inline">params[1]</span>.
+
+Here’s an example of the output:
+
+<img alt="" class="size-full wp-image-11938 aligncenter perfmatters-lazy" data-sizes="(max-width: 301px) 100vw, 301px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/10/21164529/Rscript2_output.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/10/21164529/Rscript2_output.png 301w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164529/Rscript2_output-189x300.png 189w" decoding="async" height="477" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='301'%20height='477'%20viewBox='0%200%20301%20477'%3E%3C/svg%3E" width="301"/>
+<h3>Example: sending price data to the R session</h3>
+
+Sending price data (or other time series, such as returns, indicators, and the like) follows a process like the one shown above, but there are one or two issues you need to be aware of.
+
+First, during the <a href="https://zorro-project.com/manual/en/lookback.htm" rel="noopener noreferrer" target="_blank">lookback</a> period, the values of such time series are undefined. Sending an undefined value via the R bridge will cause a fatal error and the subsequent termination of the R session. To get around this issue, we can wrap our calls to <span class="lang:c decode:true crayon-inline">Rset()</span> in an <span class="lang:c decode:true crayon-inline">if</span> condition which evaluates to <span class="lang:c decode:true crayon-inline">True</span> outside the lookback period: <span class="lang:c decode:true crayon-inline">if(!is(LOOKBACK))</span>.
+
+The other problem is that Zorro’s time series are constructed with the newest values <em>first</em>. R functions expect time series data in chronological order with the newest elements <em>last</em>. That means that we need to reverse the order of our Zorro time series before sending them to R.
+
+This is fairly painless, since Zorro implements the <span class="lang:c decode:true crayon-inline">rev()</span> function for that very purpose. Simply provide <span class="lang:c decode:true crayon-inline">rev()</span> with the time series to be reversed, and optionally the number of values to be sent to R (if this argument is omitted, <span class="lang:c decode:true crayon-inline">LookBack</span> values are used instead).
+
+Here’s an example of sending price data to R that deals with these two issues:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Sending price data to R">#include &lt;r.h&gt;
+
+function run()
+{
+    if(!Rstart("", 2)) //enable verbose output
+    {
+        print("Error - could not start R session!");
+        quit();
+    }
+    
+    vars Close = series(priceClose());
+    int size = 20;
+    vars revClose = rev(Close, size);
+    
+    if(!is(LOOKBACK))
+    {
+        printf("\n#########\nZorro's most recent close:\n%.5f", Close[0]);
+        Rset("closes", revClose, size);
+        Rx("last_close &lt;- round(closes[length(closes)],5)", 0);
+        printf("\nR's most recent close:\n");
+        Rx("print(last_close, 5)", 3);
+    }
+        
+    if(!Rrun())
+    {
+        print("Error - R session has been terminated!");
+        quit();
+    }
+        
+}</pre>
+
+Here’s an example of the output:
+
+<img alt="" class="size-full wp-image-11939 aligncenter perfmatters-lazy" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/10/21164529/Rscript3_output.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/10/21164529/Rscript3_output.png 300w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164529/Rscript3_output-188x300.png 188w" decoding="async" height="478" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='478'%20viewBox='0%200%20300%20478'%3E%3C/svg%3E" width="300"/>
+<h3>6. Return data from R to Zorro</h3>
+
+The three functions <span class="lang:c decode:true crayon-inline">Ri(), Rd(), Rv()</span> evaluate a given R expression, much like <span class="lang:c decode:true crayon-inline">Rx()</span>, but they return the result of the expression back to the Zorro session as either an int, float, or vector respectively. We can supply any variable, valid R code or function to <span class="lang:c decode:true crayon-inline">Ri(), Rd(), Rv()</span>, so long as it evaluates to the correct variable type.
+
+<span class="lang:c decode:true crayon-inline">Ri()</span> and <span class="lang:c decode:true crayon-inline">Rd()</span> work in much the same way: we only need to supply an R expression as a string, and the functions return the result of the expression. This means that in the Lite-C script, we can set a variable using the output of <span class="lang:c decode:true crayon-inline">Ri()</span> or <span class="lang:c decode:true crayon-inline">Rd()</span>.
+
+For example, to define the variable <span class="lang:c decode:true crayon-inline">my_var</span> and use it to store the mean of the R vector <span class="lang:c decode:true crayon-inline">my_data</span>, we would do:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="">var my_var = Rd("mean(my_data)");</pre>
+<span class="lang:c decode:true crayon-inline">Rv()</span> works in a slightly different way. We supply as arguments an R expression that evaluates to a vector, and we also supply a pointer to the Lite-C var array to be filled with the results of the R expression. We also supply the number of elements in the vector.
+
+Here’s an example where we fill the float array <span class="lang:c decode:true crayon-inline">my_vector</span> with the output of R’s <span class="lang:r decode:true crayon-inline">rnorm()</span> function (which produces a vector of normally distributed random variables of a given length, mean and standard deviation):
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Rv">var my_vector[10];
+Rv("rnorm(10, 0, 1)", my_vector, 10);</pre>
+
+Here’s an example where we put both of these together – we populate a vector in our Lite-C script with some random numbers generated in R. Then we send that vector back to R to calculate the mean before printing the results. Of course this is a very convoluted way to get some random numbers and their mean, but it illustrates the point:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-title="Exchange data with R">#include &lt;r.h&gt;
+
+function run()
+{
+    if(!Rstart("", 2)) //enable verbose output
+    {
+        print("Error - could not start R session!");
+        quit();
+    }
+    
+    var my_vector[10]; // initialise array of float
+    
+    if(!is(LOOKBACK))
+    {
+        Rv("rnorm(10, 0, 1)", my_vector, 10);
+        Rset("my_data", my_vector, 10);
+        var my_mean = Rd("mean(my_data)");
+        
+        int i;
+        printf("\n#################");
+        for(i=0; i&lt;10; i++)
+        {
+            printf("\nmy_vector[%i]: %.3f", i, my_vector[i]);
+        }
+        printf("\nmean: %.3f", my_mean);
+        
+    }
+        
+    if(!Rrun())
+    {
+        print("Error - R session has been terminated!");
+        quit();
+    }
+        
+}</pre>
+
+And here’s the output:
+
+<img alt="" class="size-full wp-image-11940 aligncenter perfmatters-lazy" data-sizes="(max-width: 303px) 100vw, 303px" data-src="https://media.robotwealth.com/wp-content/uploads/2019/10/21164528/Rscript4_output.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2019/10/21164528/Rscript4_output.png 303w, https://media.robotwealth.com/wp-content/uploads/2019/10/21164528/Rscript4_output-190x300.png 190w" decoding="async" height="478" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='303'%20height='478'%20viewBox='0%200%20303%20478'%3E%3C/svg%3E" width="303"/>
+<h2>A General Workflow and Common Errors</h2>
+
+The intent of Zorro’s R bridge is to:
+
+<ol>
+<li>Facilitate the sending of large amounts of data from Zorro to R,</li>
+<li>Enable analysis of this data in R by executing R code from the Lite-C script, and</li>
+<li>Return single numbers or vectors from R to Zorro.</li>
+</ol>
+
+With that in mind, it makes sense to do as much of the data acquisition, cleaning and processing on the Lite-C side as possible. Save the R session for analysis that requires the use of specialized packages or functions not available in Zorro.
+
+In particular, avoid executing loops in R <em>(these can be painfully slow). </em>But if operations can be vectorized, they may be more efficiently performed in R.
+
+It is wise to test the R commands you supply to <span class="lang:c decode:true crayon-inline">Rx()</span>, <span class="lang:c decode:true crayon-inline">Ri()</span>, <span class="lang:c decode:true crayon-inline">Rd()</span>, and <span class="lang:c decode:true crayon-inline">Rv()</span> in an R console prior to running them in a Lite-C script. Any syntax error or bad data will cause the R session to terminate and all subsequent R commands to fail – potentially without raising a visible error. For that reason, use the <span class="lang:c decode:true crayon-inline">Rrun()</span> function regularly (at least once per bar) and keep on eye on the Debug View tool’s output, or the Zorro GUI.
+
+A frozen Zorro instance is often indicative of an incomplete R command, such as a missing bracket. Such a mistake will not throw an error, but R will wait for the final bracket, causing Zorro to freeze.
+
+Another common error is to attempt to load an R package that hasn’t been installed. This will cause the R session to terminate, so make sure your required packages are all installed before trying to load them. The source of the resulting error may not be immediately obvious, so keep an eye on the Debug View tool’s output.
+
+Depending on your setup, <em>the packages available to your R terminal may not be the same as those available in your R Studio environment</em> (if you’re using that particular IDE).
+
+Here’s a short R script that specifies some arbitrary required packages, checks if they are installed, and attempts to install them from CRAN if they are not already installed:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="Check packages">required.packages &lt;- c('deepnet', 'caret', 'kernlab')
+new.packages &lt;- required.packages[!(required.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, repos='https://cran.us.r-project.org')
+</pre>
+
+You can include this script in the file specified as the <span class="lang:c decode:true crayon-inline">source</span> parameter to <span class="lang:c decode:true crayon-inline">Rstart()</span> to ensure that your required packages are always present.
+
+Another common issue with the R bridge arises from passing <em>backslashes</em> in file names from Lite-C to R. R uses <em>forward</em> <em>slashes</em> instead. You can modify these manually, or use Zorro’s <span class="lang:c decode:true crayon-inline">slash()</span> function, which automatically converts all backslashes in a string to forward slashes. For example, <span class="lang:c decode:true crayon-inline">slash(ZorroFolder)</span> returns the file path to the Zorro folder as a string, with forward slashes instead of backslashes.
+
+<h2>Conclusion</h2>
+
+OK, that was a lengthy tutorial, but it will be worth it!
+
+So far we’ve used fairly simple R functions – stuff that you can easily do in Lite-C, like calcualting the mean of a bunch of numbers. But in the next post, we’ll put together our Zorro pairs tradng script that makes use of the Kalman filter that we wrote in R.
+
+<em><strong>More importantly, if you can master the R bridge functions we’ve discussed, you’ll be able to use any R tool directly in your trading scripts.</strong></em>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>R</span>, <span>R bridge</span>, <span>Zorro</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-136178 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-pair-trading tag-stat-arb tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/resourcing-a-triangulated-stat-arb-operation-as-a-solo-trader/"><img alt="Resourcing a Triangulated Stat Arb Operation as a Solo Trader" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="136205" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-768x384.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-1280x640.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-80x40.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-480x240.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns-960x480.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/08145930/earnings_filter_returns.webp 1456w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-135949 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-stat-arb-2 tag-trading-strategies tag-triangulated-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/when-is-a-mispricing-not-a-mispricing/"><img alt="When Is a Mispricing Not a Mispricing?" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="135957" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-768x384.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-1280x640.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-80x40.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-480x240.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840-960x480.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/06/01180924/36efb61e-4a66-43e8-9d13-2cfa2bcbe09d_1680x840.png 1680w" decoding="async" height="384" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='384'%20viewBox='0%200%20768%20384'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-134094 post type-post status-publish format-standard has-post-thumbnail hentry category-quant-trading tag-quantitative-trading tag-stat-arb-2 tag-trading-strategies pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-metamorphosis/"><img alt="The Metamorphosis" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="134095" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-768x576.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-1280x960.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-80x60.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-480x360.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa-960x720.jpg 960w, https://media.robotwealth.com/wp-content/uploads/2026/05/22172316/tsa.jpg 1456w" decoding="async" height="576" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='576'%20viewBox='0%200%20768%20576'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">3 thoughts on “Integrating R with the Zorro Backtesting and Execution Platform”</h2>
+<ol class="comment-list">
+<li class="comment even thread-even depth-1 parent" id="comment-9561">
+<article class="comment-body" id="div-comment-9561" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Maybe something that will be covered in a next piece, but your latter statement:<br/>
+“required.packages &lt;- c('deepnet', 'caret', 'kernlab')<br/>
+new.packages &lt;- required.packages[!(required.packages %in% installed.packages()[,"Package"])]<br/>
+if(length(new.packages)) install.packages(new.packages, repos='<a href="https://cran.us.r-project.org&amp;#039" rel="nofollow ugc">https://cran.us.r-project.org&amp;#039</a>;)"</p>
+<p>How should that be incorporated in the Z-code? </p>
+<p>The manual has an example (#2), but no example of the content of "MySignals.r" or "MyObjects.bin" is provided so Butterworth filter (pass.filt) from the dplR-library to work is challenging and this implementation differs from the one in Zorro.  Any clues are welcome.</p>
+<span class="reply"><a aria-label="Reply to Norbert Westerhuijs" class="comment-reply-link" data-belowelement="div-comment-9561" data-commentid="9561" data-postid="11302" data-replyto="Reply to Norbert Westerhuijs" data-respondelement="respond" href="#comment-9561" rel="nofollow">Reply</a></span> </div>
+</article>
+<ul class="children">
+<li class="comment byuser comment-author-robot-master bypostauthor odd alt depth-2" id="comment-9860">
+<article class="comment-body" id="div-comment-9860" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Hi Norbert, that code you’re talking about is R code, not Zorro code. It belongs in the R script that you source at the outset. It’s just a convenient way to make sure you have all the required R packages installed and loaded, as this is a common bug (and one that will cause R to fail silently when called from a Zorro script). </p>
+<p>Hope that helps.</p>
+<span class="reply"><a aria-label="Reply to Kris Longmore" class="comment-reply-link" data-belowelement="div-comment-9860" data-commentid="9860" data-postid="11302" data-replyto="Reply to Kris Longmore" data-respondelement="respond" href="#comment-9860" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ul><!-- .children -->
+</li><!-- #comment-## -->
+<li class="pingback even thread-odd thread-alt depth-1" id="comment-17774">
+<div class="comment-body">
+				Pingback: Trading FX using Autoregressive Models - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/integrating-r-with-the-zorro-backtesting-and-execution-platform/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

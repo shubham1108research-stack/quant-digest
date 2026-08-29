@@ -1,0 +1,488 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>The VIX Futures Basis</title>
+<!-- source: https://robotwealth.com/the-vix-futures-basis/ -->
+<h1>The VIX Futures Basis</h1>
+
+<a class="screen-reader-text skip-link" href="#content" title="Skip to content">Skip to content</a>
+
+<div class="site grid-container container hfeed" id="page">
+<div class="site-content" id="content">
+<div class="content-area" id="primary">
+<main class="site-main" id="main">
+<article class="dynamic-content-template post-22522 post type-post status-publish format-standard hentry category-r category-trading-strategies tag-arbitrage tag-dplyr tag-rvest tag-tidyverse tag-vix tag-volatility tag-vx pmpro-has-access" id="post-22522">
+<section class="ipa-section-space--sm ipa-hero">
+<div class="ipa-width--content gbp-section__inner gb-element-2854c01c">
+<div class="gb-element-45d1452f">
+<div class="gb-element-dc5b461a">
+<div class="gb-element-54da7c5f"><figure class="gb-block-image gb-block-image-15fda567"><img alt="" class="avatar avatar-32 photo gb-image-15fda567 Image_author_avatar perfmatters-lazy" data-src="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=32&amp;d=mm&amp;r=g" data-srcset="https://secure.gravatar.com/avatar/b2ef26114527262e1f7c1025b589c9fac2fedc3f02e0daad940ebc2f8be9ddc8?s=64&amp;d=mm&amp;r=g 2x" decoding="async" height="32" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%3E%3C/svg%3E" width="32"/></figure>
+<p class="gb-text gb-text-746d6697"><a href="https://robotwealth.com/author/jameshodges/">Robot James</a></p>
+</div>
+<div class="gb-element-296d33e1">
+<p class="gb-text gb-text-7bf92e34">April 30, 2020</p>
+</div>
+</div>
+<div class="ipa-inner-space--xs">
+<h1 class="gb-text">The VIX Futures Basis</h1>
+<div class="ipa-media gb-element-bc7a6593">
+<img alt="The VIX Futures Basis" class="ipa-media gb-media-55b19ed5" decoding="async" fetchpriority="high" height="720" sizes="(max-width: 1280px) 100vw, 1280px" src="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp" srcset="https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-768x432.webp 768w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-80x45.webp 80w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-480x270.webp 480w, https://media.robotwealth.com/wp-content/uploads/2025/12/01212109/rw_pro_blog_featured_image-960x540.webp 960w" title="rw_pro_blog_featured_image" width="1280"/>
+</div>
+</div>
+<div class="gb-element-2868ec25">
+<div class="gb-element-d8f138e9"><div class="dynamic-entry-content">In the eye of the recent storm, with VIX up over 50, many traders were looking to “short the VIX” using products like TVIX.
+
+<blockquote><em>“Surely it’s going to coming back down?”</em></blockquote>
+
+Well yeah, it will, eventually, but that doesn’t mean that you can profitably short VIX products.
+
+First, some basics…
+
+<h2>What is VIX?</h2>
+
+VIX is a benchmark index for SPX volatility.
+
+It shows the SPX options market’s expected value of volatility over the next 30 days.
+
+You can think of it as <em>“What does the SPX options market think SPX volatility will be over the next 30 days?”</em>
+
+Technically it is calculated based on the 30-day variance swap and then converted to a volatility calculation.
+
+So the VIX index is just a mathematical calculation… you can’t trade it.
+
+<blockquote><em>So what can you trade?</em></blockquote>
+<h2>VX Futures</h2>
+
+The CBOE lists VX futures which settle to the cash value of the VIX index at their expiration date.
+
+For example, the 20 May VX contract settles to the value of the VIX index on 20 May. <em>(Give or take… there are a few technicalities around it, but they’re not important here.)</em>
+
+VX futures are essentially<strong> forward bets on what VIX is going to be on the expiry date of the futures contract.</strong>
+
+There are typically a number of contracts in play at any point, each with different expirations.
+
+<h3>Term Structure and “Cash-and-Carry Arbitrage”</h3>
+
+It’s not immediately clear whether the 20 May VX contract (say) should trade at a higher or lower price than the index. Especially as the “underlying asset” (the VIX index) cannot be traded.
+
+So, first, let’s consider how a futures contract on an underlying which can be traded is priced. We’ll consider the S&amp;P 500 E-mini futures contract (ES).
+
+The June ES contract (ESM2020) settles to the cash value of the SPX index in June 2020. It’s April now, so what should be the value of that futures contract?
+
+In the short term, arbitrage rules the trading world. If two things are the same, they will have the same value. If they weren’t traders would buy the cheaper one and sell the expensive one and make a profit. This would act to bring the prices of the things back in line.
+
+Therefore, the difference in price between the futures and the index must be related to the way in which those two things are different.
+
+Let’s think about the way those things might be different. Let’s consider the experience of “buying the index” until June 2020, and buying the ESM2020 contract.
+
+We can’t actually “buy the index” – we have to buy all the constituent stocks that make it up in the weightings they are held in the index. We need some cash (which we either have lying around or we borrow) and we pay the full notional value of those stocks. Then some of those stocks will pay us dividends in the period we hold them.
+
+When we buy the ESM2020 futures contract we need less cash. We just post margin. But we also don’t own any stocks, so we don’t receive any dividends.
+
+To summarise, here are the differences:
+
+<ul>
+<li>The futures require less cash outlay than we need to buy stocks. If we buy the futures then we can invest the extra cash and earn interest on it.</li>
+<li>The stocks pay us dividends, the futures do not.</li>
+</ul>
+
+At this point, the naive trader might be trying to work out which one is better.
+
+But remember that, in the short term, arbitrage rules everything. The futures will be actively arbitraged against the stock basket, meaning that the price of their cashflows are equivalent.
+
+Cashflows that are the same will have the same price. That’s the law of no-arbitrage and it’s the closest thing to a law that exists in finance.
+
+<blockquote><em>How does that work?</em></blockquote>
+
+Well, the arbrigateurs will calculate a “fair value” of the futures contract, given the value of the index, the expected dividends and the interest rate they can fund themselves at. Then, they write down the total cashflows over the period.
+
+<code>-ESM2020 + Expected interest received on cash = -SPX + Expected dividends received on stocks</code>
+
+By re-arranging this we can see that the fair value of ESM2020 is…
+
+<code>ESM2020 = SPX + Expected interest Received - Expected dividends received</code>
+
+If ESM2020 is trading significantly over this “fair value”, index arbitrageurs will sell ESM2020 and buy the stock basket. If it is trading under this “fair value”, they will buy ESM2020 and sell the stock basket. We call this “cash and carry arbitrage.”
+
+Because of this arbitrage, ES contracts always track very closely to their fair value.
+
+<ul>
+<li>If the interest paid on cash exceeds the dividends paid by stocks, then the futures will trade at a premium to the index.</li>
+<li>If the dividends paid by stocks exceed the interest paid on cash, the futures will trade at a discount to the index.</li>
+</ul>
+
+Given the clear “cash and carry” relationship between ES futures and SPX it is easy to understand why futures expiring on a certain date are priced the way they are.
+
+With VX futures, however, there is no tradeable underlying asset to arbitrage to – so these rules don’t hold. You might try to price them by trying to forecast what VIX is going to be at expiry. That’s really the best you can do – but in practice VX futures tend to take on a bit of a life of their own, bouncing around any reasonable forecast of “fair value” with considerable volatility.
+
+That can make them quite attractive for alpha trading.
+
+<h2>The VX Futures Term Structure</h2>
+
+So let’s look at the prices of VX futures at various expiry dates. We call this the “VX Term Structure”.
+
+We can get snapshot historical VX prices from <a href="http://vixcentral.com">vixcentral.com</a>
+
+We’ll use the <code>rvest</code> <a href="https://www.tidyverse.org/packages/">tidyverse</a> package to scrape the data using R.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">library(tidyverse)
+library(rvest)
+vixcentral &lt;- read_html('http://vixcentral.com/historical/?days=5000')
+vix_ts &lt;- vixcentral %&gt;%
+  html_node('table') %&gt;%
+  html_table(header = TRUE)
+</pre>
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">vix_ts &lt;- vix_ts %&gt;%
+  # F9 to F12 have blanks, and such are loaded 
+  mutate(Date = as.Date(Date, format = '%Y-%m-%d'),
+         F9 = as.numeric(F9),
+         F10 = as.numeric(F10),
+         F11 = as.numeric(F11),
+         F12 = as.numeric(F12)) %&gt;%
+  select(Date, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12) %&gt;%
+  filter(!is.na(Date)) %&gt;% 
+  arrange(Date)
+
+vix_ts_tidy &lt;- vix_ts %&gt;%
+  pivot_longer(-Date, names_to = 'Contract', names_prefix = 'F', names_ptypes = list(Contract = integer()), values_to = 'Price') %&gt;%
+  filter(Price != 0 &amp; !is.na(Price)) 
+</pre>
+
+Let’s plot the term structure for the earliest date of each year for which we have data.
+
+This will give us a series of line plots, with each line showing the term structure at a given date.
+
+Each point on the x-axis represents the next VX contract to expire. So x = 1 represents the contract with the least time to expiry, x = 2 with the next least time to expiry and so on. The y-axis represents the price of the futures contract.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">library(lubridate)
+firstdates &lt;- vix_ts %&gt;%
+  mutate(year = year(Date)) %&gt;%
+  group_by(year) %&gt;%
+  summarise(Date = min(Date))
+
+vix_ts_tidy %&gt;%
+  filter(Contract &lt;= 8) %&gt;% # Only plot first 8 contracts
+  inner_join(firstdates, by = 'Date') %&gt;%
+  ggplot(aes(x = Contract, y = Price, color = factor(Date))) +
+    geom_point() +
+    geom_smooth(method = 'loess', formula = y ~ x, se = FALSE) +
+    ggtitle('VX Futures Term Structure for 12 different days between 2009 and 2020')
+</pre>
+<img alt="plot of chunk term_structure" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162151/term_structure-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk term_structure"/>
+
+As we go along the x-axis there is longer to expiry.
+
+Most of the time we see that VX futures get <em>more expensive</em> the longer we have to expiry. There are exceptions, of course, such as the red series in 2009-03-18 and the purple series at the beginning of 2019. But at most times, if we want to gain exposure to the VIX index, we have to pay more, the further out we go.
+
+There is generally a “cost” to holding a VX position. It costs us more the more time we want exposure and, all things being equal, the value of our VX position will lose money over time as time passes and we “slide down the curve”.
+
+<blockquote><em>Why might this be?</em></blockquote>
+
+Well, let’s plot VIX…
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">vixdata %&gt;%
+  ggplot(aes(x=Date, y=VIX)) + 
+    geom_line() + 
+    ggtitle('VIX Index')
+</pre>
+<img alt="plot of chunk VIX" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162150/VIX-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk VIX"/>
+<em>What do you notice about this?</em>
+<ul>
+<li>There are more really big up moves than down moves</li>
+<li>It seems to be locally mean-reverting – it “comes back” closer to the mean value over time.</li>
+<li>There appears to be a “floor” under which VIX is unlikely to go much lower.</li>
+</ul>
+
+This last point makes intuitive sense. Unless something significant changes in the structure of the equity market, it’s unlikely we’ll see 30-day annualised volatility of SPX drop much lower than 9%, for example.
+
+Let’s imagine it’s November 2017 and VIX is below 10.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">vixdata %&gt;%
+  filter(Date &gt;= '2017-11-01') %&gt;%
+  select(Date, VIX) %&gt;%
+  head(5)
+</pre>
+<pre>## # A tibble: 5 x 2
+##   Date         VIX
+##        
+## 1 2017-11-01 10.2 
+## 2 2017-11-02  9.93
+## 3 2017-11-03  9.14
+## 4 2017-11-06  9.4 
+## 5 2017-11-07  9.89
+</pre>
+
+If you look at the chart of VIX above, you’ll notice that the VIX index has never printed below 9. So, on the 3rd of November 2017, you can understand plenty of people wanting to bet on VIX being higher, but much fewer people are going to want to bet on VIX being lower than 9.
+
+For every VX futures contract traded there needs to be a buyer and seller.
+
+So, with VIX at 9.14 you’re unlikely to find too many sellers. VIX is unlikely to go much lower than 9, and quite likely to go haywire to the upside at some point. So, in order for VX contracts to trade, they’re going to need to be priced such that people are prepared to sell them. They’ll need to trade at a higher price than the VIX index they settle to.
+
+Now let’s look what the VX futures prices were on 3rd November 2017:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">vix_ts_tidy %&gt;%
+  filter(Date == '2017-11-03')
+</pre>
+<pre>## # A tibble: 9 x 3
+##   Date       Contract Price
+##            
+## 1 2017-11-03        1  11.0
+## 2 2017-11-03        2  12.3
+## 3 2017-11-03        3  13.5
+## 4 2017-11-03        4  14.1
+## 5 2017-11-03        5  14.7
+## 6 2017-11-03        6  15.3
+## 7 2017-11-03        7  15.7
+## 8 2017-11-03        8  16.2
+## 9 2017-11-03        9  16.6
+</pre>
+
+And indeed that’s exactly what we see.
+
+Futures traders are only prepared to sell VX at a premium to the index. And the value of this premium increases as the futures contracts have longer to expiry.
+
+A long position in VIX is a very attractive commodity when VIX is low, <em>so you have to pay to hold it.</em>
+
+What about when VIX is very high? From looking at the chart above it would seem like you’d struggle to find buyers of VX at 80 or more when VIX hit 80 in March 2020. Let’s look at what happened then:
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">vixdata %&gt;% filter(Date == '2020-03-16') %&gt;% select(Date, VIX)
+</pre>
+<pre>## # A tibble: 1 x 2
+##   Date         VIX
+##        
+## 1 2020-03-16  82.7
+</pre>
+
+It would be hard to find someone prepared to buy VX futures at or above 80, especially at longer expirations. VIX has never been much higher than that, and we have seen that it consistently reverts to the mean.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">vix_ts_tidy %&gt;%
+  filter(Date == '2020-03-16')
+</pre>
+<pre>## # A tibble: 9 x 3
+##   Date       Contract Price
+##            
+## 1 2020-03-16        1  72.6
+## 2 2020-03-16        2  59.2
+## 3 2020-03-16        3  44.9
+## 4 2020-03-16        4  39.0
+## 5 2020-03-16        5  35.0
+## 6 2020-03-16        6  32.2
+## 7 2020-03-16        7  30.9
+## 8 2020-03-16        8  30.7
+## 9 2020-03-16        9  28.8
+</pre>
+
+And indeed we see the opposite situation.
+
+We can’t find buyers of the shortest VX futures contract at 82, but we could find them at 72.
+
+The VX futures with 6 months to expiry were trading at 32, <em>60% less than the index.</em>
+
+We have the data, so let’s generalise this a little more. We’ll calculate the “basis” of VX futures as the percentage difference between the second VX futures contract by expiration, and plot it against the level of the “spot” VIX index.
+
+<pre class="EnlighterJSRAW" data-enlighter-language="r" data-enlighter-title="">vix_ts %&gt;%
+  inner_join(vixdata, by = 'Date') %&gt;%
+  mutate(slope = F2/VIX - 1) %&gt;%
+  ggplot(aes(x=VIX, y=slope)) +
+    geom_point() +
+    ggtitle('Premium of VX2 to VIX vs VIX level')
+</pre>
+<img alt="plot of chunk unnamed-chunk-10" class="perfmatters-lazy" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162149/unnamed-chunk-10-1.png" decoding="async" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E" style="display: block; margin: auto;" title="plot of chunk unnamed-chunk-10"/>
+
+As we expected, when VIX is low we have to pay a premium to get long VX futures, as the market anticipates limited potential downside and nobody wants to get short at the index price. We can see this by the generally <em>positive</em> slope of the term structure between VX2 and VIX when VIX is low.
+
+And when VIX is high the futures trade at a discount because the market anticipates reversion to mean, and few people want to get long at the index price. We can see this by the generally <em>negative</em> slope of the term structure between VX2 and VIX when VIX is low.
+
+At this stage it should be clear to you that:
+
+<ul>
+<li>The VIX index is predictable</li>
+<li>But you can’t trade the VIX index, you can only trade futures contracts that settle to it.</li>
+<li>And the most obvious predictable elements of the behaviour of the VIX index are “priced into” the “term structure” tradeable futures contracts.</li>
+<li>The futures usually trade at a premium to VIX – meaning that there’s a “cost” to being long VX.</li>
+<li>When the market is very stressed and VIX is very high, the futures usually trade at a discount to VIX – meaning that there is a “cost” to being short VX.</li>
+</ul>
+<h2>A Volatility Alpha Hint</h2>
+
+Whilst we’re talking about it, I’ll mention that there is significant evidence that the VX futures term structure is predictive of VX futures returns. It’s almost as if the VX futures basis “over-adjusts” for the stylised facts of volatility.
+
+The seminal paper on this is <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2094510">Simon and Campasso (2010): The VIX Futures Basis: Evidence and Trading Strategies.</a>
+
+The scatterplots below illustrate a similar effect where, following <a href="http://www.godotfinance.com/workingpapers.xhtml">Chrilly Donninger</a>, we have plotted VX returns over a day, a week, and month (from a constant maturity VX futures index) against the model-free implied volatility term structure slope
+
+<img alt="" class="aligncenter size-full wp-image-22419 perfmatters-lazy" data-sizes="(max-width: 648px) 100vw, 648px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162143/SPVIXSTR_vs_ivts_slope-1.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162143/SPVIXSTR_vs_ivts_slope-1.png 648w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162143/SPVIXSTR_vs_ivts_slope-1-600x333.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162143/SPVIXSTR_vs_ivts_slope-1-300x167.png 300w" decoding="async" height="360" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='648'%20height='360'%20viewBox='0%200%20648%20360'%3E%3C/svg%3E" width="648"/>
+
+We see that the VX returns have a (noisy) positive dependency on the slope. This leads to carry trades where one goes:
+
+<ul>
+<li>long VX products when short term implied volatility is more expensive than longer-term volatility</li>
+<li>short VX products when short term implied volatility is cheaper than long term implied volatility.</li>
+</ul>
+
+Here’s a very simple backtest of a strategy that takes a position in the SPVIXSTR index<em> (30-day constant maturity VX futures)</em> in the direction of that “carry”.
+
+<img alt="" class="aligncenter size-full wp-image-22421 perfmatters-lazy" data-sizes="(max-width: 648px) 100vw, 648px" data-src="https://media.robotwealth.com/wp-content/uploads/2020/04/21162141/ivts_slope_backtest-1.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2020/04/21162141/ivts_slope_backtest-1.png 648w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162141/ivts_slope_backtest-1-600x333.png 600w, https://media.robotwealth.com/wp-content/uploads/2020/04/21162141/ivts_slope_backtest-1-300x167.png 300w" decoding="async" height="360" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='648'%20height='360'%20viewBox='0%200%20648%20360'%3E%3C/svg%3E" width="648"/>
+
+In addition to positive returns, you can see that this very simple trading strategy has tended to have large positive returns in times of market stress.
+
+<h2>Conclusion</h2>
+
+There is rarely a free lunch in the market.
+
+If you find a trade that “looks like a lay-up”, such as shorting VIX products at VIX 80, then it’s more likely that you’ve missed something.
+
+In this case, the thing you would have missed is that there was a significant “carrying cost” to getting long VX futures with VIX at 80. The VX futures were already pricing in a significant amount of mean-reversion in the index.
+
+Investors piling into the USO Crude ETF because <em>“crude can’t go any lower, surely”</em> will also be learning this lesson right now…
+
+<div class="convertful-36233"></div>
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+<section class="gb-container gb-container-65eb7062 blog-footer-cta">
+<h1 class="gb-text gb-text-cwl3rx6l">Free Case Study: <em> </em></h1>
+<h1 class="gb-text gb-text-2b6cfd08"><em>A wantaway engineer’s journey into professional trading and out again </em></h1>
+<div class="gbp-section__inner">
+<div class="gbp-section">
+<div class="ipa-grid gb-element-5d601422">
+<div class="gb-element-6296737a">
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph"><em><strong>I went from engineering to an equity partnership at a prop trading firm to running my own systematic trading operation from home in Western Australia. </strong></em></p>
+<p class="has-text-align-left has-medium-font-size wp-block-paragraph">This case study is the full story – every mistake, every breakthrough, and some things I trade today.</p>
+</div>
+<div>
+<img alt="" class="gb-media-584a84d1 perfmatters-lazy" data-sizes="(max-width: 2530px) 100vw, 2530px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head.jpg 2530w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-768x764.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-1280x1273.jpg 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-150x150.jpg 150w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-80x80.jpg 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-480x478.jpg 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/12002924/kris-head-960x955.jpg 960w" decoding="async" height="2517" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='2530'%20height='2517'%20viewBox='0%200%202530%202517'%3E%3C/svg%3E" title="kris head" width="2530"/>
+</div>
+</div>
+</div>
+<div class="gbp-section__inner gb-element-e11c0bc4"><div class="convertful-235571"></div>
+</div>
+</div>
+</section><div class="conv-place conv-place_after_post"></div></div></div>
+</div>
+<div class="ipa-inner-space--xs gb-element-5e0a97d8">
+<p class="gb-text gb-text-f277e363"><span>arbitrage</span>, <span>dplyr</span>, <span>rvest</span>, <span>tidyverse</span>, <span>VIX</span>, <span>volatility</span>, <span>VX</span></p>
+</div>
+<h2 class="gb-headline gb-headline-cb84a409 gb-headline-text">Related Articles</h2>
+<div><div class="gb-looper-32ad0312">
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130666 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/the-winter-of-our-pairs-trading-discontent-problems-limitations-frustrations/"><img alt="The Winter of our Pairs Trading Discontent: Problems, limitations, frustrations" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130667" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-768x429.png 768w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-1280x714.png 1280w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-80x45.png 80w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-480x268.png 480w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg-960x536.png 960w, https://media.robotwealth.com/wp-content/uploads/2026/03/02130642/iceberg.png 1376w" decoding="async" height="429" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='429'%20viewBox='0%200%20768%20429'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130276 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/moneyball-finding-undervalued-pairs-using-unconventional-metrics/"><img alt="Moneyball: Finding Undervalued Pairs Using Unconventional Metrics" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="130277" data-sizes="(max-width: 768px) 100vw, 768px" data-src="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp" data-srcset="https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-768x578.webp 768w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-1280x964.webp 1280w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-80x60.webp 80w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-480x361.webp 480w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features-960x723.webp 960w, https://media.robotwealth.com/wp-content/uploads/2026/02/20182905/combined_features.webp 1456w" decoding="async" height="578" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='768'%20height='578'%20viewBox='0%200%20768%20578'%3E%3C/svg%3E" width="768"/></a>
+</div>
+
+</article>
+<article class="gb-loop-item gb-loop-item-705c90b1 post-130275 post type-post status-publish format-standard has-post-thumbnail hentry category-trading-strategies tag-pairs-trading tag-stat-arb-2 pmpro-has-access">
+<div class="gbp--border-radius gb-element-91327225">
+<a href="https://robotwealth.com/a-tale-of-two-prices/"><img alt="A Tale of Two Prices" class="gb-media-8d1e4dd4 perfmatters-lazy" data-media-id="120744" data-sizes="(max-width: 300px) 100vw, 300px" data-src="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg" data-srcset="https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-300x158.jpg 300w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-1024x538.jpg 1024w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04-768x403.jpg 768w, https://media.robotwealth.com/wp-content/uploads/2025/09/19193611/email-bf1d4eed-20c8-47a3-9965-8c50508ebb04.jpg 1200w" decoding="async" height="158" src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='158'%20viewBox='0%200%20300%20158'%3E%3C/svg%3E" width="300"/></a>
+</div>
+
+</article>
+</div></div>
+</div>
+
+</div>
+</section>
+</article>
+<div class="comments-area">
+<div id="comments">
+<h2 class="comments-title">5 thoughts on “The VIX Futures Basis”</h2>
+<ol class="comment-list">
+<li class="comment byuser comment-author-minshengw even thread-even depth-1" id="comment-14166">
+<article class="comment-body" id="div-comment-14166" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Very good explanation. Thank you so much for the article. After reading, I wont long USO at this point of time.</p>
+<span class="reply"><a aria-label="Reply to Minsheng Wu" class="comment-reply-link" data-belowelement="div-comment-14166" data-commentid="14166" data-postid="22522" data-replyto="Reply to Minsheng Wu" data-respondelement="respond" href="#comment-14166" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="pingback odd alt thread-odd thread-alt depth-1" id="comment-14178">
+<div class="comment-body">
+				Pingback: Quantocracy's Daily Wrap for 04/30/2020 | Quantocracy 			</div>
+</li><!-- #comment-## -->
+<li class="pingback even thread-even depth-1" id="comment-14824">
+<div class="comment-body">
+				Pingback: Why Aren't Call Options More Expensive Than Put Options? - Robot Wealth 			</div>
+</li><!-- #comment-## -->
+<li class="comment odd alt thread-odd thread-alt depth-1" id="comment-33905">
+<article class="comment-body" id="div-comment-33905" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Great article and thanks for sharing that code.  I’ve been banging my head against the wall trying to do something similar in python.  time to bite the bullet and open up Rstudio again lol</p>
+<span class="reply"><a aria-label="Reply to VP" class="comment-reply-link" data-belowelement="div-comment-33905" data-commentid="33905" data-postid="22522" data-replyto="Reply to VP" data-respondelement="respond" href="#comment-33905" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+<li class="comment even thread-even depth-1" id="comment-36503">
+<article class="comment-body" id="div-comment-36503" itemscope="" itemtype="https://schema.org/Comment">
+
+<div class="comment-content" itemprop="text">
+<p>Has anyone managed to replicate this in python using beautifulsoup to scrape vixcentral?</p>
+<span class="reply"><a aria-label="Reply to vp" class="comment-reply-link" data-belowelement="div-comment-36503" data-commentid="36503" data-postid="22522" data-replyto="Reply to vp" data-respondelement="respond" href="#comment-36503" rel="nofollow">Reply</a></span> </div>
+</article>
+</li><!-- #comment-## -->
+</ol><!-- .comment-list -->
+<div class="comment-respond" id="respond">
+<h3 class="comment-reply-title" id="reply-title">Leave a Comment <small><a href="/the-vix-futures-basis/#respond" id="cancel-comment-reply-link" rel="nofollow" style="display:none;">Cancel reply</a></small></h3> </div><!-- #respond -->
+</div><!-- #comments -->
+</div>
+</main>
+</div>
+</div>
+</div>
+<div class="site-footer">
+
+</div>
+<a aria-label="Scroll back to top" class="generate-back-to-top" data-scroll-speed="400" data-start-scroll="300" href="#" rel="nofollow" role="button" title="Scroll back to top">
+<span class="gp-icon icon-arrow-up"><svg aria-hidden="true" clip-rule="evenodd" fill-rule="evenodd" height="1em" stroke-linejoin="round" stroke-miterlimit="1.414" viewbox="0 0 330 512" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M305.863 314.916c0 2.266-1.133 4.815-2.832 6.514l-14.157 14.163c-1.699 1.7-3.964 2.832-6.513 2.832-2.265 0-4.813-1.133-6.512-2.832L164.572 224.276 53.295 335.593c-1.699 1.7-4.247 2.832-6.512 2.832-2.265 0-4.814-1.133-6.513-2.832L26.113 321.43c-1.699-1.7-2.831-4.248-2.831-6.514s1.132-4.816 2.831-6.515L158.06 176.408c1.699-1.7 4.247-2.833 6.512-2.833 2.265 0 4.814 1.133 6.513 2.833L303.03 308.4c1.7 1.7 2.832 4.249 2.832 6.515z" fill-rule="nonzero"></path></svg></span>
+</a> <!-- #site-navigation -->
+
+<!-- Memberships powered by Paid Memberships Pro v3.8.5. -->
+
+<div aria-label="Search" aria-modal="true" class="gp-modal gp-search-modal" id="gp-search" role="dialog">
+<div class="gp-modal__overlay" data-gpmodal-close="" tabindex="-1">
+<div class="gp-modal__container">
+
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
