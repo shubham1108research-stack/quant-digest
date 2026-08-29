@@ -111,6 +111,10 @@ TERM_SLEEVE: dict[str, str] = {
 # little else, and families like research integrity would never survive it.
 TAXONOMY: dict[str, list[str]] = {
     "A_style_premia": [
+        # route H (2026-08-29): validated on S2 before adding.
+        "BAB factor", "CTA returns", "lookback straddle",
+        "low volatility anomaly", "low-risk anomaly", "momentum crashes",
+        "quality minus junk", "trend-following returns", "value premium",
         "value investing", "momentum", "time-series momentum",
         "cross-sectional momentum", "mean reversion", "short-term reversal",
         "long-term reversal", "carry trade", "roll yield", "convenience yield",
@@ -123,6 +127,10 @@ TAXONOMY: dict[str, list[str]] = {
         "defensive equity",
     ],
     "B_asset_classes": [
+        # route H (2026-08-29): validated on S2 before adding.
+        "basis trade", "bond carry", "cash-futures basis",
+        "commodity carry", "futures roll", "safe asset",
+        "seasonal futures", "swap spread",
         "equity premium", "interest rates", "credit spreads",
         "foreign exchange", "commodity futures", "gold", "crude oil",
         "natural gas markets", "agricultural commodities", "cryptocurrency",
@@ -133,6 +141,21 @@ TAXONOMY: dict[str, list[str]] = {
         "private equity returns", "emerging market debt", "sovereign debt",
     ],
     "C_systematic_macro": [
+        # route H (2026-08-29): validated on S2 before adding.
+        "CIP deviation", "MIDAS regression", "Markov regime switching",
+        "affine term structure", "bond risk premia",
+        "change-point detection", "data vintages", "dynamic factor model",
+        "economic surprise index", "excess bond returns",
+        "exchange rate predictability", "expectations hypothesis",
+        "factor-augmented", "financial conditions index",
+        "forward premium puzzle", "forward rate regression",
+        "hidden Markov", "high-frequency identification",
+        "mixed frequency", "monetary policy shock",
+        "multiple structural changes", "no-arbitrage term structure",
+        "purchasing power parity", "real exchange rate", "real-time data",
+        "regime switching model", "structural break",
+        "term structure of interest rates", "uncovered interest parity",
+        "yield curve factors",
         "inflation dynamics", "inflation expectations", "real interest rates",
         "monetary policy", "federal reserve", "european central bank",
         "bank of japan", "quantitative easing", "quantitative tightening",
@@ -146,6 +169,10 @@ TAXONOMY: dict[str, list[str]] = {
         "emerging markets", "zero lower bound",
     ],
     "D_vol_derivatives": [
+        # route H (2026-08-29): validated on S2 before adding.
+        "FX carry", "delta-hedged gains", "long volatility",
+        "model-free implied volatility", "options on futures",
+        "volatility carry", "volatility skew",
         "volatility forecasting", "realized volatility", "implied volatility",
         "volatility surface", "volatility smile", "variance risk premium",
         "VIX", "VIX futures", "variance swaps", "dispersion trading",
@@ -154,6 +181,9 @@ TAXONOMY: dict[str, list[str]] = {
         "volatility targeting",
     ],
     "E_portfolio_construction": [
+        # route H (2026-08-29): validated on S2 before adding.
+        "cross-asset carry", "naive diversification",
+        "shrinkage estimator", "volatility-managed",
         "portfolio optimization", "mean-variance optimization",
         "Black-Litterman", "risk parity", "hierarchical risk parity",
         "risk budgeting", "equal risk contribution",
@@ -175,6 +205,9 @@ TAXONOMY: dict[str, list[str]] = {
         "systemic risk", "market turmoil", "crisis alpha",
     ],
     "G_machine_learning": [
+        # route H (2026-08-29): validated on S2 before adding.
+        "empirical asset pricing", "high-dimensional prediction",
+        "machine learning asset pricing",
         "machine learning", "deep learning",
         "neural networks", "transformer models",
         "large language models", "reinforcement learning",
@@ -190,6 +223,9 @@ TAXONOMY: dict[str, list[str]] = {
         "generative adversarial network", "transfer learning",
     ],
     "H_econometrics": [
+        # route H (2026-08-29): validated on S2 before adding.
+        "Fama-MacBeth", "Newey-West standard errors", "false discoveries",
+        "half-life of PPP deviations",
         "financial econometrics", "return forecasting", "GARCH",
         "stochastic volatility models", "state space models", "Kalman filter",
         "cointegration", "unit root tests", "vector autoregression",
@@ -201,6 +237,9 @@ TAXONOMY: dict[str, list[str]] = {
         "difference-in-differences", "structural breaks",
     ],
     "I_microstructure": [
+        # route H (2026-08-29): validated on S2 before adding.
+        "market impact", "slippage",
+        "square-root law",
         "market microstructure", "limit order book", "order flow",
         "order flow imbalance", "price impact", "Kyle lambda",
         "market making", "high-frequency trading", "optimal execution",
@@ -223,6 +262,9 @@ TAXONOMY: dict[str, list[str]] = {
         "financial regulation", "Basel capital",
     ],
     "L_behavioural_esg": [
+        # route H (2026-08-29): validated on S2 before adding.
+        "January effect", "calendar effects", "commodity seasonality",
+        "day-of-week effect", "harvest cycle", "return seasonality",
         # "overreaction underreaction" returned 24 results: nobody writes
         # those two words adjacently, and an exact-phrase search asks for
         # exactly that. Split into the phrase people do write, plus the
@@ -250,6 +292,32 @@ TAXONOMY: dict[str, list[str]] = {
         "cross-asset momentum", "currency carry",
         "value and momentum everywhere", "lead-lag effect",
         "volatility spillover",
+    ],
+    # ROUTE H'S ONE STRUCTURAL ADDITION. Positioning and flows -- who is
+    # holding what, and what happens when they unwind -- had no home in the 14
+    # families, so 10 desk-relevant terms had nowhere to live. For a systematic
+    # macro/CTA book this is not a niche: COT positioning, hedging pressure and
+    # commodity financialisation are read weekly. Every term below was probed
+    # on S2 first; "CTA replication" (2) and "broker-dealer leverage" (16) are
+    # thin but real, and a thin term is a cheap one -- one request, and it
+    # returns the canonical paper for its concept.
+    # "crowding" and "capacity constraints" were validated, looked strong on
+    # volume (24,365 and 5,016) and were REJECTED on their top hits:
+    # crowding returns "Incentives and Prosocial Behavior" -- the crowding-OUT
+    # literature -- and capacity constraints returns "The Theory of Industrial
+    # Organization" and "Vehicle Routing Problem". Volume alone cannot tell a
+    # technical term from a common English one; the titles can.
+    "O_positioning_flows": [
+        "CFTC",
+        "CTA replication",
+        "broker-dealer leverage",
+        "commitments of traders",
+        "commodity financialization",
+        
+        "dealer balance sheet",
+        "hedging pressure",
+        "intermediary asset pricing",
+        "speculative positions",
     ],
     "N_risk_premia": [
         "risk premia", "alternative risk premia", "risk premium",

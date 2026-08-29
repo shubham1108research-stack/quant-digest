@@ -583,6 +583,15 @@ def cmd_sweep(args):
     if key:
         hdr["x-api-key"] = key
     seen, out = set(), []
+    # A TERM THAT FAILS ITS REQUEST IS NOT A TERM WITH NO PAPERS. `_get`
+    # returns None after three attempts -- a 429, a timeout, a transient 5xx --
+    # and the loop below used to `break` on that, so the term contributed zero
+    # and said nothing. Measured on the 311-term run: 42 terms returned zero,
+    # including "momentum", "gold", "business cycle" and "VIX", which between
+    # them are tens of thousands of papers. The sweep still printed healthy
+    # per-family totals and the job exited green, and the missing 20,606 papers
+    # were read as a real change in the corpus.
+    failed, empty = [], []
     prog = Progress(len(terms), "sweep", every_s=30)
     for family, term in terms:
         q = urllib.parse.quote(f'"{term}"' if " " in term else term)
@@ -594,6 +603,8 @@ def cmd_sweep(args):
             u = url + (f"&token={token}" if token else "")
             body = _get(u, tries=3, timeout=60)
             if not body:
+                if pages == 0:
+                    failed.append(term)      # nothing at all came back
                 break
             try:
                 d = json.loads(body.decode("utf-8", "replace"))
@@ -627,6 +638,52 @@ def cmd_sweep(args):
 
     out.sort(key=lambda r: -(r["cites"] or 0))
     OUT.mkdir(parents=True, exist_ok=True)
+    # Report the failures LOUDLY, and retry them once before giving up: a
+    # transient 429 on a 30,000-paper term costs more than the whole retry.
+    if failed:
+        log(f"[sweep] {len(failed)} terms returned NOTHING on the first pass "
+            f"-- retrying them once: {', '.join(failed[:8])}"
+            + (" ..." if len(failed) > 8 else ""))
+        still = []
+        for term in failed:
+            fam = next((f for f, t in terms if t == term), "")
+            q = urllib.parse.quote(f'"{term}"' if " " in term else term)
+            body = _get(f"{S2_BULK}?query={q}&fields=title,year,externalIds,"
+                        f"citationCount,abstract&fieldsOfStudy=Economics,Business"
+                        f"&sort=citationCount:desc", tries=5, timeout=90)
+            if not body:
+                still.append(term)
+                continue
+            try:
+                d = json.loads(body.decode("utf-8", "replace"))
+            except Exception:                              # noqa: BLE001
+                still.append(term)
+                continue
+            n0 = len(out)
+            for x in (d.get("data") or []):
+                ext = x.get("externalIds") or {}
+                doi = (ext.get("DOI") or "").lower()
+                arx = ext.get("ArXiv")
+                uid = (f"doi:{doi}" if doi else
+                       f"arxiv:{arx}" if arx else None)
+                if not uid or uid in seen:
+                    continue
+                seen.add(uid)
+                out.append({"uid": uid, "title": x.get("title") or "",
+                            "year": x.get("year"),
+                            "cites": x.get("citationCount") or 0,
+                            "family": fam, "tag": term,
+                            "has_abstract": bool(x.get("abstract")),
+                            "found_by": "sweep"})
+            log(f"[sweep]   retry {term!r}: +{len(out)-n0}")
+            time.sleep(pause)
+        if still:
+            log(f"[sweep] !! {len(still)} terms STILL returned nothing after "
+                f"a retry -- these are lost from this run, not empty: "
+                f"{', '.join(still)}")
+        else:
+            log(f"[sweep] all retried terms recovered")
+
     (OUT / "core_sweep.json").write_text(
         json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
     fam = collections.Counter(r["family"] for r in out)

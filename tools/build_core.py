@@ -91,6 +91,12 @@ FAMILY_SLEEVE = {
     "I_microstructure": "microstructure", "J_research_integrity": "other",
     "K_institutions": "other", "L_behavioural_esg": "equity_xs",
     "M_asset_allocation": "cross_asset", "N_risk_premia": "equity_xs",
+    # Positioning/flows spans books by nature -- COT positioning, hedging
+    # pressure and dealer balance sheets are read across commodities, FX and
+    # rates -- so cross_asset is the least wrong single default. A family with
+    # no entry here silently becomes "other" (Part 11.1), which for a family
+    # added precisely because a macro/CTA desk reads it would defeat the point.
+    "O_positioning_flows": "cross_asset",
 }
 
 
