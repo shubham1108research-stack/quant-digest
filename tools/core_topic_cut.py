@@ -1,0 +1,235 @@
+#!/usr/bin/env python3
+"""Remove candidates whose OpenAlex TOPIC is off-desk, by a named list.
+
+WHY A LIST OF NAMES AND NOT A RULE. The obvious rule -- drop anything OpenAlex
+files outside "Economics, Econometrics and Finance" -- deletes canonical
+finance. Measured on this pool: Merton's "Lifetime Portfolio Selection by
+Dynamic Stochastic Programming" is filed under Management Science, "Rollover
+Risk and Credit Risk" under MEDICINE, and the Lucas critique under
+Agricultural and Biological Sciences. Field-level labels are wrong in both
+directions often enough that no threshold on them is safe.
+
+The TOPIC names are a different matter. They are specific enough to read and
+judge one at a time -- "Electric Power System Optimization" is not a borderline
+call -- so the decision lives in data/core_topic_drops.csv where a person made
+it, not in a heuristic here. Extending the cut means adding a row to that file.
+
+THE INTERSECTION WITH THE KEYWORD GATE DOES NOT WORK, and it is worth recording
+why. Requiring both an off-domain topic AND no finance vocabulary in the title
+cuts 7 papers, of which "Two-Way Fixed Effects and Differences-in-Differences"
+and "Income Smoothing and Consumption Smoothing" are ones we want. Meanwhile it
+SPARES "Climate Change Impacts on Global Food Security", because clean_core's
+keep-list contains `climate` and `insur`. Where the two disagree the topic is
+usually right and the vocabulary usually wrong, so this does not defer to it.
+
+PROTECTION IS UNCHANGED. A row held in the archive, found by two or more
+routes, cited by a seed, or contributed by a curated route is never removed on
+a topic label alone -- the same rule clean_core.py uses, for the same reason:
+independent evidence outranks a single automated classification, and that
+classification has a measured error rate.
+
+    python tools/core_topic_cut.py --inventory   # every topic + counts, review
+    python tools/core_topic_cut.py --dry-run     # what the list would remove
+    python tools/core_topic_cut.py               # apply it
+"""
+
+import argparse
+import collections
+import csv
+import io
+import json
+import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+import textnorm                                              # noqa: E402
+
+OUT = pathlib.Path("export")
+CAND = OUT / "core_candidates.csv"
+STRAYS = OUT / "core_strays.csv"
+TOPICS = OUT / "core_topics.json"
+INVENTORY = OUT / "core_topic_inventory.csv"
+DROPS = pathlib.Path("data") / "core_topic_drops.csv"
+
+CURATED = {"canon", "nber", "snowball", "pwb", "quantseeker", "authors",
+           "signaldoc"}
+
+# RESCUE: title carries one of these and the row is kept even under a DROP
+# topic. Measured before this existed: the seven approved DROP topics remove
+# 14,453 unprotected rows, and 2,917 of them (20.2%) name something this desk
+# actually trades -- "Blockchain Technology Applications and Security" turned
+# out to be mostly Bitcoin volatility and return-prediction papers (GARCH
+# models, safe-haven tests, bubble dating), and "Sustainable Finance and Green
+# Bonds" caught 220 monetary-policy and 117 central-bank papers that happen to
+# mention climate. The topic name describes the bucket's centroid, not every
+# row in it -- a paper is filed on ITS title+abstract, and a title using desk
+# vocabulary is stronger evidence than the bucket it landed in.
+#
+# This is deliberately NARROWER than clean_core.FIN. That list is broad enough
+# to rescue "Climate Change Impacts on Global Food Security" via `climate` and
+# `insur`, which is the wrong answer for exactly the population this cut is
+# aimed at. RESCUE holds only terms this desk trades or watches directly.
+RESCUE = [
+    "crypto", "cryptocurren", "bitcoin", "ethereum", "digital asset",
+    "volatility", "garch", "stochastic volatility", "realized volatility",
+    "monetary policy", "central bank", "federal reserve", " ecb ",
+    "inflation", "interest rate", "term structure", "yield curve",
+    "exchange rate", "currency", " fx ",
+    "futures", "hedging", " hedge ", "derivative", "option pricing",
+    "momentum", "carry trade", " carry ", "trend following",
+    "commodity", "commodities",
+]
+
+
+def log(m):
+    print(m, flush=True)
+
+
+def _protected(r):
+    return (r.get("held") == "1"
+            or int(float(r.get("n_routes") or 0)) >= 2
+            or int(float(r.get("seed_indegree") or 0)) >= 1
+            or bool(set((r.get("found_by") or "").split("+")) & CURATED))
+
+
+def _rescued(r):
+    """True if the title carries desk vocabulary strong enough to override a
+    DROP topic. Uses THE SAME NORMALISER as clean_core.py (textnorm.padded) --
+    that file's own history is that a private normaliser here, subtly
+    different from the shared one, is how "Detecting p-Hacking" and 45 other
+    hyphenated titles went silently unmatched. `fx ` and `ecb ` only work as
+    whole-word tests because textnorm strips punctuation to spaces first, so
+    "FX:" and "Bitcoin," normalise the same as "fx " and "bitcoin "."""
+    t = textnorm.padded(r.get("title"))
+    return any(term in t for term in RESCUE)
+
+
+def _load():
+    if not TOPICS.exists():
+        raise SystemExit(
+            f"[cut] {TOPICS} missing. Run tools/core_topics.py (or dispatch "
+            f"core-topics.yml) first -- with no topics this would remove "
+            f"nothing and look like a clean result.")
+    if not CAND.exists():
+        raise SystemExit(f"[cut] {CAND} missing -- build the core list first")
+    topics = json.loads(TOPICS.read_text(encoding="utf-8"))
+    rows = list(csv.DictReader(io.open(CAND, encoding="utf-8", newline="")))
+    return topics, rows
+
+
+def _drops():
+    if not DROPS.exists():
+        raise SystemExit(
+            f"[cut] {DROPS} missing. The off-desk decision lives in that file, "
+            f"not in this script -- without it there is nothing to apply.")
+    d = {}
+    for r in csv.DictReader(io.open(DROPS, encoding="utf-8")):
+        t = (r.get("topic") or "").strip()
+        if t:
+            d[t] = (r.get("reason") or "off-desk").strip()
+    return d
+
+
+def cmd_inventory(topics, rows):
+    by_uid = {r["uid"]: r for r in rows}
+    tot = collections.Counter()
+    unp = collections.Counter()
+    for u, v in topics.items():
+        t = v.get("t")
+        r = by_uid.get(u)
+        if not t or r is None:
+            continue
+        tot[t] += 1
+        if not _protected(r):
+            unp[t] += 1
+    drops = _drops()
+    with io.open(INVENTORY, "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["topic", "papers", "unprotected", "decision"])
+        for t, n in tot.most_common():
+            w.writerow([t, n, unp[t], "DROP" if t in drops else ""])
+    log(f"[cut] {len(tot):,} distinct topics across {sum(tot.values()):,} "
+        f"labelled papers -> {INVENTORY}")
+    log(f"[cut] {len(drops)} currently marked DROP in {DROPS}")
+    log(f"[cut] add a row to {DROPS} to extend the cut")
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--inventory", action="store_true")
+    ap.add_argument("--dry-run", action="store_true")
+    args = ap.parse_args()
+    topics, rows = _load()
+    if args.inventory:
+        return cmd_inventory(topics, rows)
+
+    drops = _drops()
+    log(f"[cut] {len(drops)} topics marked off-desk in {DROPS}")
+    log(f"[cut] {len(RESCUE)} desk-vocabulary terms in RESCUE -- a title "
+        f"match keeps the row even under a DROP topic")
+    keep, cut = [], []
+    spared = collections.Counter()
+    rescued = collections.Counter()
+    for r in rows:
+        t = (topics.get(r["uid"]) or {}).get("t")
+        if t in drops:
+            if _protected(r):
+                spared[t] += 1
+                keep.append(r)
+                continue
+            if _rescued(r):
+                rescued[t] += 1
+                keep.append(r)
+                continue
+            r["stray_reason"] = f"topic:{t}"
+            cut.append(r)
+        else:
+            keep.append(r)
+
+    why = collections.Counter(r["stray_reason"] for r in cut)
+    log(f"[cut] {len(rows):,} rows -> keep {len(keep):,}, "
+        f"remove {len(cut):,} ({100*len(cut)/max(1,len(rows)):.2f}%)")
+    for t, n in why.most_common():
+        log(f"[cut]   {n:>6,}  {t[6:]}")
+    if spared:
+        log(f"[cut] {sum(spared.values()):,} SPARED on independent evidence "
+            f"(held / 2+ routes / seed-cited / curated route):")
+        for t, n in spared.most_common(6):
+            log(f"[cut]   {n:>6,}  {t}")
+    if rescued:
+        log(f"[cut] {sum(rescued.values()):,} RESCUED on desk vocabulary in "
+            f"the title:")
+        for t, n in rescued.most_common(6):
+            log(f"[cut]   {n:>6,}  {t}")
+    if args.dry_run:
+        log("[cut] --dry-run: nothing written")
+        return 0
+
+    cols = [c for c in rows[0].keys()]
+    with io.open(CAND, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=cols)
+        w.writeheader()
+        w.writerows({k: r.get(k, "") for k in cols} for r in keep)
+    # APPEND, never replace. core_strays.csv is what makes every cut in this
+    # pipeline reversible, and clean_core re-merges it on the next run so a
+    # refined vocabulary can win a row back. Overwriting it here would drop
+    # 62,648 keyword-judged strays on the floor.
+    scols = cols + ["stray_reason"]
+    old = []
+    if STRAYS.exists():
+        old = list(csv.DictReader(io.open(STRAYS, encoding="utf-8")))
+        scols = list(dict.fromkeys(list(old[0].keys()) + scols)) if old else scols
+    with io.open(STRAYS, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=scols)
+        w.writeheader()
+        w.writerows({k: r.get(k, "") for k in scols} for r in old + cut)
+    log(f"[cut] {CAND} rewritten; {len(cut):,} rows appended to {STRAYS} "
+        f"({len(old):,} were already there) -- reviewable, reversible")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
