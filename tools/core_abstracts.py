@@ -146,7 +146,12 @@ def main():
                 else:
                     miss += 1
         prog.tick()
-        if (i // 500) % 10 == 9:
+        # CHECKPOINT EVERY OTHER BATCH, not every tenth. At one-in-ten a run
+        # killed at batch 7 discards 3,500 fetched abstracts and leaves the
+        # cache byte-identical, so the next run re-fetches everything and the
+        # only evidence of the work is a log that scrolled past. Ten batches is
+        # a lot of somebody else's rate limit to be willing to throw away.
+        if (i // 500) % 2 == 1:
             DEST.write_text(json.dumps(have), encoding="utf-8")
         time.sleep(pause)
     prog.done()

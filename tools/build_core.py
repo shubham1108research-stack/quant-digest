@@ -507,6 +507,32 @@ def main():
     log(f"[core] taxonomy: {len(taxonomy)} terms loaded for labelling; "
         f"{len(_TERM_SLEEVE)} carry an explicit sleeve")
 
+    # Abstracts fetched for candidates NO ROUTE COULD LABEL (core_abstracts.py).
+    # The labeller matches title + abstract because that is the surface S2
+    # retrieves on, but the only abstracts it saw were the ones the sweep
+    # happened to carry -- and the untagged population is precisely the papers
+    # the sweep never touched: they arrive from an author's back catalogue or a
+    # citation edge with no search phrase and no abstract attached.
+    # core_abstracts.py has been writing this file and NOTHING HAS EVER READ IT,
+    # its own docstring's claim that "build_core reads it" notwithstanding.
+    extra_abs = {}
+    _abs_path = OUT / "core_abstracts.json"
+    if _abs_path.exists():
+        try:
+            extra_abs = json.loads(_abs_path.read_text(encoding="utf-8")) or {}
+        except Exception as e:                              # noqa: BLE001
+            # Not fatal -- labelling degrades to titles, which is where it was.
+            # But it must not be silent: a corrupt cache and an absent one
+            # would otherwise produce the same number with no way to tell.
+            log(f"[core] !! {_abs_path.name} present but unreadable "
+                f"({type(e).__name__}); labelling on titles alone")
+        else:
+            log(f"[core] {len(extra_abs):,} cached abstracts for otherwise "
+                f"unlabellable candidates")
+    else:
+        log(f"[core] no {_abs_path.name}; run tools/core_abstracts.py to "
+            f"label the candidates no route could tag")
+
     # ------------------------------------------------------------ deduplicate
     # A paper reaches this pool under every identifier it has ever carried.
     # "Value and Momentum Everywhere" arrived FOUR times -- three SSRN preprint
@@ -585,7 +611,7 @@ def main():
             # already fetches it.
             t = _norm((items[uid]["title"] if uid in items else
                        (c.get("ext_title") or ""))
-                      + " " + (c.get("abstract") or ""))
+                      + " " + (c.get("abstract") or extra_abs.get(uid) or ""))
             for term, fam, sl in taxonomy:
                 if term in t:
                     family, tag, tag_sleeve = fam, term, sl
