@@ -760,7 +760,47 @@ def _load_pool(path):
                     r["cites"] = ""
             r["sleeve"] = r.get("sleeve") or "other"
             rows.append(r)
+    _warn_stale_sleeves(rows)
     return rows
+
+
+def _warn_stale_sleeves(rows):
+    """Say so when the pool's labels predate the current taxonomy.
+
+    This path passes `sleeve` and `tag` straight through -- deliberately, since
+    the archive label for a held paper outranks the taxonomy and the pool CSV
+    does not carry it, so re-deriving here would be lossy. In CI that is
+    correct: the compile step labels with the live taxonomy earlier in the same
+    job. Run it against a pool from an OLDER build, though, and every taxonomy
+    improvement since is silently absent -- which is how a rebuild "settled"
+    the sleeve fix while trend_cta sat 151 papers short of where the taxonomy
+    put it. Passing stale labels through is fine; passing them through without
+    saying so is the failure this repository keeps having.
+    """
+    try:
+        tax = _load_taxonomy()
+    except SystemExit:
+        raise
+    except Exception:                                       # noqa: BLE001
+        return
+    want = {_norm(t): sl for t, _f, sl in tax if sl}
+    if not want:
+        return
+    stale = collections.Counter()
+    for r in rows:
+        sl = want.get(_norm(r.get("tag") or ""))
+        if sl and sl != r.get("sleeve"):
+            stale[(r.get("sleeve") or "", sl)] += 1
+    if not stale:
+        log("[core] pool sleeves agree with the current taxonomy")
+        return
+    n = sum(stale.values())
+    log(f"[core] !! {n:,} pool rows carry a sleeve the CURRENT taxonomy "
+        f"disagrees with -- this pool predates the taxonomy and --from-pool "
+        f"does NOT relabel. Re-compile (build_core.py --target 0) to apply "
+        f"them.")
+    for (have, sl), c in stale.most_common(6):
+        log(f"[core]      {c:>6}  {have or '(blank)':<14} -> {sl}")
 
 
 def _write(picked, cand, taxonomy):

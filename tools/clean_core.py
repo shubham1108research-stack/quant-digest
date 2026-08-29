@@ -71,7 +71,18 @@ FIN = [
     "asset", "portfolio", "stock", "equit", "bond ", "bonds", "market",
     "trading", "trader", "investor", "investment", "price", "pricing",
     "return", " risk", "risk ", "volatil", "liquidity", "credit", "currenc",
-    "exchange rate", "inflation", "monetary", "macroeconomic", "macro-",
+    "exchange rate", "inflation", "monetary", "macroeconomic",
+    # `macro-` used to sit here as a hyphen-compound matcher. Once titles are
+    # hyphen-stripped it degrades into a bare `macro ` prefix, which admits
+    # "Macro Organizational Characteristics" and "Macro Environmental Factors
+    # ... Rural Tourism" -- and it wins, because a finance hit is checked
+    # before the off-domain markers. These are the compounds the pool actually
+    # contains; the ones left out (macro level, macro policy, macro
+    # determinants) are the ones carrying the strays.
+    "macro finance", "macro financial", "macro prudential", "macro economic",
+    "macro economy", "macro factor", "macro stress", "macro risk",
+    "macro news", "macro announcement", "macro fundamentals",
+    "macro variables", "macro shocks", "macro model", "macro hedge",
     "interest rate", "yield", "term structure", "treasur", "mutual fund",
     "hedge fund", "pension", "bank", "financ", "dividend", "earnings",
     "valuation", "arbitrage", "hedg", "futures", "option", "swap",
@@ -124,6 +135,27 @@ OFF = [
 norm = textnorm.padded
 
 
+def _nt(t):
+    """Normalise a keep/off term the way titles are normalised.
+
+    BOTH SIDES OR NEITHER. Normalising only the title is how this defect class
+    reappeared inside its own fix: the first pass stripped hyphens from titles
+    and left them in the vocabulary, so `bid-ask`, `out-of-sample`, `risk-free`
+    and 46 taxonomy terms could no longer match anything -- 518 papers cut in
+    the same run that won 580 back.
+
+    The two space guards in these lists are deliberate and survive:
+
+        "bond "   trailing space, so it does not fire on "bondholder"
+        " risk"   leading space, so it does not fire on "asterisk"
+        "macro-"  the hyphen BECOMES a space under norm(), so this stays a
+                  prefix test -- it matches "macro finance", not "macrophage"
+    """
+    lead = " " if t[:1] in (" ", "-") else ""
+    trail = " " if t[-1:] in (" ", "-") else ""
+    return lead + textnorm.norm(t) + trail
+
+
 def _fin_terms():
     """FIN plus every taxonomy term -- one vocabulary, again.
 
@@ -158,6 +190,7 @@ def _fin_terms():
         t = (r.get("term") or "").strip().lower()
         if len(t) >= 4:
             terms.append(t)
+    terms = [x for x in (_nt(t) for t in terms) if x.strip()]
     # longest first so the reported match is the most specific one
     return sorted(set(terms), key=len, reverse=True)
 
@@ -177,8 +210,10 @@ def main():
         print(f"[clean] re-merged {len(back):,} previously removed rows for "
               f"re-judgement")
     fin_terms = _fin_terms()
+    off_terms = [x for x in (_nt(t) for t in OFF) if x.strip()]
     print(f"[clean] keep-vocabulary: {len(fin_terms)} terms "
-          f"(FIN + taxonomy + finance stems)")
+          f"(FIN + taxonomy + finance stems), {len(off_terms)} off-domain "
+          f"markers -- both normalised the same way as the titles")
 
     # HAND JUDGEMENTS OUTRANK THE VOCABULARY. Every stray above the selection
     # cut was read and judged by hand; those verdicts are the most expensive
@@ -217,7 +252,7 @@ def main():
             r["clean"] = f"fin:{fin.strip()}"
             kept.append(r)
             continue
-        off = next((w for w in OFF if w in t), None)
+        off = next((w for w in off_terms if w in t), None)
         r["stray_reason"] = f"offdomain:{off.strip()}" if off else "no_finance_signal"
         strays.append(r)
 
