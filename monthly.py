@@ -65,10 +65,31 @@ def update_nber_current(log) -> None:
 
 
 def _load(p: pathlib.Path, default):
+    """Read a JSON archive, distinguishing ABSENT from UNREADABLE.
+
+    Every caller here mutates what this returns and then writes it back
+    unconditionally, so returning `default` on a read error does not degrade
+    the run -- it DESTROYS the archive. A truncated write from a killed run, a
+    permission error or one bad byte silently replaced the whole of
+    monthly.json / classics.json / nber.json with just this run's output, and
+    the log looked normal.
+
+    backfill.py guards this exact hazard on this exact classics.json and says
+    so in a comment; the lesson was never carried across to the other writer.
+    A missing file is a legitimate first run. An unreadable one is not, and it
+    raises rather than quietly becoming {}.
+    """
+    if not p.exists():
+        return default
     try:
         return json.loads(p.read_text(encoding="utf-8"))
-    except Exception:                                  # noqa: BLE001
-        return default
+    except Exception as e:                             # noqa: BLE001
+        raise SystemExit(
+            f"[monthly] {p} exists but could not be read "
+            f"({type(e).__name__}: {str(e)[:120]}). REFUSING to continue: "
+            f"every caller writes this file back, so proceeding would "
+            f"overwrite the archive with only this run's output. Restore it "
+            f"from git or R2, or delete it deliberately to start fresh.")
 
 
 def _save(p: pathlib.Path, obj) -> None:

@@ -101,6 +101,13 @@ docs/bm25.json
 # how principal_portfolios.pdf ended up sitting untracked in the repo root.
 export/
 
+# Unpacked CI artifacts -- `gh run download` scratch directories. Same content
+# as export/ (the workflow uploads export/ and we unpack it here to compare
+# builds), so the same two reasons apply, but the names are ad hoc and one
+# `git add -A` in the wrong directory publishes the whole harvest.
+_prev/
+_v[0-9]*/
+
 # Hand-collected practitioner article HTML (Alpha Architect, Macrosynergy).
 # 2,963 files, 33 MB of SOMEONE ELSE'S ARTICLES, and this repository is public
 # -- the same reason docs/ft/ and export/ are ignored. They are an input to

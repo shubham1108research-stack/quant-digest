@@ -310,8 +310,19 @@ def main():
                 "SELECT uid, url, status FROM pdfs WHERE url IS NOT NULL"):
             if url_ and st_ in ("ok", "resolved"):
                 known[uid_] = url_
-    except Exception:                           # noqa: BLE001
-        pass
+    except Exception as e:                      # noqa: BLE001
+        # A BARE `pass` HERE LAUNDERS A DB ERROR INTO A VERDICT ABOUT PAPERS.
+        # `known` feeds fetch_worker, which records `no_pdf` for anything it
+        # cannot find a url for -- and `no_pdf` means "the resolver had no
+        # answer", a claim the requeue logic then acts on. So `no such table:
+        # pdfs` on a fresh database used to print "0 urls already resolved"
+        # and mark every queued paper as having no PDF available.
+        raise SystemExit(
+            f"[ft] could not read the pdfs table ({type(e).__name__}: "
+            f"{str(e)[:120]}). REFUSING to continue: with no resolved urls "
+            f"every paper would be recorded no_pdf, which is a statement "
+            f"about the resolver, not about this failure. Run "
+            f"`python tools/fetch_pdfs.py --resolve-only` first.")
     log(f"[ft] {len(known):,} urls already resolved in the pdfs table")
 
     tally = collections.Counter()

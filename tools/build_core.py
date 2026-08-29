@@ -57,6 +57,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import store                                               # noqa: E402
+import textnorm                                            # noqa: E402
 
 OUT = pathlib.Path("export")
 SLEEVES = ["trend_cta", "carry", "fx", "rates_credit", "commodities",
@@ -100,6 +101,28 @@ FAMILY_SLEEVE = {
 }
 
 
+def _check_family_keys(taxonomy):
+    """Every family in the taxonomy must have a sleeve default, and vice versa.
+
+    FAMILY_SLEEVE is keyed on family names owned by core_tags.py and arriving
+    through the CSV -- the same foreign-key-with-no-constraint that made three
+    TAG_SLEEVE keys dead. core_tags._check_sleeve_keys() validates the term
+    level and fails loudly; nothing validated the family level, so renaming or
+    adding a family silently sent all its papers to "other".
+    """
+    fams = {f for _t, f, _s in taxonomy if f}
+    missing = sorted(fams - set(FAMILY_SLEEVE))
+    if missing:
+        raise SystemExit(
+            f"[core] families in the taxonomy with no FAMILY_SLEEVE entry: "
+            f"{', '.join(missing)}. Every one of their papers would silently "
+            f"become sleeve='other'. Add them to build_core.FAMILY_SLEEVE.")
+    unused = sorted(set(FAMILY_SLEEVE) - fams)
+    if unused:
+        log(f"[core] note: FAMILY_SLEEVE names {len(unused)} families the "
+            f"taxonomy no longer defines: {', '.join(unused)}")
+
+
 def _load_taxonomy():
     """[(term, family, sleeve)] longest-first, for title matching.
 
@@ -107,7 +130,15 @@ def _load_taxonomy():
     read from the same row as the term, so the two can never disagree.
     """
     if not TAGS_CSV.exists():
-        return []
+        # export/ is gitignored, so this `exists()` is a silent CI branch. An
+        # empty taxonomy makes EVERY candidate fall through the labelling loop
+        # with no family and no tag, so every paper is written sleeve="other"
+        # and the build still exits 0 having produced a full, wrong list.
+        # core_sources.cmd_sweep refuses to run on the same missing file.
+        raise SystemExit(
+            f"[core] {TAGS_CSV} missing. REFUSING to build: with no taxonomy "
+            f"every paper is labelled sleeve='other' and the run still looks "
+            f"successful. Run `python tools/core_tags.py` first.")
     rows = list(csv.DictReader(io.open(TAGS_CSV, encoding="utf-8")))
     # NORMALISE THE TERM THE SAME WAY AS THE TITLE. Titles are matched against
     # _norm(title), which replaces every non-alphanumeric run with a space --
@@ -141,8 +172,9 @@ def log(m):
     print(m, flush=True)
 
 
-def _norm(t):
-    return re.sub(r"[^a-z0-9]+", " ", (t or "").lower()).strip()
+# Shared with clean_core and anything else comparing a term to a title, so the
+# two sides of every comparison are prepared identically. See tools/textnorm.py.
+_norm = textnorm.norm
 
 
 def _load(name):
@@ -468,6 +500,7 @@ def main():
         f"  ({len(auth):,} candidates, most not yet in the archive)")
 
     taxonomy = _load_taxonomy()
+    _check_family_keys(taxonomy)
     # term -> sleeve, for candidates whose tag came from route A rather than
     # from matching the title here. Same file, same rows, one lookup.
     _TERM_SLEEVE = {t: sl for t, _f, sl in taxonomy if sl}
@@ -486,12 +519,21 @@ def main():
     # DOI beats a preprint id beats a bare OpenAlex id), and UNION the routes,
     # because route agreement is the signal this list is built on.
     def _rank_uid(u):
+        # PREFER THE VERSION OF RECORD. NBER working-paper DOIs (10.3386/w####)
+        # used to score 3, exactly like a published DOI, so when the two
+        # versions of a paper merged the winner was whichever arrived first.
+        # 4,192 rows kept the working paper -- 1,340 of them seed-cited --
+        # including Betting Against Beta as 10.3386/w16601 rather than its JFE
+        # DOI. That splits citation counts (OpenAlex counts the versions
+        # separately) and breaks joins to PWB, SignalDoc and Crossref.
         if u.startswith("doi:10.2139"):      # SSRN preprint
             return 1
-        if u.startswith("doi:"):             # published DOI
-            return 3
-        if u.startswith("arxiv:"):
+        if u.startswith("doi:10.3386"):      # NBER working paper
             return 2
+        if u.startswith("doi:"):             # published DOI -- the record
+            return 4
+        if u.startswith("arxiv:"):
+            return 3
         return 0                             # oa:, sig:, title hash
 
     merged: dict[str, dict] = {}

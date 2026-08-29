@@ -582,6 +582,18 @@ STAGES = [
 ]
 
 
+# Per-stage HTTP failures, so a stage that resolved nothing can say WHY. The
+# staged design exists to make "OpenAlex resolved 4,102 of 18,300" a fact about
+# that source -- which it is not when a rejected key and an empty answer print
+# the same 0.
+STAGE_FAIL: dict[str, dict] = {}
+
+
+def _note_fail(stage, what):
+    d = STAGE_FAIL.setdefault(stage, {})
+    d[what] = d.get(what, 0) + 1
+
+
 def resolve_staged(con, todo, log=log):
     """Run the batched stages in order; return what is still unresolved.
 
@@ -605,6 +617,10 @@ def resolve_staged(con, todo, log=log):
         remaining = [t for t in remaining if t[0] not in found]
         log(f"[pdf] stage {name:<12} resolved {len(found):>6,} of {before:>6,} "
             f"({100.0*len(found)/max(before,1):4.1f}%)  {note}")
+        if STAGE_FAIL.get(name):
+            log(f"[pdf]   !! stage {name} had failures: "
+                f"{STAGE_FAIL[name]} -- the number above is NOT a measurement "
+                f"of this source, it is partly a measurement of being refused")
         if found:
             con.executemany(
                 "INSERT OR REPLACE INTO pdfs (uid,status,url,path,bytes) "
@@ -648,6 +664,11 @@ def bulk_resolve(pairs, only=None):
                              "select": "doi,best_oa_location,locations",
                              "per-page": 50, "mailto": EMAIL})
             if not r.ok:
+                # Counted, not swallowed. "stage openalex resolved 0 of 18,300"
+                # printed identically for "no open PDFs exist" and "our key was
+                # rejected", which defeats the whole point of measuring each
+                # source separately.
+                _note_fail("openalex", f"HTTP {r.status_code}")
                 return
             found = {}
             for w in (r.json().get("results") or []):
@@ -695,8 +716,8 @@ def bulk_resolve(pairs, only=None):
                         url = ((rec or {}).get("openAccessPdf") or {}).get("url")
                         if url:
                             out[uid] = url
-            except Exception:                            # noqa: BLE001
-                pass
+            except Exception as e:                       # noqa: BLE001
+                _note_fail("s2", type(e).__name__)
             p2.tick()
             time.sleep(1.5)
         p2.done()

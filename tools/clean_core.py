@@ -40,6 +40,10 @@ import pathlib
 import re
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+import textnorm                                             # noqa: E402
+
 OUT = pathlib.Path("export")
 CAND = OUT / "core_candidates.csv"
 STRAYS = OUT / "core_strays.csv"
@@ -112,8 +116,12 @@ OFF = [
 ]
 
 
-def norm(t):
-    return " " + re.sub(r"[^a-z0-9-]+", " ", (t or "").lower()).strip() + " "
+# THE ONE NORMALISER. This used to keep hyphens ([^a-z0-9-]+) while every
+# other module stripped them, so a hyphenated term only matched a hyphenated
+# title -- 46 of 402 terms invisible to a keep-list whose failure mode is
+# deletion. Measured cost: 101 papers removed as strays, including "Detecting
+# p-Hacking". See tools/textnorm.py for the full history of this defect class.
+norm = textnorm.padded
 
 
 def _fin_terms():
@@ -133,11 +141,23 @@ def _fin_terms():
                          "variable selection", "secular stagnation",
                          "exchange-rate", "risk premium"]
     tags = OUT / "core_tags.csv"
-    if tags.exists():
-        for r in csv.DictReader(io.open(tags, encoding="utf-8")):
-            t = (r.get("term") or "").strip().lower()
-            if len(t) >= 4:
-                terms.append(t)
+    # NOT OPTIONAL. export/ is gitignored, so `if exists()` is a silent CI
+    # branch -- and here the consequence is DELETION: without the taxonomy the
+    # keep-vocabulary collapses from ~400 terms to the ~40 hard-coded FIN
+    # stems, thousands of good papers fail the finance test, and the reduced
+    # result overwrites core_candidates.csv in place. That is precisely the
+    # failure this module's docstring says it exists to prevent.
+    if not tags.exists():
+        raise SystemExit(
+            f"[clean] {tags} missing. REFUSING to run: the keep-vocabulary "
+            f"would fall back to {len(terms)} hard-coded stems and this tool "
+            f"OVERWRITES the candidate file, so the difference would be "
+            f"thousands of good papers moved to strays. "
+            f"Run `python tools/core_tags.py` first.")
+    for r in csv.DictReader(io.open(tags, encoding="utf-8")):
+        t = (r.get("term") or "").strip().lower()
+        if len(t) >= 4:
+            terms.append(t)
     # longest first so the reported match is the most specific one
     return sorted(set(terms), key=len, reverse=True)
 

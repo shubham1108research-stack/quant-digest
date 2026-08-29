@@ -482,7 +482,14 @@ def cmd_authors(args):
             d = _get(f"{API}/author/{sid}/papers"
                      f"?fields=title,year,externalIds,citationCount&limit=100",
                      budget)
-            if not d or d.get("_notfound"):
+            if not d:
+                # _get returns None for a timeout or an exhausted retry/request
+                # budget, and {"_notfound": True} only for a real 404. Merging
+                # them reported "profile not found: 175" for a roster S2 knows
+                # perfectly well. Two other call sites in this file already
+                # keep them apart (see `got["failed"]` and `got["term failed"]`).
+                got["request failed"] += 1
+            elif d.get("_notfound"):
                 got["profile not found"] += 1
                 time.sleep(PAUSE)
                 continue

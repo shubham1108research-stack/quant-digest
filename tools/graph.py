@@ -283,6 +283,8 @@ def build_cites(con, args):
     # bounded by workers/delay instead of 1/delay.
     lock = threading.Lock()
     errs: dict[str, str] = {}
+    http_fail: dict[int, int] = {}
+    first_http_err: list[str] = []
     prog = Progress(len(chunks), "graph-cites", every_s=45)
 
     def fetch(chunk):
@@ -295,6 +297,17 @@ def build_cites(con, args):
                         "per-page": 50, "mailto": MAILTO},
                 timeout=60)
             if not r.ok:
+                # A NON-2xx IS NOT AN EMPTY RESULT. This used to `return`, so a
+                # rejected OPENALEX_API_KEY made every batch contribute nothing
+                # while the delete below still ran -- one bad key wiped the
+                # citation graph and the job exited 0 reporting "0 internal
+                # edges". Same bug as build_core's `if not rr.ok: continue`,
+                # which swallowed 60 consecutive 401s.
+                with lock:
+                    http_fail[r.status_code] = http_fail.get(r.status_code, 0) + 1
+                    if not first_http_err:
+                        first_http_err.append(f"HTTP {r.status_code}: "
+                                              f"{r.text[:160]}")
                 return
             got = []
             for w in (r.json().get("results") or []):
@@ -327,6 +340,36 @@ def build_cites(con, args):
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
         list(ex.map(fetch, chunks))
     prog.done()
+
+    # REPORT WHAT FAILED, THEN REFUSE TO REPLACE A GOOD GRAPH WITH A BAD RUN.
+    # The two DELETEs below are unconditional by design -- this rebuilds the
+    # graph rather than appending to it -- which makes them catastrophic when
+    # the fetch produced nothing because it was refused rather than because
+    # there was nothing to fetch.
+    failed = sum(http_fail.values()) + sum(1 for _ in errs)
+    if http_fail:
+        log(f"[graph] !! {sum(http_fail.values())} of {len(chunks)} batches "
+            f"returned a non-2xx: {dict(http_fail)}")
+        if first_http_err:
+            log(f"[graph] !! first error: {first_http_err[0]}")
+    if errs:
+        log(f"[graph] !! batch exceptions: {errs}")
+
+    have_old = 0
+    try:
+        have_old = con.execute("SELECT COUNT(*) FROM cites").fetchone()[0]
+    except Exception:                                # noqa: BLE001
+        pass
+    if not refs and have_old:
+        log(f"[graph] REFUSING to rebuild: this run resolved 0 reference "
+            f"lists while {have_old:,} edges already exist. That is a failed "
+            f"fetch, not an empty corpus -- the existing graph is kept. "
+            f"Check the key with `python -c \"import oa; oa.preflight()\"`.")
+        return 1
+    if http_fail and refs:
+        log(f"[graph] proceeding with a PARTIAL rebuild -- {len(refs):,} "
+            f"papers resolved despite {sum(http_fail.values())} failed "
+            f"batches; the graph will be thinner than the archive warrants")
 
     con.executescript(_CITES_SCHEMA)
     con.executescript(_REFS_SCHEMA)
@@ -559,9 +602,13 @@ def main():
         # read-only experiment look like something that touches shared state.
         return build_local(None, args)
     con = graph_con(store.connect())
-    {"sim": build_sim, "cites": build_cites, "report": report,
-     "export": export, "probe": probe_floor}[args.action](con, args)
+    # PROPAGATE THE EXIT CODE. The dispatch used to discard it and __main__
+    # called main() without sys.exit, so build_cites' refusal-to-rebuild would
+    # have returned 1 into the void and the job would still have exited 0 --
+    # the same "failure reported as success" this file was just fixed for.
+    return {"sim": build_sim, "cites": build_cites, "report": report,
+            "export": export, "probe": probe_floor}[args.action](con, args) or 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

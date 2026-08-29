@@ -341,13 +341,27 @@ def cmd_quantseeker(args):
     """Mine paper identifiers out of the weekly research recaps."""
     OUT.mkdir(parents=True, exist_ok=True)
     posts, offset = [], 0
+    fetch_failed = False
     while True:
         body = _get(f"{QS_ARCHIVE}?sort=new&limit=12&offset={offset}")
         if not body:
+            # THE SAME `if not body: break` THAT COST THE SWEEP 42 TERMS,
+            # forty lines below this one and left unfixed. A block or a
+            # rate-limit at offset 0 gave `posts == []`, the run logged
+            # "0 posts -> 0 papers", and the empty result was WRITTEN OVER
+            # core_quantseeker.json. Every layer read it as "the newsletter
+            # mentioned no papers".
+            if offset == 0:
+                fetch_failed = True
             break
         try:
             page = json.loads(body.decode("utf-8", "replace"))
-        except Exception:                                  # noqa: BLE001
+        except Exception as e:                             # noqa: BLE001
+            log(f"[quantseeker] !! archive page at offset {offset} did not "
+                f"decode ({type(e).__name__}) -- a challenge page or an error "
+                f"body, not an empty archive")
+            if offset == 0:
+                fetch_failed = True
             break
         if not page:
             break
@@ -404,6 +418,12 @@ def cmd_quantseeker(args):
         uniq.append(r)
 
     _s2_titles(uniq)
+
+    if fetch_failed and not uniq:
+        raise SystemExit(
+            "[quantseeker] the archive returned nothing on the FIRST request. "
+            "That is a fetch failure, not an empty newsletter -- refusing to "
+            "overwrite core_quantseeker.json with an empty list.")
 
     (OUT / "core_quantseeker.json").write_text(
         json.dumps(uniq, indent=1, ensure_ascii=False), encoding="utf-8")
@@ -609,6 +629,14 @@ def cmd_sweep(args):
             try:
                 d = json.loads(body.decode("utf-8", "replace"))
             except Exception:                              # noqa: BLE001
+                # A 200 CARRYING AN HTML CHALLENGE PAGE IS A FAILURE TOO. The
+                # `if not body` branch above records the term for retry; this
+                # one used to `break` silently, so a WAF interstitial was
+                # invisible to both the retry and the "!! N terms STILL
+                # returned nothing" warning -- the same 42-terms-return-zero
+                # failure through a different door.
+                if pages == 0:
+                    failed.append(term)
                 break
             for x in (d.get("data") or []):
                 ext = x.get("externalIds") or {}

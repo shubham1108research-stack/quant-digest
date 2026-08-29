@@ -76,6 +76,7 @@ def _openalex_cites(items: list[dict], log=print) -> None:
     by_doi = {it["doi"].lower(): it for it in need}
     dois = list(by_doi)
     filled = 0
+    batches = failed_batches = 0
     for i in range(0, len(dois), 50):
         chunk = dois[i:i + 50]
         params = {"filter": "doi:" + "|".join("https://doi.org/" + d for d in chunk),
@@ -96,6 +97,9 @@ def _openalex_cites(items: list[dict], log=print) -> None:
                 break
             except Exception:                          # noqa: BLE001
                 time.sleep(1.5 * (attempt + 1))
+        batches += 1
+        if data is None:
+            failed_batches += 1
         for w in (data or {}).get("results", []):
             doi = (w.get("doi") or "").replace("https://doi.org/", "")
             it = by_doi.get(doi)
@@ -111,6 +115,18 @@ def _openalex_cites(items: list[dict], log=print) -> None:
         time.sleep(0.4)
     if filled:
         log(f"[enrich] OpenAlex filled citations for {filled} items S2 missed")
+    elif dois:
+        # The ONLY log in this function used to be gated on success, so a
+        # rejected key or a full outage produced zero output lines -- and this
+        # function exists as the rescue for S2 already returning nothing, so
+        # both failing silently loses the citation signal entirely.
+        log(f"[enrich] OpenAlex filled NOTHING for {len(dois):,} items S2 "
+            f"missed ({failed_batches} of {batches} batches failed outright)"
+            + ("  -- check the key: python -c \"import oa; oa.preflight()\""
+               if failed_batches else ""))
+    if failed_batches:
+        log(f"[enrich] !! {failed_batches} of {batches} OpenAlex batches "
+            f"returned nothing after 4 attempts")
 
 # Non-paper records that occasionally slip through a source (Crossref front
 # matter, a blog's own link-roundup post) and would otherwise rank on

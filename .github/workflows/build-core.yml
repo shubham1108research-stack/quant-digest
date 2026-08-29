@@ -145,8 +145,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh run download 32970831654 -n s2-candidates -D export/ || \
-            echo "watched-author artifact unavailable (expires ~2026-09-25)"
+          # DO NOT PIN A RUN ID. 32970831654 was hardcoded here and expires
+          # ~2026-09-25, after which route D would quietly lose 1,218 papers
+          # behind an `echo`. Resolve the newest successful s2-harvest run,
+          # and say clearly when there is none.
+          PREV=$(gh run list --workflow=s2-harvest.yml --status=success \
+                   --limit 10 --json databaseId --jq '.[].databaseId' | head -1)
+          if [ -z "$PREV" ]; then PREV=32970831654; fi
+          gh run download "$PREV" -n s2-candidates -D export/ \
+            && echo "recovered watched-author candidates from run $PREV" \
+            || echo "!! watched-author candidates UNAVAILABLE -- route D short ~1,218 papers; re-run s2-harvest.yml"
 
       - name: Build the list
         # OPENALEX_API_KEY IS NOT OPTIONAL HERE. Route C resolves the unheld
