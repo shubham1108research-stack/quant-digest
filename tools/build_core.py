@@ -807,7 +807,41 @@ def _load_pool(path):
             r["sleeve"] = r.get("sleeve") or "other"
             rows.append(r)
     _warn_stale_sleeves(rows)
+    _apply_recovered_titles(rows)
     return rows
+
+
+def _apply_recovered_titles(rows):
+    """Fill in export/core_titles.json for rows the pool carries with none.
+
+    THIS WAS MISSING, and it was missing in exactly the branch that matters
+    most: --from-pool COMPILE mode is what CI runs to produce the actual
+    deployed list, and the full-build path (main(), further down) already had
+    this wired in -- but that path returns 0 before this function is ever
+    reached whenever --from-pool is passed. Recovered titles sat in the cache
+    file, correctly fetched, and never touched the output. Same defect class
+    as the rest of this batch: code that exists is not the same as code that
+    runs.
+    """
+    path = OUT / "core_titles.json"
+    if not path.exists():
+        return
+    try:
+        extra = json.loads(path.read_text(encoding="utf-8")) or {}
+    except Exception as e:                                   # noqa: BLE001
+        log(f"[core] !! {path.name} present but unreadable "
+            f"({type(e).__name__}); title-less rows stay title-less")
+        return
+    n = 0
+    for r in rows:
+        if not (r.get("title") or "").strip():
+            t = extra.get(r["uid"])
+            if t:
+                r["title"] = t
+                n += 1
+    if n:
+        log(f"[core] {n:,} titles applied from {path.name} to rows that had "
+            f"none")
 
 
 def _warn_stale_sleeves(rows):
