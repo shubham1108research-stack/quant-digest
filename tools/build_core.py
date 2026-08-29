@@ -549,7 +549,14 @@ def main():
                     family, tag, tag_sleeve = fam, term, sl
                     break
         else:
-            tag_sleeve = _TERM_SLEEVE.get(tag, "")
+            # NORMALISE BEFORE THE LOOKUP. _TERM_SLEEVE is keyed on normalised
+            # terms (the hyphen fix), but route A records the tag exactly as
+            # written in the taxonomy -- "time-series momentum". Looking that
+            # up in a dict keyed "time series momentum" misses, and the paper
+            # silently takes its family default instead of its sleeve: this
+            # cost trend_cta 152 of 154 time-series-momentum papers in one
+            # build. Every hyphenated sleeve override broke the same way.
+            tag_sleeve = _TERM_SLEEVE.get(_norm(tag), "")
         # sleeve: the archive label if held; else the term's own sleeve (read
         # from core_tags.csv, same row as the term); else the family default.
         # `markets` stays its OWN column -- PWB's asset class is additional
