@@ -41,6 +41,7 @@ import io
 import json
 import os
 import pathlib
+import re
 import sys
 import time
 
@@ -55,8 +56,12 @@ ROSTER = pathlib.Path("data") / "core_roster.csv"
 OUT = pathlib.Path("export") / "core_roster_verified.json"
 API = "https://api.semanticscholar.org/graph/v1/author/search"
 UA = "quant-digest/1.0"
-# Economics and Business are the desk's domains. A profile below this share is
-# a different person with the same name, however well cited.
+# Economics and Business only. Widening to Mathematics/Computer Science was
+# measured: it decides more people (no-picks 9 -> 4) and is LESS accurate
+# (97.2% -> 92.7%), because admitting Mathematics lets mathematician namesakes
+# back in and they outnumber the econometricians it rescues -- it broke Daniel
+# Kahneman (h=124 -> h=3) to save Halbert White. An econometrician whose corpus
+# S2 files under Mathematics comes back as no-pick, which is the honest answer.
 MIN_SHARE = 40.0
 MIN_PAPERS = 3          # a share computed over one paper is not evidence
 
@@ -101,11 +106,38 @@ def _score(c):
     return 100.0 * econ / tot, tot
 
 
-def _pick(cands):
+def _name_ok(roster_name, profile_name):
+    """Does this profile plausibly belong to the person we asked about?
+
+    The field test alone chose "K. Clements" for Kenneth West -- a different
+    surname entirely, because nothing was checking the name. Field answers "is
+    this an economist"; it cannot answer "is this the RIGHT economist".
+
+    SURNAME ONLY, ON PURPOSE. An earlier version also required the roster's
+    first initial to appear among the profile's given names, and that was
+    measured as strictly worse: 91.7% against 97.2% on the settled roster. It
+    rejected Andrew Karolyi's real profile (h=48, 139 papers) because he
+    publishes as G. Andrew Karolyi -- "Andrew" is his middle name, so the
+    initial is G. The surname carries the whole signal; the extra strictness
+    only threw away correct answers.
+
+        Kenneth West   -> K. Clements   surname differs   -> rejected
+        Andrew Karolyi -> G. Karolyi    surname matches   -> accepted
+        Ben Bernanke   -> B. Bernanke   surname matches   -> accepted
+    """
+    def toks(n):
+        return [t for t in re.split(r"[^A-Za-z]+", (n or "").lower()) if t]
+    a, b = toks(roster_name), toks(profile_name)
+    return bool(a and b and a[-1] == b[-1])
+
+
+def _pick(cands, roster_name=""):
     """Best profile by field share, breaking ties on h-index."""
     scored = []
     for c in cands:
         share, n = _score(c)
+        if roster_name and not _name_ok(roster_name, c.get("name")):
+            continue
         if n >= MIN_PAPERS and share >= MIN_SHARE:
             scored.append((share, c.get("hIndex") or 0, c))
     if not scored:
@@ -126,6 +158,8 @@ def main():
     ap.add_argument("--resolve", action="store_true",
                     help="decide the needs_review people")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--names", default="",
+                    help="comma-separated names to re-check, ignoring the flag")
     args = ap.parse_args()
     if not (args.check or args.resolve):
         log("[verify] pass --check or --resolve")
@@ -142,6 +176,10 @@ def main():
     else:
         subset = [p for p in people if p.get("needs_review") == "1"]
         label = "flagged"
+    if args.names:
+        want = {n.strip().lower() for n in args.names.split(",") if n.strip()}
+        subset = [p for p in people if p["name"].lower() in want]
+        label = "named"
     if args.limit:
         subset = subset[:args.limit]
     key = os.environ.get("S2_API_KEY", "").strip()
@@ -160,7 +198,7 @@ def main():
         if cands is None:
             failed += 1
             prog.tick(); time.sleep(pause); continue
-        best, share = _pick(cands)
+        best, share = _pick(cands, p['name'])
         rec = {"name": p["name"], "current_s2_id": p.get("s2_id", ""),
                "n_candidates": len(cands)}
         if best is None:

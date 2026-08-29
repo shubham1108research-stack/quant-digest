@@ -1,176 +1,176 @@
-name,sleeve,category,firm,s2_id,s2_h,s2_cites,s2_papers,s2_status,needs_review,c_firm,c_pubs,c_cites,c_sleeve,criteria_met,qualifies,source
-Adrien Verdelhan,fx,fx_basis,,101751026,33,7596,68,ok,0,0,,1,0,1,0,author_sites.csv
-Albert Kyle,microstructure,,,144865543,22,15356,67,ok,0,0,,1,1,2,1,canon (Kyle lambda; informed trading)
-Albert Menkveld,microstructure,microstructure,,2632263,31,6023,124,ok,0,0,,1,1,2,1,author_sites.csv
-Allan Timmermann,other,econometrics,man,4177701,71,23653,204,ok,1,1,,1,0,2,1,author_sites.csv
-Ananth Madhavan,microstructure,,,73479558,38,10456,130,ok,0,0,,1,1,2,1,canon (execution; ETF plumbing)
-Andrea Frazzini,equity_xs,practitioner,aqr,2106499,21,8856,35,ok,0,1,,1,0,2,1,author_sites.csv
-Andreas Neuhierl,equity_xs,factors,,70411189,11,839,30,ok,0,0,,1,0,1,0,author_sites.csv
-Andrei Shleifer,other,promoted,,145279878,160,288994,510,ok,0,0,,1,0,1,0,author_sites.csv
-Andrew Ang,equity_xs,,blackrock,144732711,38,19132,123,ok,1,1,,1,0,2,1,gap-fill (plan 2.2)
-Andrew Karolyi,fx,,,23729816,48,15847,139,ok,0,0,,1,0,1,0,canon (international asset pricing)
-Andrew Lo,trend_cta,,alphasimplex,118887609,44,23955,250,ok,0,1,,1,1,3,1,gap-fill (plan 2.2)
-Andrew Patton,other,econometrics,,2334189,29,8472,67,ok,0,0,,1,0,1,0,author_sites.csv
-Andrew Y. Chen,equity_xs,qfactor,,2309213717,23,2842,146,ok,0,0,,1,0,1,0,author_sites.csv
-Anna Cieslak,macro_regime,macro,,145204875,10,1124,25,ok,0,0,,1,0,1,0,author_sites.csv
-Annette Vissing-Jorgensen,macro_regime,,,1403712997,33,10666,61,ok,0,0,,1,0,1,0,canon (treasury convenience yield)
-Antti Ilmanen,equity_xs,practitioner,aqr,11627253,18,1552,81,ok,0,1,,1,0,2,1,author_sites.csv
-Arvind Krishnamurthy,carry,convenience_yield,,144695691,76,21649,259,ok,1,0,,1,1,2,1,author_sites.csv
-Attilio Meucci,cross_asset,,,144398527,17,1486,62,ok,0,0,,1,1,2,1,gap-fill (plan 2.2)
-Barbara Rossi,macro_regime,macro,,8966708,30,5618,64,ok,1,0,,1,0,1,0,author_sites.csv
-Ben Bernanke,macro_regime,,,2264126631,25,29743,32,ok,1,0,,1,0,1,0,canon (financial accelerator; policy)
-Bob Litterman,macro_regime,practitioner_macro,,123388926,3,334,6,ok,0,0,,0,0,0,0,author_sites.csv
-Bob Prince,macro_regime,practitioner_macro,bridgewater,2076060575,1,4,2,ok,0,1,,0,0,1,0,author_sites.csv
-Brad Barber,equity_xs,,,32410878,40,20924,79,ok,1,0,,1,0,1,0,canon (retail trading)
-Brian Hurst,trend_cta,trend_following,aqr,102281906,16,518,33,ok,0,1,,1,1,3,1,author_sites.csv
-Bryan Kelly,equity_xs,factors,,5342498,78,17436,313,ok,1,0,,1,0,1,0,author_sites.csv
-Campbell Harvey,equity_xs,qfactor,,1829590,73,33173,274,ok,1,0,,1,0,1,0,author_sites.csv
-Charles Engel,fx,,,34631809,39,8872,184,ok,1,0,,1,0,1,0,canon (exchange rate predictability)
-Christopher Polk,equity_xs,factors,,49295598,21,5210,51,ok,0,0,,1,0,1,0,author_sites.csv
-Claude Erb,commodities,,,52549769,20,4017,43,ok,0,0,,1,1,2,1,gap-fill (plan 2.2)
-Cliff Asness,macro_regime,practitioner_macro,aqr,102104637,27,5956,73,ok,0,1,,1,0,2,1,author_sites.csv
-Clive Granger,other,,,49566894,93,130445,361,ok,1,0,,1,0,1,0,canon (causality; cointegration)
-Craig Burnside,fx,fx_basis,,2290544277,2,4610,2,ok,1,0,,1,0,1,0,author_sites.csv
-Dacheng Xiu,equity_xs,factors,,90286912,30,6038,62,ok,0,0,,1,0,1,0,author_sites.csv
-Dan Rasmussen,macro_regime,,verdad,144433967,18,2864,49,ok,0,1,,1,0,2,1,gap-fill (plan 2.2)
-Daniel Kahneman,equity_xs,,,3683465,124,237020,290,ok,0,0,,1,0,1,0,canon (prospect theory)
-Darrell Duffie,rates_credit,,,3121291,71,30842,217,ok,1,0,,1,0,1,0,"canon (term structure, OTC markets)"
-David Blitz,equity_xs,practitioner,robeco,49500384,22,2010,95,ok,0,1,,1,0,2,1,author_sites.csv
-David Harding,macro_regime,practitioner_macro,,1826133,34,10167,152,ok,1,0,,1,0,1,0,author_sites.csv
-David Hirshleifer,equity_xs,behavioural,,1991863,49,29907,156,ok,1,0,,1,0,1,0,author_sites.csv
-David Hsieh,trend_cta,,,144217629,33,14563,164,ok,1,0,,1,1,2,1,canon (trend-following risk factors)
-David McLean,equity_xs,,,144931353,53,14426,522,ok,1,0,,1,0,1,0,canon (does academic research destroy predictability)
-Dimitri Vayanos,rates_credit,,,2820319,37,12381,109,ok,1,0,,1,0,1,0,canon (preferred habitat; liquidity)
-Dimitris Korobilis,other,econometrics,,3410382,26,4312,73,ok,0,0,,1,0,1,0,author_sites.csv
-Doron Avramov,equity_xs,factors,,93151567,26,5581,88,ok,0,0,,1,0,1,0,author_sites.csv
-Eduardo Schwartz,commodities,,,3323460,59,32921,137,ok,0,0,,1,1,2,1,canon (convenience yield term structure)
-Eugene Fama,equity_xs,,,65999231,85,182403,169,ok,1,0,,1,0,1,0,canon (6 canon papers)
-Francis Longstaff,vol_options,,,4269547,56,23172,167,ok,0,0,,1,0,1,0,canon (LSM; illiquid derivatives)
-Francis X. Diebold,macro_regime,macro,,2262635900,39,21959,74,ok,1,0,,1,0,1,0,author_sites.csv
-Gary Gorton,commodities,,,2675724,73,23222,270,ok,0,0,,1,1,2,1,canon (facts and fantasies about commodity futures)
-Gary Koop,other,econometrics,,1721269,56,16570,204,ok,1,0,,1,0,1,0,author_sites.csv
-Geert Rouwenhorst,commodities,,,98156664,13,4805,27,ok,0,0,,1,1,2,1,canon (commodity futures risk premia; momentum everywhere)
-Gita Gopinath,macro_regime,global_financial_cycle,,143622435,26,6034,82,ok,0,0,,1,0,1,0,author_sites.csv
-Greg Duffee,rates_credit,term_structure,,101928684,20,5710,54,ok,0,0,,1,0,1,0,author_sites.csv
-Grigory Vilkov,vol_options,volatility,,52158685,18,3067,55,ok,0,0,,1,0,1,0,author_sites.csv
-Guanhao Feng,equity_xs,factors,,49082014,8,849,34,ok,0,0,,1,0,1,0,author_sites.csv
-Guido Baltussen,equity_xs,practitioner,,2054521,15,1263,40,ok,0,0,,1,0,1,0,author_sites.csv
-Halbert White,other,,,2149702798,77,88823,239,ok,1,0,,1,0,1,0,canon (reality check; misspecification)
-Hanno Lustig,macro_regime,macro,,3208964,45,8980,229,ok,0,0,,1,0,1,0,author_sites.csv
-Harry Markowitz,cross_asset,,,2237725584,4,18174,4,ok,1,0,,1,1,2,1,canon (portfolio selection)
-Helene Rey,macro_regime,global_financial_cycle,,2411471688,35,10410,40,ok,1,0,,1,0,1,0,author_sites.csv
-Hendrik Bessembinder,commodities,,,118786084,36,10595,99,ok,0,0,,1,1,2,1,canon (hedging pressure; market quality)
-Hyun Song Shin,macro_regime,,,2337313,50,13353,261,ok,1,0,,1,0,1,0,canon (leverage cycles; BIS)
-Ian Dew-Becker,vol_options,volatility,,1399085481,16,1690,47,ok,0,0,,1,0,1,0,author_sites.csv
-James Hamilton,macro_regime,,,4765016,43,30737,90,ok,0,0,,1,0,1,0,canon (regime switching; oil)
-James MacKinlay,other,,,32624555,5,439,5,ok,0,0,,0,0,0,0,canon (event studies; econometrics of finance)
-James Stock,macro_regime,,,82973203,69,41663,201,ok,1,0,,1,0,1,0,canon (factor models for macro forecasting)
-Jean-Philippe Bouchaud,macro_regime,practitioner_macro,,2524821,86,33134,592,ok,0,0,,1,0,1,0,author_sites.csv
-Jeffrey Pontiff,equity_xs,,,3079037,19,5464,39,ok,0,0,,1,0,1,0,canon (publication effect; limits to arbitrage)
-Jim Gatheral,vol_options,,,1714289,26,4999,61,ok,0,0,,1,0,1,0,canon (volatility surface; rough vol)
-Joel Hasbrouck,microstructure,,,97896536,35,11968,76,ok,0,0,,1,1,2,1,canon (price discovery; TAQ empirics)
-John C. Cox,rates_credit,,,47582388,16,21176,32,ok,1,0,,1,0,1,0,canon (CIR; option pricing)
-John Cochrane,macro_regime,,,2610603,59,16419,342,ok,1,0,,1,0,1,0,canon (asset pricing; discount rates)
-John Hull,vol_options,,,144470136,39,23240,102,ok,1,0,,1,0,1,0,canon (derivatives canon)
-John Y. Campbell,other,promoted,,1801034,69,57635,235,ok,1,0,,1,0,1,0,author_sites.csv
-Jonathan Berk,equity_xs,,,50203470,20,7044,53,ok,1,0,,1,0,1,0,canon (fund flows and performance)
-Jonathan Wright,rates_credit,term_structure,,3575644,48,18866,325,ok,1,0,,1,0,1,0,author_sites.csv
-Josef Lakonishok,equity_xs,,,83311247,56,36021,97,ok,0,0,,1,0,1,0,canon (contrarian; LSV)
-Juhani Linnainmaa,equity_xs,,,70091263,27,4248,81,ok,0,0,,1,0,1,0,canon (factor replication; history of anomalies)
-Jules van Binsbergen,equity_xs,factors,,2259105343,21,3102,41,ok,1,0,,1,0,1,0,author_sites.csv
-Kathryn Kaminski,trend_cta,trend_following,alphasimplex,145394771,4,116,26,ok,0,1,,0,1,2,1,author_sites.csv
-Kelly Shue,equity_xs,behavioural,,2097116792,2,2313,2,ok,1,0,,1,0,1,0,author_sites.csv
-Kenneth French,equity_xs,,,72891652,41,86490,77,ok,1,0,,1,0,1,0,canon (Fama-French factors)
-Kenneth Froot,fx,,,72716376,64,29468,178,ok,1,0,,1,0,1,0,canon (forward discount; institutional FX)
-Kenneth Rogoff,fx,,,4009124,65,42114,235,ok,1,0,,1,0,1,0,canon (exchange rate disconnect; debt)
-Kenneth West,other,,,1857050,69,19097,1303,ok,1,0,,1,0,1,0,canon (HAC; forecast evaluation)
-Kent Daniel,equity_xs,qfactor,,1719066,17,6812,42,ok,1,0,,1,0,1,0,author_sites.csv
-Kewei Hou,equity_xs,qfactor,,2212693,20,7725,50,ok,0,0,,1,0,1,0,author_sites.csv
-Lars Peter Hansen,other,,,1796633,61,34926,247,ok,1,0,,1,0,1,0,canon (GMM; robustness)
-Lasse Heje Pedersen,equity_xs,practitioner,,2237174329,20,18894,50,ok,0,0,,1,0,1,0,author_sites.csv
-Laurens Swinkels,equity_xs,,robeco,104068207,19,1371,96,ok,0,1,,1,0,2,1,gap-fill (plan 2.2)
-Leda Braga,macro_regime,practitioner_macro,,5392205,11,443,43,ok,0,0,,0,0,0,0,author_sites.csv
-Lu Zhang,equity_xs,qfactor,,1848964,49,15380,238,ok,1,0,,1,0,1,0,author_sites.csv
-Lubos Pastor,equity_xs,,,2290684500,34,23441,54,ok,1,0,,1,0,1,0,canon (liquidity risk; fund flows)
-Lucio Sarno,fx,,,152110492,51,11343,143,ok,1,0,,1,0,1,0,canon (FX predictability; carry)
-Lukas Menkhoff,carry,,,94380489,39,6333,174,ok,1,0,,1,1,2,1,canon (carry trades and global FX volatility)
-Marcos Lopez de Prado,equity_xs,practitioner,,1741105308,11,1339,38,ok,1,0,,1,0,1,0,author_sites.csv
-Mark Carhart,macro_regime,practitioner_macro,man,118961247,5,941,9,ok,0,1,,1,0,2,1,author_sites.csv
-Mark Kritzman,cross_asset,,,69441497,27,2921,175,ok,0,0,,1,1,2,1,canon (turbulence; absorption ratio)
-Mark Watson,macro_regime,,,2880426,69,49422,214,ok,1,0,,1,0,1,0,canon (dynamic factor models)
-Markus Brunnermeier,macro_regime,,,3113641,49,20393,167,ok,1,0,,1,0,1,0,canon (liquidity spirals; macro-finance)
-Markus Pelger,equity_xs,factors,,88740624,18,1571,47,ok,0,0,,1,0,1,0,author_sites.csv
-Martin Lettau,equity_xs,,,2338153179,34,14696,64,ok,1,0,,1,0,1,0,canon (cay; consumption asset pricing)
-Matteo Maggiori,carry,convenience_yield,,2237465654,8,1904,22,ok,0,0,,1,1,2,1,author_sites.csv
-Matthias Hanauer,equity_xs,,robeco,10927903,20,1841,52,ok,0,1,,1,0,2,1,gap-fill (plan 2.2)
-Maureen O'Hara,microstructure,,,88087434,62,29147,130,ok,1,0,,1,1,2,1,canon (market microstructure theory)
-Michael Bauer,rates_credit,term_structure,,144302077,35,4977,134,ok,1,0,,1,0,1,0,author_sites.csv
-Monika Piazzesi,macro_regime,macro,,70106137,32,9295,90,ok,0,0,,1,0,1,0,author_sites.csv
-Myron Scholes,vol_options,,,39536819,28,41952,63,ok,0,0,,1,0,1,0,canon (option pricing)
-Narasimhan Jegadeesh,equity_xs,,,66052545,36,23635,78,ok,0,0,,1,0,1,0,canon (momentum)
-Neil Shephard,vol_options,,,50275561,67,33368,193,ok,1,0,,1,0,1,0,canon (realized volatility)
-Nicholas Barberis,equity_xs,behavioural,,3095692,35,29163,74,ok,0,0,,1,0,1,0,author_sites.csv
-Nick Baltas,equity_xs,practitioner,,119479992,7,141,11,ok,0,0,,0,0,0,0,author_sites.csv
-Nikolai Roussanov,carry,,,2411761825,7,1020,8,ok,0,0,,1,1,2,1,canon (currency risk factors; carry portfolios)
-Oldrich Vasicek,rates_credit,,,72075118,20,8984,60,ok,0,0,,1,0,1,0,canon (term structure model)
-Ole Barndorff-Nielsen,vol_options,,,1398951619,76,33516,359,ok,0,0,,1,0,1,0,canon (realized variance theory)
-Otto van Hemert,trend_cta,,man,117456062,13,1385,25,ok,0,1,,1,1,3,1,gap-fill (plan 2.2)
-Owen Lamont,equity_xs,,acadian,2269496,30,10920,52,ok,0,1,,1,0,2,1,gap-fill (plan 2.2)
-Peter Carr,vol_options,volatility,,143970068,48,17577,188,ok,1,0,,1,0,1,0,author_sites.csv
-Peter Christoffersen,vol_options,,,35905839,37,9169,111,ok,1,0,,1,0,1,0,canon (option-implied information)
-Philippe Jorion,cross_asset,,,81772556,47,15982,100,ok,0,0,,1,1,2,1,canon (VaR; estimation risk)
-Pierre-Olivier Gourinchas,carry,convenience_yield,,119387559,44,12054,184,ok,0,0,,1,1,2,1,author_sites.csv
-Pim van Vliet,equity_xs,practitioner,robeco,145178118,16,999,50,ok,1,1,,1,0,2,1,author_sites.csv
-Ralph Koijen,equity_xs,factors,,2957390,53,9254,164,ok,0,0,,1,0,1,0,author_sites.csv
-Ralph Sueppel,carry,,macrosynergy,122463988,2,19,3,ok,0,1,,0,1,2,1,gap-fill (plan 2.2)
-Raman Uppal,cross_asset,,,39116899,29,9400,94,ok,1,0,,1,1,2,1,canon (1/N; model uncertainty)
-Ravi Bansal,other,promoted,,2054868537,30,10027,64,ok,1,0,,1,0,1,0,author_sites.csv
-Ray Dalio,macro_regime,practitioner_macro,bridgewater,1475790281,1,6,5,ok,0,1,,0,0,1,0,author_sites.csv
-Refet Gurkaynak,rates_credit,,,2174693814,3,91,5,ok,0,0,,0,0,0,0,canon (yield curve data; monetary surprises)
-Riccardo Rebonato,rates_credit,,,66698587,26,3084,227,ok,0,0,,1,0,1,0,gap-fill (plan 2.2)
-Richard Lyons,fx,,,2270809544,22,4072,38,ok,1,0,,1,0,1,0,canon (FX microstructure)
-Richard Michaud,cross_asset,,,2412895802,5,1550,14,ok,0,0,,1,1,2,1,canon (resampled efficiency)
-Richard Thaler,equity_xs,,,2240116,67,80100,162,ok,1,0,,1,0,1,0,canon (behavioural canon)
-Rob Arnott,equity_xs,practitioner,research affiliates,104579207,25,3381,92,ok,1,1,,1,0,2,1,author_sites.csv
-Robert Engle,vol_options,,,35535410,76,108231,210,ok,1,0,,1,0,1,0,canon (ARCH; vol modelling)
-Robert J. Hodrick,fx,fx_basis,,10806338,36,25909,97,ok,0,0,,1,0,1,0,author_sites.csv
-Robert Merton,vol_options,,,7347752,63,63380,289,ok,1,0,,1,0,1,0,"canon (4 canon papers; ICAPM, option pricing)"
-Robert Novy-Marx,equity_xs,qfactor,,1398634241,28,6260,62,ok,0,0,,1,0,1,0,author_sites.csv
-Robert Pindyck,commodities,,,3436008,64,35931,214,ok,0,0,,1,1,2,1,canon (storage; volatility)
-Robert Shiller,macro_regime,,,5736726,80,48254,355,ok,1,0,,1,0,1,0,canon (excess volatility; CAPE)
-Robert Stambaugh,equity_xs,,,113247468,30,16576,74,ok,1,0,,1,0,1,0,canon (liquidity risk; mispricing factors)
-Robert Vishny,equity_xs,,,4988184,76,191686,152,ok,0,0,,1,0,1,0,canon (limits of arbitrage; LSV)
-Robin Greenwood,equity_xs,behavioural,,38818395,16,2563,48,ok,0,0,,1,0,1,0,author_sites.csv
-Russ Wermers,equity_xs,,,3173841,33,13772,109,ok,0,0,,1,0,1,0,canon (mutual fund performance)
-Semyon Malamud,other,other,,2772316,23,2371,156,ok,0,0,,1,0,1,0,author_sites.csv
-Serhiy Kozak,equity_xs,factors,,101120005,8,953,16,ok,0,0,,1,0,1,0,author_sites.csv
-Sheridan Titman,equity_xs,,,52453175,90,74982,310,ok,0,0,,1,0,1,0,canon (momentum; characteristics)
-Shihao Gu,equity_xs,factors,,90255997,3,2358,9,ok,0,0,,1,0,1,0,author_sites.csv
-Stefan Nagel,equity_xs,factors,,50373121,30,12054,74,ok,1,0,,1,0,1,0,author_sites.csv
-Stefano Giglio,equity_xs,factors,,69847461,24,5328,51,ok,0,0,,1,0,1,0,author_sites.csv
-Stephen A. Ross,other,promoted,,145520631,56,54860,158,ok,0,0,,1,0,1,0,author_sites.csv
-Steven Heston,vol_options,,,3115777,24,14090,47,ok,0,0,,1,0,1,0,canon (stochastic volatility model)
-Sydney Ludvigson,macro_regime,macro,,66428735,28,8866,72,ok,1,0,,1,0,1,0,author_sites.csv
-Tarun Chordia,microstructure,,,104633810,42,16947,107,ok,0,0,,1,1,2,1,canon (liquidity commonality)
-Terrance Odean,equity_xs,,,1869851,35,26776,72,ok,0,0,,1,0,1,0,canon (retail investor behaviour)
-Terrence Hendershott,microstructure,microstructure,,2287993,33,8009,85,ok,0,0,,1,1,2,1,author_sites.csv
-Thierry Roncalli,cross_asset,,amundi,70432107,29,3940,123,ok,0,1,,1,1,3,1,gap-fill (plan 2.2)
-Tim Bollerslev,vol_options,volatility,,2702465,83,83748,181,ok,1,0,,1,0,1,0,author_sites.csv
-Tobias Adrian,rates_credit,,,2448060413,1,16710,1,ok,0,0,,1,0,1,0,canon (intermediary asset pricing; term premia)
-Tobias Moskowitz,other,other,,102056949,14,8487,27,ok,1,0,,1,0,1,0,author_sites.csv
-Torben Andersen,vol_options,volatility,,2315163,62,35029,169,ok,1,0,,1,0,1,0,author_sites.csv
-Ulrike Malmendier,equity_xs,,,1405417097,43,21583,120,ok,0,0,,1,0,1,0,canon (experience effects; CEO overconfidence)
-Victor DeMiguel,other,econometrics,,1785216,22,6210,52,ok,0,0,,1,0,1,0,author_sites.csv
-Viral Acharya,rates_credit,,,2240101713,17,8928,36,ok,1,0,,1,0,1,0,canon (systemic risk; credit)
-Vitali Kalesnik,cross_asset,,research affiliates,97748897,16,725,61,ok,0,1,,1,1,3,1,gap-fill (plan 2.2)
-Wei Xiong,macro_regime,,,2437677,32,3056,117,ok,1,0,,1,0,1,0,canon (bubbles; commodities financialization)
-Wenxin Du,fx,fx_basis,,9625154,14,1364,19,ok,1,0,,1,0,1,0,author_sites.csv
-Wesley Gray,equity_xs,,alpha architect,2926253,36,11433,292,ok,1,1,,1,0,2,1,gap-fill (plan 2.2)
-Whitney Newey,other,,,3646527,73,56882,228,ok,0,0,,1,0,1,0,canon (HAC standard errors)
-William Fung,trend_cta,,,1810039,22,4966,37,ok,1,0,,1,1,2,1,canon (hedge fund styles; trend replication)
-William Sharpe,cross_asset,,,3159358,39,36111,106,ok,1,0,,1,1,2,1,canon (CAPM; Sharpe ratio)
-Yakov Amihud,microstructure,,,102785782,50,27909,150,ok,0,0,,1,1,2,1,canon (illiquidity measure)
-Yao Hua Ooi,trend_cta,trend_following,,145379569,8,1696,17,ok,0,0,,1,1,2,1,author_sites.csv
-Zhengyang Jiang,carry,convenience_yield,,48634350,14,1141,21,ok,1,0,,1,1,2,1,author_sites.csv
-Zhiguo He,equity_xs,factors,,2351678,34,8981,93,ok,1,0,,1,0,1,0,author_sites.csv
-Zoltan Pozsar,macro_regime,practitioner_macro,,119328229,9,854,15,ok,0,0,,1,0,1,0,author_sites.csv
+name,sleeve,category,firm,s2_id,s2_h,s2_cites,s2_papers,s2_status,needs_review,c_firm,c_pubs,c_cites,c_sleeve,criteria_met,qualifies,source,verify_note
+Adrien Verdelhan,fx,fx_basis,,101751026,33,7596,68,ok,0,0,,1,0,1,0,author_sites.csv,
+Albert Kyle,microstructure,,,144865543,22,15356,67,ok,0,0,,1,1,2,1,canon (Kyle lambda; informed trading),
+Albert Menkveld,microstructure,microstructure,,2632263,31,6023,124,ok,0,0,,1,1,2,1,author_sites.csv,
+Allan Timmermann,other,econometrics,man,4177701,71,23653,204,ok,0,1,,1,0,2,1,author_sites.csv,confirmed by field test (econ 62.3%)
+Ananth Madhavan,microstructure,,,73479558,38,10456,130,ok,0,0,,1,1,2,1,canon (execution; ETF plumbing),
+Andrea Frazzini,equity_xs,practitioner,aqr,2106499,21,8856,35,ok,0,1,,1,0,2,1,author_sites.csv,
+Andreas Neuhierl,equity_xs,factors,,70411189,11,839,30,ok,0,0,,1,0,1,0,author_sites.csv,
+Andrei Shleifer,other,promoted,,145279878,160,288994,510,ok,0,0,,1,0,1,0,author_sites.csv,
+Andrew Ang,equity_xs,,blackrock,144732711,38,19132,123,ok,0,1,,1,0,2,1,gap-fill (plan 2.2),confirmed by field test (econ 83.2%)
+Andrew Karolyi,fx,,,23729816,48,15847,139,ok,0,0,,1,0,1,0,canon (international asset pricing),
+Andrew Lo,trend_cta,,alphasimplex,118887609,44,23955,250,ok,0,1,,1,1,3,1,gap-fill (plan 2.2),
+Andrew Patton,other,econometrics,,2334189,29,8472,67,ok,0,0,,1,0,1,0,author_sites.csv,
+Andrew Y. Chen,equity_xs,qfactor,,2309213717,23,2842,146,ok,0,0,,1,0,1,0,author_sites.csv,
+Anna Cieslak,macro_regime,macro,,145204875,10,1124,25,ok,0,0,,1,0,1,0,author_sites.csv,
+Annette Vissing-Jorgensen,macro_regime,,,1403712997,33,10666,61,ok,0,0,,1,0,1,0,canon (treasury convenience yield),
+Antti Ilmanen,equity_xs,practitioner,aqr,11627253,18,1552,81,ok,0,1,,1,0,2,1,author_sites.csv,
+Arvind Krishnamurthy,carry,convenience_yield,,2078984742,49,21649,259,ok,0,0,,1,1,2,1,author_sites.csv,replaced 144695691 (econ 0%) -> 2078984742 (econ 86.5%)
+Attilio Meucci,cross_asset,,,144398527,17,1486,62,ok,0,0,,1,1,2,1,gap-fill (plan 2.2),
+Barbara Rossi,macro_regime,macro,,4935479,35,5618,64,ok,0,0,,1,0,1,0,author_sites.csv,replaced 8966708 (econ 0%) -> 4935479 (econ 55.6%)
+Ben Bernanke,macro_regime,,,50823818,60,29743,32,ok,0,0,,1,0,1,0,canon (financial accelerator; policy),replaced 2264126631 (econ 91%) -> 50823818 (econ 60.5%)
+Bob Litterman,macro_regime,practitioner_macro,,123388926,3,334,6,ok,0,0,,0,0,0,0,author_sites.csv,
+Bob Prince,macro_regime,practitioner_macro,bridgewater,2076060575,1,4,2,ok,0,1,,0,0,1,0,author_sites.csv,
+Brad Barber,equity_xs,,,32410878,40,20924,79,ok,0,0,,1,0,1,0,canon (retail trading),confirmed by field test (econ 81.8%)
+Brian Hurst,trend_cta,trend_following,aqr,102281906,16,518,33,ok,0,1,,1,1,3,1,author_sites.csv,
+Bryan Kelly,equity_xs,factors,,2411588366,18,17436,313,ok,0,0,,1,0,1,0,author_sites.csv,replaced 5342498 (econ 0%) -> 2411588366 (econ 91.7%)
+Campbell Harvey,equity_xs,qfactor,,1829590,73,33173,274,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 91.6%)
+Charles Engel,fx,,,1825958,25,8872,184,ok,0,0,,1,0,1,0,canon (exchange rate predictability),replaced 34631809 (econ 0%) -> 1825958 (econ 94.5%)
+Christopher Polk,equity_xs,factors,,49295598,21,5210,51,ok,0,0,,1,0,1,0,author_sites.csv,
+Claude Erb,commodities,,,52549769,20,4017,43,ok,0,0,,1,1,2,1,gap-fill (plan 2.2),
+Cliff Asness,macro_regime,practitioner_macro,aqr,102104637,27,5956,73,ok,0,1,,1,0,2,1,author_sites.csv,
+Clive Granger,other,,,49566894,93,130445,361,ok,0,0,,1,0,1,0,canon (causality; cointegration),confirmed by field test (econ 42.0%)
+Craig Burnside,fx,fx_basis,,144766335,22,4610,2,ok,0,0,,1,0,1,0,author_sites.csv,replaced 2290544277 (econ 100%) -> 144766335 (econ 83.3%)
+Dacheng Xiu,equity_xs,factors,,90286912,30,6038,62,ok,0,0,,1,0,1,0,author_sites.csv,
+Dan Rasmussen,macro_regime,,verdad,144433967,18,2864,49,ok,0,1,,1,0,2,1,gap-fill (plan 2.2),
+Daniel Kahneman,equity_xs,,,3683465,124,237020,290,ok,0,0,,1,0,1,0,canon (prospect theory),
+Darrell Duffie,rates_credit,,,3121291,71,30842,217,ok,0,0,,1,0,1,0,"canon (term structure, OTC markets)",confirmed by field test (econ 77.8%)
+David Blitz,equity_xs,practitioner,robeco,49500384,22,2010,95,ok,0,1,,1,0,2,1,author_sites.csv,
+David Harding,macro_regime,practitioner_macro,,2071327097,5,10167,152,ok,0,0,,1,0,1,0,author_sites.csv,replaced 1826133 (econ 0%) -> 2071327097 (econ 70.0%)
+David Hirshleifer,equity_xs,behavioural,,1991863,49,29907,156,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 85.1%)
+David Hsieh,trend_cta,,,32308786,38,14563,164,ok,0,0,,1,1,2,1,canon (trend-following risk factors),replaced 144217629 (econ 0%) -> 32308786 (econ 88.1%)
+David McLean,equity_xs,,,10805670,9,14426,522,ok,0,0,,1,0,1,0,canon (does academic research destroy predictability),replaced 144931353 (econ 0%) -> 10805670 (econ 100.0%)
+Dimitri Vayanos,rates_credit,,,2820319,37,12381,109,ok,0,0,,1,0,1,0,canon (preferred habitat; liquidity),confirmed by field test (econ 92.4%)
+Dimitris Korobilis,other,econometrics,,3410382,26,4312,73,ok,0,0,,1,0,1,0,author_sites.csv,
+Doron Avramov,equity_xs,factors,,93151567,26,5581,88,ok,0,0,,1,0,1,0,author_sites.csv,
+Eduardo Schwartz,commodities,,,3323460,59,32921,137,ok,0,0,,1,1,2,1,canon (convenience yield term structure),
+Eugene Fama,equity_xs,,,65999231,85,182403,169,ok,0,0,,1,0,1,0,canon (6 canon papers),confirmed by field test (econ 95.8%)
+Francis Longstaff,vol_options,,,4269547,56,23172,167,ok,0,0,,1,0,1,0,canon (LSM; illiquid derivatives),
+Francis X. Diebold,macro_regime,macro,,2262635900,39,21959,74,ok,0,0,,1,0,1,0,author_sites.csv,"kept: right person, S2 files the field as Mathematics"
+Gary Gorton,commodities,,,2675724,73,23222,270,ok,0,0,,1,1,2,1,canon (facts and fantasies about commodity futures),
+Gary Koop,other,econometrics,,1721269,56,16570,204,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 44.3%)
+Geert Rouwenhorst,commodities,,,98156664,13,4805,27,ok,0,0,,1,1,2,1,canon (commodity futures risk premia; momentum everywhere),
+Gita Gopinath,macro_regime,global_financial_cycle,,143622435,26,6034,82,ok,0,0,,1,0,1,0,author_sites.csv,
+Greg Duffee,rates_credit,term_structure,,101928684,20,5710,54,ok,0,0,,1,0,1,0,author_sites.csv,
+Grigory Vilkov,vol_options,volatility,,52158685,18,3067,55,ok,0,0,,1,0,1,0,author_sites.csv,
+Guanhao Feng,equity_xs,factors,,49082014,8,849,34,ok,0,0,,1,0,1,0,author_sites.csv,
+Guido Baltussen,equity_xs,practitioner,,2054521,15,1263,40,ok,0,0,,1,0,1,0,author_sites.csv,
+Halbert White,other,,,2149702798,77,88823,239,ok,0,0,,1,0,1,0,canon (reality check; misspecification),"kept: right person, S2 files the field as Mathematics"
+Hanno Lustig,macro_regime,macro,,3208964,45,8980,229,ok,0,0,,1,0,1,0,author_sites.csv,
+Harry Markowitz,cross_asset,,,50018942,35,18174,4,ok,0,0,,1,1,2,1,canon (portfolio selection),replaced 2237725584 (econ 67%) -> 50018942 (econ 53.8%)
+Helene Rey,macro_regime,global_financial_cycle,,2411471688,35,10410,40,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 92.3%)
+Hendrik Bessembinder,commodities,,,118786084,36,10595,99,ok,0,0,,1,1,2,1,canon (hedging pressure; market quality),
+Hyun Song Shin,macro_regime,,,2337313,50,13353,261,ok,0,0,,1,0,1,0,canon (leverage cycles; BIS),confirmed by field test (econ 82.9%)
+Ian Dew-Becker,vol_options,volatility,,1399085481,16,1690,47,ok,0,0,,1,0,1,0,author_sites.csv,
+James Hamilton,macro_regime,,,4765016,43,30737,90,ok,0,0,,1,0,1,0,canon (regime switching; oil),
+James MacKinlay,other,,,32624555,5,439,5,ok,0,0,,0,0,0,0,canon (event studies; econometrics of finance),
+James Stock,macro_regime,,,82973203,69,41663,201,ok,0,0,,1,0,1,0,canon (factor models for macro forecasting),confirmed by field test (econ 48.2%)
+Jean-Philippe Bouchaud,macro_regime,practitioner_macro,,2524821,86,33134,592,ok,0,0,,1,0,1,0,author_sites.csv,
+Jeffrey Pontiff,equity_xs,,,3079037,19,5464,39,ok,0,0,,1,0,1,0,canon (publication effect; limits to arbitrage),
+Jim Gatheral,vol_options,,,1714289,26,4999,61,ok,0,0,,1,0,1,0,canon (volatility surface; rough vol),
+Joel Hasbrouck,microstructure,,,97896536,35,11968,76,ok,0,0,,1,1,2,1,canon (price discovery; TAQ empirics),
+John C. Cox,rates_credit,,,47582388,16,21176,32,ok,0,0,,1,0,1,0,canon (CIR; option pricing),confirmed by field test (econ 85.7%)
+John Cochrane,macro_regime,,,2259056360,40,16419,342,ok,0,0,,1,0,1,0,canon (asset pricing; discount rates),replaced 2610603 (econ 3%) -> 2259056360 (econ 100.0%)
+John Hull,vol_options,,,144470136,39,23240,102,ok,0,0,,1,0,1,0,canon (derivatives canon),confirmed by field test (econ 76.7%)
+John Y. Campbell,other,promoted,,1801034,69,57635,235,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 69.5%)
+Jonathan Berk,equity_xs,,,50203470,20,7044,53,ok,0,0,,1,0,1,0,canon (fund flows and performance),confirmed by field test (econ 93.0%)
+Jonathan Wright,rates_credit,term_structure,,2244977415,26,18866,325,ok,0,0,,1,0,1,0,author_sites.csv,replaced 3575644 (econ 0%) -> 2244977415 (econ 65.1%)
+Josef Lakonishok,equity_xs,,,83311247,56,36021,97,ok,0,0,,1,0,1,0,canon (contrarian; LSV),
+Juhani Linnainmaa,equity_xs,,,70091263,27,4248,81,ok,0,0,,1,0,1,0,canon (factor replication; history of anomalies),
+Jules van Binsbergen,equity_xs,factors,,2259105343,21,3102,41,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 100.0%)
+Kathryn Kaminski,trend_cta,trend_following,alphasimplex,145394771,4,116,26,ok,0,1,,0,1,2,1,author_sites.csv,
+Kelly Shue,equity_xs,behavioural,,3429142,12,2313,2,ok,0,0,,1,0,1,0,author_sites.csv,replaced 2097116792 (econ 0%) -> 3429142 (econ 72.7%)
+Kenneth French,equity_xs,,,72891652,41,86490,77,ok,0,0,,1,0,1,0,canon (Fama-French factors),confirmed by field test (econ 96.9%)
+Kenneth Froot,fx,,,72716376,64,29468,178,ok,0,0,,1,0,1,0,canon (forward discount; institutional FX),confirmed by field test (econ 91.2%)
+Kenneth Rogoff,fx,,,4009124,65,42114,235,ok,0,0,,1,0,1,0,canon (exchange rate disconnect; debt),confirmed by field test (econ 86.3%)
+Kenneth West,other,,,49517228,28,19097,1303,ok,0,0,,1,0,1,0,canon (HAC; forecast evaluation),replaced 1857050 (econ 0%) -> 49517228 (econ 79.7%)
+Kent Daniel,equity_xs,qfactor,,1719066,17,6812,42,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 89.7%)
+Kewei Hou,equity_xs,qfactor,,2212693,20,7725,50,ok,0,0,,1,0,1,0,author_sites.csv,
+Lars Peter Hansen,other,,,1796633,61,34926,247,ok,0,0,,1,0,1,0,canon (GMM; robustness),confirmed by field test (econ 48.0%)
+Lasse Heje Pedersen,equity_xs,practitioner,,2237174329,20,18894,50,ok,0,0,,1,0,1,0,author_sites.csv,
+Laurens Swinkels,equity_xs,,robeco,104068207,19,1371,96,ok,0,1,,1,0,2,1,gap-fill (plan 2.2),
+Leda Braga,macro_regime,practitioner_macro,,5392205,11,443,43,ok,0,0,,0,0,0,0,author_sites.csv,
+Lu Zhang,equity_xs,qfactor,,2411489783,23,15380,238,ok,0,0,,1,0,1,0,author_sites.csv,replaced 1848964 (econ 0%) -> 2411489783 (econ 100.0%)
+Lubos Pastor,equity_xs,,,2290684500,34,23441,54,ok,0,0,,1,0,1,0,canon (liquidity risk; fund flows),confirmed by field test (econ 92.3%)
+Lucio Sarno,fx,,,152110492,51,11343,143,ok,0,0,,1,0,1,0,canon (FX predictability; carry),confirmed by field test (econ 95.8%)
+Lukas Menkhoff,carry,,,94380489,39,6333,174,ok,0,0,,1,1,2,1,canon (carry trades and global FX volatility),confirmed by field test (econ 87.4%)
+Marcos Lopez de Prado,equity_xs,practitioner,,1741105308,11,1339,38,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 43.8%)
+Mark Carhart,macro_regime,practitioner_macro,man,118961247,5,941,9,ok,0,1,,1,0,2,1,author_sites.csv,
+Mark Kritzman,cross_asset,,,69441497,27,2921,175,ok,0,0,,1,1,2,1,canon (turbulence; absorption ratio),
+Mark Watson,macro_regime,,,32082672,64,49422,214,ok,0,0,,1,0,1,0,canon (dynamic factor models),replaced 2880426 (econ 0%) -> 32082672 (econ 62.0%)
+Markus Brunnermeier,macro_regime,,,3113641,49,20393,167,ok,0,0,,1,0,1,0,canon (liquidity spirals; macro-finance),confirmed by field test (econ 78.0%)
+Markus Pelger,equity_xs,factors,,88740624,18,1571,47,ok,0,0,,1,0,1,0,author_sites.csv,
+Martin Lettau,equity_xs,,,2338153179,34,14696,64,ok,0,0,,1,0,1,0,canon (cay; consumption asset pricing),confirmed by field test (econ 89.5%)
+Matteo Maggiori,carry,convenience_yield,,2237465654,8,1904,22,ok,0,0,,1,1,2,1,author_sites.csv,
+Matthias Hanauer,equity_xs,,robeco,10927903,20,1841,52,ok,0,1,,1,0,2,1,gap-fill (plan 2.2),
+Maureen O'Hara,microstructure,,,88087434,62,29147,130,ok,0,0,,1,1,2,1,canon (market microstructure theory),confirmed by field test (econ 85.7%)
+Michael Bauer,rates_credit,term_structure,,145421946,22,4977,134,ok,0,0,,1,0,1,0,author_sites.csv,replaced 144302077 (econ 0%) -> 145421946 (econ 88.6%)
+Monika Piazzesi,macro_regime,macro,,70106137,32,9295,90,ok,0,0,,1,0,1,0,author_sites.csv,
+Myron Scholes,vol_options,,,39536819,28,41952,63,ok,0,0,,1,0,1,0,canon (option pricing),
+Narasimhan Jegadeesh,equity_xs,,,66052545,36,23635,78,ok,0,0,,1,0,1,0,canon (momentum),
+Neil Shephard,vol_options,,,50275561,67,33368,193,ok,1,0,,1,0,1,0,canon (realized volatility),unresolved: no economist candidate
+Nicholas Barberis,equity_xs,behavioural,,3095692,35,29163,74,ok,0,0,,1,0,1,0,author_sites.csv,
+Nick Baltas,equity_xs,practitioner,,119479992,7,141,11,ok,0,0,,0,0,0,0,author_sites.csv,
+Nikolai Roussanov,carry,,,2411761825,7,1020,8,ok,0,0,,1,1,2,1,canon (currency risk factors; carry portfolios),
+Oldrich Vasicek,rates_credit,,,72075118,20,8984,60,ok,0,0,,1,0,1,0,canon (term structure model),
+Ole Barndorff-Nielsen,vol_options,,,1398951619,76,33516,359,ok,0,0,,1,0,1,0,canon (realized variance theory),
+Otto van Hemert,trend_cta,,man,117456062,13,1385,25,ok,0,1,,1,1,3,1,gap-fill (plan 2.2),
+Owen Lamont,equity_xs,,acadian,2269496,30,10920,52,ok,0,1,,1,0,2,1,gap-fill (plan 2.2),
+Peter Carr,vol_options,volatility,,143970068,48,17577,188,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 66.7%)
+Peter Christoffersen,vol_options,,,35905839,37,9169,111,ok,0,0,,1,0,1,0,canon (option-implied information),confirmed by field test (econ 76.7%)
+Philippe Jorion,cross_asset,,,81772556,47,15982,100,ok,0,0,,1,1,2,1,canon (VaR; estimation risk),
+Pierre-Olivier Gourinchas,carry,convenience_yield,,119387559,44,12054,184,ok,0,0,,1,1,2,1,author_sites.csv,
+Pim van Vliet,equity_xs,practitioner,robeco,145178118,16,999,50,ok,0,1,,1,0,2,1,author_sites.csv,confirmed by field test (econ 72.9%)
+Ralph Koijen,equity_xs,factors,,2957390,53,9254,164,ok,0,0,,1,0,1,0,author_sites.csv,
+Ralph Sueppel,carry,,macrosynergy,122463988,2,19,3,ok,0,1,,0,1,2,1,gap-fill (plan 2.2),
+Raman Uppal,cross_asset,,,39116899,29,9400,94,ok,0,0,,1,1,2,1,canon (1/N; model uncertainty),confirmed by field test (econ 89.6%)
+Ravi Bansal,other,promoted,,2054868537,30,10027,64,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 88.5%)
+Ray Dalio,macro_regime,practitioner_macro,bridgewater,1475790281,1,6,5,ok,0,1,,0,0,1,0,author_sites.csv,
+Refet Gurkaynak,rates_credit,,,2174693814,3,91,5,ok,0,0,,0,0,0,0,canon (yield curve data; monetary surprises),
+Riccardo Rebonato,rates_credit,,,66698587,26,3084,227,ok,0,0,,1,0,1,0,gap-fill (plan 2.2),
+Richard Lyons,fx,,,49427893,23,4072,38,ok,0,0,,1,0,1,0,canon (FX microstructure),replaced 2270809544 (econ 90%) -> 49427893 (econ 92.0%)
+Richard Michaud,cross_asset,,,2412895802,5,1550,14,ok,0,0,,1,1,2,1,canon (resampled efficiency),
+Richard Thaler,equity_xs,,,2240116,67,80100,162,ok,0,0,,1,0,1,0,canon (behavioural canon),confirmed by field test (econ 66.0%)
+Rob Arnott,equity_xs,practitioner,research affiliates,46371615,26,3381,92,ok,0,1,,1,0,2,1,author_sites.csv,replaced 104579207 (econ 0%) -> 46371615 (econ 90.7%)
+Robert Engle,vol_options,,,35535410,76,108231,210,ok,0,0,,1,0,1,0,canon (ARCH; vol modelling),confirmed by field test (econ 66.3%)
+Robert J. Hodrick,fx,fx_basis,,10806338,36,25909,97,ok,0,0,,1,0,1,0,author_sites.csv,
+Robert Merton,vol_options,,,2451644,47,63380,289,ok,0,0,,1,0,1,0,"canon (4 canon papers; ICAPM, option pricing)",replaced 7347752 (econ 2%) -> 2451644 (econ 85.5%)
+Robert Novy-Marx,equity_xs,qfactor,,1398634241,28,6260,62,ok,0,0,,1,0,1,0,author_sites.csv,
+Robert Pindyck,commodities,,,3436008,64,35931,214,ok,0,0,,1,1,2,1,canon (storage; volatility),
+Robert Shiller,macro_regime,,,5736726,80,48254,355,ok,0,0,,1,0,1,0,canon (excess volatility; CAPE),confirmed by field test (econ 79.6%)
+Robert Stambaugh,equity_xs,,,113247468,30,16576,74,ok,0,0,,1,0,1,0,canon (liquidity risk; mispricing factors),confirmed by field test (econ 90.0%)
+Robert Vishny,equity_xs,,,4988184,76,191686,152,ok,0,0,,1,0,1,0,canon (limits of arbitrage; LSV),
+Robin Greenwood,equity_xs,behavioural,,38818395,16,2563,48,ok,0,0,,1,0,1,0,author_sites.csv,
+Russ Wermers,equity_xs,,,3173841,33,13772,109,ok,0,0,,1,0,1,0,canon (mutual fund performance),
+Semyon Malamud,other,other,,2772316,23,2371,156,ok,0,0,,1,0,1,0,author_sites.csv,
+Serhiy Kozak,equity_xs,factors,,101120005,8,953,16,ok,0,0,,1,0,1,0,author_sites.csv,
+Sheridan Titman,equity_xs,,,52453175,90,74982,310,ok,0,0,,1,0,1,0,canon (momentum; characteristics),
+Shihao Gu,equity_xs,factors,,90255997,3,2358,9,ok,0,0,,1,0,1,0,author_sites.csv,
+Stefan Nagel,equity_xs,factors,,50373121,30,12054,74,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 87.5%)
+Stefano Giglio,equity_xs,factors,,69847461,24,5328,51,ok,0,0,,1,0,1,0,author_sites.csv,
+Stephen A. Ross,other,promoted,,145520631,56,54860,158,ok,0,0,,1,0,1,0,author_sites.csv,
+Steven Heston,vol_options,,,3115777,24,14090,47,ok,0,0,,1,0,1,0,canon (stochastic volatility model),
+Sydney Ludvigson,macro_regime,macro,,66428735,28,8866,72,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 89.2%)
+Tarun Chordia,microstructure,,,104633810,42,16947,107,ok,0,0,,1,1,2,1,canon (liquidity commonality),
+Terrance Odean,equity_xs,,,1869851,35,26776,72,ok,0,0,,1,0,1,0,canon (retail investor behaviour),
+Terrence Hendershott,microstructure,microstructure,,2287993,33,8009,85,ok,0,0,,1,1,2,1,author_sites.csv,
+Thierry Roncalli,cross_asset,,amundi,70432107,29,3940,123,ok,0,1,,1,1,3,1,gap-fill (plan 2.2),
+Tim Bollerslev,vol_options,volatility,,2702465,83,83748,181,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 66.7%)
+Tobias Adrian,rates_credit,,,2448060413,1,16710,1,ok,0,0,,1,0,1,0,canon (intermediary asset pricing; term premia),
+Tobias Moskowitz,other,other,,102056949,14,8487,27,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 87.5%)
+Torben Andersen,vol_options,volatility,,2315163,62,35029,169,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 65.8%)
+Ulrike Malmendier,equity_xs,,,1405417097,43,21583,120,ok,0,0,,1,0,1,0,canon (experience effects; CEO overconfidence),
+Victor DeMiguel,other,econometrics,,1785216,22,6210,52,ok,0,0,,1,0,1,0,author_sites.csv,
+Viral Acharya,rates_credit,,,2411680472,36,8928,36,ok,0,0,,1,0,1,0,canon (systemic risk; credit),replaced 2240101713 (econ 100%) -> 2411680472 (econ 98.0%)
+Vitali Kalesnik,cross_asset,,research affiliates,97748897,16,725,61,ok,0,1,,1,1,3,1,gap-fill (plan 2.2),
+Wei Xiong,macro_regime,,,2242769925,12,3056,117,ok,0,0,,1,0,1,0,canon (bubbles; commodities financialization),replaced 2437677 (econ 0%) -> 2242769925 (econ 45.0%)
+Wenxin Du,fx,fx_basis,,9625154,14,1364,19,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 78.6%)
+Wesley Gray,equity_xs,,alpha architect,49669863,5,11433,292,ok,0,1,,1,0,2,1,gap-fill (plan 2.2),replaced 2926253 (econ 2%) -> 49669863 (econ 57.6%)
+Whitney Newey,other,,,3646527,73,56882,228,ok,0,0,,1,0,1,0,canon (HAC standard errors),
+William Fung,trend_cta,,,1810039,22,4966,37,ok,0,0,,1,1,2,1,canon (hedge fund styles; trend replication),confirmed by field test (econ 89.2%)
+William Sharpe,cross_asset,,,3159358,39,36111,106,ok,0,0,,1,1,2,1,canon (CAPM; Sharpe ratio),confirmed by field test (econ 76.8%)
+Yakov Amihud,microstructure,,,102785782,50,27909,150,ok,0,0,,1,1,2,1,canon (illiquidity measure),
+Yao Hua Ooi,trend_cta,trend_following,,145379569,8,1696,17,ok,0,0,,1,1,2,1,author_sites.csv,
+Zhengyang Jiang,carry,convenience_yield,,14484581,14,1141,21,ok,0,0,,1,1,2,1,author_sites.csv,replaced 48634350 (econ 0%) -> 14484581 (econ 97.1%)
+Zhiguo He,equity_xs,factors,,2351678,34,8981,93,ok,0,0,,1,0,1,0,author_sites.csv,confirmed by field test (econ 95.5%)
+Zoltan Pozsar,macro_regime,practitioner_macro,,119328229,9,854,15,ok,0,0,,1,0,1,0,author_sites.csv,
