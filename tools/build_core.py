@@ -366,7 +366,7 @@ def main():
         if r.get("uid"):
             add(r["uid"], "sweep", family=r.get("family"), tag=r.get("tag"),
                 ext_title=r.get("title"), ext_year=r.get("year"),
-                ext_cites=r.get("cites"))
+                ext_cites=r.get("cites"), abstract=r.get("abstract"))
     log(f"[core] route A sweep      : "
         f"{sum(1 for c in cand.values() if 'sweep' in c['routes']):>6,}"
         f"  ({len(sweep):,} harvested)")
@@ -535,8 +535,15 @@ def main():
         family, tag = c.get("family", ""), c.get("tag", "")
         tag_sleeve = ""
         if not tag:
-            t = _norm(items[uid]["title"] if uid in items else
-                      (c.get("ext_title") or ""))
+            # MATCH THE SURFACE S2 SEARCHED. S2 retrieves on title AND
+            # abstract -- measured: only 27.3% of swept papers contain their
+            # own term in the title -- so matching titles alone asks the
+            # labeller to do a harder job than the retriever did. Where an
+            # abstract is available it is appended, which is free: the sweep
+            # already fetches it.
+            t = _norm((items[uid]["title"] if uid in items else
+                       (c.get("ext_title") or ""))
+                      + " " + (c.get("abstract") or ""))
             for term, fam, sl in taxonomy:
                 if term in t:
                     family, tag, tag_sleeve = fam, term, sl

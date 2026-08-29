@@ -624,6 +624,15 @@ def cmd_sweep(args):
                     "year": x.get("year"),
                     "cites": x.get("citationCount") or 0,
                     "family": family, "tag": term,
+                    # KEEP THE ABSTRACT, DO NOT JUST COUNT IT. The request
+                    # already asks for it (fields=...,abstract) and the old
+                    # code stored a boolean and dropped the text -- 124,228 of
+                    # 264,320 abstracts fetched and deleted. Labelling matches
+                    # terms against the TITLE while S2 searched title AND
+                    # abstract, so 72.7% of swept papers do not contain their
+                    # own term in the title. Storing what we already paid for
+                    # closes that asymmetry at zero extra requests.
+                    "abstract": (x.get("abstract") or "").strip(),
                     "has_abstract": bool((x.get("abstract") or "").strip()),
                     "found_by": "sweep",
                 })
@@ -673,6 +682,7 @@ def cmd_sweep(args):
                             "year": x.get("year"),
                             "cites": x.get("citationCount") or 0,
                             "family": fam, "tag": term,
+                            "abstract": (x.get("abstract") or "").strip(),
                             "has_abstract": bool(x.get("abstract")),
                             "found_by": "sweep"})
             log(f"[sweep]   retry {term!r}: +{len(out)-n0}")
