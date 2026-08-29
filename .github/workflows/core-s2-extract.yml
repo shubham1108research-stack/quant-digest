@@ -1,0 +1,88 @@
+name: Core S2 extract
+
+# What Semantic Scholar has that OpenAlex does not: influentialCitationCount
+# (no OpenAlex equivalent -- fwci and citation_normalized_percentile measure
+# field-relative rate, not "is this citation substantive"), TLDR, an
+# open-access PDF link, and the SPECTER v2 embedding.
+#
+# fieldsOfStudy/s2FieldsOfStudy, publicationTypes, venue, title and abstract
+# are deliberately excluded -- OpenAlex already covers title, and its
+# abstract coverage measures better for this pool (56-57% vs S2's 16.5%).
+#
+# It runs here for the same reason core-openalex-extract.yml does: budget.
+# S2's batch endpoint takes 500 ids/request, so this is a much smaller job
+# than the OpenAlex one (~460 requests vs ~2,300), but still worth keeping
+# off a laptop connection for an unattended, resumable, rate-limit-aware run.
+#
+# READ-ONLY. Touches no database, takes no lock, removes nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Fetch only this many (0 = all). Use for a sample first."
+        required: false
+        default: "0"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Recover the candidate list
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p export
+          PREV=$(gh run list --workflow=build-core.yml --status=success \
+                   --limit 10 --json databaseId --jq '.[].databaseId' | head -1)
+          if [ -z "$PREV" ]; then
+            echo "!! no successful build-core run to take the candidate list from"
+            exit 1
+          fi
+          gh run download "$PREV" -n core-list -D export/
+          echo "recovered the candidate list from run $PREV"
+
+      - name: Recover the extract cache
+        # RESUMABLE, including the SPECTER .npy: core_s2_extract.py appends
+        # new rows onto the previous vector array rather than starting a
+        # 768-dim matrix from zero on every dispatch.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+        run: |
+          mkdir -p _s2x_prev
+          PREV=$(gh run list --workflow=core-s2-extract.yml \
+                   --status=success --limit 5 --json databaseId \
+                   --jq '.[].databaseId' | head -1)
+          if [ -n "$PREV" ]; then
+            gh run download "$PREV" -n core-s2-extra -D _s2x_prev/ || true
+            for f in core_s2_extra.ndjson core_s2_specter.npy core_s2_specter_uids.json; do
+              [ -f "_s2x_prev/$f" ] && cp "_s2x_prev/$f" "export/$f" \
+                && echo "recovered $f from run $PREV"
+            done
+          fi
+
+      - name: Fetch
+        env:
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
+        run: python tools/core_s2_extract.py --limit "${{ inputs.limit }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-s2-extra
+          path: |
+            export/core_s2_extra.ndjson
+            export/core_s2_specter.npy
+            export/core_s2_specter_uids.json
+          retention-days: 90

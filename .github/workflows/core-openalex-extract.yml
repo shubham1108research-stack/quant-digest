@@ -1,0 +1,85 @@
+name: Core OpenAlex extract
+
+# The rest of OpenAlex for every candidate -- everything tools/core_topics.py
+# does not already hold. Keywords, abstract, citation metrics, the outbound
+# citation graph (referenced_works), related-work ids, and distilled
+# authorships. sustainable_development_goals, mesh, publicationTypes and
+# venue are deliberately excluded -- reviewed and cut, not overlooked.
+#
+# Same reason core_topics.yml is its own workflow rather than a step in
+# build-core.yml: this is ~2,300 requests against a keyless ~1,000/day budget
+# shared with every anonymous caller from this IP. OPENALEX_API_KEY lifts it
+# to 10,000/day.
+#
+# READ-ONLY. Touches no database, takes no lock, removes nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Fetch only this many (0 = all). Use for a sample first."
+        required: false
+        default: "0"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Recover the candidate list
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p export
+          PREV=$(gh run list --workflow=build-core.yml --status=success \
+                   --limit 10 --json databaseId --jq '.[].databaseId' | head -1)
+          if [ -z "$PREV" ]; then
+            echo "!! no successful build-core run to take the candidate list from"
+            exit 1
+          fi
+          gh run download "$PREV" -n core-list -D export/
+          echo "recovered the candidate list from run $PREV"
+          wc -l export/core_candidates.csv
+
+      - name: Recover the extract cache
+        # RESUMABLE ACROSS RUNS. NDJSON append-only means a re-dispatch after
+        # a partial run continues rather than re-spending the budget from
+        # zero. Failure here is a cold start, not a job failure.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+        run: |
+          mkdir -p _oax_prev
+          PREV=$(gh run list --workflow=core-openalex-extract.yml \
+                   --status=success --limit 5 --json databaseId \
+                   --jq '.[].databaseId' | head -1)
+          if [ -n "$PREV" ]; then
+            gh run download "$PREV" -n core-openalex-extra -D _oax_prev/ || true
+            if [ -f _oax_prev/core_openalex_extra.ndjson ]; then
+              cp _oax_prev/core_openalex_extra.ndjson export/core_openalex_extra.ndjson
+              echo "recovered $(wc -l < export/core_openalex_extra.ndjson) cached rows from run $PREV"
+            fi
+          fi
+
+      - name: Fetch
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+        run: |
+          python -c "import oa; oa.preflight()"
+          python tools/core_openalex_extract.py --limit "${{ inputs.limit }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-openalex-extra
+          path: export/core_openalex_extra.ndjson
+          retention-days: 90
