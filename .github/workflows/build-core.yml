@@ -183,6 +183,55 @@ jobs:
           python tools/build_core.py --from-pool export/core_pool.csv \
             --target "${{ inputs.target }}"
 
+      - name: Recover the topics cache
+        # tools/core_topics.py is its own workflow (core-topics.yml) because
+        # 2,380 OpenAlex requests do not belong bolted onto a build that
+        # already runs the sweep -- it would roughly double this job's time
+        # for data the build itself never reads. This step only CONSUMES the
+        # latest cache; it never fetches. A candidate not yet in it (this
+        # run's new sweep hits, mainly) simply keeps no topic label until the
+        # next core-topics.yml dispatch -- core_topic_cut.py's default for "no
+        # topic on file" is to keep the row, so an absent or stale cache never
+        # removes anything, it only under-cuts.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+        run: |
+          mkdir -p _topics_prev
+          PREV=$(gh run list --workflow=core-topics.yml --status=success \
+                   --limit 5 --json databaseId --jq '.[].databaseId' | head -1)
+          if [ -n "$PREV" ]; then
+            gh run download "$PREV" -n core-topics -D _topics_prev/ || true
+            [ -f _topics_prev/core_topics.json ] && \
+              cp _topics_prev/core_topics.json export/core_topics.json && \
+              echo "recovered topics cache from run $PREV"
+          else
+            echo "no core-topics.yml run found -- topic cut will remove nothing"
+          fi
+
+      - name: Apply the topic cut
+        # data/core_topic_drops.csv is a hand-reviewed list of OpenAlex TOPIC
+        # names judged off-desk (Housing Market and Economics, Blockchain
+        # Technology Applications and Security, ...) -- never a rule on the
+        # coarser FIELD, which is unreliable enough to file Merton's "Lifetime
+        # Portfolio Selection" under Management Science and "Rollover Risk and
+        # Credit Risk" under Medicine. Protects on the same independent-evidence
+        # rule as clean_core.py (held / 2+ routes / seed-cited / curated route)
+        # and rescues on desk vocabulary in the title (crypto, volatility,
+        # monetary policy, ...), because the naive cut removes 20.2% of rows
+        # that name something this desk actually trades.
+        #
+        # Runs only when a topics cache actually arrived -- --dry-run is not
+        # an option here because a MISSING cache and a cache that says "cut
+        # nothing" must not be silently identical for a step this loud.
+        run: |
+          if [ -f export/core_topics.json ]; then
+            python tools/core_topic_cut.py
+            python tools/core_topic_cut.py --inventory
+          else
+            echo "!! no topics cache recovered -- SKIPPING the topic cut this run"
+          fi
+
       - name: Route tally
         # The audit, in the job that produced the numbers. Part 7.6's bar is
         # "all seven routes non-zero"; route C is the one to read.
@@ -215,6 +264,7 @@ jobs:
             export/core_strays.csv
             export/core_review.md
             export/core_tags.csv
+            export/core_topic_inventory.csv
             export/core_sweep.json
             export/core_signaldoc.csv
             export/core_quantseeker.json
