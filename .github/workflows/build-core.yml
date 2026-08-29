@@ -172,6 +172,20 @@ jobs:
           python -c "import oa; oa.preflight()"
           python tools/build_core.py --target 0 --resolve-gap 20000
 
+      - name: Resolve missing titles
+        # 951 QuantSeeker + 7 snowball rows reach here with a DOI and no
+        # title -- upstream title resolution failed and blank was the
+        # deliberate choice (dedup falls back to the uid rather than
+        # collapsing unrelated papers). S2 has NOTHING for these; OpenAlex
+        # resolves ~93% in one bulk lookup and Crossref (the registration
+        # agency for the 10.2139 SSRN prefix) picks up most of the rest.
+        # Cheap -- under 20 requests total -- so it runs every build rather
+        # than as its own workflow.
+        env:
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+        continue-on-error: true
+        run: python tools/core_resolve_titles.py
+
       - name: Clean the strays, then select
         # The cleaner ran only on a laptop until now, so a CI build produced an
         # UNCLEANED list and quietly discarded 1,394 hand judgements. It reads
