@@ -85,6 +85,24 @@ TERM_SLEEVE: dict[str, str] = {
     "yield curve": "rates_credit", "term premium": "rates_credit",
     "sovereign debt": "rates_credit",
     "inflation-linked bonds": "rates_credit",
+    # Added after measuring: "trend following" is the most common phrase in
+    # 2,963 practitioner articles and 896 papers on S2, and was in neither the
+    # taxonomy nor any sleeve -- the sleeve it names held 293 papers.
+    "trend following": "trend_cta", "moving average rule": "trend_cta",
+    "commodity trading advisor": "trend_cta",
+    "forward premium": "carry", "interest rate differential": "carry",
+    "contango": "commodities", "theory of storage": "commodities",
+    "commodity returns": "commodities",
+    "treasury market": "rates_credit",
+    # B_asset_classes defaults to "other", which is right for crypto, DeFi,
+    # stablecoins and REITs -- no desk trades those as a book -- but wrong for
+    # these six. 11,385 B papers sat in "other"; these are ~5,600 of them.
+    "securitization": "rates_credit",
+    "mortgage-backed securities": "rates_credit",
+    "convertible bonds": "rates_credit",
+    "municipal bonds": "rates_credit",
+    "emerging market debt": "rates_credit",
+    "equity premium": "equity_xs",
 }
 
 # --------------------------------------------------------------------- families
@@ -96,6 +114,7 @@ TAXONOMY: dict[str, list[str]] = {
         "value investing", "momentum", "time-series momentum",
         "cross-sectional momentum", "mean reversion", "short-term reversal",
         "long-term reversal", "carry trade", "roll yield", "convenience yield",
+        "forward premium", "interest rate differential", "momentum crash",
         "quality factor", "profitability factor", "investment factor",
         "size effect", "low beta", "betting against beta",
         "idiosyncratic volatility", "seasonality",
@@ -107,6 +126,7 @@ TAXONOMY: dict[str, list[str]] = {
         "equity premium", "interest rates", "credit spreads",
         "foreign exchange", "commodity futures", "gold", "crude oil",
         "natural gas markets", "agricultural commodities", "cryptocurrency",
+        "contango", "theory of storage", "commodity returns", "treasury market",
         "decentralized finance", "stablecoins", "inflation-linked bonds",
         "municipal bonds", "mortgage-backed securities", "securitization",
         "convertible bonds", "real estate investment trusts",
@@ -203,8 +223,14 @@ TAXONOMY: dict[str, list[str]] = {
         "financial regulation", "Basel capital",
     ],
     "L_behavioural_esg": [
-        "behavioral finance", "limits to arbitrage", "investor sentiment",
-        "overreaction underreaction", "disposition effect", "asset bubbles",
+        # "overreaction underreaction" returned 24 results: nobody writes
+        # those two words adjacently, and an exact-phrase search asks for
+        # exactly that. Split into the phrase people do write, plus the
+        # British spelling of the family's own name and the concept the
+        # family was missing outright.
+        "behavioral finance", "behavioural finance", "investor overreaction",
+        "overconfidence", "limits to arbitrage", "investor sentiment",
+        "disposition effect", "asset bubbles",
         "herding behavior", "investor attention", "retail investors",
         "ESG investing", "climate risk", "transition risk",
         "alternative data", "satellite data", "credit card transaction data",
@@ -230,6 +256,7 @@ TAXONOMY: dict[str, list[str]] = {
         "time-varying risk premia", "equity risk premium", "bond risk premium",
         "credit risk premium", "currency risk premium",
         "commodity risk premium", "illiquidity premium",
+        "trend following", "moving average rule", "commodity trading advisor",
         "volatility risk premium", "smart beta", "alternative beta",
         "factor investing", "multifactor portfolio", "factor momentum",
         "factor crowding", "factor rotation", "alpha decay",
