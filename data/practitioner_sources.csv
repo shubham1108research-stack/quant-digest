@@ -1,0 +1,46 @@
+n,source,domain,category,status,notes
+1,Alpha Architect,alphaarchitect.com,Quant research blog,wired,RSS (PRACTITIONER_FEEDS)
+2,Macrosynergy,macrosynergy.com,Macro quant,manual only,WAF refuses runner IPs; robots 403. tools/backfill_macrosynergy.py
+3,Finominal (ex-FactorResearch),finominal.com,Factor research,not wired,
+4,Robeco,robeco.com,Quant / factor,not wired,
+5,Quantpedia,quantpedia.com,Strategy library,wired,RSS
+6,Newfound / Flirting with Models,blog.thinknewfound.com,Quant research,wired,RSS
+7,Robot Wealth,robotwealth.com,Systematic trading,not wired,
+8,Two Centuries Investments,twocenturies.com,Factor research,not wired,
+9,Elm Wealth,elmwealth.com,Sizing / allocation,not wired,
+10,Meb Faber / Cambria,mebfaber.com,"Trend, allocation",not wired,
+11,OSAM,osam.com,Factor research,not wired,may have stopped publishing post-Franklin
+12,Quantitativo,quantitativo.com,Systematic trading,not wired,
+13,Six Figure Investing,sixfigureinvesting.com,Vol / options,not wired,
+14,SqueezeMetrics,squeezemetrics.com,Options flows,not wired,
+15,Quantica Capital,quantica-capital.com,CTA research,not wired,no CTA-manager research source wired today
+16,Man Institute / AHL,man.com/insights,CTA / multi-strat,wired,Playwright (FIRM_SITES)
+17,Campbell & Company,campbell.com,CTA,not wired,
+18,Aspect Capital,aspectcapital.com,CTA,not wired,
+19,Graham Capital,grahamcapital.com,Macro / CTA,not wired,
+20,Welton,welton.com,CTA,not wired,
+21,Winton,winton.com,CTA,not wired,cadence has dropped
+22,AQR,aqr.com,Firm research,wired,sitemap (551 articles) + Playwright
+23,Research Affiliates,rafi.com,Firm research,wired,sitemap (9) + Playwright
+24,Acadian,acadian-asset.com,Firm research,wired,sitemap (221)
+25,Verdad,verdadcap.com,Firm research,wired,sitemap (446) + RSS; RSS quiet since 2026-05-04
+26,GMO,gmo.com,Firm research,not wired,
+27,PIMCO,pimco.com,Firm research,not wired,
+28,State Street Associates,ssga.com,Firm research,not wired,
+29,Northern Trust,northerntrust.com,Firm research,not wired,
+30,Amundi Research Center,research-center.amundi.com,Alt risk premia,not wired,
+31,Bank of England - Bank Underground,bankunderground.co.uk,Official sector,not wired,closest official-sector analogue to Macrosynergy
+32,NY Fed Liberty Street Economics,libertystreeteconomics.newyorkfed.org,Official sector,wired,RSS; highest-volume macro source
+33,BIS Working Papers,bis.org,Official sector,wired,RSS 1.0/RDF (doclist/wppubls.rss)
+34,FEDS Notes,federalreserve.gov,Official sector,not wired,
+35,ECB Research Bulletin,ecb.europa.eu,Official sector,not wired,
+36,IMF Working Papers,imf.org,Official sector,not wired,
+37,VoxEU / CEPR,cepr.org/voxeu,Academic-practitioner,not wired,"high volume, economics-wide, needs filtering"
+38,Exante Data,exantedata.com,Macro flows,not wired,partly paywalled
+39,The Macro Compass,themacrocompass.com,Macro,not wired,mostly paywalled
+40,Variant Perception,variantperception.com,Macro,not wired,mostly institutional
+41,Fathom Consulting,fathom-consulting.com,Macro,not wired,
+42,Quantocracy,quantocracy.com,Aggregator,wired,RSS
+43,QuantSeeker,quantseeker.substack.com,Aggregator,wired,core_sources.py quantseeker
+44,Papers With Backtest,paperswithbacktest.com,Strategy database,wired,"core_sources.py pwb (3,587)"
+45,SignalDoc (Chen-Zimmermann),openassetpricing.com,Signal database,wired,core_sources.py signaldoc (266)

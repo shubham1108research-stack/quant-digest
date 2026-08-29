@@ -533,6 +533,25 @@ def main():
         log(f"[core] no {_abs_path.name}; run tools/core_abstracts.py to "
             f"label the candidates no route could tag")
 
+    # Titles recovered for rows that reached the list with NONE. 951 QuantSeeker
+    # rows carry a DOI and nothing else -- no title, year or citation count --
+    # because upstream title resolution failed and blank was deliberate: a blank
+    # title makes dedup fall back to the uid instead of collapsing unrelated
+    # papers. That is right for dedup and useless afterwards, since a row with
+    # no title cannot be labelled, read, judged or ranked. Applied AFTER dedup
+    # for exactly that reason -- filling them in earlier would re-introduce the
+    # collapse the blank was protecting against.
+    extra_titles = {}
+    _t_path = OUT / "core_titles.json"
+    if _t_path.exists():
+        try:
+            extra_titles = json.loads(_t_path.read_text(encoding="utf-8")) or {}
+            log(f"[core] {len(extra_titles):,} recovered titles for rows that "
+                f"had none")
+        except Exception as e:                              # noqa: BLE001
+            log(f"[core] !! {_t_path.name} present but unreadable "
+                f"({type(e).__name__}); those rows stay title-less")
+
     # ------------------------------------------------------------ deduplicate
     # A paper reaches this pool under every identifier it has ever carried.
     # "Value and Momentum Everywhere" arrived FOUR times -- three SSRN preprint
@@ -664,7 +683,8 @@ def main():
         rows.append({
             "uid": uid,
             "title": ((items[uid]["title"] if uid in items else "")
-                      or c.get("ext_title") or "")[:200],
+                      or c.get("ext_title")
+                      or extra_titles.get(uid) or "")[:200],
             "year": year or "",
             "doi": m.get("doi") or (uid[4:] if uid.startswith("doi:") else ""),
             "cites": cites if cites is not None else "",
@@ -839,8 +859,35 @@ def _warn_stale_sleeves(rows):
         log(f"[core]      {c:>6}  {have or '(blank)':<14} -> {sl}")
 
 
+def _audit_written(picked):
+    """Report what got through: exact title collisions, and rows with no title.
+
+    Dedup merges on the normalised title truncated to 70 chars, so an exact
+    collision in the OUTPUT means a pair it should have caught and did not --
+    one survives today (the same paper under a DOI and an OpenAlex id). And a
+    row with no title at all cannot be labelled, read, judged or ranked; 958
+    reached the list before anyone counted them. Neither is fatal and neither
+    should be silent.
+    """
+    import collections as _c
+    t = _c.Counter(textnorm.norm(r["title"]) for r in picked if r.get("title"))
+    dups = sum(1 for v in t.values() if v > 1)
+    blank = [r for r in picked if not (r.get("title") or "").strip()]
+    if dups:
+        log(f"[core] !! {dups:,} title(s) appear on more than one row -- dedup "
+            f"merges on the normalised title, so these are pairs it missed")
+    if blank:
+        by = _c.Counter(r.get("found_by") for r in blank)
+        log(f"[core] !! {len(blank):,} rows have NO title "
+            f"({dict(by.most_common(3))}) -- unlabellable and unreadable; "
+            f"run tools/core_abstracts.py to recover them")
+    if not dups and not blank:
+        log("[core] audit: no duplicate titles, no title-less rows")
+
+
 def _write(picked, cand, taxonomy):
     import collections
+    _audit_written(picked)
     OUT.mkdir(parents=True, exist_ok=True)
     cols = ["rank", "title", "year", "doi", "cites", "cites_per_year",
             "seed_indegree", "n_routes", "found_by", "sleeve", "family",

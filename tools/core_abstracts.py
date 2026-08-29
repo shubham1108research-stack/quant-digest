@@ -52,6 +52,14 @@ from progress import Progress                              # noqa: E402
 OUT = pathlib.Path("export")
 CAND = OUT / "core_candidates.csv"
 DEST = OUT / "core_abstracts.json"
+# The SAME REQUEST already returns the title and this tool used to discard it.
+# 951 QuantSeeker rows reach the final list carrying nothing but a DOI -- no
+# title, no year, no citation count -- because their title resolution failed
+# upstream and blank was the deliberate choice (a blank title makes dedup fall
+# back to the uid rather than collapsing unrelated papers). Blank is right for
+# dedup and useless for everything after it: a row with no title cannot be
+# labelled, read, judged or ranked. Keeping the title costs zero extra requests.
+TITLES = OUT / "core_titles.json"
 S2_BATCH = "https://api.semanticscholar.org/graph/v1/paper/batch"
 UA = "quant-digest/1.0"
 
@@ -94,7 +102,22 @@ def main():
             log(f"[abs] {len(have):,} already cached")
         except Exception:                                   # noqa: BLE001
             have = {}
-    todo = [r for r in targets if r["uid"] not in have]
+    titles = {}
+    if TITLES.exists():
+        try:
+            titles = json.loads(TITLES.read_text(encoding="utf-8"))
+            log(f"[abs] {len(titles):,} titles already cached")
+        except Exception:                                   # noqa: BLE001
+            titles = {}
+    # A row still needs fetching if it lacks an abstract OR -- new -- if it has
+    # no title and we have not recovered one. Selecting on `have` alone would
+    # skip precisely the rows this was extended for: the title-less ones that
+    # already returned an abstract on an earlier run, when the title was thrown
+    # away.
+    todo = [r for r in targets
+            if r["uid"] not in have
+            or (not (r.get("title") or "").strip()
+                and r["uid"] not in titles)]
     if args.limit:
         todo = todo[:args.limit]
     if not todo:
@@ -111,6 +134,7 @@ def main():
         f"({'key set' if key else 'NO KEY -- slow'})")
 
     got = miss = 0
+    rate_limited = [0]
     prog = Progress(n_req, "abs", every_s=30)
     for i in range(0, len(todo), 500):
         chunk = todo[i:i + 500]
@@ -137,9 +161,22 @@ def main():
                 break
             body = rr.json()
             break
+        else:
+            # THE for-else FIRES WHEN THE RETRIES ARE EXHAUSTED WITHOUT A break.
+            # Five consecutive 429s left body=None, skipped the batch and said
+            # NOTHING -- so a rate-limited run and a run where S2 genuinely has
+            # no abstracts printed the same "0 found" and the same exit code.
+            # Without a key this is the likely failure, not the rare one.
+            rate_limited[0] += len(chunk)
+            log(f"[abs]   !! batch {i//500 + 1} ABANDONED after 5 attempts "
+                f"(last status {rr.status_code if 'rr' in dir() else '?'}) -- "
+                f"{len(chunk)} papers NOT looked up, not 'without abstracts'")
         if body:
             for rec, hit in zip(chunk, body):
                 a = ((hit or {}).get("abstract") or "").strip()
+                ti = ((hit or {}).get("title") or "").strip()
+                if ti and not (rec.get("title") or "").strip():
+                    titles[rec["uid"]] = ti
                 if a:
                     have[rec["uid"]] = a
                     got += 1
@@ -153,12 +190,21 @@ def main():
         # a lot of somebody else's rate limit to be willing to throw away.
         if (i // 500) % 2 == 1:
             DEST.write_text(json.dumps(have), encoding="utf-8")
+            TITLES.write_text(json.dumps(titles), encoding="utf-8")
         time.sleep(pause)
     prog.done()
     DEST.write_text(json.dumps(have), encoding="utf-8")
+    TITLES.write_text(json.dumps(titles), encoding="utf-8")
     seen = got + miss
     log(f"[abs] abstracts found for {got:,} of {seen:,} looked up "
         f"({100*got/max(1,seen):.1f}% coverage); {len(have):,} cached total")
+    if rate_limited[0]:
+        log(f"[abs] !! {rate_limited[0]:,} papers were never looked up at all "
+            f"-- batches abandoned on repeated 429. That is a RATE LIMIT, not "
+            f"a coverage result. Set S2_API_KEY and re-run before concluding "
+            f"anything about coverage.")
+    log(f"[abs] {len(titles):,} titles recovered for rows that had none "
+        f"-> {TITLES}")
     log(f"[abs] written to {DEST} -- nothing ingested")
     return 0
 
