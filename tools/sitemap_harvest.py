@@ -26,8 +26,12 @@ the retries, the host is skipped rather than crawled. SSRN is 403 on
 robots.txt itself, which is why SSRN is not in this file and is reached through
 Crossref instead.
 
-NOTHING IS INGESTED. Writes export/sitemap_urls.json -- urls and titles for
-review, the same contract as the other core_* harvests.
+NOTHING IS INGESTED. Writes export/sitemap_urls.json -- URLS ONLY, for review,
+the same contract as the other core_* harvests. It said "urls and titles" for
+a while and never captured a title: a sitemap carries locations, not headings,
+so a title costs one fetch PER ARTICLE (1,227 of them) rather than one XML
+fetch per host. The slug carries most of it -- `2024-in-factors`,
+`effects-of-valuation` -- and costs nothing.
 
     python tools/sitemap_harvest.py                 # every configured host
     python tools/sitemap_harvest.py --host AQR
@@ -211,17 +215,48 @@ def main():
         log(f"[sitemap] unknown host(s): {', '.join(bad)}")
         return 2
 
-    out = []
+    # --host MERGES, it does not replace the file. Writing `out` straight over
+    # OUT means a single-host run discards every other host: probing one site
+    # turned 1,227 harvested urls into a lone 0-url record, and the only copy
+    # was the one just overwritten. A partial run must never be able to
+    # destroy a complete one -- the failure this repository keeps having, in
+    # its narrowest form.
+    prior = []
+    if OUT.exists():
+        try:
+            prior = json.loads(OUT.read_text(encoding="utf-8")) or []
+        except Exception as e:                              # noqa: BLE001
+            raise SystemExit(
+                f"[sitemap] {OUT} exists but will not parse ({type(e).__name__}). "
+                f"REFUSING to overwrite it -- move it aside to start fresh.")
+
+    fresh = {}
     for n in names:
         base, pat = HOSTS[n]
-        out.append(harvest(n, base, pat))
+        fresh[n] = harvest(n, base, pat)
+
+    merged, seen = [], set()
+    for rec in prior:
+        h = rec.get("host")
+        seen.add(h)
+        merged.append(fresh.get(h, rec))
+    for n in names:
+        if n not in seen:
+            merged.append(fresh[n])
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(out, indent=1), encoding="utf-8")
-    total = sum(len(o["urls"]) for o in out)
-    log(f"\n[sitemap] {total:,} article urls across {len(out)} hosts "
+    OUT.write_text(json.dumps(merged, indent=1), encoding="utf-8")
+    total = sum(len(o.get("urls") or []) for o in merged)
+    kept = [o for o in merged if o.get("host") not in fresh]
+    log(f"\n[sitemap] {total:,} article urls across {len(merged)} hosts "
         f"-> {OUT}  (nothing ingested)")
-    for o in out:
-        log(f"[sitemap]   {o['host']:<22} {o['status']:<8} {len(o['urls']):>5}")
+    if kept:
+        log(f"[sitemap] {len(kept)} host(s) carried over untouched from the "
+            f"previous run: {', '.join(o['host'] for o in kept)}")
+    for o in merged:
+        mark = " " if o.get("host") in fresh else "."
+        log(f"[sitemap] {mark} {o['host']:<22} {str(o.get('status')):<8} "
+            f"{len(o.get('urls') or []):>5}")
     return 0
 
 
