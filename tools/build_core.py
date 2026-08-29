@@ -786,8 +786,18 @@ def _warn_stale_sleeves(rows):
     want = {_norm(t): sl for t, _f, sl in tax if sl}
     if not want:
         return
+    # HELD ROWS ARE NOT STALE. For a paper in the archive the curated label
+    # outranks the taxonomy -- that is the documented precedence in the
+    # compile path, not a defect -- so counting them here made the warning
+    # fire on a CI build that was perfectly fresh: 99 rows, every one held,
+    # among them the CAPM filed under equity_xs while its matched term says
+    # rates_credit. The archive is right. A warning that fires on every
+    # correct run teaches people to ignore it, which is how the silent
+    # failures this repository keeps finding stayed invisible.
     stale = collections.Counter()
     for r in rows:
+        if r.get("held") in (1, "1"):
+            continue
         sl = want.get(_norm(r.get("tag") or ""))
         if sl and sl != r.get("sleeve"):
             stale[(r.get("sleeve") or "", sl)] += 1
