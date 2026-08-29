@@ -115,6 +115,19 @@ _v[0-9]*/
 # `git add -A` would otherwise publish another firm's whole research archive.
 docs/html/
 
+# Same story, different directory: 5,306 scraped firm articles (Acadian and
+# others), 152 MB, third-party text in a public repo. This one was MISSED --
+# it carries no ignore rule of its own and a `git add -A` swept 2,099 of these
+# files into commit b665f1d on 2026-08-29, which is why this rule exists and
+# why that commit needs a history scrub, not just a future guard.
+docs/practitioner/
+
+# Scratch directories for comparing CI artifacts across runs, same class as
+# _prev/ and _v[0-9]*/ above but not matching that pattern.
+_topics/
+_topics_prev/
+_sitemap_prev/
+
 # SPECTER vectors cached from Semantic Scholar (tools/core_specter.py).
 # 12,086 x 768 floats, regenerable from the API, and third-party derived data.
 export/*.npy
