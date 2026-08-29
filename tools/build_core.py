@@ -109,7 +109,17 @@ def _load_taxonomy():
     if not TAGS_CSV.exists():
         return []
     rows = list(csv.DictReader(io.open(TAGS_CSV, encoding="utf-8")))
-    terms = [(r["term"].lower(), r["family"], (r.get("sleeve") or "").strip())
+    # NORMALISE THE TERM THE SAME WAY AS THE TITLE. Titles are matched against
+    # _norm(title), which replaces every non-alphanumeric run with a space --
+    # so "Time-Series Momentum" becomes "time series momentum". The term was
+    # only lowercased, so `"time-series momentum" in "time series momentum..."`
+    # is False and 46 of 394 terms could NEVER match a title. They carry tags
+    # today only because route A hands the term over directly; every paper
+    # arriving from the other seven routes was judged against a vocabulary
+    # missing 12% of itself. S2 ignores hyphens in phrase search (measured:
+    # "cross-section of expected returns" and "cross section of expected
+    # returns" both return 272), so normalising here costs no recall.
+    terms = [(_norm(r["term"]), r["family"], (r.get("sleeve") or "").strip())
              for r in rows if r.get("term")]
     terms.sort(key=lambda t: -len(t[0]))
     return terms

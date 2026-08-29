@@ -111,6 +111,12 @@ TERM_SLEEVE: dict[str, str] = {
 # little else, and families like research integrity would never survive it.
 TAXONOMY: dict[str, list[str]] = {
     "A_style_premia": [
+        # The taxonomy had NO cross-section term at all -- only
+        # cross-sectional momentum. Stored unhyphenated because S2 normalises
+        # hyphens in phrase search, so one spelling is enough.
+        "cross section of stock returns", "cross section of returns",
+        "cross section of expected returns",
+        "cross section of currency returns",
         # route H (2026-08-29): validated on S2 before adding.
         "BAB factor", "CTA returns", "lookback straddle",
         "low volatility anomaly", "low-risk anomaly", "momentum crashes",
@@ -141,6 +147,11 @@ TAXONOMY: dict[str, list[str]] = {
         "private equity returns", "emerging market debt", "sovereign debt",
     ],
     "C_systematic_macro": [
+        # validated 2026-08-29: macroeconomic factors 9,202 ("Currency crashes
+        # in emerging markets"), macro factors 1,337 ("Macro Factors in Bond
+        # Risk Premia"), macroeconomic risk 1,238, announcements 577.
+        "macroeconomic factors", "macro factors", "macroeconomic risk",
+        "macroeconomic announcements",
         # route H (2026-08-29): validated on S2 before adding.
         "CIP deviation", "MIDAS regression", "Markov regime switching",
         "affine term structure", "bond risk premia",
