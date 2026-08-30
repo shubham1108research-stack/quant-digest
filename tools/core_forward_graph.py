@@ -146,11 +146,24 @@ def main():
                     forward[target].add(uid)
                     n_edges_inpool += 1
 
+    # COUNT THE SET, NOT THE OCCURRENCES. n_edges_inpool increments on every
+    # hit, but forward[target] is a set, so a repeated (src, dst) collapses
+    # before anything is written. The extract is append-only and its retry
+    # runs re-append -- 840 duplicated lines here -- so the occurrence count
+    # ran 7,098 ahead of the real edge count and the log reported 2,521,221
+    # edges for a file containing 2,514,123. Both numbers are now printed,
+    # because the gap between them is the duplication, and hiding it would
+    # hide that.
+    n_unique = sum(len(v) for v in forward.values())
     log(f"[fwd] {n_papers:,} papers' reference lists scanned, "
         f"{n_edges_total:,} outbound edges total")
-    log(f"[fwd] {n_edges_inpool:,} of those point at a paper ALSO in the pool "
-        f"({100*n_edges_inpool/max(1,n_edges_total):.2f}%) -- this is the "
-        f"forward-citation graph")
+    log(f"[fwd] {n_unique:,} UNIQUE in-pool edges "
+        f"({100*n_unique/max(1,n_edges_total):.2f}% of outbound) -- this is "
+        f"the forward-citation graph")
+    if n_edges_inpool != n_unique:
+        log(f"[fwd]   ({n_edges_inpool-n_unique:,} duplicate (src,dst) "
+            f"occurrences collapsed -- the extract is append-only and its "
+            f"retry runs re-append)")
     log(f"[fwd] {len(forward):,} pool papers have at least one in-pool "
         f"forward citer ({100*len(forward)/len(rows):.1f}% of the pool)")
 
