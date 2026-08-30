@@ -31,21 +31,22 @@ TWO COLUMNS WORTH READING CAREFULLY:
                        59.6% of the time. Recording it keeps that finding
                        visible instead of relearnable.
 
-ONE PAPER, ONE AUTHOR -- AND THAT IS A REAL LIMITATION. The harvest attributed
-each paper to exactly one roster member (10,910 rows, zero duplicate DOIs), so
-a paper co-written by two people on the roster is credited to whichever was
-processed first. Fama-French 1993 is filed under Eugene Fama; Kenneth French is
-also on the roster and gets no credit for it. Every co-author count here is
-therefore a FLOOR, not a total.
+CO-AUTHORSHIP IS NOW COUNTED, and the fix was upstream rather than here. The
+harvest used to share ONE `seen` set across every roster member, so a paper
+found for one author was skipped for all the others: Fama-French 1993 landed
+under Eugene Fama and Kenneth French -- also on the roster -- got nothing for
+his own paper, and every per-author count was a floor nobody had labelled as
+one. core_sources.cmd_roster now dedupes per author, so a paper co-written by
+several roster members is credited to each. Kenneth French went 14 -> 55
+papers, Robert Vishny 6 -> 73.
 
-The obvious fix -- match roster names against the OpenAlex author lists in
-core_master.ndjson -- was measured and is WORSE: exact-name matching finds only
-7,173 author-paper pairs against the harvest's 9,976, matches just 140 of 175
-roster names, and scores Kenneth French at zero because OpenAlex writes
-"Kenneth R. French". The harvest matches on S2 AUTHOR IDS, which is identity;
-a name string is not, and fuzzy name matching was already measured and rejected
-earlier in this project. Fixing this properly needs per-paper author IDs, which
-would be another fetch pass -- not a string heuristic layered on top.
+The tempting alternative -- match roster names against the OpenAlex author
+lists already in core_master.ndjson -- was measured and is WORSE: exact-name
+matching finds 7,173 author-paper pairs against the harvest's ~10,500, matches
+140 of 175 roster names, and scores Kenneth French at ZERO because OpenAlex
+writes "Kenneth R. French". The harvest matches on S2 AUTHOR IDS, which is
+identity; a name string is not, and fuzzy name matching was already measured
+and rejected earlier in this project.
 
 Output is data/core_author_stats.csv, not export/ -- 175 rows of our own
 measurements with no third-party text, the same test that put
@@ -196,10 +197,9 @@ def main():
         n_uniq = len({r["uid"] for r in paper_rows})
         log(f"[authors] {len(paper_rows):,} author-paper rows "
             f"({n_uniq:,} distinct papers) -> {PAPERS_DEST}")
-        log(f"[authors]   NOTE: one paper is credited to ONE roster member -- "
-            f"the harvest deduped across authors, so Fama-French 1993 is "
-            f"filed under Fama and Kenneth French gets no credit. Per-author "
-            f"counts are a floor.")
+        if len(paper_rows) > n_uniq:
+            log(f"[authors]   {len(paper_rows)-n_uniq:,} of these are papers "
+                f"co-written by several roster members, credited to each")
 
     rows.sort(key=lambda r: -r["fwd_citers_total"])
     DEST.parent.mkdir(parents=True, exist_ok=True)
