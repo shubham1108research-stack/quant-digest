@@ -31,6 +31,22 @@ TWO COLUMNS WORTH READING CAREFULLY:
                        59.6% of the time. Recording it keeps that finding
                        visible instead of relearnable.
 
+ONE PAPER, ONE AUTHOR -- AND THAT IS A REAL LIMITATION. The harvest attributed
+each paper to exactly one roster member (10,910 rows, zero duplicate DOIs), so
+a paper co-written by two people on the roster is credited to whichever was
+processed first. Fama-French 1993 is filed under Eugene Fama; Kenneth French is
+also on the roster and gets no credit for it. Every co-author count here is
+therefore a FLOOR, not a total.
+
+The obvious fix -- match roster names against the OpenAlex author lists in
+core_master.ndjson -- was measured and is WORSE: exact-name matching finds only
+7,173 author-paper pairs against the harvest's 9,976, matches just 140 of 175
+roster names, and scores Kenneth French at zero because OpenAlex writes
+"Kenneth R. French". The harvest matches on S2 AUTHOR IDS, which is identity;
+a name string is not, and fuzzy name matching was already measured and rejected
+earlier in this project. Fixing this properly needs per-paper author IDs, which
+would be another fetch pass -- not a string heuristic layered on top.
+
 Output is data/core_author_stats.csv, not export/ -- 175 rows of our own
 measurements with no third-party text, the same test that put
 data/core_roster.csv and data/practitioner_sources.csv under version control.
@@ -52,6 +68,13 @@ ROSTER = DATA / "core_roster.csv"
 PAPERS = OUT / "core_roster_papers.json"
 MASTER = OUT / "core_master.csv"
 DEST = DATA / "core_author_stats.csv"
+# The per-PAPER companion. core_author_stats.csv answers "how much did this
+# author contribute"; this one answers "which papers, exactly" -- the roster
+# harvest knows the author->paper attribution and core_master.csv knows
+# everything else about the paper, and until now nothing joined the two.
+# Lands in export/ rather than data/ because it is paper-level derived data
+# at ~10k rows, the same class as core_master.csv.
+PAPERS_DEST = OUT / "core_author_papers.csv"
 
 COLS = ["name", "sleeve", "category", "firm", "s2_id", "s2_h", "s2_cites",
         "s2_papers", "needs_review",
@@ -147,6 +170,36 @@ def main():
             "top_paper_title": ((top or {}).get("title") or "")[:120],
             "top_paper_fwd_citers": _i((top or {}).get("fwd_citers")),
         })
+
+    # ------------------------------------------------- per-paper companion
+    # Every master column, prefixed by who it was harvested for. An author
+    # with several papers appears several times; a paper co-written by two
+    # roster members appears once per author, because the question this file
+    # answers is "what did THIS author contribute", not "list the papers".
+    roster_meta = {(m.get("name") or "").strip(): m for m in roster}
+    paper_rows = []
+    for author, mine in in_pool.items():
+        rm = roster_meta.get(author) or {}
+        for r in mine:
+            paper_rows.append({"author": author,
+                               "author_sleeve": rm.get("sleeve") or "",
+                               "author_category": rm.get("category") or "",
+                               **r})
+    paper_rows.sort(key=lambda r: (r["author"], -_i(r.get("fwd_citers"))))
+    if paper_rows:
+        pcols = ["author", "author_sleeve", "author_category"] +                 [c for c in paper_rows[0] if c not in
+                 ("author", "author_sleeve", "author_category")]
+        with io.open(PAPERS_DEST, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=pcols)
+            w.writeheader()
+            w.writerows(paper_rows)
+        n_uniq = len({r["uid"] for r in paper_rows})
+        log(f"[authors] {len(paper_rows):,} author-paper rows "
+            f"({n_uniq:,} distinct papers) -> {PAPERS_DEST}")
+        log(f"[authors]   NOTE: one paper is credited to ONE roster member -- "
+            f"the harvest deduped across authors, so Fama-French 1993 is "
+            f"filed under Fama and Kenneth French gets no credit. Per-author "
+            f"counts are a floor.")
 
     rows.sort(key=lambda r: -r["fwd_citers_total"])
     DEST.parent.mkdir(parents=True, exist_ok=True)
