@@ -136,8 +136,31 @@ def main():
     if not CAND.exists():
         raise SystemExit(f"[oax] {CAND} missing -- build the core list first")
     rows = list(csv.DictReader(io.open(CAND, encoding="utf-8", newline="")))
-    targets = [r for r in rows if (r.get("doi") or "").strip()]
+    have_doi = [r for r in rows if (r.get("doi") or "").strip()]
+    # ONE BAD DOI POISONS ITS WHOLE BATCH, not just itself. Found the hard way:
+    # doi:10.14718/http://doi.org/10.14718/revfinanzpolitecon.2019.11.1.9 --
+    # route A (sweep) constructed a uid from a source that had already
+    # concatenated a URL into the DOI field. The filter string OpenAlex
+    # receives is doi-values joined with "|"; this value's embedded
+    # "http://doi.org/" breaks their parser ("|https is not a valid field")
+    # for the ENTIRE 100-paper batch it lands in, and because batches are
+    # formed in a fixed row order, every retry reforms the same poisoned
+    # batch and the other 99 papers in it never get a chance. Filtering these
+    # out here is a guard against one row silently costing up to 99 others,
+    # not a fix for wherever the concatenation actually happened.
+    # Broadened after a second poisoned batch: some DOI fields hold multiple
+    # DOIs space-separated (e.g. "10.1214/x 10.1214/y 10.1214/z"), which is
+    # just as invalid a filter value as an embedded URL. A real DOI never
+    # contains whitespace.
+    malformed = [r for r in have_doi
+                 if "http" in r["doi"] or "|" in r["doi"]
+                 or any(c.isspace() for c in r["doi"])]
+    targets = [r for r in have_doi if r not in malformed]
     log(f"[oax] {len(rows):,} candidates; {len(targets):,} have a DOI")
+    if malformed:
+        log(f"[oax] !! {len(malformed):,} DOI(s) look malformed (contain "
+            f"'http' or '|') and are EXCLUDED to protect their batch: "
+            f"{[r['uid'] for r in malformed][:5]}")
 
     done = _load_done()
     todo = [r for r in targets if r["uid"] not in done]
