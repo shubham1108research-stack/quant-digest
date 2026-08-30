@@ -48,10 +48,69 @@ CAND = OUT / "core_candidates.csv"
 IDS = OUT / "core_openalex_ids.json"
 EXTRA = OUT / "core_openalex_extra.ndjson"
 DEST = OUT / "core_forward_graph.json"
+EDGES = OUT / "core_edges.csv"
+METRICS = OUT / "core_graph_metrics.json"
 
 
 def log(m):
     print(m, flush=True)
+
+
+def _metrics(forward, by_uid, iters=20, damping=0.85):
+    """In-degree, out-degree and PageRank over the in-pool citation graph.
+
+    WHY PAGERANK AND NOT THE CITATION COUNT WE ALREADY HAVE. `cites` is a
+    global number from OpenAlex, and sorting the pool by it returns the same
+    1970s canon every time -- it measures fame, and it measures it outside
+    this corpus. PageRank over IN-POOL edges answers a narrower and more
+    useful question: which papers the later work *in this collection* is
+    built on. A 1970s paper nobody here actually cites scores low, which is
+    the desired behaviour, not a bug.
+
+    THIS IS SPARSE AND CHEAP -- seconds over 2.5M edges. It is not the O(n^2)
+    trap that makes tools/graph.py build_sim unusable at this scale
+    (230k x 230k dense dot products); nothing here ever materialises an
+    n x n anything.
+
+    Dangling nodes (papers citing nothing in-pool) have their mass
+    redistributed uniformly rather than silently leaked, which is the usual
+    way a hand-rolled PageRank quietly stops summing to 1.
+    """
+    # forward[dst] = {srcs citing dst}. Build the transpose once: out[src] =
+    # [dsts src cites], which is the direction PageRank pushes mass along.
+    out_edges = collections.defaultdict(list)
+    for dst, srcs in forward.items():
+        for src in srcs:
+            out_edges[src].append(dst)
+
+    nodes = sorted(set(forward) | set(out_edges))
+    n = len(nodes)
+    if not n:
+        return {}
+    idx = {u: i for i, u in enumerate(nodes)}
+    out_lists = [[idx[d] for d in out_edges.get(u, ())] for u in nodes]
+
+    rank = [1.0 / n] * n
+    for _ in range(iters):
+        nxt = [0.0] * n
+        dangling = 0.0
+        for i, outs in enumerate(out_lists):
+            if not outs:
+                dangling += rank[i]
+                continue
+            share = rank[i] / len(outs)
+            for j in outs:
+                nxt[j] += share
+        base = (1.0 - damping) / n + damping * dangling / n
+        rank = [base + damping * v for v in nxt]
+
+    log(f"[fwd] pagerank over {n:,} connected nodes, {iters} iterations "
+        f"(sum={sum(rank):.4f} -- should be ~1.0)")
+
+    return {u: {"fwd_citers": len(forward.get(u, ())),
+                "out_refs": len(out_edges.get(u, ())),
+                "pagerank": round(rank[idx[u]], 10)}
+            for u in nodes}
 
 
 def main():
@@ -98,6 +157,27 @@ def main():
     out = {u: sorted(v) for u, v in forward.items()}
     DEST.write_text(json.dumps(out), encoding="utf-8")
     log(f"[fwd] written to {DEST} -- nothing ingested")
+
+    # ------------------------------------------------------------ edge list
+    # DIRECTION IS src CITES dst. Stated here and in the file's own header
+    # because an inverted edge list silently inverts every metric built on
+    # it -- PageRank on a reversed graph ranks papers by how many references
+    # they HAVE rather than how often they are cited, which looks plausible
+    # and is completely wrong.
+    n_written = 0
+    with io.open(EDGES, "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["src_uid", "dst_uid"])   # src cites dst
+        for dst, srcs in forward.items():
+            for src in srcs:
+                w.writerow([src, dst])
+                n_written += 1
+    log(f"[fwd] {n_written:,} edges -> {EDGES} (src cites dst)")
+
+    # ------------------------------------------------------- graph metrics
+    metrics = _metrics(forward, by_uid)
+    METRICS.write_text(json.dumps(metrics), encoding="utf-8")
+    log(f"[fwd] per-paper metrics -> {METRICS}")
 
     # -------------------------------------------------------------- report
     ranked = sorted(forward.items(), key=lambda kv: -len(kv[1]))
