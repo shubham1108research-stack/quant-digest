@@ -51,6 +51,8 @@ CAND = OUT / "core_candidates.csv"
 STRAYS = OUT / "core_strays.csv"
 TOPICS = OUT / "core_topics.json"
 INVENTORY = OUT / "core_topic_inventory.csv"
+METRICS = OUT / "core_graph_metrics.json"
+FORWARD = OUT / "core_forward_graph.json"
 DROPS = pathlib.Path("data") / "core_topic_drops.csv"
 
 CURATED = {"canon", "nber", "snowball", "pwb", "quantseeker", "authors",
@@ -88,10 +90,42 @@ def log(m):
 
 
 def _protected(r):
-    return (r.get("held") == "1"
+    """Independent evidence that a paper belongs, whatever its topic says.
+
+    HELD / MULTI-ROUTE / SEED-CITED ARE EVIDENCE ABOUT THE PAPER. A curated
+    route is not, and treating it as such is what let a condensed-matter
+    physics career into a quant-finance corpus. Route D harvests an author's
+    ENTIRE bibliography, so "Memory and Chaos Effects in Spin Glasses" arrived
+    under `authors` because Jean-Philippe Bouchaud is on the roster -- he is a
+    statistical physicist who also does finance, and route D cannot tell his
+    two careers apart. The roster is evidence about the AUTHOR; it says
+    nothing about whether a given paper of theirs is about markets.
+
+    So a curated route still protects a paper that carries a taxonomy tag --
+    something in the finance vocabulary matched it -- but an UNTAGGED,
+    single-route paper whose topic is explicitly on the off-desk list is
+    judged on that topic. 619 of the 646 off-domain candidates came in this
+    way, and 626 of them have no tag at all.
+    """
+    # THE CORPUS'S OWN VERDICT OUTRANKS THE TOPIC LABEL. fwd_citers counts
+    # papers IN THIS POOL that cite this one, so >=5 means the collection
+    # itself is built on it whatever OpenAlex filed it under. seed_indegree
+    # only sees the original seed set and misses this entirely: Fama-Jensen
+    # 1983 "Agency Problems and Residual Claims" has seed_indegree 0, no tag,
+    # one route and a topic of "Islamic Finance and Banking Studies" -- it
+    # would have been cut on all four counts, while 155 papers here cite it.
+    # Also spares Barndorff-Nielsen's hyperbolic-distribution paper, filed
+    # under "Aeolian processes and effects" with 120 in-pool citers, which is
+    # foundational for the NIG models this desk actually uses.
+    if int(float(r.get("fwd_citers") or 0)) >= 5:
+        return True
+    if (r.get("held") == "1"
             or int(float(r.get("n_routes") or 0)) >= 2
-            or int(float(r.get("seed_indegree") or 0)) >= 1
-            or bool(set((r.get("found_by") or "").split("+")) & CURATED))
+            or int(float(r.get("seed_indegree") or 0)) >= 1):
+        return True
+    if set((r.get("found_by") or "").split("+")) & CURATED:
+        return bool((r.get("tag") or "").strip())
+    return False
 
 
 def _rescued(r):
@@ -116,6 +150,52 @@ def _load():
         raise SystemExit(f"[cut] {CAND} missing -- build the core list first")
     topics = json.loads(TOPICS.read_text(encoding="utf-8"))
     rows = list(csv.DictReader(io.open(CAND, encoding="utf-8", newline="")))
+
+    # fwd_citers LIVES IN THE METRICS FILE, NOT IN core_candidates.csv, and
+    # this cost a real paper. The guard was first written as
+    # r.get("fwd_citers") against these rows -- a column that does not exist
+    # there -- so it returned None, became 0, and protected nothing while
+    # looking exactly like a working guard. Fama-Jensen 1983 was cut with 155
+    # in-pool citers. Loading it explicitly, and REFUSING when it is absent,
+    # is the difference between a guard and the appearance of one.
+    if not METRICS.exists():
+        raise SystemExit(
+            f"[cut] {METRICS} missing. REFUSING to cut: fwd_citers is the "
+            f"signal that keeps papers this corpus actually builds on -- "
+            f"without it the guard silently protects nothing. Run "
+            f"tools/core_forward_graph.py first.")
+    metrics = json.loads(METRICS.read_text(encoding="utf-8"))
+
+    # COUNT ON-DESK CITERS, NOT ALL CITERS. A raw fwd_citers guard spared
+    # "Memory and Chaos Effects in Spin Glasses" at 11 citers -- and those
+    # citers are Bouchaud's OTHER condensed-matter papers, which route D
+    # imported alongside it. An off-desk cluster citing itself produces exactly
+    # the same number as genuine corpus relevance, so the raw count cannot tell
+    # "the collection is built on this" from "a physics island lives here".
+    # Excluding citers that are themselves in a dropped topic separates the
+    # two: Fama-Jensen keeps 155 finance citers and survives; the spin-glass
+    # papers drop to near zero and do not.
+    drops_for_cite = set(_drops())
+    fwd = {}
+    if FORWARD.exists():
+        fwd = json.loads(FORWARD.read_text(encoding="utf-8"))
+    n_hit = 0
+    for r in rows:
+        uid = r["uid"]
+        citers = fwd.get(uid) or []
+        on_desk = sum(1 for c in citers
+                      if (topics.get(c) or {}).get("t") not in drops_for_cite)
+        r["fwd_citers"] = on_desk
+        r["fwd_citers_all"] = (metrics.get(uid) or {}).get("fwd_citers", 0)
+        if r["fwd_citers_all"]:
+            n_hit += 1
+    log(f"[cut] fwd_citers attached to {n_hit:,} of {len(rows):,} rows; "
+        f"citers in a dropped topic are NOT counted (an off-desk cluster "
+        f"citing itself is not evidence)")
+    if n_hit == 0:
+        raise SystemExit(
+            f"[cut] {METRICS.name} joined ZERO rows -- the uid spaces do not "
+            f"match. REFUSING rather than cutting with a dead guard.")
     return topics, rows
 
 
