@@ -485,6 +485,17 @@ def cmd_roster(args):
     log(f"[roster] {len(people)} people: {len(usable)} harvestable, "
         f"{flagged} skipped as needs_review (ambiguous S2 profile), "
         f"{unresolved} unresolved")
+    only = [x.strip().lower() for x in (getattr(args, "only", "") or "").split(",")
+            if x.strip()]
+    if only:
+        usable = [p for p in usable
+                  if any(o in (p.get("name") or "").lower() for o in only)]
+        if not usable:
+            raise SystemExit(
+                f"[roster] --only matched NOBODY harvestable. Refusing rather "
+                f"than writing an empty harvest over a good file.")
+        log(f"[roster] --only: harvesting {len(usable)} "
+            f"({', '.join(p['name'] for p in usable)})")
     if args.limit:
         usable = usable[:args.limit]
         log(f"[roster] --limit {args.limit}: harvesting {len(usable)}")
@@ -633,8 +644,29 @@ def cmd_roster(args):
             log(f"[roster]   retry {p['name']}: +{got}")
             time.sleep(2.0)
 
-    (OUT / "core_roster_papers.json").write_text(
-        json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
+    # A PARTIAL RUN MUST NOT REPLACE A COMPLETE ONE. --only harvests a
+    # handful of people; writing `out` straight over the file would discard
+    # the other ~174 bibliographies. Rows for the people this run actually
+    # covered are replaced, everyone else is carried through untouched --
+    # the same merge sitemap_harvest.py needed after --host wiped 1,227 urls.
+    dest = OUT / "core_roster_papers.json"
+    prior = []
+    if dest.exists():
+        try:
+            prior = json.loads(dest.read_text(encoding="utf-8")) or []
+        except Exception as e:                              # noqa: BLE001
+            raise SystemExit(
+                f"[roster] {dest} exists but will not parse "
+                f"({type(e).__name__}). REFUSING to overwrite it.")
+    if prior:
+        covered = {p["name"] for p in usable}
+        kept = [r for r in prior if r.get("author") not in covered]
+        log(f"[roster] merging: {len(kept):,} rows carried over from "
+            f"{len(prior):,} for the {len(set(r.get('author') for r in prior))-len(covered & {r.get('author') for r in prior})} "
+            f"people this run did not touch")
+        out = kept + out
+    dest.write_text(json.dumps(out, indent=1, ensure_ascii=False),
+                    encoding="utf-8")
     by_sleeve = collections.Counter(r["sleeve"] for r in out)
     n_distinct = len({(f"doi:{r['doi']}" if r["doi"] else f"arxiv:{r['arxiv']}")
                       for r in out})
@@ -827,6 +859,11 @@ def main():
         if name == "pwb":
             p.add_argument("--restart", action="store_true",
                            help="ignore the existing file and refetch all")
+        if name == "roster":
+            p.add_argument("--only", default="",
+                           help="harvest just these people (comma-separated "
+                                "names, substring match) and MERGE the result "
+                                "into the existing file")
     args = ap.parse_args()
     return {"signaldoc": cmd_signaldoc, "pwb": cmd_pwb,
             "quantseeker": cmd_quantseeker, "sweep": cmd_sweep,
