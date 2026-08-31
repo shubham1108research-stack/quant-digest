@@ -82,6 +82,19 @@ RESCUE = [
     "futures", "hedging", " hedge ", "derivative", "option pricing",
     "momentum", "carry trade", " carry ", "trend following",
     "commodity", "commodities",
+    # ADDED AFTER THE ENGINEERING/HEALTH PASS. That cut caught "On Portfolio
+    # Optimization: Forecasting Covariance" (583 cites) and "Quantifying the
+    # uncertainty in VaR and expected shortfall" -- both filed by OpenAlex
+    # under "Reservoir Engineering and Simulation Methods", both unmistakably
+    # this desk's work. Also "Nowcasting Unemployment Using Neural Networks"
+    # under disease surveillance and "Macroeconomic implications of population
+    # ageing" under health care. The topic label is wrong often enough that the
+    # rescue vocabulary has to carry the risk and portfolio words too, not just
+    # the asset-class ones.
+    "value at risk", "expected shortfall", "portfolio optimi",
+    "portfolio selection", "asset allocation", "stress test",
+    "nowcast", "tail risk", "extreme value", "covariance matrix",
+    "macroeconomic", "risk premium", "sharpe ratio", "drawdown",
 ]
 
 
