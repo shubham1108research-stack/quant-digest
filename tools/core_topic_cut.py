@@ -54,6 +54,15 @@ INVENTORY = OUT / "core_topic_inventory.csv"
 METRICS = OUT / "core_graph_metrics.json"
 FORWARD = OUT / "core_forward_graph.json"
 DROPS = pathlib.Path("data") / "core_topic_drops.csv"
+# FIELD-level drops, deliberately a SEPARATE and much shorter list. Fields are
+# far blunter than topics -- Merton's portfolio selection is filed under
+# Management Science and Fama-Jensen under Islamic Finance -- so this holds
+# only fields with no plausible finance reading at all, and every guard that
+# applies to a topic drop applies here too. It exists because the medical and
+# psychological residue sits in a long tail of ~100 tiny topics (Gambling
+# Behavior 81, Color perception 30, Paranormal Experiences 16) that would
+# never surface in a top-40 review.
+FIELD_DROPS = pathlib.Path("data") / "core_field_drops.csv"
 
 CURATED = {"canon", "nber", "snowball", "pwb", "quantseeker", "authors",
            "signaldoc"}
@@ -212,6 +221,14 @@ def _load():
     return topics, rows
 
 
+def _field_drops():
+    if not FIELD_DROPS.exists():
+        return {}
+    return {(r.get("field") or "").strip(): (r.get("reason") or "off-desk").strip()
+            for r in csv.DictReader(io.open(FIELD_DROPS, encoding="utf-8"))
+            if (r.get("field") or "").strip()}
+
+
 def _drops():
     if not DROPS.exists():
         raise SystemExit(
@@ -266,9 +283,15 @@ def main():
     keep, cut = [], []
     spared = collections.Counter()
     rescued = collections.Counter()
+    fdrops = _field_drops()
+    if fdrops:
+        log(f"[cut] {len(fdrops)} FIELDS marked off-desk in {FIELD_DROPS.name}: "
+            f"{', '.join(fdrops)}")
     for r in rows:
-        t = (topics.get(r["uid"]) or {}).get("t")
-        if t in drops:
+        tinfo = topics.get(r["uid"]) or {}
+        t = tinfo.get("t")
+        # a field drop is judged exactly like a topic drop -- same guards
+        if t in drops or (tinfo.get("f") in fdrops and t not in drops):
             if _protected(r):
                 spared[t] += 1
                 keep.append(r)
@@ -277,7 +300,8 @@ def main():
                 rescued[t] += 1
                 keep.append(r)
                 continue
-            r["stray_reason"] = f"topic:{t}"
+            r["stray_reason"] = (f"topic:{t}" if t in drops
+                                 else f"field:{tinfo.get('f')}")
             cut.append(r)
         else:
             keep.append(r)

@@ -3,9 +3,9 @@ Eugene Fama,equity_xs,,,65999231,85,182403,169,0,119,106,89.1,37,34,157324,244,3
 Kenneth French,equity_xs,,,72891652,41,86490,77,0,55,50,90.9,20,15,79159,173,26123,0.00656351,6,other,Common risk factors in the returns on stocks and bonds,8050
 Tim Bollerslev,vol_options,volatility,,2702465,83,83748,181,0,117,108,92.3,62,49,74574,140,25134,0.00637278,9,other,Generalized autoregressive conditional heteroskedasticity,6017
 Robert Engle,vol_options,,,35535410,76,108231,210,0,132,123,93.2,37,68,98963,109,22367,0.00849242,9,other,Autoregressive Conditional Heteroscedasticity with Estimates of the Variance of United Kingdom Inflation,5315
-Andrei Shleifer,other,promoted,,145279878,160,288994,510,0,241,220,91.3,173,150,200203,162,15587,0.00434947,8,other,Noise Trader Risk in Financial Markets,2071
-Clive Granger,other,,,49566894,93,130445,361,0,298,276,92.6,39,119,95816,40,12001,0.00929135,9,other,"Co-Integration and Error Correction: Representation, Estimation, and Testing",4178
-Stephen A. Ross,other,promoted,,145520631,56,54860,158,0,108,105,97.2,12,62,48758,99,11939,0.00798951,7,other,A Theory of the Term Structure of Interest Rates,2352
+Andrei Shleifer,other,promoted,,145279878,160,288994,510,0,241,218,90.5,172,149,200155,162,15587,0.00434791,8,other,Noise Trader Risk in Financial Markets,2071
+Clive Granger,other,,,49566894,93,130445,361,0,298,273,91.6,38,118,95767,40,12001,0.0092898,9,other,"Co-Integration and Error Correction: Representation, Estimation, and Testing",4178
+Stephen A. Ross,other,promoted,,145520631,56,54860,158,0,108,104,96.3,12,62,48754,104,11939,0.00798951,7,other,A Theory of the Term Structure of Interest Rates,2352
 Sheridan Titman,equity_xs,,,52453175,90,74982,310,0,186,169,90.9,95,92,51719,65,11840,0.00280195,8,other,Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency,4043
 Torben Andersen,vol_options,volatility,,2315163,62,35029,169,0,96,84,87.5,51,44,25666,89,10711,0.00176785,8,other,Modeling and Forecasting Realized Volatility,1651
 Robert Merton,vol_options,,,2451644,47,63380,289,0,65,59,90.8,16,33,43983,97,10009,0.00619578,7,other,An Intertemporal Capital Asset Pricing Model,2056
@@ -13,17 +13,17 @@ Robert Vishny,equity_xs,,,4988184,76,191686,152,0,73,68,93.2,52,43,126495,444,74
 James Hamilton,macro_regime,,,4765016,43,30737,90,0,61,58,95.1,19,32,27538,94,7374,0.00215058,4,other,A New Approach to the Economic Analysis of Nonstationary Time Series and the Business Cycle,2843
 Yakov Amihud,microstructure,,,102785782,50,27909,150,0,111,103,92.8,32,47,30035,37,7325,0.00154029,6,other,Amihud's illiquidity,3285
 Myron Scholes,vol_options,,,39536819,28,41952,63,0,44,43,97.7,13,19,40583,70,7164,0.00653234,6,other,The Pricing of Options and Corporate Liabilities,5426
-Darrell Duffie,rates_credit,,,3121291,71,30842,217,0,130,121,93.1,42,56,27975,87,7162,0.00229658,7,other,A YIELD‐FACTOR MODEL OF INTEREST RATES,964
-Lars Peter Hansen,other,,,1796633,61,34926,247,0,157,148,94.3,44,51,32827,64,7124,0.00532239,5,other,LARGE SAMPLE PROPERTIES OF GENERALIZED METHOD OF,2377
+Darrell Duffie,rates_credit,,,3121291,71,30842,217,0,130,119,91.5,42,56,27975,87,7162,0.00229658,7,other,A YIELD‐FACTOR MODEL OF INTEREST RATES,964
+Lars Peter Hansen,other,,,1796633,61,34926,247,0,157,146,93.0,44,51,32827,64,7124,0.00532239,5,other,LARGE SAMPLE PROPERTIES OF GENERALIZED METHOD OF,2377
 Mark Watson,macro_regime,,,32082672,64,49422,214,0,105,97,92.4,40,65,33572,132,6639,0.00276496,6,other,Forecasting Using Principal Components From a Large Number of Predictors,845
-Halbert White,other,,,2149702798,77,88823,239,0,185,175,94.6,33,93,75690,56,6600,0.00652735,7,other,A Heteroskedasticity-Consistent Covariance Matrix Estimator and a Direct Test for Heteroskedasticity,2463
-John Y. Campbell,other,promoted,,1801034,69,57635,235,0,147,118,80.3,61,65,32863,60,6286,0.00161589,7,other,Predicting Excess Stock Returns Out of Sample: Can Anything Beat the Historical Average?,1308
+Halbert White,other,,,2149702798,77,88823,239,0,185,171,92.4,30,89,75425,56,6596,0.00652048,7,other,A Heteroskedasticity-Consistent Covariance Matrix Estimator and a Direct Test for Heteroskedasticity,2463
+John Y. Campbell,other,promoted,,1801034,69,57635,235,0,147,108,73.5,60,61,32667,64,6286,0.00161433,7,other,Predicting Excess Stock Returns Out of Sample: Can Anything Beat the Historical Average?,1308
 John C. Cox,rates_credit,,,47582388,16,21176,32,0,23,23,100.0,7,12,23140,268,6267,0.00382743,5,other,A Theory of the Term Structure of Interest Rates,2352
-James Stock,macro_regime,,,82973203,69,41663,201,0,124,111,89.5,46,73,35035,80,6234,0.00274368,4,other,Forecasting Using Principal Components From a Large Number of Predictors,845
+James Stock,macro_regime,,,82973203,69,41663,201,0,124,110,88.7,45,72,35027,80,6234,0.00274212,4,other,Forecasting Using Principal Components From a Large Number of Predictors,845
 Narasimhan Jegadeesh,equity_xs,,,66052545,36,23635,78,0,60,57,95.0,31,29,20485,102,5998,0.00114758,7,other,Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency,4043
 Maureen O'Hara,microstructure,,,88087434,62,29147,130,0,115,104,90.4,44,56,21102,70,5939,0.00157656,7,other,"Price, trade size, and information in securities markets",844
-Richard Thaler,equity_xs,,,2240116,67,80100,162,0,109,105,96.3,23,55,55734,138,5898,0.00192809,4,other,Does the Stock Market Overreact?,2020
-Robert Shiller,macro_regime,,,5736726,80,48254,355,0,257,237,92.2,90,113,31093,36,5796,0.00324015,5,other,Yield Spreads and Interest Rate Movements: A Bird's Eye View,795
+Richard Thaler,equity_xs,,,2240116,67,80100,162,0,109,101,92.7,22,52,55682,150,5896,0.00192318,4,other,Does the Stock Market Overreact?,2020
+Robert Shiller,macro_regime,,,5736726,80,48254,355,0,257,235,91.4,90,113,31093,36,5796,0.00324015,5,other,Yield Spreads and Interest Rate Movements: A Bird's Eye View,795
 Lasse Heje Pedersen,equity_xs,practitioner,,2237174329,20,18894,50,0,24,21,87.5,18,16,9439,266,5754,0.00077696,6,microstructure,Market Liquidity and Funding Liquidity,1693
 Eduardo Schwartz,commodities,,,3323460,59,32921,137,0,108,105,97.2,17,58,24469,74,5670,0.0023299,9,other,A Simple Approach to Valuing Risky Fixed and Floating Rate Debt,679
 Josef Lakonishok,equity_xs,,,83311247,56,36021,97,0,73,71,97.3,23,47,22112,167,5608,0.00208413,6,other,The impact of institutional trading on stock prices,795
@@ -38,7 +38,7 @@ Albert Kyle,microstructure,,,144865543,22,15356,67,0,46,44,95.7,28,16,14137,14,4
 Steven Heston,vol_options,,,3115777,24,14090,47,0,41,39,95.1,22,20,13100,30,4538,0.00091305,5,vol_options,A Closed-Form Solution for Options with Stochastic Volatility with Applications to Bond and Currency Options,2983
 Peter Carr,vol_options,volatility,,143970068,48,17577,188,0,129,127,98.4,45,76,15194,21,4524,0.00091742,7,vol_options,Variance Risk Premiums,649
 Terrance Odean,equity_xs,,,1869851,35,26776,72,0,52,40,76.9,22,19,16275,66,4511,0.00064216,3,other,All that Glitters: The Effect of Attention and News on the Buying Behavior of Individual and Institutional Investors,1462
-Daniel Kahneman,equity_xs,,,3683465,124,237020,290,0,194,175,90.2,40,102,137071,234,4345,0.00251444,3,other,Advances in prospect theory: Cumulative representation of uncertainty,1018
+Daniel Kahneman,equity_xs,,,3683465,124,237020,290,0,194,145,74.7,34,83,132562,267,4322,0.00244165,3,other,Advances in prospect theory: Cumulative representation of uncertainty,1018
 Francis X. Diebold,macro_regime,macro,,2262635900,39,21959,74,0,30,27,90.0,24,11,9419,100,4168,0.00059192,8,other,Modeling and Forecasting Realized Volatility,1651
 Kenneth Rogoff,fx,,,4009124,65,42114,235,0,137,127,92.7,51,56,29625,56,4119,0.00139546,7,other,Empirical exchange rate models of the seventies,1182
 Andrew Ang,equity_xs,,blackrock,144732711,38,19132,123,0,91,76,83.5,41,34,11195,23,3970,0.00052339,7,other,Coskewness using daily returns,2078
@@ -54,9 +54,9 @@ Hendrik Bessembinder,commodities,,,118786084,36,10595,99,0,81,77,95.1,37,29,9985
 Markus Brunnermeier,macro_regime,,,3113641,49,20393,167,0,83,75,90.4,39,40,7983,64,3025,0.00051857,8,other,Market Liquidity and Funding Liquidity,1693
 Andrea Frazzini,equity_xs,practitioner,aqr,2106499,21,8856,35,0,29,25,86.2,17,18,9037,114,2979,0.00032694,4,equity_xs,Betting against beta,949
 Gary Gorton,commodities,,,2675724,73,23222,270,0,149,52,34.9,34,32,12430,84,2963,0.00085991,8,other,Facts and Fantasies about Commodity Futures,629
-Jean-Philippe Bouchaud,macro_regime,practitioner_macro,,2524821,86,33134,592,0,510,376,73.7,226,212,23126,18,2953,0.00123528,9,other,Noise Dressing of Financial Correlation Matrices,214
+Jean-Philippe Bouchaud,macro_regime,practitioner_macro,,2524821,86,33134,592,0,510,373,73.1,226,209,23035,18,2953,0.00123528,9,other,Noise Dressing of Financial Correlation Matrices,214
 Joel Hasbrouck,microstructure,,,97896536,35,11968,76,0,46,40,87.0,18,22,8834,104,2938,0.0007065,5,other,"One Security, Many Markets: Determining the Contributions to Price Discovery",532
-Andrew Lo,trend_cta,,alphasimplex,118887609,44,23955,250,0,174,169,97.1,95,106,12542,19,2821,0.00080189,8,other,The Adaptive Markets Hypothesis,504
+Andrew Lo,trend_cta,,alphasimplex,118887609,44,23955,250,0,174,162,93.1,89,101,12452,20,2819,0.00079385,8,other,The Adaptive Markets Hypothesis,504
 Stefan Nagel,equity_xs,factors,,50373121,30,12054,74,0,46,31,67.4,23,19,10154,63,2812,0.00032678,7,other,"Short sales, institutional investors and the cross-section of stock returns",517
 Russ Wermers,equity_xs,,,3173841,33,13772,109,0,79,71,89.9,41,18,9086,30,2787,0.00046737,5,other,Measuring Mutual Fund Performance with Characteristic‐Based Benchmarks,898
 Ben Bernanke,macro_regime,,,50823818,60,29743,32,0,69,64,92.8,24,34,14005,46,2759,0.00075244,5,other,What Explains the Stock Market's Reaction to Federal Reserve Policy?,721
@@ -70,35 +70,35 @@ Greg Duffee,rates_credit,term_structure,,101928684,20,5710,54,0,23,21,91.3,12,13
 Peter Christoffersen,vol_options,,,35905839,37,9169,111,0,71,66,93.0,33,24,5954,40,2158,0.00044515,9,other,Evaluating Interval Forecasts,971
 Monika Piazzesi,macro_regime,macro,,70106137,32,9295,90,0,28,22,78.6,19,14,5390,66,2016,0.00029859,4,rates_credit,Bond Risk Premia,702
 Andrew Patton,other,econometrics,,2334189,29,8472,67,0,42,38,90.5,25,20,5689,94,1987,0.0002578,5,other,"Good Volatility, Bad Volatility: Signed Jumps and The Persistence of Volatility",414
-Nicholas Barberis,equity_xs,behavioural,,3095692,35,29163,74,0,35,23,65.7,16,11,12836,295,1976,0.00028077,2,other,Prospect Theory and Asset Prices,515
+Nicholas Barberis,equity_xs,behavioural,,3095692,35,29163,74,0,35,22,62.9,16,11,12836,295,1976,0.00028077,2,other,Prospect Theory and Asset Prices,515
 Terrence Hendershott,microstructure,microstructure,,2287993,33,8009,85,0,65,60,92.3,40,27,7536,39,1936,0.00034065,4,other,High-Frequency Trading and Price Discovery,453
 Campbell Harvey,equity_xs,qfactor,,1829590,73,33173,274,0,164,158,96.3,83,82,27479,58,1903,0.00055655,6,other,The Separation of Ownership and Control in East Asian Corporations,243
-Andrew Karolyi,fx,,,23729816,48,15847,139,0,92,84,91.3,49,27,10601,47,1878,0.0004509,9,other,Why Do Markets Move Together? An Investigation of U.S.‐Japan Stock Return Comovements,290
+Andrew Karolyi,fx,,,23729816,48,15847,139,0,92,77,83.7,46,25,10588,48,1878,0.0004509,9,other,Why Do Markets Move Together? An Investigation of U.S.‐Japan Stock Return Comovements,290
 Jeffrey Pontiff,equity_xs,,,3079037,19,5464,39,0,30,27,90.0,15,9,5660,54,1825,0.00031499,6,other,Does Academic Research Destroy Stock Return Predictability?,631
 Annette Vissing-Jorgensen,macro_regime,,,1403712997,33,10666,61,0,33,25,75.8,22,17,4980,88,1781,0.00031395,5,other,The Aggregate Demand for Treasury Debt,510
-Ravi Bansal,other,promoted,,2054868537,30,10027,64,0,43,37,86.0,26,22,4284,38,1705,0.00026351,6,other,A Long-Run Risks Explanation of Predictability Puzzles in Bond and Currency Markets,230
+Ravi Bansal,other,promoted,,2054868537,30,10027,64,0,43,36,83.7,25,22,4278,39,1705,0.00026351,6,other,A Long-Run Risks Explanation of Predictability Puzzles in Bond and Currency Markets,230
 Ulrike Malmendier,equity_xs,,,1405417097,43,21583,120,0,57,51,89.5,42,35,15576,71,1699,0.00030845,5,other,Who Makes Acquisitions? CEO Overconfidence and the Market's Reaction,445
 Kent Daniel,equity_xs,qfactor,,1719066,17,6812,42,0,17,16,94.1,3,10,6714,82,1698,0.00031134,3,other,Measuring Mutual Fund Performance with Characteristic‐Based Benchmarks,898
-Owen Lamont,equity_xs,,acadian,2269496,30,10920,52,0,33,26,78.8,21,14,8196,154,1690,0.0003257,6,other,Does Academic Research Destroy Stock Return Predictability?,631
-Doron Avramov,equity_xs,factors,,93151567,26,5581,88,0,65,57,87.7,42,19,5076,26,1673,0.00022024,7,other,Stock return predictability and model uncertainty,268
+Owen Lamont,equity_xs,,acadian,2269496,30,10920,52,0,33,25,75.8,20,13,8196,154,1690,0.0003257,6,other,Does Academic Research Destroy Stock Return Predictability?,631
+Doron Avramov,equity_xs,factors,,93151567,26,5581,88,0,65,56,86.2,41,18,5076,26,1673,0.00022024,7,other,Stock return predictability and model uncertainty,268
 William Fung,trend_cta,,,1810039,22,4966,37,0,30,30,100.0,4,14,4656,32,1635,0.00043,6,other,The Risk in Hedge Fund Strategies: Theory and Evidence from Trend Followers,494
-Jonathan Berk,equity_xs,,,50203470,20,7044,53,0,27,27,100.0,16,14,5767,59,1587,0.00024715,2,other,Mutual Fund Flows and Performance in Rational Markets,670
+Jonathan Berk,equity_xs,,,50203470,20,7044,53,0,27,26,96.3,15,14,5763,83,1586,0.00024555,2,other,Mutual Fund Flows and Performance in Rational Markets,670
 Tobias Moskowitz,other,other,,102056949,14,8487,27,0,13,12,92.3,8,5,6207,56,1503,0.00025146,3,equity_xs,Do Industries Explain Momentum?,714
 Dimitri Vayanos,rates_credit,,,2820319,37,12381,109,0,44,38,86.4,33,25,5459,76,1499,0.00024858,5,other,Limits of Arbitrage,200
 Harry Markowitz,cross_asset,,,50018942,35,18174,4,0,128,123,96.1,19,70,9079,18,1464,0.00127048,4,other,Mean-Variance Analysis in Portfolio Choice and Capital Markets,202
-Robert Pindyck,commodities,,,3436008,64,35931,214,0,117,111,94.9,59,57,15732,53,1435,0.00107358,7,other,The Excess Co-Movement of Commodity Prices,273
+Robert Pindyck,commodities,,,3436008,64,35931,214,0,117,110,94.0,59,57,15732,53,1435,0.00107358,7,other,The Excess Co-Movement of Commodity Prices,273
 Hanno Lustig,macro_regime,macro,,3208964,45,8980,229,0,92,65,70.7,52,34,2527,26,1377,0.00022128,8,other,The Cross-Section of Foreign Currency Risk Premia and Consumption Growth Risk,223
 Martin Lettau,equity_xs,,,2338153179,34,14696,64,0,16,8,50.0,6,5,2466,37,1368,0.00022569,5,other,Have Individual Stocks Become More Volatile? An Empirical Exploration of Idiosyncratic Risk,746
-Raman Uppal,cross_asset,,,39116899,29,9400,94,0,55,43,78.2,25,21,4930,40,1324,0.00023599,8,other,A Generalized Approach to Portfolio Optimization: Improving Performance by Constraining Portfolio Norms,439
+Raman Uppal,cross_asset,,,39116899,29,9400,94,0,55,42,76.4,24,21,4929,42,1324,0.00023599,8,other,A Generalized Approach to Portfolio Optimization: Improving Performance by Constraining Portfolio Norms,439
 Sydney Ludvigson,macro_regime,macro,,66428735,28,8866,72,0,23,18,78.3,11,13,3079,51,1309,0.00020937,6,other,"Consumption, Aggregate Wealth and Expected Stock Returns",793
 Barbara Rossi,macro_regime,macro,,4935479,35,5618,64,0,50,46,92.0,28,30,4684,58,1298,0.00020261,3,other,Can Exchange Rates Forecast Commodity Prices,215
 Albert Menkveld,microstructure,microstructure,,2632263,31,6023,124,0,55,52,94.5,41,20,5365,28,1255,0.00024187,6,other,High frequency trading and the new market makers,309
 Claude Erb,commodities,,,52549769,20,4017,43,0,39,39,100.0,23,15,3446,27,1102,0.00026853,5,other,The Strategic and Tactical Value of Commodity Futures,512
 Jonathan Wright,rates_credit,term_structure,,2244977415,26,18866,325,0,40,34,85.0,30,16,3526,72,1093,0.00020335,5,other,The TIPS Yield Curve and Inflation Compensation,158
 Dimitris Korobilis,other,econometrics,,3410382,26,4312,73,0,54,54,100.0,51,24,4046,32,1063,0.00017128,7,other,A new index of financial conditions,275
-Dirk G. Baur,commodities,gold_safe_haven,,46245448,26,2803,71,0,59,59,100.0,29,19,2775,23,1063,0.000192,8,other,"Bitcoin, gold and the US dollar – A replication and extension",243
+Dirk G. Baur,commodities,gold_safe_haven,,46245448,26,2803,71,0,59,58,98.3,29,19,2711,22,1061,0.00019025,8,other,"Bitcoin, gold and the US dollar – A replication and extension",243
 Christopher Polk,equity_xs,factors,,49295598,21,5210,51,0,32,28,87.5,27,8,3090,50,1047,0.00016401,4,equity_xs,The Stock Market and Corporate Investment: A Test of Catering Theory,208
-Hyun Song Shin,macro_regime,,,2337313,50,13353,261,0,128,120,93.8,39,66,8877,22,1047,0.00035625,9,other,Social Value of Public Information,225
+Hyun Song Shin,macro_regime,,,2337313,50,13353,261,0,128,119,93.0,39,65,8863,22,1047,0.0003547,9,other,Social Value of Public Information,225
 Pierre-Olivier Gourinchas,carry,convenience_yield,,119387559,44,12054,184,0,73,67,91.8,44,38,7737,44,1047,0.00024847,5,other,An Equilibrium Model of Global Imbalances and Low Interest Rates,232
 Thierry Roncalli,cross_asset,,amundi,70432107,29,3940,123,0,98,91,92.9,72,23,3567,15,1001,0.00035383,6,other,The Properties of Equally Weighted Risk Contribution Portfolios,386
 Geert Rouwenhorst,commodities,,,98156664,13,4805,27,0,23,17,73.9,11,8,3164,69,964,0.00021679,7,commodities,Facts and Fantasies about Commodity Futures,629
@@ -106,7 +106,7 @@ Lu Zhang,equity_xs,qfactor,,2411489783,23,15380,238,0,38,31,81.6,24,15,1444,10,9
 Robert Novy-Marx,equity_xs,qfactor,,1398634241,28,6260,62,0,36,31,86.1,19,21,2518,36,924,0.0001274,6,other,A Taxonomy of Anomalies and their Trading Costs,297
 Victor DeMiguel,other,econometrics,,1785216,22,6210,52,0,34,32,94.1,25,17,2993,47,859,0.00014199,5,other,A Generalized Approach to Portfolio Optimization: Improving Performance by Constraining Portfolio Norms,439
 Yao Hua Ooi,trend_cta,trend_following,,145379569,8,1696,17,0,6,5,83.3,3,4,1603,30,841,8.791e-05,4,equity_xs,Time Series Momentum,712
-Mark Kritzman,cross_asset,,,69441497,27,2921,175,0,148,137,92.6,31,83,2569,6,819,0.00036142,7,other,Principal Components as a Measure of Systemic Risk,113
+Mark Kritzman,cross_asset,,,69441497,27,2921,175,0,148,134,90.5,30,82,2562,6,818,0.00035885,7,other,Principal Components as a Measure of Systemic Risk,113
 Dacheng Xiu,equity_xs,factors,,90286912,30,6038,62,0,43,33,76.7,21,13,2443,63,813,0.0001072,6,other,Taming the Factor Zoo: A Test of New Factors,238
 Zhiguo He,equity_xs,factors,,2351678,34,8981,93,0,64,45,70.3,37,28,3985,26,800,0.00013538,5,other,Intermediary Asset Pricing,454
 Stefano Giglio,equity_xs,factors,,69847461,24,5328,51,0,30,20,66.7,18,12,2171,64,770,0.00010117,6,other,Taming the Factor Zoo: A Test of New Factors,238
@@ -114,18 +114,18 @@ Helene Rey,macro_regime,global_financial_cycle,,2411471688,35,10410,40,0,13,12,9
 Adrien Verdelhan,fx,fx_basis,,101751026,33,7596,68,0,25,14,56.0,13,7,926,58,751,9.019e-05,7,carry,The Cross-Section of Foreign Currency Risk Premia and Consumption Growth Risk,223
 Ralph Koijen,equity_xs,factors,,2957390,53,9254,164,0,69,44,63.8,27,28,1858,28,746,0.00013783,7,other,Predictive Regressions: A Present-value Approach,187
 Richard Lyons,fx,,,49427893,23,4072,38,0,26,24,92.3,4,12,2794,46,731,0.0001877,5,other,The Microstructure Approach to Exchange Rates,360
-David Blitz,equity_xs,practitioner,robeco,49500384,22,2010,95,0,87,82,94.3,44,44,1805,12,696,0.00016514,6,equity_xs,The Volatility Effect,205
+David Blitz,equity_xs,practitioner,robeco,49500384,22,2010,95,0,87,80,92.0,43,43,1803,12,696,0.00016514,6,equity_xs,The Volatility Effect,205
 Lukas Menkhoff,carry,,,94380489,39,6333,174,0,116,109,94.0,75,43,5548,24,674,0.00023025,9,other,"The impact of experience on risk taking, overconfidence, and herding of fund managers: Complementary survey evidence",67
 Viral Acharya,rates_credit,,,2411680472,36,8928,36,0,43,32,74.4,27,12,4228,74,664,0.00014255,5,other,Precautionary Hoarding of Liquidity and Inter-Bank Markets: Evidence from the Sub-Prime Crisis,89
-Rob Arnott,equity_xs,practitioner,research affiliates,46371615,26,3381,92,0,122,110,90.2,19,92,2273,11,662,0.00034207,5,other,What Risk Premium Is “Normal”?,94
-Antti Ilmanen,equity_xs,practitioner,aqr,11627253,18,1552,81,0,71,69,97.2,7,62,1406,13,617,0.00015498,7,other,Time‐Varying Expected Returns in International Bond Markets,113
+Rob Arnott,equity_xs,practitioner,research affiliates,46371615,26,3381,92,0,122,109,89.3,18,91,2264,11,662,0.00034207,5,other,What Risk Premium Is “Normal”?,94
+Antti Ilmanen,equity_xs,practitioner,aqr,11627253,18,1552,81,0,71,68,95.8,7,61,1326,12,617,0.00015498,7,other,Time‐Varying Expected Returns in International Bond Markets,113
 John Cochrane,macro_regime,,,2259056360,40,16419,342,0,25,23,92.0,20,10,2915,65,601,0.00014686,6,other,The Fed and Interest Rates—A High-Frequency Identification,175
 Juhani Linnainmaa,equity_xs,,,70091263,27,4248,81,0,52,38,73.1,28,14,2119,20,586,0.00010482,5,equity_xs,Deflating profitability,98
 Grigory Vilkov,vol_options,volatility,,52158685,18,3067,55,0,42,40,95.2,34,11,1639,17,576,0.00011469,5,other,The Price of Correlation Risk: Evidence from Equity Options,183
 Richard Michaud,cross_asset,,,2412895802,5,1550,14,0,10,10,100.0,8,3,1572,10,561,0.00011732,2,other,The Markowitz Optimization Enigma: Is ‘Optimized’ Optimal?,552
 Kewei Hou,equity_xs,qfactor,,2212693,20,7725,50,0,30,24,80.0,22,8,2024,19,554,7.307e-05,7,equity_xs,An Augmented q-Factor Model with Expected Growth,154
 Gita Gopinath,macro_regime,global_financial_cycle,,143622435,26,6034,82,0,43,16,37.2,12,12,3541,77,525,0.00010545,4,macro_regime,"Defaultable Debt, Interest Rates, and the Current Account",177
-Jim Gatheral,vol_options,,,1714289,26,4999,61,0,53,51,96.2,27,29,3932,40,509,0.00014615,4,other,Pricing under rough volatility,121
+Jim Gatheral,vol_options,,,1714289,26,4999,61,0,53,50,94.3,26,28,3932,40,509,0.00014615,4,other,Pricing under rough volatility,121
 Charles Engel,fx,,,1825958,25,8872,184,0,52,49,94.2,18,17,3721,24,491,0.00019753,6,other,Accounting for U.S. Real Exchange Rate Changes,118
 Robin Greenwood,equity_xs,behavioural,,38818395,16,2563,48,0,16,14,87.5,10,9,2546,130,487,7.29e-05,7,other,Short- and long-term demand curves for stocks: theory and evidence on the dynamics of arbitrage,130
 Riccardo Rebonato,rates_credit,,,66698587,26,3084,227,0,205,199,97.1,32,150,2204,6,471,0.00023008,8,other,Volatility and correlation : the perfect hedger and the fox,79
@@ -140,7 +140,7 @@ Jules van Binsbergen,equity_xs,factors,,2259105343,21,3102,41,0,19,13,68.4,11,6,
 Guido Baltussen,equity_xs,practitioner,,2054521,15,1263,40,0,29,27,93.1,23,13,1142,16,266,5.578e-05,6,other,Unknown Unknowns: Uncertainty About Risk and Stock Returns∗,67
 Semyon Malamud,other,other,,2772316,23,2371,156,0,90,66,73.3,65,15,852,6,262,0.00011895,8,other,Information Percolation With Equilibrium Search Dynamics,53
 Michael Bauer,rates_credit,term_structure,,145421946,22,4977,134,0,17,15,88.2,14,7,1043,57,249,4.222e-05,4,other,Correcting Estimation Bias in Dynamic Term Structure Models,92
-Kenneth West,other,,,49517228,28,19097,1303,0,123,116,94.3,55,51,1867,8,242,0.00034169,4,other,Commodity Currencies and Currency Commodities,25
+Kenneth West,other,,,49517228,28,19097,1303,0,123,113,91.9,54,48,1858,8,242,0.00034013,4,other,Commodity Currencies and Currency Commodities,25
 Pim van Vliet,equity_xs,practitioner,robeco,145178118,16,999,50,0,41,39,95.1,14,24,806,16,213,5.255e-05,5,other,Explanations for the Volatility Effect: An OverviewBased on the CAPM Assumptions,41
 Nikolai Roussanov,carry,,,2411761825,7,1020,8,0,5,3,60.0,2,0,86,39,196,1.895e-05,2,macro_regime,Countercyclical Currency Risk Premia,164
 Bryan Kelly,equity_xs,factors,,2411588366,18,17436,313,0,12,5,41.7,5,1,1712,66,181,3.734e-05,3,other,Text as Data,130
@@ -149,29 +149,29 @@ Matteo Maggiori,carry,convenience_yield,,2237465654,8,1904,22,0,7,4,57.1,3,4,520
 Wenxin Du,fx,fx_basis,,9625154,14,1364,19,0,16,12,75.0,11,10,568,32,160,2.946e-05,3,other,Local Currency Sovereign Risk: Local Currency Sovereign Risk,67
 Zoltan Pozsar,macro_regime,practitioner_macro,,119328229,9,854,15,0,8,8,100.0,8,3,639,118,159,4.3e-05,3,other,"Bagehot was a Shadow Banker: Shadow Banking, Central Banking, and the Future of Global Finance",45
 Otto van Hemert,trend_cta,,man,117456062,13,1385,25,0,15,13,86.7,8,3,461,27,125,3.748e-05,6,other,The Impact of Volatility Targeting,42
-Kelly Shue,equity_xs,behavioural,,3429142,12,2313,2,0,15,14,93.3,13,6,1198,19,111,4.457e-05,4,other,Screening Peers Softly: Inferring the Quality of Small Borrowers,31
+Kelly Shue,equity_xs,behavioural,,3429142,12,2313,2,0,15,13,86.7,12,6,1195,24,111,4.301e-05,4,other,Screening Peers Softly: Inferring the Quality of Small Borrowers,31
 Ian Dew-Becker,vol_options,volatility,,1399085481,16,1690,47,0,28,22,78.6,20,15,970,20,105,3.664e-05,5,other,Hedging Macroeconomic and Financial Uncertainty and Volatility,32
 Markus Pelger,equity_xs,factors,,88740624,18,1571,47,0,42,34,81.0,30,9,659,9,105,5.128e-05,6,other,Forest Through the Trees: Building Cross-Sections of Stock Returns,57
-Wei Xiong,macro_regime,,,2242769925,12,3056,117,0,38,34,89.5,17,19,221,7,95,2.774e-05,4,other,Risks in China’s Financial System,29
+Wei Xiong,macro_regime,,,2242769925,12,3056,117,0,38,32,84.2,16,18,221,7,95,2.774e-05,4,other,Risks in China’s Financial System,29
 Dan Rasmussen,macro_regime,,verdad,144433967,18,2864,49,0,34,21,61.8,18,17,2498,42,93,6.537e-05,2,other,Estimating economic damage from climate change in the United States,56
-Andreas Neuhierl,equity_xs,factors,,70411189,11,839,30,0,22,17,77.3,9,5,254,6,78,2.82e-05,5,other,Market Reaction to Corporate Press Releases,29
-Matthias Hanauer,equity_xs,,robeco,10927903,20,1841,52,0,43,35,81.4,17,24,1305,18,67,5.375e-05,3,other,Machine Learning and The Cross-Section of Emerging Market Stock Returns,12
+Andreas Neuhierl,equity_xs,factors,,70411189,11,839,30,0,22,16,72.7,9,4,253,6,78,2.82e-05,5,other,Market Reaction to Corporate Press Releases,29
+Matthias Hanauer,equity_xs,,robeco,10927903,20,1841,52,0,43,34,79.1,17,24,1305,18,67,5.375e-05,3,other,Machine Learning and The Cross-Section of Emerging Market Stock Returns,12
 Nick Baltas,equity_xs,practitioner,,119479992,7,141,11,0,7,6,85.7,2,3,127,20,65,1.605e-05,3,cross_asset,"Demystifying Time‐Series Momentum Strategies: Volatility Estimators, Trading Rules and Pairwise Correlations",28
-Zhengyang Jiang,carry,convenience_yield,,14484581,14,1141,21,0,46,36,78.3,25,12,318,5,52,4.995e-05,5,other,Foreign Safe Asset Demand for US Treasurys and the Dollar,15
+Zhengyang Jiang,carry,convenience_yield,,14484581,14,1141,21,0,46,35,76.1,24,11,318,5,52,4.995e-05,5,other,Foreign Safe Asset Demand for US Treasurys and the Dollar,15
 David McLean,equity_xs,,,10805670,9,14426,522,0,16,8,50.0,6,1,721,85,49,1.398e-05,3,equity_xs,"Idiosyncratic Risk, Long-Term Reversal, and Momentum",29
 Wesley Gray,equity_xs,,alpha architect,49669863,5,11433,292,0,28,28,100.0,4,17,150,24,41,1.265e-05,1,other,Why Do Fund Managers Identify and Share Profitable Ideas?,14
 Kathryn Kaminski,trend_cta,trend_following,alphasimplex,145394771,4,116,26,0,20,20,100.0,3,17,98,13,29,2.989e-05,5,trend_cta,When Do Stop-Loss Rules Stop Losses?,22
 Bob Litterman,macro_regime,practitioner_macro,,123388926,3,334,6,0,5,5,100.0,3,5,129,15,24,1.03e-05,2,other,Applying Asset Pricing Theory to Calibrate the Price of Climate Risk,20
 Serhiy Kozak,equity_xs,factors,,101120005,8,953,16,0,10,8,80.0,8,3,148,18,19,1.245e-05,5,equity_xs,Kernel Trick for the Cross Section,9
-Leda Braga,macro_regime,practitioner_macro,,5392205,11,443,43,0,30,29,96.7,26,25,334,4,12,2.766e-05,1,other,COMPREHENDING THE TOPIC OF A PARAGRAPH: A FUNCTIONAL IMAGING STUDY OF A COMPLEX LANGUAGE PROCESS,3
 Refet Gurkaynak,rates_credit,,,2174693814,3,91,5,0,2,2,100.0,2,2,72,72,6,2.22e-06,2,macro_regime,"Dynamics of Macroeconomic Adjustment in a Globalized Developing Economy: Growth, Accumulation and Distribution, Turkey 1",6
+Leda Braga,macro_regime,practitioner_macro,,5392205,11,443,43,0,30,14,46.7,11,10,84,4,3,9.45e-06,1,other,The relationship between bilingualism and working memory: a review,1
 Tobias Adrian,rates_credit,,,2448060413,1,16710,1,0,1,1,100.0,1,1,17127,17127,3,3.26e-06,1,other,A global reference for human genetic variation,3
 Brian Hurst,trend_cta,trend_following,aqr,102281906,16,518,33,0,25,4,16.0,3,2,36,9,2,7.64e-06,1,other,"Design, construction, prototype tests and performance of a vertex chamber for the MAC detector",1
 Ralph Sueppel,carry,,macrosynergy,122463988,2,19,3,0,2,2,100.0,0,2,3,3,2,3.22e-06,2,other,Forecasting Sovereign Credit Spreads,2
-Andrew Y. Chen,equity_xs,qfactor,,2309213717,23,2842,146,0,120,116,96.7,77,94,2605,8,0,3.12e-06,1,other,Comparison of Auditory Perceptual Ratings Between Australian and Cantonese Listeners on Normal and Disordered Voices.,0
-Bob Prince,macro_regime,practitioner_macro,bridgewater,2076060575,1,4,2,0,2,2,100.0,0,1,4,4,0,0,1,other,Section V panel: Swimming against the paradigm tide: (516002006-014),0
+Andrew Y. Chen,equity_xs,qfactor,,2309213717,23,2842,146,0,120,55,45.8,34,42,2024,13,0,0,1,other,Cyclic Gomesin as a scaffold for stabilising anticancer peptides and targeting melanoma cells,0
+Bob Prince,macro_regime,practitioner_macro,bridgewater,2076060575,1,4,2,0,2,1,50.0,0,0,0,0,0,0,1,other,Section V panel: Swimming against the paradigm tide: (516002006-014),0
 David Harding,macro_regime,practitioner_macro,,2071327097,5,10167,152,0,2,2,100.0,0,1,13,13,0,0,2,trend_cta,Managed Futures:: Trend-Following Investing,0
-James MacKinlay,other,,,32624555,5,439,5,0,5,4,80.0,2,3,388,30,0,0,1,other,Effect of germination temperatures on proteolysis of the gluten-free grains sorghum and millet during malting and mashin,0
+James MacKinlay,other,,,32624555,5,439,5,0,5,3,60.0,2,2,355,28,0,0,1,other,Impact of colour adjustment on flavour stability of pale lager beers with a range of distinct colouring agents,0
 Neil Shephard,vol_options,,,50275561,67,33368,193,1,0,0,,0,0,0,0,0,0,0,,,0
 Ray Dalio,macro_regime,practitioner_macro,bridgewater,1475790281,1,6,5,0,3,3,100.0,1,1,0,0,0,0,2,other,Brain Stimulation: Table of Contents,0
 Shihao Gu,equity_xs,factors,,90255997,3,2358,9,0,4,2,50.0,1,0,14,14,0,1.56e-06,1,other,Production Outsourcing and Innovation: Evidence from China’s Pharmaceutical Industry,0

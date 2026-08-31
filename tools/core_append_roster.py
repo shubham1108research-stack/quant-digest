@@ -59,6 +59,7 @@ HARVEST = OUT / "core_roster_papers.json"
 TAGS = OUT / "core_tags.csv"
 TOPICS = OUT / "core_topics.json"
 OAX = OUT / "core_openalex_extra.ndjson"
+STRAYS = OUT / "core_strays.csv"
 IDS = OUT / "core_openalex_ids.json"
 WORKS = "https://api.openalex.org/works"
 
@@ -241,6 +242,26 @@ def main():
         wr.writeheader()
         wr.writerows(rows + new_rows)
     log(f"[append] {CAND}: {len(rows):,} -> {len(rows)+len(new_rows):,}")
+
+    # A PAPER CANNOT BE IN BOTH FILES. Some of these were cut by an earlier
+    # pass and are being re-added now, which is the roster making an explicit
+    # decision that outranks a keyword verdict -- "Case Study: Porsche versus
+    # Volkswagen" was removed as `no_finance_signal` because its title carries
+    # no finance vocabulary, and it is a paper about the 2008 VW short squeeze.
+    # Leaving it in strays too produces a pool where candidates and strays
+    # overlap, and every count taken across the two is then wrong.
+    if STRAYS.exists():
+        srows = list(csv.DictReader(io.open(STRAYS, encoding="utf-8", newline="")))
+        added = {r["uid"] for r in new_rows}
+        keep = [r for r in srows if r["uid"] not in added]
+        if len(keep) != len(srows):
+            with io.open(STRAYS, "w", newline="", encoding="utf-8") as fh:
+                wr = csv.DictWriter(fh, fieldnames=list(srows[0].keys()))
+                wr.writeheader()
+                wr.writerows(keep)
+            log(f"[append] {len(srows)-len(keep)} of these had been cut by an "
+                f"earlier pass; removed from {STRAYS.name} so the two files "
+                f"stay disjoint")
 
     # keep the derived caches in step, so core_master.py sees the new papers
     if topics_add and TOPICS.exists():
